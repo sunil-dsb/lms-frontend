@@ -28,6 +28,7 @@ export function Greeting({
   training,
   locale = 'en',
   isOnboarding = false,
+  line,
   greetLine = 'Good morning',
 }: {
   /** Optional backwards compatibility */
@@ -46,6 +47,10 @@ export function Greeting({
   const badge = initials(name);
   const subtitle = [roleName, stationName].filter(Boolean).join(' · ');
   const isEs = locale === 'es';
+  // `line` is the translated time-aware greeting from the caller
+  // ("Good morning" / "Good afternoon" / "Good evening"); `greetLine` is the
+  // legacy default. Prefer `line` when provided.
+  const greetText = line ?? greetLine;
 
   // SCENARIO A: Onboarding Not Completed
   if (isOnboarding) {
@@ -75,15 +80,15 @@ export function Greeting({
 
             <div className="min-w-0 flex-1">
               <h2
-                className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] leading-snug tracking-tight"
+                className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] leading-snug tracking-tight truncate"
                 style={{ fontSize: '17px' }}
               >
-                {name}
+                {greetText}
               </h2>
               {subtitle ? (
                 <p
-                  className="text-xs sm:text-sm text-[var(--color-ink-2)]"
-                  style={{ marginTop: '2px' }}
+                  className="text-[13px] text-[var(--color-ink-2)] truncate"
+                  style={{ marginTop: '2px', lineHeight: '1.35' }}
                 >
                   {subtitle}
                 </p>
@@ -189,22 +194,16 @@ export function Greeting({
           </div>
 
           <div className="min-w-0 flex-1">
-            <p
-              className="text-xs text-[var(--color-ink-2)]"
-              style={{ marginBottom: '2px', lineHeight: '1.2' }}
-            >
-              {isEs ? 'Buenos días' : greetLine}
-            </p>
             <h2
-              className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] leading-snug tracking-tight"
+              className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] leading-snug tracking-tight truncate"
               style={{ fontSize: '17px' }}
             >
-              {name}
+              {greetText}
             </h2>
             {subtitle ? (
               <p
-                className="text-xs sm:text-sm text-[var(--color-ink-2)]"
-                style={{ marginTop: '2px' }}
+                className="text-[13px] text-[var(--color-ink-2)] truncate"
+                style={{ marginTop: '2px', lineHeight: '1.35' }}
               >
                 {subtitle}
               </p>

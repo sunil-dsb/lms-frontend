@@ -94,6 +94,10 @@ export default async function ProceduresPage({ params, searchParams }: PageProps
     ? 'mx-auto w-full max-w-doc px-4 pt-6 sm:px-6 sm:pt-8'
     : 'mx-auto w-full max-w-doc px-4 pt-6 sm:px-6 sm:pt-8';
 
+  const resolvedStationIds =
+    employee.stationIds ??
+    (employee.stations ? employee.stations.map((s: { id: string }) => s.id) : []);
+
   return (
     <>
       <main className={mainClass} style={isAdmin ? undefined : { paddingBottom: '100px' }}>
@@ -126,8 +130,8 @@ export default async function ProceduresPage({ params, searchParams }: PageProps
           locale={locale}
           readsSpanish={readsSpanish}
           viewAs={viewAs}
-          stationId={employee.stationIds[0] ?? null}
-          stationIds={employee.stationIds ?? []}
+          stationId={resolvedStationIds[0] ?? null}
+          stationIds={resolvedStationIds}
           employeeId={employee.id}
           locked={!onboardingDone}
           lockedHref={lockedHref}

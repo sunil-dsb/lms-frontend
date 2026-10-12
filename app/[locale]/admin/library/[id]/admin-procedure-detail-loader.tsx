@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getCachedProcedure, getProcedureBySlug } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { getProcedureBySlug } from '@/lib/api';
 import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
 import { AdminProcedureView } from '@/components/admin/admin-procedure-view';
 import { AdminProcedureDetailSkeleton } from '@/components/admin/admin-procedure-detail-skeleton';
@@ -12,12 +12,10 @@ import type { Employee, Procedure } from '@/lib/types';
 /**
  * Client data layer for the admin procedure detail.
  *
- * First paint: whichever list the manager came from — the TanStack
- * browse cache (the library already fetched every procedure) or the
- * on-device store. `useQuery` then revalidates in the background, so a
- * repeat open is instant and still fresh. Only a cold open (no cache,
- * direct link) shows the document skeleton; a miss renders the same
- * kind of "not available" message the employee view uses.
+ * The page waits for the slug API and renders the whole procedure at
+ * once — no partial paint from a cached list row (heading + purpose
+ * with the body still loading). Only the document skeleton shows until
+ * the API resolves; a miss renders the not-available message.
  */
 export function AdminProcedureDetailLoader({
   locale,
@@ -28,22 +26,14 @@ export function AdminProcedureDetailLoader({
   id: string;
   employee: Employee;
 }): React.ReactElement {
-  const queryClient = useQueryClient();
-
-  const cached = React.useMemo(() => {
-    const browse = queryClient.getQueryData<Procedure[]>([...PROCEDURES_QUERY_KEY, 'browse']);
-    return browse?.find((p) => p.id === id || p.slug === id) ?? getCachedProcedure(id);
-    // Only the first paint matters — the query keeps the row fresh.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
+  // The page waits for the slug API — no cached partial paint.
   const query = useQuery<Procedure, Error>({
     queryKey: [...PROCEDURES_QUERY_KEY, 'detail', id],
     queryFn: () => getProcedureBySlug(id).then((r) => r.procedure),
-    initialData: cached ?? undefined,
+    staleTime: 0,
   });
 
-  if (query.isLoading && !query.data) {
+  if (query.isLoading) {
     return <AdminProcedureDetailSkeleton />;
   }
 

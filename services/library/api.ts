@@ -10,7 +10,7 @@
 import http from '@/lib/http';
 import { LIBRARY_ENDPOINTS } from './endpoints';
 import type { Procedure, CreateProcedureInput } from '@/lib/types';
-import type { ProcedureFilterOptions } from './types';
+import type { ProcedureFilterOptions, AssignedProceduresFilterOptions } from './types';
 
 function makeHeaders(cookieHeader?: string): Record<string, string> {
   const headers: Record<string, string> = {};
@@ -24,7 +24,7 @@ function makeHeaders(cookieHeader?: string): Record<string, string> {
   return headers;
 }
 
-function isUuid(val: string | null | undefined): boolean {
+export function isUuid(val: string | null | undefined): boolean {
   if (!val) return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
 }
@@ -409,17 +409,26 @@ export function normalizeBackendProcedure(raw: any): Procedure {
   // side but the Archived filter reads "0 of N".
   const archived = raw.isArchived ?? raw.status === 'archived';
   const status = raw.status === 'archived' ? (raw.previousStatus ?? 'draft') : raw.status;
+  // Backend shape is `stationIds: string[] | null` (multi-station). The
+  // frontend's `stationId` stays the first id (single-station UI paths);
+  // `stationIds` carries the full allocation.
+  const stationIds: string[] = Array.isArray(raw.stationIds)
+    ? raw.stationIds.filter((s: unknown): s is string => typeof s === 'string')
+    : raw.station?.id || raw.stationId
+      ? [raw.station?.id || raw.stationId]
+      : [];
   return {
     ...raw,
     status,
-    stationId: raw.stationId ?? null,
+    stationIds,
+    stationId: stationIds[0] ?? null,
     isDirectlyAssigned: Boolean(raw.isDirectlyAssigned),
     isStationProcedure: Boolean(raw.isStationProcedure),
     subcategoryId: raw.subcategory?.id ?? raw.subcategoryId ?? null,
     category: raw.category ?? null,
     stationScope:
       raw.stationScope ??
-      (raw.stationId ? { mode: 'specific', stationIds: [raw.stationId] } : null),
+      (stationIds.length > 0 ? { mode: 'specific', stationIds } : null),
     iconImageUrl: raw.iconImageUrl ?? raw.procedureImage ?? null,
     version: raw.version ?? 1,
     isArchived: archived,
@@ -526,23 +535,87 @@ async function resolveBackendCategories(procedures: Procedure[], cookieHeader?: 
   }
 }
 
+export async function fetchAssignedProcedures(
+  options: AssignedProceduresFilterOptions = {},
+  cookieHeader?: string,
+): Promise<{ procedures: Procedure[]; total: number; meta?: { page: number; limit: number; total: number; totalPages: number } }> {
+  const headers = makeHeaders(cookieHeader);
+  const params: Record<string, any> = {};
+
+  if (options.scope === 'mine' || options.scope === 'all') {
+    params.scope = options.scope;
+  }
+  if (options.categoryId && isUuid(options.categoryId)) {
+    params.categoryId = options.categoryId;
+  }
+  if (options.page != null) {
+    params.page = options.page;
+  }
+  if (options.limit != null) {
+    params.limit = options.limit;
+  }
+  if (options.search && options.search.trim()) {
+    params.search = options.search.trim();
+  }
+
+  const { data } = await http.get<{
+    success: boolean;
+    data: {
+      procedures: any[];
+      meta?: { page: number; limit: number; total: number; totalPages: number };
+    };
+  }>(LIBRARY_ENDPOINTS.ASSIGNED, {
+    headers: Object.keys(headers).length ? headers : undefined,
+    params,
+  });
+
+  const rawList = Array.isArray(data.data?.procedures) ? data.data.procedures : [];
+  const procedures = rawList.map(normalizeBackendProcedure);
+  await resolveBackendCategories(procedures, cookieHeader);
+  const total = data.data?.meta?.total ?? procedures.length;
+  return { procedures, total, meta: data.data?.meta };
+}
+
 export async function fetchProcedureById(
   slugOrId: string,
   _isAdmin = false,
   cookieHeader?: string,
 ): Promise<Procedure> {
   const headers = makeHeaders(cookieHeader);
-  const { data } = await http.get<{
-    success: boolean;
-    data: { procedure: Procedure };
-  }>(LIBRARY_ENDPOINTS.GET(slugOrId), {
-    headers: Object.keys(headers).length ? headers : undefined,
-  });
+  try {
+    const { data } = await http.get<{
+      success: boolean;
+      data: { procedure: Procedure };
+    }>(LIBRARY_ENDPOINTS.GET(slugOrId), {
+      headers: Object.keys(headers).length ? headers : undefined,
+    });
 
-  if (!data.data?.procedure) {
+    if (data.data?.procedure) {
+      const proc = normalizeBackendProcedure(data.data.procedure);
+      await resolveBackendCategories([proc], cookieHeader);
+      return proc;
+    }
+  } catch (err) {
+    // Slugs go straight through; anything else falls to the id path below.
+    if (!isUuid(slugOrId)) throw err;
+  }
+
+  // Admin list links used to carry the row id (UUID), which never matches
+  // the backend's slug column — resolve it through the (cached) list, then
+  // fetch the whole procedure by the resolved slug so detail views always
+  // get full bodies, never a metadata row.
+  if (!isUuid(slugOrId)) {
     throw new Error(`Procedure not found: ${slugOrId}`);
   }
-  return normalizeBackendProcedure(data.data.procedure);
+  const { procedures } = await fetchProcedures({}, _isAdmin, cookieHeader);
+  const match = procedures.find((p) => p.id === slugOrId);
+  if (!match) {
+    throw new Error(`Procedure not found: ${slugOrId}`);
+  }
+  if (match.slug && match.slug !== slugOrId) {
+    return fetchProcedureById(match.slug, _isAdmin, cookieHeader);
+  }
+  return match;
 }
 
 /** Backend PUT/POST validate against the full create schema, so every
@@ -568,35 +641,11 @@ function buildProcedurePayload(input: Partial<CreateProcedureInput>): Record<str
     ? blocksEs
     : [{ id: 'b-init-1', kind: 'text', body: { en: purposeEn, es: purposeEs } }];
 
-  const MOCK_TO_REAL_SUBCATEGORY: Record<string, string> = {
-    'sub-plating': '7ecfd968-b364-4801-abf0-859842ce7705',
-    'sub-cooking': '8352bd04-2584-49f4-91b1-463123d3e4eb',
-    'sub-portions': '3dd93add-e931-43d5-94c7-8eaa37dd6f8f',
-    'sub-culture': 'a689329a-7cd3-4ec7-878c-ae45d295597d',
-    'sub-uniform': '181a5580-5762-4ed1-9c94-04f1840cbb0b',
-    'sub-conduct': '5c51ede7-8c5f-4dee-a5b8-0045ab47a00a',
-    'sub-hygiene': 'd1777da5-e508-4405-9851-3c03f76b66a2',
-    'sub-cross-contam': 'f170b9c2-ee80-4bd8-86f3-d03f5043fabf',
-    'sub-labeling': '0b977189-7ba6-465d-b66c-b74d8811fc30',
-    'sub-allergy': 'b8109b7b-5696-47c5-9fa7-c612cb261861',
-    'sub-dishwashing': 'd92e92bc-386b-485f-bb25-f1bba54a4539',
-    'sub-chemicals': '0635eef3-9f13-4e6a-b540-a5c171dc6c04',
-    'sub-waste': '40739a28-3d9f-4c92-a9c4-4eedcf085897',
-    'sub-station-setup': 'f8caa67a-d67f-4b30-b393-f28b0805e859',
-    'sub-communication': '0448c821-c2e4-4605-a3fa-5a9ddfbd23c0',
-    'sub-opening': 'cc035c4c-c198-4a16-819b-aba0db01639b',
-    'sub-closing': '08e28476-9246-471c-aab2-d1169f857d4c',
-    'sub-eod-checks': 'ffd15434-5529-478c-96f9-a6c66c3e9733',
-    'sub-operation': '2a962279-9d87-4dac-a463-be3d15cbb8e8',
-    'sub-equipment-safety': 'c6a1a2c9-6bd3-4b55-a345-69d08253fa37',
-    'sub-equipment-cleaning': '0f77903c-9b81-4b16-a71b-ed3ee36aa510',
-  };
-
-  const subcategoryId = isUuid(input.subcategoryId)
-    ? input.subcategoryId
-    : input.subcategoryId && MOCK_TO_REAL_SUBCATEGORY[input.subcategoryId]
-      ? MOCK_TO_REAL_SUBCATEGORY[input.subcategoryId]
-      : null;
+  // Only live UUIDs go out — the wizard resolves mock picks to live ids
+  // before calling. Anything else becomes null (backend-valid: a
+  // procedure may live without a subcategory) instead of a dead UUID
+  // that dies with SUBCATEGORY_NOT_FOUND.
+  const subcategoryId = isUuid(input.subcategoryId) ? input.subcategoryId : null;
   const stationId = isUuid(input.stationId)
     ? input.stationId
     : input.stationScope?.stationIds?.[0] && isUuid(input.stationScope.stationIds[0])
@@ -631,7 +680,23 @@ function buildProcedurePayload(input: Partial<CreateProcedureInput>): Record<str
   };
 
   if (subcategoryId) payload.subcategoryId = subcategoryId;
-  if (stationId) payload.stationId = stationId;
+  // Always explicit: a UUID for station-specific, or null for general
+  // categories (applies to all stations). Backend also defaults omission
+  // to null, but sending it states the intent.
+  payload.stationId = stationId;
+  // Full station allocation. General categories send every station id;
+  // station-specific ones the single pick. Resolution chain: explicit
+  // `stationIds` → stationScope → audience. The live backend is
+  // non-strict zod, so the array is stripped today and applied the
+  // moment the API accepts multi-station.
+  const stationIds = (
+    Array.isArray(input.stationIds) && input.stationIds.length > 0
+      ? input.stationIds
+      : input.stationScope?.stationIds?.length
+        ? input.stationScope.stationIds
+        : input.audience?.stationIds ?? []
+  ).filter(isUuid);
+  if (stationIds.length > 0) payload.stationIds = stationIds;
   if (quizId) payload.quizId = quizId;
   if (procedureImage) {
     payload.procedureImage = procedureImage;
@@ -709,6 +774,46 @@ export async function updateProcedure(
   }
 
   throw new Error('Backend did not return updated procedure');
+}
+
+/** PATCH /api/v1/procedures/:id/station — replace the station allocation.
+ *  Sends the array form (`stationIds`) the multi-station backend expects;
+ *  `null` / empty clears the allocation (general = every station). The
+ *  backend also still accepts a single `stationId` for older clients.
+ *  Super_admin only. Returns the updated row. */
+export async function updateProcedureStation(
+  id: string,
+  stationId: string | null,
+): Promise<Procedure> {
+  const { data } = await http.patch<{
+    success: boolean;
+    message: string;
+    data: { procedure: Procedure };
+  }>(LIBRARY_ENDPOINTS.UPDATE_STATION(id), {
+    stationIds: stationId ? [stationId] : null,
+  });
+
+  if (data.data?.procedure) {
+    return normalizeBackendProcedure(data.data.procedure);
+  }
+
+  throw new Error('Backend did not return updated procedure');
+}
+
+/** POST /api/v1/procedures/:id/publish — one-click draft → published.
+ *  409 when already published or archived. */
+export async function publishProcedure(id: string): Promise<Procedure> {
+  const { data } = await http.post<{
+    success: boolean;
+    message: string;
+    data: { procedure: Procedure };
+  }>(LIBRARY_ENDPOINTS.PUBLISH(id));
+
+  if (data.data?.procedure) {
+    return normalizeBackendProcedure(data.data.procedure);
+  }
+
+  throw new Error('Backend did not return published procedure');
 }
 
 /** POST /api/v1/procedures/:id/archive — soft delete; the backend has

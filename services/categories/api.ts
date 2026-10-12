@@ -190,3 +190,78 @@ export async function fetchBackendCategories(
   inFlightBackendCategories.set(cacheKey, promise);
   return promise;
 }
+
+export interface LiveSubcategory {
+  id: string;
+  categoryId: string;
+  nameEn: string;
+  nameEs: string;
+}
+
+/** Live subcategories of one backend category.
+ *  GET /api/v1/categories/:categoryId/subcategories (any logged-in employee). */
+export async function fetchBackendSubcategories(
+  categoryId: string,
+  cookieHeader?: string,
+): Promise<LiveSubcategory[]> {
+  const headers = makeBackendHeaders(cookieHeader);
+  const { default: http } = await import('@/lib/http');
+  const { data } = await http.get<{
+    success: boolean;
+    data: { subcategories: LiveSubcategory[]; meta?: { total: number } };
+  }>(`/api/v1/categories/${categoryId}/subcategories`, {
+    headers: Object.keys(headers).length ? headers : undefined,
+    params: { page: 1, limit: 100 },
+  });
+  const list = data.data?.subcategories;
+  return Array.isArray(list) ? list : [];
+}
+
+/** Resolve a wizard-picked subcategory to a live backend UUID.
+ *
+ *  The picker's catalog is the local mock store, so the picked id is
+ *  usually a mock handle (`sub-cooking`), not a UUID. Match order per
+ *  side: exact id, then slug, then English name. Returns the live UUID,
+ *  or `null` when nothing on the server matches — callers must NOT send
+ *  the stale pick (the backend answers SUBCATEGORY_NOT_FOUND). */
+export async function resolveLiveSubcategoryId(input: {
+  categoryId?: string | null;
+  categorySlug?: string | null;
+  categoryNameEn?: string | null;
+  subcategoryId?: string | null;
+  subcategorySlug?: string | null;
+  subcategoryNameEn?: string | null;
+}): Promise<string | null> {
+  try {
+    const cats = await fetchBackendCategories();
+    const normName = (s: string | null | undefined): string => (s || '').trim().toLowerCase();
+    const cat =
+      cats.find((c) => input.categoryId != null && c.id === input.categoryId) ??
+      cats.find(
+        (c) =>
+          input.categorySlug != null && categorySlugsMatch(c.slug, input.categorySlug),
+      ) ??
+      cats.find(
+        (c) =>
+          input.categoryNameEn != null &&
+          normName(c.nameEn) === normName(input.categoryNameEn),
+      );
+    if (!cat) return null;
+    const subs = await fetchBackendSubcategories(cat.id);
+    const sub =
+      subs.find((s) => input.subcategoryId != null && s.id === input.subcategoryId) ??
+      subs.find(
+        (s) =>
+          input.subcategorySlug != null &&
+          categorySlugsMatch(backendSlug(s.nameEn), input.subcategorySlug),
+      ) ??
+      subs.find(
+        (s) =>
+          input.subcategoryNameEn != null &&
+          normName(s.nameEn) === normName(input.subcategoryNameEn),
+      );
+    return sub?.id ?? null;
+  } catch {
+    return null;
+  }
+}

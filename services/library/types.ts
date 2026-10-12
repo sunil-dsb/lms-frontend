@@ -18,3 +18,11 @@ export interface ProcedureFilterOptions {
    *  explicit limit so lists never silently truncate. */
   limit?: number;
 }
+
+export interface AssignedProceduresFilterOptions {
+  scope?: 'all' | 'mine';
+  categoryId?: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+}

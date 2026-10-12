@@ -61,58 +61,27 @@ export async function fetchJobStations(
     return { stations: [] };
   }
 
-  const headers: Record<string, string> = {};
-  if (cookieHeader) {
-    headers['Cookie'] = cookieHeader;
-    const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
-    if (tokenMatch) {
-      headers['Authorization'] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
-    }
+  // No dedicated backend route derivable through the proxy
+  // (GET /jobs/stations is QUERY-only) — resolve locally instead: jobs
+  // carry their stationIds, names come from the stations list. Both
+  // calls below are cached, so this costs no extra round-trips.
+  const [{ jobs }, { stations }] = await Promise.all([
+    fetchJobs(cookieHeader),
+    import('@/services/stations/api').then((m) => m.fetchStations({}, cookieHeader)),
+  ]);
+  const wanted = new Set(jobIds);
+  const ids = new Set<string>();
+  for (const job of jobs) {
+    if (!wanted.has(job.id)) continue;
+    for (const sid of job.stationIds ?? []) ids.add(sid);
   }
-
-  // GET first: comma-separated query string, no body semantics, so it
-  // survives every proxy (Next rewrites have mangled the QUERY verb in
-  // practice, costing a wasted round-trip on every call). QUERY second,
-  // POST last — both documented by the backend for this route.
-  try {
-    // 1. GET with comma-separated query string ?jobIds=id1,id2
-    const { data } = await http.get<{
-      success: boolean;
-      data: { stations: Array<{ id: string; name: string }> };
-    }>(JOBS_ENDPOINTS.STATIONS, {
-      params: { jobIds: jobIds.join(',') },
-      headers: Object.keys(headers).length ? headers : undefined,
-    });
-
-    return { stations: data.data?.stations ?? [] };
-  } catch {
-    try {
-      // 2. HTTP QUERY with body { jobIds } as per backend specification
-      const { data } = await http.request<{
-        success: boolean;
-        data: { stations: Array<{ id: string; name: string }> };
-      }>({
-        method: 'QUERY',
-        url: JOBS_ENDPOINTS.STATIONS,
-        data: { jobIds },
-        headers: Object.keys(headers).length ? headers : undefined,
-      });
-
-      return { stations: data.data?.stations ?? [] };
-    } catch {
-      // 3. Fallback: POST with JSON body
-      const { data } = await http.post<{
-        success: boolean;
-        data: { stations: Array<{ id: string; name: string }> };
-      }>(
-        JOBS_ENDPOINTS.STATIONS,
-        { jobIds },
-        { headers: Object.keys(headers).length ? headers : undefined },
-      );
-
-      return { stations: data.data?.stations ?? [] };
-    }
-  }
+  const byId = new Map(stations.map((s) => [s.id, s.name] as const));
+  return {
+    stations: [...ids]
+      .filter((id) => byId.has(id))
+      .map((id) => ({ id, name: byId.get(id)! }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  };
 }
 
 export async function createJob(

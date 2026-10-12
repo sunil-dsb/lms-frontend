@@ -2474,12 +2474,15 @@ export async function getProcedureById(id: string): Promise<{ procedure: Procedu
   return { procedure: found };
 }
 
-/** Publishing rule: a procedure may go live only when it knows where it
- *  belongs — explicitly scoped to ≥1 station (specific scope or a direct
- *  stationId), or General (no category and no subcategory: kitchen-wide by
- *  definition). A categorized procedure with no station assignment stays a
- *  draft until someone places it. */
+/** Publishing rule (multi-station): a procedure may go live only when it
+ *  knows where it works — at least one station in `stationIds`. General
+ *  procedures carry EVERY station id (the wizard allocates them at save),
+ *  so they pass naturally; an unplaced row (empty / null) stays a draft
+ *  until someone places it. Legacy single-station shapes (stationScope /
+ *  stationId) still resolve for rows created before the array landed. */
 export function canPublishProcedure(p: Procedure): boolean {
+  const ids = (p as { stationIds?: string[] | null }).stationIds;
+  if (Array.isArray(ids)) return ids.length > 0;
   if (!p.category && !p.subcategoryId) return true;
   const scope = p.stationScope;
   if (scope && scope.mode === 'specific') return scope.stationIds.length > 0;
@@ -2502,16 +2505,23 @@ function isRouteMissing(err: unknown): boolean {
  *  Real APIs first, mock fallback while they land:
  *  - publish guard runs before anything: unplaced procedures stay drafts.
  *  - `isArchived` goes to the dedicated archive/unarchive routes (exist).
- *  - `status` goes to PATCH /:id (lands later — see `patchProcedure`).
- *  A 404-without-body or 405 means "route not here yet" and falls back to
- *  the local store; real failures (400 validation, 401/403, row-not-found)
- *  propagate so the UI can show them. */
+ *  - publish is a single POST /:id/publish (mounted; returns the updated
+ *  row). Moving back to draft has no endpoint and is no longer offered in
+ *  the UI: local update only. Real failures (409 already published /
+ *  archived, 401/403, row-not-found) propagate so the UI can show them. */
 export async function setProcedureState(
   id: string,
   change: { status?: Procedure['status']; isArchived?: boolean },
+  context?: { row?: Procedure },
 ): Promise<Procedure> {
   if (change.status === 'published') {
-    const existing = getProceduresStore().find((p) => p.id === id || p.slug === id);
+    // Gate on the row the caller just showed the user when it has one: list
+    // and detail screens hold freshly fetched data, while the mirrored store
+    // copy can lag behind — a stale mirror would block publishes the UI just
+    // verified, or wave unplaced rows through. The store stays as the
+    // fallback for callers with no row in hand (demo/mock ids).
+    const existing =
+      context?.row ?? getProceduresStore().find((p) => p.id === id || p.slug === id);
     if (existing && !canPublishProcedure(existing)) {
       throw new ApiException(
         400,
@@ -2536,16 +2546,20 @@ export async function setProcedureState(
     } catch (err) {
       if (!isRouteMissing(err)) throw err;
     }
-  } else if (change.status !== undefined) {
+  } else if (change.status === 'published') {
+    // One call: POST /:id/publish returns the updated row. Mock/demo
+    // ids skip the API and go straight to the local update below.
     try {
-      const { patchProcedure } = await import('@/services/library/api');
-      const updated = await patchProcedure(id, { status: change.status });
-      mockProcedures = getProceduresStore().map((p) =>
-        p.id === id || p.slug === id ? { ...updated, id: p.id } : p,
-      );
-      setStored('procedures_v2', mockProcedures);
-      clearLibraryListCache();
-      return { ...updated, id };
+      const { publishProcedure, isUuid } = await import('@/services/library/api');
+      if (isUuid(id)) {
+        const updated = await publishProcedure(id);
+        mockProcedures = getProceduresStore().map((p) =>
+          p.id === id || p.slug === id ? { ...updated, id: p.id } : p,
+        );
+        setStored('procedures_v2', mockProcedures);
+        clearLibraryListCache();
+        return { ...updated, id };
+      }
     } catch (err) {
       if (!isRouteMissing(err)) throw err;
     }

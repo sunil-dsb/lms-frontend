@@ -20,6 +20,9 @@ export interface Employee {
   languagePref: LanguagePref;
   roleClearance?: ClearanceLevel | null;
   createdAt?: string;
+  /** Denormalised names from GET /api/auth/me — prefer these over extra lookups. */
+  stations?: Array<{ id: string; name: string }>;
+  jobs?: Array<{ id: string; name: string }>;
 }
 export interface Role {
   id: string;
@@ -473,6 +476,10 @@ export interface Procedure {
   quizId?: string | null;
   /** Station id this procedure is scoped to */
   stationId?: string | null;
+  /** Denormalised station returned by backend */
+  station?: { id: string; name: string } | null;
+  /** Procedure cover/thumbnail image from backend */
+  procedureImage?: string | null;
   /** Employee ids this procedure is directly assigned to (backend
    *  `assign_users`). Drives the "Assigned to you" section on the
    *  employee home and the matching browse filter. */
@@ -517,6 +524,12 @@ export interface CreateProcedureInput {
    *  optional otherwise. */
   subcategoryId?: string | null;
   stationId?: string | null;
+  /** Every station this procedure is allocated to. General-category
+   *  procedures carry ALL station ids; station-specific ones carry the
+   *  single picked id. Sent alongside `stationId` — the current backend
+   *  (zod non-strict) strips the array until multi-station lands, then
+   *  it lights up with no further frontend change. */
+  stationIds?: string[];
   procedureImage?: string | null;
   assignUsers?: string[];
   /** Per-procedure station scope. The subcategory carries a default

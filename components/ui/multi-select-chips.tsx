@@ -26,6 +26,9 @@ interface MultiSelectChipsProps {
   emptyText: string;
   blockedReason?: string;
   id?: string;
+  /** Cap on selected values. When reached, the Add trigger disables and
+   *  picking replaces the selection instead of appending. Unset = unlimited. */
+  maxSelected?: number;
   visibleChipLimit?: number;
   labelTrailing?: React.ReactNode;
   tone?: 'brand' | 'neutral';
@@ -46,6 +49,7 @@ export function MultiSelectChips({
   emptyText,
   blockedReason,
   id,
+  maxSelected,
   visibleChipLimit = 6,
   labelTrailing,
   tone = 'neutral',
@@ -71,6 +75,12 @@ export function MultiSelectChips({
 
   const handleAdd = (picked: string): void => {
     if (!picked || value.includes(picked)) return;
+    // Single-select mode: picking replaces the current value.
+    if (maxSelected != null && maxSelected <= 1) {
+      onChange([picked]);
+      return;
+    }
+    if (maxSelected != null && value.length >= maxSelected) return;
     onChange([...value, picked]);
   };
 
@@ -81,7 +91,8 @@ export function MultiSelectChips({
   const overflow = Math.max(0, selectedOptions.length - visibleChipLimit);
   const visibleChips = selectedOptions.slice(0, visibleChipLimit);
   const isBlocked = Boolean(blockedReason);
-  const triggerDisabled = disabled || isLoading || isBlocked || pickableOptions.length === 0;
+  const atLimit = maxSelected != null && value.length >= maxSelected;
+  const triggerDisabled = disabled || isLoading || isBlocked || atLimit || pickableOptions.length === 0;
 
   return (
     <div className={cn('flex flex-col gap-2 h-full', className)} data-slot="multi-select-chips">

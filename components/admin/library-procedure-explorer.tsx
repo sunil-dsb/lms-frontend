@@ -12,7 +12,6 @@ import {
   LuArchive,
   LuArchiveRestore,
   LuCircleCheck,
-  LuCircleDashed,
   LuFilePen,
   LuFileSearch,
   LuLock,
@@ -215,7 +214,11 @@ export function LibraryProcedureExplorer({
   );
 
   const act = React.useCallback(
-    async (id: string, change: { status?: ProcedureStatus; isArchived?: boolean }) => {
+    async (
+      id: string,
+      change: { status?: ProcedureStatus; isArchived?: boolean },
+      row?: Procedure,
+    ) => {
       if (change.status) {
         setStatusOverrides((prev) => new Map(prev).set(id, change.status!));
       }
@@ -228,7 +231,7 @@ export function LibraryProcedureExplorer({
         });
       }
       try {
-        await setProcedureState(id, change);
+        await setProcedureState(id, change, row ? { row } : undefined);
         await queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY });
       } catch {
         await queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY });
@@ -265,6 +268,15 @@ export function LibraryProcedureExplorer({
   }, [selectedCategorySlug]);
 
   const [searchQuery, setSearchQuery] = React.useState<string>('');
+  // Debounced search for the server round-trip. The client-side filter below
+  // keeps using the live `searchQuery` so keystrokes feel instant on rows
+  // already in hand; the backend query follows once the user pauses instead
+  // of firing per keystroke.
+  const [debouncedSearch, setDebouncedSearch] = React.useState<string>('');
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
   // Archived is its own choice: out of the list by default, one pick away for
   // the audit.
   const [statusFilter, setStatusFilter] = React.useState<'all' | ProcedureStatus | 'archived'>('all');
@@ -430,7 +442,7 @@ export function LibraryProcedureExplorer({
     backendSubcategoryIds?.length ||
     backendStationIds?.length ||
     backendStatus ||
-    searchQuery.trim(),
+    debouncedSearch.trim(),
   );
 
   const { data: filterApiResponse, isLoading: isFilterLoading } = useQuery({
@@ -442,7 +454,7 @@ export function LibraryProcedureExplorer({
         subcategoryIds: backendSubcategoryIds,
         stationIds: backendStationIds,
         status: backendStatus,
-        search: searchQuery.trim() || undefined,
+        search: debouncedSearch.trim() || undefined,
       },
     ],
     queryFn: async () => {
@@ -453,7 +465,7 @@ export function LibraryProcedureExplorer({
           subcategoryIds: backendSubcategoryIds,
           stationIds: backendStationIds,
           status: backendStatus,
-          search: searchQuery.trim() || undefined,
+          search: debouncedSearch.trim() || undefined,
         },
         true,
       );
@@ -910,7 +922,10 @@ export function LibraryProcedureExplorer({
         <ul className="divide-y divide-[var(--color-line)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)]">
           {visibleProcedures.map((p) => {
             const procCategory = p.category ?? (p.subcategoryId ? categoryList.find((c) => c.subcategories?.some((s) => s.id === p.subcategoryId)) : null);
-            const catName = procCategory ? (isEs ? procCategory.nameEs : procCategory.nameEn) : 'General';
+            // No fabricated fallback ("General") when the row carries neither
+            // a resolvable category nor a subcategory — unknown stays blank
+            // instead of lying about where the procedure lives.
+            const catName = procCategory ? (isEs ? procCategory.nameEs : procCategory.nameEn) : null;
             const title = (isEs ? p.titleEs || p.titleEn : p.titleEn || p.titleEs) || p.slug;
             const purpose = isEs ? p.purposeEs || p.purposeEn : p.purposeEn || p.purposeEs;
             // Subcategory resolves from the FK via the map the catalog already
@@ -918,12 +933,15 @@ export function LibraryProcedureExplorer({
             // fallback that used to lie about recipe sections.
             const sub = p.subcategoryId ? subById.get(p.subcategoryId) ?? null : null;
             const subName = sub ? (isEs ? sub.nameEs : sub.nameEn) : null;
-            // Station names — only for procedures with an explicit narrow scope
-            // (mode: 'specific' with at least one station) or attached stationId. Kitchen-wide
-            // procedures don't carry a station in the meta line because the
-            // whole floor follows them.
+            // Station names — the API sends the denormalised `station`
+            // object on list rows, so prefer its name; fall back to the
+            // stations list for legacy/detail rows that only carry an id.
+            // Kitchen-wide procedures (no station) show no station in the
+            // meta line because the whole floor follows them.
             const scopeStations =
-              p.stationScope && p.stationScope.mode === 'specific' && p.stationScope.stationIds.length > 0
+              p.station?.name
+                ? [p.station.name]
+                : p.stationScope && p.stationScope.mode === 'specific' && p.stationScope.stationIds.length > 0
                 ? p.stationScope.stationIds
                   .map((id) => liveStations.find((s) => s.id === id)?.name)
                   .filter((n): n is string => Boolean(n))
@@ -937,7 +955,7 @@ export function LibraryProcedureExplorer({
                     list were six copies of one action. What changes the
                     procedure's state sits in its menu. */}
                 <Link
-                  href={`/${locale}/admin/library/${p.id}`}
+                  href={`/${locale}/admin/library/${p.slug || p.id}`}
                   className="group flex min-w-0 flex-1 items-center justify-between gap-4 py-5 pl-4"
                 >
                   {/* The icon is a mark, not a framed object: the bordered tile was
@@ -1005,16 +1023,16 @@ export function LibraryProcedureExplorer({
                         in (subcategory + station). The category was also a badge above
                         and a column to the right; it is said once, here. */}
                       <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-meta text-[var(--color-ink-3)]">
-                        <span>{catName}</span>
+                        {catName ? <span>{catName}</span> : null}
                         {subName ? (
                           <>
-                            <span aria-hidden="true">·</span>
+                            {catName ? <span aria-hidden="true">·</span> : null}
                             <span>{subName}</span>
                           </>
                         ) : null}
                         {scopeStations.length > 0 ? (
                           <>
-                            <span aria-hidden="true">·</span>
+                            {catName || subName ? <span aria-hidden="true">·</span> : null}
                             <span>
                               {scopeStations.length === 1
                                 ? scopeStations[0]
@@ -1024,7 +1042,9 @@ export function LibraryProcedureExplorer({
                         ) : null}
                         {p.protection === 'confidential' || p.protection === 'master' ? (
                           <>
-                            <span aria-hidden="true">·</span>
+                            {catName || subName || scopeStations.length > 0 ? (
+                              <span aria-hidden="true">·</span>
+                            ) : null}
                             <span className="inline-flex items-center gap-1 font-semibold text-[var(--color-ink-2)]">
                               <LuLock aria-hidden="true" />
                               {p.protection === 'master'
@@ -1044,14 +1064,25 @@ export function LibraryProcedureExplorer({
                     [
                       p.isArchived
                         ? null
-                        : { label: isEs ? 'Editar' : 'Edit', icon: LuPencil, onSelect: () => router.push(`/${locale}/admin/library/${p.id}/edit`) },
+                        : { label: isEs ? 'Editar' : 'Edit', icon: LuPencil, onSelect: () => router.push(`/${locale}/admin/library/${p.slug || p.id}/edit`) },
                       p.isArchived
                         ? { label: isEs ? 'Restaurar' : 'Restore', icon: LuArchiveRestore, onSelect: () => void act(p.id, { isArchived: false }) }
                         : p.status === 'draft'
-                          ? canPublishProcedure(p)
-                            ? { label: isEs ? 'Publicar' : 'Publish', icon: LuCircleCheck, onSelect: () => void act(p.id, { status: 'published' }) }
-                            : null
-                          : { label: isEs ? 'Pasar a borrador' : 'Move to drafts', icon: LuCircleDashed, onSelect: () => void act(p.id, { status: 'draft' }) },
+                          ? {
+                              label: isEs ? 'Publicar' : 'Publish',
+                              icon: LuCircleCheck,
+                              onSelect: () => {
+                                // Placement gate: publishing needs a station
+                                // (or General). Unplaced rows go to the
+                                // editor's Access step with the reason shown.
+                                if (!canPublishProcedure(p)) {
+                                  router.push(`/${locale}/admin/library/${p.slug || p.id}/edit?step=access&publishBlocked=1`);
+                                  return;
+                                }
+                                void act(p.id, { status: 'published' }, p);
+                              },
+                            }
+                          : null,
                       p.isArchived
                         ? null
                         : { label: isEs ? 'Archivar' : 'Archive', icon: LuArchive, onSelect: () => void onArchive(p.id) },

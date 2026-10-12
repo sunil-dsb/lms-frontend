@@ -6,16 +6,14 @@ interface PageProps {
   params: Promise<{ locale: string; id: string }>;
 }
 
-/**
- * Server shell. The detail page is client-driven (localStorage is
- * unreadable on the server, and `getTrainingRowsForEmployee` is a pure
- * selector that the client runs on every render). The shell's only job
- * is to set the locale for next-intl and hand off to the client.
- */
 export default async function AdminEmployeeDetailPage({
   params,
 }: PageProps): Promise<React.ReactElement> {
-  const { locale } = await params;
+  const { locale, id } = await params;
   setRequestLocale(locale);
-  return <EmployeeDetailClient locale={locale} />;
+
+  // No server-side fetch here on purpose: the detail call is made
+  // client-side by EmployeeDetailClient (React Query, visible in the
+  // Network tab, deduped on StrictMode double-mount).
+  return <EmployeeDetailClient locale={locale} id={id} />;
 }
