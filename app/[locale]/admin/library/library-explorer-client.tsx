@@ -5,7 +5,7 @@ import { useQueries } from '@tanstack/react-query';
 import { useLocations } from '@/services/locations/hooks';
 import { useCategories, useBackendCategories } from '@/services/categories/hooks';
 import { useStations } from '@/services/stations/hooks';
-import { useBrowseProcedures } from '@/services/library/hooks';
+import { useProcedures } from '@/services/library/hooks';
 import { LibraryProcedureExplorer } from '@/components/admin/library-procedure-explorer';
 import { backendSlug, fetchBackendSubcategories } from '@/services/categories/api';
 
@@ -36,7 +36,9 @@ export function LibraryExplorerClient({ locale }: { locale: string }): React.Rea
     })),
   });
   const stationsQuery = useStations({ locationId });
-  const proceduresQuery = useBrowseProcedures();
+  // The admin library includes drafts and archived procedures too; the
+  // employee browse query applies visibility filtering and can hide them.
+  const proceduresQuery = useProcedures({}, true);
 
   // Backend rows first (real data wins on slug clashes), mock store rows
   // after for demo/seed content. The explorer dedupes by slug.
