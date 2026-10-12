@@ -1,11 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { useLocations } from '@/services/locations/hooks';
 import { useCategories, useBackendCategories } from '@/services/categories/hooks';
 import { useStations } from '@/services/stations/hooks';
 import { useBrowseProcedures } from '@/services/library/hooks';
 import { LibraryProcedureExplorer } from '@/components/admin/library-procedure-explorer';
+import { backendSlug, fetchBackendSubcategories } from '@/services/categories/api';
 
 /**
  * Client data layer for the admin library explorer.
@@ -24,15 +26,33 @@ export function LibraryExplorerClient({ locale }: { locale: string }): React.Rea
   const locationId = locationsQuery.data?.locations?.[0]?.id;
   const categoriesQuery = useCategories(locationId);
   const backendCategoriesQuery = useBackendCategories();
+  const backendCategoryRows = backendCategoriesQuery.data ?? [];
+  const subcategoryQueries = useQueries({
+    queries: backendCategoryRows.map((category) => ({
+      queryKey: ['categories', 'backend-subcategories', category.id],
+      queryFn: () => fetchBackendSubcategories(category.id),
+      enabled: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(category.id),
+      staleTime: 60 * 60 * 1000,
+    })),
+  });
   const stationsQuery = useStations({ locationId });
   const proceduresQuery = useBrowseProcedures();
 
   // Backend rows first (real data wins on slug clashes), mock store rows
   // after for demo/seed content. The explorer dedupes by slug.
-  const categories = React.useMemo(
-    () => [...(backendCategoriesQuery.data ?? []), ...(categoriesQuery.data ?? [])],
-    [backendCategoriesQuery.data, categoriesQuery.data],
-  );
+  const categories = React.useMemo(() => {
+    const liveCategories = backendCategoryRows.map((category, index) => ({
+      ...category,
+      subcategories: (subcategoryQueries[index]?.data ?? []).map((subcategory) => ({
+        id: subcategory.id,
+        categoryId: subcategory.categoryId || category.id,
+        slug: backendSlug(subcategory.nameEn),
+        nameEn: subcategory.nameEn,
+        nameEs: subcategory.nameEs,
+      })),
+    }));
+    return liveCategories.length ? liveCategories : categoriesQuery.data ?? [];
+  }, [backendCategoryRows, categoriesQuery.data, subcategoryQueries]);
 
   return (
     <LibraryProcedureExplorer

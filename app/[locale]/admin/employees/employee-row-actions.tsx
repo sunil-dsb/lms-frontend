@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import {
   deactivateEmployee,
@@ -12,6 +13,7 @@ import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
 import type { AdminEmployee } from '@/lib/types';
 import { LuBan, LuPencil, LuRotateCw, LuSend } from 'react-icons/lu';
 import { ResendInviteModal } from './resend-invite-modal';
+import { EMPLOYEES_QUERY_KEY } from '@/services/employees/hooks';
 
 interface EmployeeRowActionsProps {
   locale: string;
@@ -27,6 +29,7 @@ interface EmployeeRowActionsProps {
 export function EmployeeRowActions({ locale, employee, onEdit }: EmployeeRowActionsProps): React.ReactElement {
   const t = useTranslations('admin');
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [_pending, startTransition] = useTransition();
   const [isResendOpen, setIsResendOpen] = useState(false);
 
@@ -53,6 +56,7 @@ export function EmployeeRowActions({ locale, employee, onEdit }: EmployeeRowActi
     startTransition(async () => {
       try {
         await deactivateEmployee(employee.id);
+        await queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
         refresh();
       } catch {
         // page refresh reflects the error
@@ -64,6 +68,7 @@ export function EmployeeRowActions({ locale, employee, onEdit }: EmployeeRowActi
     startTransition(async () => {
       try {
         await reactivateEmployee(employee.id);
+        await queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
         refresh();
       } catch {
         // page refresh reflects the error
@@ -92,6 +97,12 @@ export function EmployeeRowActions({ locale, employee, onEdit }: EmployeeRowActi
           label: t('actionsDeactivate'),
           icon: LuBan,
           destructive: true,
+          confirmTitle: locale === 'es' ? '¿Desactivar empleado?' : 'Deactivate employee?',
+          confirmDescription:
+            locale === 'es'
+              ? 'El empleado quedará inactivo y podrás reactivarlo más adelante. Se conservarán sus datos.'
+              : 'This employee will be deactivated. You can reactivate them later, and their records will be kept.',
+          confirmLabel: locale === 'es' ? 'Desactivar' : 'Deactivate',
           onSelect: onDeactivate,
         },
       ];
@@ -103,6 +114,12 @@ export function EmployeeRowActions({ locale, employee, onEdit }: EmployeeRowActi
           label: t('actionsDeactivate'),
           icon: LuBan,
           destructive: true,
+          confirmTitle: locale === 'es' ? '¿Desactivar empleado?' : 'Deactivate employee?',
+          confirmDescription:
+            locale === 'es'
+              ? 'El empleado quedará inactivo y podrás reactivarlo más adelante. Se conservarán sus datos.'
+              : 'This employee will be deactivated. You can reactivate them later, and their records will be kept.',
+          confirmLabel: locale === 'es' ? 'Desactivar' : 'Deactivate',
           onSelect: onDeactivate,
         },
       ];

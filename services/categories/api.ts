@@ -198,23 +198,50 @@ export interface LiveSubcategory {
   nameEs: string;
 }
 
+const inFlightBackendSubcategories = new Map<string, Promise<LiveSubcategory[]>>();
+const cachedBackendSubcategories = new Map<
+  string,
+  { data: LiveSubcategory[]; expiresAt: number }
+>();
+const BACKEND_SUBCATEGORIES_CACHE_TTL_MS = 60 * 60 * 1000;
+
 /** Live subcategories of one backend category.
  *  GET /api/v1/categories/:categoryId/subcategories (any logged-in employee). */
 export async function fetchBackendSubcategories(
   categoryId: string,
   cookieHeader?: string,
 ): Promise<LiveSubcategory[]> {
-  const headers = makeBackendHeaders(cookieHeader);
-  const { default: http } = await import('@/lib/http');
-  const { data } = await http.get<{
-    success: boolean;
-    data: { subcategories: LiveSubcategory[]; meta?: { total: number } };
-  }>(`/api/v1/categories/${categoryId}/subcategories`, {
-    headers: Object.keys(headers).length ? headers : undefined,
-    params: { page: 1, limit: 100 },
-  });
-  const list = data.data?.subcategories;
-  return Array.isArray(list) ? list : [];
+  const cacheKey = `${cookieHeader || 'client'}::${categoryId}`;
+  const cached = cachedBackendSubcategories.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  const inFlight = inFlightBackendSubcategories.get(cacheKey);
+  if (inFlight) return inFlight;
+
+  const request = (async () => {
+    try {
+      const headers = makeBackendHeaders(cookieHeader);
+      const { default: http } = await import('@/lib/http');
+      const { data } = await http.get<{
+        success: boolean;
+        data: { subcategories: LiveSubcategory[]; meta?: { total: number } };
+      }>(`/api/v1/categories/${categoryId}/subcategories`, {
+        headers: Object.keys(headers).length ? headers : undefined,
+        params: { page: 1, limit: 10, search: '' },
+      });
+      const list = Array.isArray(data.data?.subcategories) ? data.data.subcategories : [];
+      cachedBackendSubcategories.set(cacheKey, {
+        data: list,
+        expiresAt: Date.now() + BACKEND_SUBCATEGORIES_CACHE_TTL_MS,
+      });
+      return list;
+    } finally {
+      inFlightBackendSubcategories.delete(cacheKey);
+    }
+  })();
+
+  inFlightBackendSubcategories.set(cacheKey, request);
+  return request;
 }
 
 /** Resolve a wizard-picked subcategory to a live backend UUID.
