@@ -13,9 +13,12 @@ const serverBaseURL = (() => {
     process.env.NEXT_PUBLIC_API_URL ||
     'http://localhost:8000'
   ).trim().replace(/\/+$/, '');
-  // Same tolerance as next.config.ts: a bare `host:port` gets http:// —
-  // axios (like Next rewrites) needs an absolute URL with a scheme.
-  return /^https?:\/\//i.test(raw) ? raw : `http://${raw}`;
+  // Same tolerance as next.config.ts: a bare `host:port` gets a scheme —
+  // axios (like Next rewrites) needs an absolute URL. Local/private hosts
+  // get http://, public hostnames https:// (the backend 301s plain HTTP).
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const isLocal = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(raw);
+  return `${isLocal ? 'http' : 'https'}://${raw}`;
 })();
 
 const baseURL =
