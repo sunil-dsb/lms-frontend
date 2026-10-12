@@ -29,8 +29,11 @@ export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.Re
   const searchParams = useSearchParams();
 
   const [state, setState] = useState<VerifyState>('verifying');
+  const redirectStarted = React.useRef(false);
 
   useEffect(() => {
+    if (redirectStarted.current) return;
+
     const queryToken = searchParams.get('token');
     const rawToken = (token && token !== 'token' ? token : queryToken) || queryToken || token;
     let actualToken = rawToken;
@@ -54,15 +57,29 @@ export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.Re
         (window.location.hostname === 'localhost' ||
           window.location.hostname === '127.0.0.1');
 
-      const backendUrl = isLocal
+      const rawBackendUrl = isLocal
         ? ''
-        : (process.env.NEXT_PUBLIC_API_URL ||
-           process.env.NEXT_PUBLIC_API_BASE ||
-           '');
+        : (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || '').trim();
+      const localBackend = /^(https?:\/\/)?(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(rawBackendUrl);
+      const backendUrl = rawBackendUrl
+        ? (/^https?:\/\//i.test(rawBackendUrl)
+            ? rawBackendUrl
+            : `${localBackend ? 'http' : 'https'}://${rawBackendUrl}`).replace(/\/+$/, '')
+        : '';
+      const secureBackendUrl = !localBackend
+        ? backendUrl.replace(/^http:\/\//i, 'https://')
+        : backendUrl;
 
-      // Full browser redirect so backend can set the secure HttpOnly cookie
-      window.location.href = `${backendUrl.replace(/\/$/, '')}/api/v1/auth/invites/${locale}/${encodeURIComponent(actualToken)}`;
+      // Prevent duplicate use of this single-use magic link during repeated
+      // effect execution (for example React Strict Mode in development).
+      redirectStarted.current = true;
+      const inviteEndpoint = `/api/v1/auth/invites/${locale}/${encodeURIComponent(actualToken)}`;
+      const destination = secureBackendUrl
+        ? `${secureBackendUrl}${inviteEndpoint}`
+        : inviteEndpoint;
+      window.location.replace(destination);
     } else {
+      redirectStarted.current = true;
       router.replace(`/${locale}/login`);
     }
   }, [locale, token, searchParams, router]);
