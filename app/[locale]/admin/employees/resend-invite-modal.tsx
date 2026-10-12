@@ -137,19 +137,19 @@ export function ResendInviteModal({
 
           <ModalBody className="space-y-4 pt-5 pb-6">
             {/* Employee summary card */}
-            <div className="flex items-center gap-3.5 rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-panel)] p-4">
+            <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-panel)] p-4">
               <Avatar initials={initials(employee.name)} size="md" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="truncate font-semibold text-[var(--color-ink)]">
+              <div className="min-w-0">
+                <h3 className="break-words text-left font-semibold leading-5 text-[var(--color-ink)]">
                     {employee.name}
-                  </h3>
-                  <StatusPill tone="warn">{t('statusPending')}</StatusPill>
-                </div>
-                <p className="truncate text-xs text-[var(--color-ink-2)] mt-0.5">
+                </h3>
+                <p className="mt-1 break-all text-left text-xs leading-4 text-[var(--color-ink-2)]">
                   {employee.email || 'No email provided'}
                 </p>
               </div>
+              <StatusPill tone={employee.status === 'pending' ? 'warn' : employee.status === 'active' ? 'success' : 'neutral'}>
+                {t(`status${employee.status.charAt(0).toUpperCase()}${employee.status.slice(1)}`)}
+              </StatusPill>
             </div>
 
             {/* Information alert */}
