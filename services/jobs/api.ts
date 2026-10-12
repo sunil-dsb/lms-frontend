@@ -11,7 +11,7 @@ const stationsRequests = new Map<string, Promise<{ stations: Array<{ id: string;
 function requestHeaders(cookieHeader?: string): Record<string, string> | undefined {
   if (!cookieHeader) return undefined;
   const headers: Record<string, string> = { Cookie: cookieHeader };
-  const tokenMatch = cookieHeader.match(/(?:^|;\\s*)lms_token=([^;]+)/);
+  const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
   if (tokenMatch) headers.Authorization = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
   return headers;
 }
@@ -77,14 +77,13 @@ export async function fetchJobStations(
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   const pending = stationsRequests.get(key);
   if (pending) return pending;
-  const request = http.request<{
+  const request = http.post<{
     success: boolean;
     data: { stations: Array<{ id: string; name: string }> };
-  }>({
-    method: 'QUERY',
-    url: JOBS_ENDPOINTS.STATIONS,
+  }>('/api/backend/jobs/stations', {
+    jobIds: ids,
+  }, {
     headers: requestHeaders(cookieHeader),
-    params: { jobIds: ids.join(',') },
   }).then(({ data }) => {
     const value = { stations: data.data?.stations ?? [] };
     stationsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
