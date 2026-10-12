@@ -160,7 +160,7 @@ export function QuizEditor({ value, onChange, isSaving, hideHeader }: QuizEditor
           const currentActive = getLang(q.id);
 
           return (
-            <li key={q.id} className="bli-card-group">
+            <li id={`quiz-question-${q.id}`} key={q.id} className="bli-card-group">
               {LANGS.map((lang) => {
                 const isActive = currentActive === lang;
 

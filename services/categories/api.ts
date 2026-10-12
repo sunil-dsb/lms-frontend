@@ -175,7 +175,7 @@ export async function fetchBackendCategories(
           nameEs: c.nameEs,
           icon: c.categoryIcon || undefined,
           isArchived: false,
-          kind: 'general',
+          kind: /station/i.test(c.categoryType || '') ? 'station-tied' : 'general',
           subcategories: [],
         }),
       );

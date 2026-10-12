@@ -555,7 +555,8 @@
           "addOption": "Add option",
           "deleteOption": "Delete option",
           "markCorrect": "Mark this option as correct",
-          "noCorrect": "Mark one option as the correct answer."
+          "noCorrect": "Mark one option as the correct answer.",
+          "answerRequiredForPublish": "Select a correct answer for every quiz question before continuing or publishing."
         },
         "recipe": {
           "pageTitle": "New Recipe",

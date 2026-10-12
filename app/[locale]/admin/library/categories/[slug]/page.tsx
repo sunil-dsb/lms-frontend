@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { cookies } from 'next/headers';
 import { setRequestLocale } from 'next-intl/server';
-import { listCategories, listLocations, ApiException, fetchMe } from '@/lib/api';
+import { listLocations, ApiException, fetchMe } from '@/lib/api';
+import { fetchBackendCategories } from '@/services/categories/api';
 import type { Category } from '@/lib/types';
 import { CategoryDetailClient } from './category-detail-client';
 
@@ -45,19 +46,14 @@ export default async function AdminCategoryDetailPage({
   }
 
   let categories: Category[] = [];
-  if (locationId) {
-    try {
-      const result = await listCategories(locationId, { includeArchived: true }, cookieHeader);
-      categories = result.categories;
-    } catch {
-      // Fallback to local
-    }
+  try {
+    categories = await fetchBackendCategories({ page: 1, limit: 200 }, cookieHeader);
+  } catch {
+    // Let the client render its not-found state if the category API is unavailable.
   }
 
-  // Server-side we only know about the seed categories — anything created
-  // through the Create Category modal lives in the client mock store. Don't
-  // bounce the user with a 404 when their freshly-created category isn't on
-  // the server; pass `null` and let the client resolve it from localStorage.
+  // Resolve the route against the live backend catalog. The client retries
+  // the same API if a category is not present in this server render.
   const category = categories.find((c) => c.slug === slug) ?? null;
 
   return <CategoryDetailClient initialCategory={category} slug={slug} locale={locale} locationId={locationId} />;

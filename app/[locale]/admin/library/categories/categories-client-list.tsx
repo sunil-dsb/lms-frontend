@@ -2,9 +2,8 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { useCategories } from '@/services/categories/hooks';
-import { backendSlug, categorySlugsMatch } from '@/services/categories/api';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { backendSlug, categorySlugsMatch, fetchBackendSubcategories } from '@/services/categories/api';
 import { fetchProcedures } from '@/services/library/api';
 import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
 import { getCategoryIcon } from '@/lib/category-icons';
@@ -36,16 +35,31 @@ import { EmptyState } from '@/components/ui/empty-state';
  */
 export function CategoriesClientList({
   initialCategories,
-  locationId,
   locale,
 }: {
   initialCategories: Category[];
-  locationId: string | null;
   locale: string;
 }): React.ReactElement {
-  const { data: categories = initialCategories } = useCategories(
-    locationId ?? undefined,
-    true,
+  const subcategoryQueries = useQueries({
+    queries: initialCategories.map((category) => ({
+      queryKey: ['categories', 'backend-subcategories', category.id],
+      queryFn: () => fetchBackendSubcategories(category.id),
+      enabled: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(category.id),
+      staleTime: 60 * 60 * 1000,
+    })),
+  });
+  const categories = React.useMemo(
+    () => initialCategories.map((category, index) => ({
+      ...category,
+      subcategories: (subcategoryQueries[index]?.data ?? []).map((subcategory) => ({
+        id: subcategory.id,
+        categoryId: subcategory.categoryId || category.id,
+        slug: backendSlug(subcategory.nameEn),
+        nameEn: subcategory.nameEn,
+        nameEs: subcategory.nameEs,
+      })),
+    })),
+    [initialCategories, subcategoryQueries],
   );
   const isEs = locale === 'es';
 

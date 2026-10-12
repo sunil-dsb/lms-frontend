@@ -54,7 +54,6 @@ import {
   createQuiz,
   fetchQuizById,
   getQuizById,
-  listCategories,
   listEmployees,
   listRoles,
   listStations,
@@ -122,23 +121,6 @@ export function ProcedureEditor({
       setCategories(initialCategories);
     }
   }, [initialCategories]);
-
-  // Fallback: if categories is empty, load from listCategories
-  React.useEffect(() => {
-    let alive = true;
-    if (categories.length === 0) {
-      void listCategories("loc-main")
-        .then((res) => {
-          if (alive && res.categories && res.categories.length > 0) {
-            setCategories(res.categories);
-          }
-        })
-        .catch(() => {});
-    }
-    return () => {
-      alive = false;
-    };
-  }, [categories.length]);
 
   const [stations, setStations] = React.useState<Station[]>([]);
   const [roles, setRoles] = React.useState<Role[]>([]);
@@ -280,15 +262,11 @@ export function ProcedureEditor({
     void Promise.all([
       listStations("loc-main"),
       listEmployees({ status: "active" }),
-      categories.length === 0 ? listCategories("loc-main") : Promise.resolve({ categories }),
     ])
-      .then(([s, e, c]) => {
+      .then(([s, e]) => {
         if (!alive) return;
         if (s?.stations) setStations(s.stations);
         if (e?.employees) setPeople(e.employees);
-        if (c?.categories && c.categories.length > 0) {
-          setCategories(c.categories);
-        }
         setAccessDataLoaded(true);
       })
       .catch(() => {
@@ -297,7 +275,7 @@ export function ProcedureEditor({
     return () => {
       alive = false;
     };
-  }, [categories.length]);
+  }, []);
 
   // Opened from a category page ("Add procedure" on Cleaning → Dishwashing),
   // the URL names where it goes: ?category=<slug>&subcategory=<slug>. Stations
@@ -438,6 +416,23 @@ export function ProcedureEditor({
       return promptHasText || choicesHaveText;
     });
   }, [quiz]);
+
+  const quizQuestionMissingAnswer = React.useMemo(() => {
+    if (!quiz || !hasQuizContent) return null;
+    return quiz.questions.find((question) => {
+      const authored = Boolean(
+        question.prompt?.en?.trim() ||
+        question.prompt?.es?.trim() ||
+        question.choices?.some((choice) => choice.label?.en?.trim() || choice.label?.es?.trim()),
+      );
+      if (!authored) return false;
+      return !question.choices?.some(
+        (choice) =>
+          choice.id === question.correctChoiceId &&
+          Boolean(choice.label?.en?.trim() || choice.label?.es?.trim()),
+      );
+    }) ?? null;
+  }, [quiz, hasQuizContent]);
 
   const quizCount = quiz?.questions.length ?? 0;
   const whoSummary = (() => {
@@ -696,6 +691,14 @@ export function ProcedureEditor({
   }
 
   function handleNext(): void {
+    if (step === 'quiz' && quizQuestionMissingAnswer) {
+      toast.error(tQuizDesc('answerRequiredForPublish'));
+      document.getElementById(`quiz-question-${quizQuestionMissingAnswer.id}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+      return;
+    }
     let valErr: ValidationErrorResult | null = null;
     if (step === 'details') {
       valErr = validateProcedureForm('details', 'draft');
@@ -716,6 +719,18 @@ export function ProcedureEditor({
   }
 
   function handleSelectStep(newStepId: WizardStepId): void {
+    if (
+      step === 'quiz' &&
+      STEPS.findIndex((item) => item.id === newStepId) > STEPS.findIndex((item) => item.id === 'quiz') &&
+      quizQuestionMissingAnswer
+    ) {
+      toast.error(tQuizDesc('answerRequiredForPublish'));
+      document.getElementById(`quiz-question-${quizQuestionMissingAnswer.id}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+      return;
+    }
     if (step === 'details' && newStepId !== 'details') {
       const valErr = validateProcedureForm('details', 'draft');
       if (valErr) {
@@ -731,6 +746,17 @@ export function ProcedureEditor({
   }
 
   function save(status: 'draft' | 'published'): void {
+    if (status === 'published' && quizQuestionMissingAnswer) {
+      setStep('quiz');
+      toast.error(tQuizDesc('answerRequiredForPublish'));
+      requestAnimationFrame(() => {
+        document.getElementById(`quiz-question-${quizQuestionMissingAnswer.id}`)?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      });
+      return;
+    }
     const valErr = validateProcedureForm('all', status);
     if (valErr) {
       applyValidationError(valErr);

@@ -555,7 +555,8 @@
           "addOption": "Añadir opción",
           "deleteOption": "Eliminar opción",
           "markCorrect": "Marcar esta opción como correcta",
-          "noCorrect": "Marca una opción como respuesta correcta."
+          "noCorrect": "Marca una opción como respuesta correcta.",
+          "answerRequiredForPublish": "Selecciona una respuesta correcta para cada pregunta antes de continuar o publicar."
         },
         "recipe": {
           "pageTitle": "Nueva Receta",

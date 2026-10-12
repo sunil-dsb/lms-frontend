@@ -17,7 +17,7 @@ import { PageHeader } from '@/components/admin/page-header';
 import { CategoryDetailSkeleton } from '@/components/admin/category-detail-skeleton';
 import { fetchProcedures, updateProcedureStation } from '@/services/library/api';
 import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
-import { backendSlug, categorySlugsMatch, fetchBackendSubcategories } from '@/services/categories/api';
+import { backendSlug, categorySlugsMatch, fetchBackendCategories, fetchBackendSubcategories } from '@/services/categories/api';
 import { useStations } from '@/services/stations/hooks';
 
 interface CategoryDetailClientProps {
@@ -97,18 +97,14 @@ export function CategoryDetailClient({
   const [isResolving, setIsResolving] = React.useState<boolean>(initialCategory === null);
   const [notFound, setNotFound] = React.useState<boolean>(false);
 
-  // Categories created through the modal are stored in the client mock
-  // store; the server's seed fetch can't see them. On mount, if the server
-  // didn't hand us a category, ask the mock store directly.
+  // If the server did not resolve the category, retry against the backend
+  // category API instead of filling this page from demo data.
   React.useEffect(() => {
     if (initialCategory !== null) return;
     let cancelled = false;
     (async () => {
       try {
-        const { listCategories } = await import('@/lib/api');
-        // locationId is not needed client-side — the mock store is location-
-        // agnostic in the demo.
-        const { categories } = await listCategories('loc-main');
+        const categories = await fetchBackendCategories({ page: 1, limit: 200 });
         const match = categories.find((c) => c.slug === slug);
         if (cancelled) return;
         if (match) {

@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { useLocations } from '@/services/locations/hooks';
-import { useCategories } from '@/services/categories/hooks';
+import { useQueries } from '@tanstack/react-query';
+import { backendSlug, fetchBackendSubcategories } from '@/services/categories/api';
+import { useBackendCategories } from '@/services/categories/hooks';
 import { ProcedureEditor } from '@/components/admin/procedure-editor';
 
 /**
@@ -14,14 +15,30 @@ import { ProcedureEditor } from '@/components/admin/procedure-editor';
  * is immediate. The editor mounts with an empty picker and fills
  * in when the queries resolve.
  */
-import { SEED_CATEGORIES } from '@/lib/api';
-
 export function NewProcedureLoader({ locale }: { locale: string }): React.ReactElement {
-  const { data: locationsData } = useLocations();
-  const locationId = locationsData?.locations?.[0]?.id ?? 'loc-main';
-  const { data: categories = [] } = useCategories(locationId);
+  const categoriesQuery = useBackendCategories();
+  const backendCategories = categoriesQuery.data ?? [];
+  const subcategoryQueries = useQueries({
+    queries: backendCategories.map((category) => ({
+      queryKey: ['categories', 'backend-subcategories', category.id],
+      queryFn: () => fetchBackendSubcategories(category.id),
+      enabled: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(category.id),
+      staleTime: 60 * 60 * 1000,
+    })),
+  });
+  const categories = React.useMemo(
+    () => backendCategories.map((category, index) => ({
+      ...category,
+      subcategories: (subcategoryQueries[index]?.data ?? []).map((subcategory) => ({
+        id: subcategory.id,
+        categoryId: subcategory.categoryId || category.id,
+        slug: backendSlug(subcategory.nameEn),
+        nameEn: subcategory.nameEn,
+        nameEs: subcategory.nameEs,
+      })),
+    })),
+    [backendCategories, subcategoryQueries],
+  );
 
-  const effectiveCategories = categories.length > 0 ? categories : SEED_CATEGORIES;
-
-  return <ProcedureEditor locale={locale} categories={effectiveCategories} />;
+  return <ProcedureEditor locale={locale} categories={categories} />;
 }

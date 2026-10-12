@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { cookies } from 'next/headers';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { listCategories, listLocations, ApiException, fetchMe } from '@/lib/api';
+import { listLocations, ApiException, fetchMe } from '@/lib/api';
+import { fetchBackendCategories } from '@/services/categories/api';
 import type { Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { CategoriesClientList } from './categories-client-list';
@@ -53,13 +54,10 @@ export default async function AdminLibraryCategoriesPage({
 
   let categories: Category[] = [];
   let loadError: string | null = null;
-  if (locationId) {
-    try {
-      const result = await listCategories(locationId, { includeArchived: true }, cookieHeader);
-      categories = result.categories;
-    } catch (err) {
-      loadError = err instanceof ApiException ? err.message : 'LOAD_FAILED';
-    }
+  try {
+    categories = await fetchBackendCategories({ page: 1, limit: 200 }, cookieHeader);
+  } catch (err) {
+    loadError = err instanceof Error ? err.message : 'LOAD_FAILED';
   }
 
   return (
@@ -83,7 +81,6 @@ export default async function AdminLibraryCategoriesPage({
 
       <CategoriesClientList
         initialCategories={categories}
-        locationId={locationId}
         locale={locale}
       />
     </div>
