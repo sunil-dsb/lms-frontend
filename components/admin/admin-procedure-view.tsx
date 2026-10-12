@@ -9,7 +9,6 @@ import {
   LuArchiveRestore,
   LuArrowLeft,
   LuCircleCheck,
-  LuCircleDashed,
   LuCopy,
   LuPencil,
   LuTrash2,
@@ -63,7 +62,7 @@ export function AdminProcedureView({
     async (change: { status?: ProcedureStatus; isArchived?: boolean }): Promise<void> => {
       setError(null);
       try {
-        const updated = await setProcedureState(proc.id, change);
+        const updated = await setProcedureState(proc.id, change, { row: proc });
         setProc(updated);
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('lms_procedures_updated'));
@@ -113,24 +112,25 @@ export function AdminProcedureView({
   const actionItems = React.useMemo<RowActionItem[]>(() => {
     const items: (RowActionItem | null)[] = [
       // 1. Status toggle: hidden while archived — restore first, status flips
-      //    after. Same ordering as the list-row kebab. Publish is offered
-      //    only for procedures with stations (or General ones); the guard in
-      //    setProcedureState backs this up for direct callers.
+      //    after. Same ordering as the list-row kebab. Publish is always
+      //    offered for drafts; when the procedure isn't placed yet the click
+      //    redirects to the editor's Access step with the reason shown. The
+      //    guard in setProcedureState backs this up for direct callers.
       proc.isArchived
         ? null
         : proc.status === 'draft'
-          ? publishable
-            ? {
-                label: t('actionsPublish'),
-                icon: LuCircleCheck,
-                onSelect: () => void transition({ status: 'published' }),
-              }
-            : null
-          : {
-              label: t('actionsMoveToDraft'),
-              icon: LuCircleDashed,
-              onSelect: () => void transition({ status: 'draft' }),
-            },
+          ? {
+              label: t('actionsPublish'),
+              icon: LuCircleCheck,
+              onSelect: () => {
+                if (!publishable) {
+                  router.push(`/${locale}/admin/library/${proc.slug || proc.id}/edit?step=access&publishBlocked=1`);
+                  return;
+                }
+                void transition({ status: 'published' });
+              },
+            }
+          : null,
       // 2. Archive / Restore
       proc.isArchived
         ? {
@@ -167,7 +167,7 @@ export function AdminProcedureView({
       },
     ];
     return items.filter((item): item is RowActionItem => item !== null);
-  }, [proc, t, publishable, transition, handleDelete]);
+  }, [proc, t, publishable, transition, handleDelete, router, locale]);
 
   // The cook-mode CTA in the top chrome bar belongs to the page's first
   // recipe block. We compute it from the loaded `proc` so a freshly-edited
@@ -214,7 +214,7 @@ export function AdminProcedureView({
             icon={LuPencil}
             onClick={() => {
               window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
-              router.push(`/${locale}/admin/library/${proc.id}/edit`);
+              router.push(`/${locale}/admin/library/${proc.slug || proc.id}/edit`);
             }}
           >
             {t('actionsEdit')}

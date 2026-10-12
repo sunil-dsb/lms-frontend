@@ -120,6 +120,8 @@ export async function fetchMe(
             roleIds: Array.isArray(raw.roleIds) ? raw.roleIds : Array.isArray(raw.jobIds) ? raw.jobIds : [],
             jobIds: Array.isArray(raw.jobIds) ? raw.jobIds : Array.isArray(raw.roleIds) ? raw.roleIds : [],
             stationIds: Array.isArray(raw.stationIds) ? raw.stationIds : [],
+            stations: Array.isArray(raw.stations) ? raw.stations : [],
+            jobs: Array.isArray(raw.jobs) ? raw.jobs : [],
           },
         };
         cachedAuthMe.set(cacheKey, { data: res, expiresAt: Date.now() + AUTH_ME_CACHE_TTL_MS });
@@ -202,6 +204,8 @@ export async function activate(input: { token?: string; password: string; email?
         roleIds: Array.isArray(rawEmp.roleIds) ? rawEmp.roleIds : Array.isArray(rawEmp.jobIds) ? rawEmp.jobIds : [],
         jobIds: Array.isArray(rawEmp.jobIds) ? rawEmp.jobIds : Array.isArray(rawEmp.roleIds) ? rawEmp.roleIds : [],
         stationIds: Array.isArray(rawEmp.stationIds) ? rawEmp.stationIds : [],
+        stations: Array.isArray(rawEmp.stations) ? rawEmp.stations : [],
+        jobs: Array.isArray(rawEmp.jobs) ? rawEmp.jobs : [],
       }
     : rawEmp;
 

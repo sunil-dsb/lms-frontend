@@ -4,24 +4,17 @@
  * Inline editor for an `ingredients` block, embedded inside a single
  * NotionBlockList row.
  *
- * Provides dedicated editing for recipe ingredients, batch factors, yield,
- * and allergen disclosures without bundling steps into the same block. Steps
- * are authored independently using numbered Steps (method) blocks.
+ * Provides dedicated editing for recipe ingredients, batch factors and
+ * yield. Steps are authored independently using numbered Steps (method)
+ * blocks.
  */
 
 import * as React from 'react';
-import { useTranslations } from 'next-intl';
-import { LuX } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CustomSelect } from '@/components/ui/custom-select';
 import { Icon } from '@/components/ui/icon';
-import { cn } from '@/lib/utils';
-import { ALLERGEN_KEYS, type AllergenKey } from '@/lib/allergens';
 import { RecipeYieldSection } from './recipe-block-body';
 import type {
-  ProcedureAllergen,
   ProcedureBlock,
   ProcedureIngredient,
   ProcedureYieldItem,
@@ -70,7 +63,6 @@ export function IngredientsBlockBody({
   block,
   onPatch,
 }: IngredientsBlockBodyProps): React.ReactElement {
-  const tForm = useTranslations('admin.library.new.form');
   const ingredients = block.ingredients ?? [];
   const factors = block.factors && block.factors.length > 0 ? block.factors : [1];
   const yieldItems = block.yieldItems ?? [];
@@ -247,195 +239,6 @@ export function IngredientsBlockBody({
           </button>
         )}
       </div>
-
-      {/* Allergens disclosure */}
-      <IngredientsAllergens
-        allergen={block.allergen}
-        onChange={(allergen) => onPatch({ ...block, allergen })}
-        labels={{
-          title: tForm('allergenTitle'),
-          picker: tForm('allergenPickerLabel'),
-        }}
-      />
     </div>
-  );
-}
-
-function IngredientsAllergens({
-  allergen,
-  onChange,
-  labels,
-}: {
-  allergen: ProcedureAllergen | undefined;
-  onChange: (next: ProcedureAllergen | undefined) => void;
-  labels: { title: string; picker: string };
-}): React.ReactElement {
-  const tForm = useTranslations('admin.library.new.form');
-  const selected = allergen?.selectedAllergens ?? [];
-  const [customInput, setCustomInput] = React.useState('');
-
-  const standardSet = new Set<string>(ALLERGEN_KEYS);
-  const customTags = selected.filter((k) => !standardSet.has(k));
-
-  function toggle(key: AllergenKey, on: boolean): void {
-    const set = new Set(selected);
-    if (on) set.add(key);
-    else set.delete(key);
-    const nextSelected = Array.from(set);
-    if (nextSelected.length === 0 && !allergen?.summary && !allergen?.detail) {
-      onChange(undefined);
-    } else {
-      onChange({
-        summary: allergen?.summary ?? '',
-        detail: allergen?.detail ?? '',
-        selectedAllergens: nextSelected,
-      });
-    }
-  }
-
-  function addCustom(): void {
-    const trimmed = customInput.trim();
-    if (!trimmed) return;
-    if (!selected.includes(trimmed as AllergenKey)) {
-      const next = [...selected, trimmed as AllergenKey];
-      onChange({
-        summary: allergen?.summary ?? '',
-        detail: allergen?.detail ?? '',
-        selectedAllergens: next,
-      });
-    }
-    setCustomInput('');
-  }
-
-  function removeCustom(tag: string): void {
-    const next = selected.filter((k) => k !== tag);
-    if (next.length === 0 && !allergen?.summary && !allergen?.detail) {
-      onChange(undefined);
-    } else {
-      onChange({
-        summary: allergen?.summary ?? '',
-        detail: allergen?.detail ?? '',
-        selectedAllergens: next,
-      });
-    }
-  }
-
-  function setSummary(summary: string): void {
-    onChange({
-      summary,
-      detail: allergen?.detail ?? '',
-      selectedAllergens: allergen?.selectedAllergens ?? [],
-    });
-  }
-
-  function setDetail(detail: string): void {
-    onChange({
-      summary: allergen?.summary ?? '',
-      detail,
-      selectedAllergens: allergen?.selectedAllergens ?? [],
-    });
-  }
-
-  return (
-    <details open className="rounded-[var(--radius-md)] border border-amber-300/80 bg-amber-50/20 dark:bg-amber-950/10 dark:border-amber-900/60 p-3 space-y-3">
-      <summary className="cursor-pointer text-sm font-semibold text-[var(--color-ink)] flex items-center justify-between">
-        <span className="flex items-center gap-2">
-          <Icon icon="ri-alarm-warning-line" className="text-base text-amber-600" />
-          {labels.title}
-          {selected.length > 0 && (
-            <span className="inline-flex items-center rounded-full bg-[var(--color-warn-tint)] px-2 py-0.5 text-xs font-semibold text-[var(--color-warn-ink)]">
-              {selected.length} allergen{selected.length > 1 ? 's' : ''}
-            </span>
-          )}
-        </span>
-      </summary>
-      <div className="mt-3 space-y-3">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <div>
-            <Label className="text-xs text-[var(--color-ink-2)]">Allergen summary header</Label>
-            <Input
-              value={allergen?.summary ?? ''}
-              onChange={(e) => setSummary(e.target.value)}
-              placeholder="e.g. Fish, Gluten, Egg"
-              className="mt-1 h-8 text-xs"
-            />
-          </div>
-          <div>
-            <Label className="text-xs text-[var(--color-ink-2)]">Detail / Instructions</Label>
-            <Input
-              value={allergen?.detail ?? ''}
-              onChange={(e) => setDetail(e.target.value)}
-              placeholder="e.g. Contains Halibut (fish), beer batter (gluten), mayo (egg)."
-              className="mt-1 h-8 text-xs"
-            />
-          </div>
-        </div>
-
-        <p className="text-xs text-[var(--color-ink-3)]">{labels.picker}</p>
-        <fieldset className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {ALLERGEN_KEYS.map((key) => {
-            const checked = selected.includes(key);
-            return (
-              <label
-                key={key}
-                className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-xs transition-colors',
-                  checked
-                    ? 'border-[var(--color-warn)] bg-[var(--color-warn-tint)] text-[var(--color-ink)]'
-                    : 'border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-wash)]',
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={(e) => toggle(key, e.target.checked)}
-                />
-                {tForm(`allergens.${key}` as `allergens.${AllergenKey}`)}
-              </label>
-            );
-          })}
-        </fieldset>
-
-        {/* Custom allergen chips & small inline add input */}
-        <div className="flex flex-wrap items-center gap-2 pt-2">
-          {customTags.length > 0 && (
-            <span className="text-xs font-semibold text-[var(--color-ink-3)]">Custom:</span>
-          )}
-          {customTags.map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-warn)] bg-[var(--color-warn-tint)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-warn-ink)]"
-            >
-              <span>{tag}</span>
-              <button
-                type="button"
-                onClick={() => removeCustom(tag)}
-                className="text-[var(--color-warn-ink)] hover:text-black"
-                aria-label={`Remove ${tag}`}
-              >
-                <LuX className="size-3" />
-              </button>
-            </span>
-          ))}
-          <div className="flex items-center gap-1.5">
-            <Input
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addCustom();
-                }
-              }}
-              placeholder="Add other allergen…"
-              className="h-7 w-36 text-xs"
-            />
-            <Button type="button" variant="ghost" size="sm" onClick={addCustom} className="h-7 px-2 text-xs">
-              Add
-            </Button>
-          </div>
-        </div>
-      </div>
-    </details>
   );
 }

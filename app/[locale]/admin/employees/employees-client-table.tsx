@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import type {
   AdminEmployee,
   EmployeeStatus,
-  Role,
-  Station,
   TrainingAssignmentRow,
 } from '@/lib/types';
 import { StatusPill, type StatusTone } from '@/components/ui/status-pill';
@@ -17,24 +15,24 @@ import { EmployeeRowActions } from './employee-row-actions';
 import { EditRolesModal } from './[id]/edit-roles-modal';
 import { Card, CardContent } from '@/components/ui/card';
 import { getTrainingRowsForEmployee } from '@/lib/mock-training';
-import { fetchRoles } from '@/services/jobs/api';
-import { fetchLocations } from '@/services/locations/api';
-import { fetchStations } from '@/services/stations/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEmployees, EMPLOYEES_QUERY_KEY } from '@/services/employees/hooks';
+import { useRoles } from '@/services/jobs/hooks';
+import { useStations } from '@/services/stations/hooks';
+import { useLocations } from '@/services/locations/hooks';
 import type { UpdateEmployeeInput } from '@/lib/mock-employees';
 import { fold } from '@/lib/utils';
 
 interface EmployeesClientTableProps {
-  initialEmployees: AdminEmployee[];
   statusFilter: EmployeeStatus | 'all';
   searchQuery: string;
   locale: string;
-  /** Pre-resolved lookups for the role / station label cells. The server
-   *  page passes these so the table can render the cells without an
-   *  extra round-trip; the client only needs them for the visible rows. */
-  roles: Role[];
-  stations: Station[];
+  /** Label lookups translated by the server page. Role / station /
+   *  location catalogs and the employee list are fetched client-side
+   *  from the shared React Query cache. */
   labels: {
     empty: string;
+    loading: string;
     thEmployee: string;
     thJobRole: string;
     thStation: string;
@@ -51,82 +49,41 @@ interface EmployeesClientTableProps {
 }
 
 export function EmployeesClientTable({
-  initialEmployees,
   statusFilter,
   searchQuery,
   locale,
-  roles,
-  stations,
   labels,
 }: EmployeesClientTableProps): React.ReactElement {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const [employees, setEmployees] = useState<AdminEmployee[]>(initialEmployees);
+  // The list call is client-side (visible in the Network tab). The query
+  // key carries the status filter, so chip changes refetch through the
+  // same cache; StrictMode's double-mount dedupes into one request.
+  const { employees, isLoading } = useEmployees({ status: statusFilter });
 
-  React.useEffect(() => {
-    setEmployees(initialEmployees);
-  }, [initialEmployees]);
+  // Label + edit-modal catalogs from the shared session cache — same
+  // queries the employee detail page uses, so switching between list
+  // and detail costs no extra calls.
+  const { roles } = useRoles();
+  const { data: stations = [] } = useStations();
+  const { data: locationsData } = useLocations();
+  const locations = locationsData?.locations ?? [];
 
   // In-place edit modal. The kebab's Edit item calls `openEdit(employee)`
   // instead of navigating to the detail page — so the user can edit
   // without losing the list (and without paying a full route change).
-  // Roles/stations seed from the server page props (already fetched for the
-  // table cells), so opening the modal usually costs ONE request —
-  // locations + this employee's stations resolve together.
   const [editing, setEditing] = useState<AdminEmployee | null>(null);
-  const [editRoles, setEditRoles] = useState<Role[]>(roles);
-  const [editLocations, setEditLocations] = useState<Array<{ id: string; name: string }>>([]);
-  const [editStations, setEditStations] = useState<Station[]>(stations);
 
-  React.useEffect(() => {
-    setEditRoles((prev) => (prev.length === 0 ? roles : prev));
-  }, [roles]);
-  React.useEffect(() => {
-    setEditStations((prev) => (prev.length === 0 ? stations : prev));
-  }, [stations]);
-
-  async function openEdit(employee: AdminEmployee): Promise<void> {
+  function openEdit(employee: AdminEmployee): void {
     setEditing(employee);
-    const needRoles = editRoles.length === 0;
-    const needLocations = editLocations.length === 0;
-    const [rolesRes, locationsRes, stationsRes] = await Promise.all([
-      needRoles
-        ? fetchRoles().then(
-            (r) => ({ ok: true as const, roles: r.roles }),
-            () => ({ ok: false as const, roles: [] as Role[] }),
-          )
-        : Promise.resolve({ ok: true as const, roles: editRoles }),
-      needLocations
-        ? fetchLocations().then(
-            (l) => ({ ok: true as const, locations: l.locations }),
-            () => ({ ok: false as const, locations: [] as Array<{ id: string; name: string }> }),
-          )
-        : Promise.resolve({ ok: true as const, locations: editLocations }),
-      fetchStations({ locationId: employee.locationId }).then(
-        (s) => ({ ok: true as const, stations: s.stations }),
-        () => ({ ok: false as const, stations: [] as Station[] }),
-      ),
-    ]);
-    if (needRoles) setEditRoles(rolesRes.roles);
-    if (needLocations) setEditLocations(locationsRes.locations);
-    setEditStations(stationsRes.stations);
-  }
-
-  async function onModalLocationChange(locationId: string): Promise<void> {
-    try {
-      const { stations: s } = await fetchStations({ locationId });
-      setEditStations(s);
-    } catch {
-      setEditStations([]);
-    }
   }
 
   function onModalSaved(next: AdminEmployee, _prior: UpdateEmployeeInput): void {
-    setEmployees((prev) =>
-      prev.map((e) => (e.id === next.id ? { ...e, ...next } : e)),
-    );
     setEditing(null);
-    router.refresh();
+    // The PUT already persisted server-side — refresh the cached list so
+    // the row reflects the new state.
+    void queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
   }
 
   // Filter the live list on the client so the chip / search changes
@@ -189,7 +146,11 @@ export function EmployeesClientTable({
     <>
     <Card>
       <CardContent className="p-0">
-        {visible.length === 0 ? (
+        {isLoading ? (
+          <p className="px-6 py-8 text-center text-sm text-[var(--color-muted-foreground)]">
+            {labels.loading}
+          </p>
+        ) : visible.length === 0 ? (
           <p className="px-6 py-8 text-center text-sm text-[var(--color-muted-foreground)]">
             {labels.empty}
           </p>
@@ -314,10 +275,10 @@ export function EmployeesClientTable({
         open
         onClose={() => setEditing(null)}
         employee={editing}
-        roles={editRoles}
-        locations={editLocations}
-        stations={editStations}
-        onLocationChange={onModalLocationChange}
+        roles={roles}
+        locations={locations}
+        stations={stations}
+        onLocationChange={() => undefined}
         onSaved={onModalSaved}
       />
     ) : null}

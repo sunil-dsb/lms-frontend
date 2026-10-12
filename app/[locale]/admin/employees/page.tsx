@@ -1,19 +1,9 @@
 import * as React from 'react';
-import { fold } from '@/lib/utils';
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { fetchEmployees } from '@/services/employees/api';
-import { fetchRoles } from '@/services/jobs/api';
-import { fetchStations } from '@/services/stations/api';
-import { ApiException } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card';
 import { EmployeesClientTable } from './employees-client-table';
-import type { AdminEmployee, EmployeeStatus, Role, Station } from '@/lib/types';
+import type { EmployeeStatus } from '@/lib/types';
 import { PageHeader } from '@/components/admin/page-header';
 import { FilterChips } from '@/components/ui/filter-chips';
 import { LuPlus } from 'react-icons/lu';
@@ -48,48 +38,15 @@ export default async function AdminEmployeesPage({
   const status = parseStatus(sp.status);
   const q = (sp.q ?? '').trim();
 
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
-
-  let employees: AdminEmployee[] = [];
-  let roles: Role[] = [];
-  let stations: Station[] = [];
-  try {
-    const [empsResult, rolesResult, stationsResult] = await Promise.allSettled([
-      fetchEmployees({ status }, cookieHeader),
-      fetchRoles(cookieHeader),
-      fetchStations({}, cookieHeader),
-    ]);
-
-    const empsList = empsResult.status === 'fulfilled' ? empsResult.value.employees : [];
-    roles = rolesResult.status === 'fulfilled' ? rolesResult.value.roles : [];
-    stations = stationsResult.status === 'fulfilled' ? stationsResult.value.stations : [];
-
-    employees = q
-      ? empsList.filter((e) => fold(`${e.name} ${e.employeeCode ?? ''} ${e.email ?? ''}`).includes(fold(q)))
-      : empsList;
-  } catch (err) {
-    if (err instanceof ApiException) {
-      return (
-        <Card className="mx-auto max-w-narrow">
-          <CardContent>
-            <p role="alert" className="text-sm text-[var(--color-bad)]">
-              {err.code}
-            </p>
-          </CardContent>
-        </Card>
-      );
-    }
-    throw err;
-  }
-
+  // No server-side fetching here on purpose: the list, role and station
+  // calls are made client-side by EmployeesClientTable (React Query —
+  // visible in the Network tab, cached and shared app-wide).
   const t = await getTranslations('admin');
+  const tc = await getTranslations('common');
 
   const labels = {
     empty: t('empty'),
+    loading: tc('loading'),
     thEmployee: t('thEmployee'),
     thJobRole: t('thJobRole'),
     thStation: t('thStation'),
@@ -145,12 +102,9 @@ export default async function AdminEmployeesPage({
       />
 
       <EmployeesClientTable
-        initialEmployees={employees}
         statusFilter={status}
         searchQuery={q}
         locale={locale}
-        roles={roles}
-        stations={stations}
         labels={labels}
       />
     </div>

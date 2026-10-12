@@ -7,12 +7,12 @@ import { useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCategories, useBackendCategories } from '@/services/categories/hooks';
 import { backendSlug, categorySlugsMatch } from '@/services/categories/api';
-import { useBrowseProcedures } from '@/services/library/hooks';
+import { useAssignedProcedures } from '@/services/library/hooks';
 import { getCategoryIcon } from '@/lib/category-icons';
 import { Icon } from '@/components/ui/icon';
 import type { Category, Procedure } from '@/lib/types';
 import { withAs, type ViewAs } from '@/lib/view-as';
-import { LuSearch } from 'react-icons/lu';
+import { LuSearch, LuBookOpen, LuInbox, LuFolderX, LuRotateCcw } from 'react-icons/lu';
 import { ProcedureRow } from '@/components/employee/procedure-row';
 import { allergenWords, factsOf } from '@/app/[locale]/employee/home/components/procedure-facts';
 
@@ -81,6 +81,12 @@ export function ProceduresClientList({
   const [activeCategory, setActiveCategory] = React.useState<string>(initialCategory);
   const [scope, setScope] = React.useState<'' | 'assigned'>('');
 
+  const [debouncedQuery, setDebouncedQuery] = React.useState(query);
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   // Both lists resolve through TanStack Query (1-hour cache for categories so
   // tab-back navigation is instant and no redundant API calls are made).
   const queryClient = useQueryClient();
@@ -101,7 +107,35 @@ export function ProceduresClientList({
     }
     return merged;
   }, [backendCategories, mockCategories]);
-  const { data: procedures = [], isLoading: proceduresLoading } = useBrowseProcedures();
+
+  const selectedCategoryObj = React.useMemo(
+    () =>
+      categories.find(
+        (c) =>
+          c.id === activeCategory ||
+          c.slug === activeCategory ||
+          categorySlugsMatch(c.slug, activeCategory),
+      ),
+    [categories, activeCategory],
+  );
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const categoryUuid =
+    selectedCategoryObj?.id && uuidRegex.test(selectedCategoryObj.id)
+      ? selectedCategoryObj.id
+      : activeCategory && uuidRegex.test(activeCategory)
+        ? activeCategory
+        : undefined;
+
+  const assignedProceduresQuery = useAssignedProcedures({
+    scope: scope === 'assigned' ? 'mine' : 'all',
+    categoryId: categoryUuid,
+    search: debouncedQuery.trim() || undefined,
+    limit: 100,
+  });
+
+  const procedures = assignedProceduresQuery.data?.procedures ?? [];
+  const proceduresLoading = assignedProceduresQuery.isLoading;
 
   // Keep the list fresh when another tab (or the admin library)
   // mutates the on-device stores.
@@ -136,24 +170,28 @@ export function ProceduresClientList({
   const words = queryWords(query);
   const myStationIds = stationIds && stationIds.length > 0 ? stationIds : stationId ? [stationId] : [];
   const mine = (p: Procedure): number =>
-    myStationIds.length > 0 &&
-    ((p.stationScope?.mode === 'specific' && p.stationScope.stationIds.some((id) => myStationIds.includes(id))) ||
-      (p.audience?.mode === 'some' && p.audience.stationIds.some((id) => myStationIds.includes(id))))
+    p.isStationProcedure ||
+    (myStationIds.length > 0 &&
+      ((p.stationScope?.mode === 'specific' && p.stationScope.stationIds.some((id) => myStationIds.includes(id))) ||
+        (p.station?.id && myStationIds.includes(p.station.id)) ||
+        (p.audience?.mode === 'some' && p.audience.stationIds.some((id) => myStationIds.includes(id)))))
       ? 1
       : 0;
   const assignedToMe = (p: Procedure): boolean =>
-    Boolean(employeeId && p.assignUsers?.includes(employeeId));
+    p.isDirectlyAssigned === true || Boolean(employeeId && p.assignUsers?.includes(employeeId));
   const published = procedures.filter((p) => p.status === 'published' && !p.isArchived);
   const results = published
-    .filter((p) =>
-      activeCategory
-        ? p.category?.slug === activeCategory ||
-          p.category?.id === activeCategory ||
-          categorySlugsMatch(p.category?.slug, activeCategory)
-        : true,
-    )
+    .filter((p) => {
+      if (!activeCategory) return true;
+      if (categoryUuid) return true;
+      return (
+        p.category?.slug === activeCategory ||
+        p.category?.id === activeCategory ||
+        categorySlugsMatch(p.category?.slug, activeCategory)
+      );
+    })
     .filter((p) => (scope === 'assigned' ? assignedToMe(p) : true))
-    .map((p) => ({ p, score: scoreProcedure(p, words) }))
+    .map((p) => ({ p, score: query.trim() ? scoreProcedure(p, words) : 1 }))
     .filter((r) => r.score > 0)
     .sort((a, b) => {
       // Prioritize Guacamole Fresco at the top when no specific text search is active
@@ -194,7 +232,7 @@ export function ProceduresClientList({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={labels.searchPlaceholder}
-            className="min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-3)] sm:text-md"
+            className="min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-3)]"
             style={{ height: '100%' }}
           />
         </div>
@@ -263,20 +301,35 @@ export function ProceduresClientList({
           </p>
 
           {results.length === 0 ? (
-            <p className="mt-4 text-md text-[var(--color-ink)]">{query ? labels.noneFor(query.trim()) : labels.none}</p>
+            <EmptyProceduresCard
+              hasFilter={Boolean(query.trim() || activeCategory || scope)}
+              hasQuery={Boolean(query.trim())}
+              hasCategory={Boolean(activeCategory)}
+              hasScope={scope === 'assigned'}
+              categoryName={selectedCategoryObj ? nameOf(selectedCategoryObj) : undefined}
+              onReset={() => {
+                setQuery('');
+                setActiveCategory('');
+                setScope('');
+              }}
+              onClearCategory={() => setActiveCategory('')}
+              onClearScope={() => setScope('')}
+              isEs={isEs}
+              noneForText={labels.noneFor(query.trim())}
+            />
           ) : (
             <ul className="mt-4 space-y-3">
               {results.map((p) => {
-                const cover = coverOf(p);
+                const cover = p.procedureImage || coverOf(p);
                 const sub = p.subcategoryId
                   ? p.category?.subcategories?.find((s) => s.id === p.subcategoryId) ?? null
-                  : null;
+                  : (p as any).subcategory ?? null;
                 return (
                   <li key={p.id}>
                     <ProcedureRow
                       href={withAs(`/${locale}/procedures/${p.slug}`, viewAs)}
                       cover={cover}
-                      iconImageUrl={p.iconImageUrl ?? null}
+                      iconImageUrl={p.iconImageUrl ?? p.procedureImage ?? null}
                       category={p.category}
                       subcategory={sub}
                       title={titleOf(p)}
@@ -333,3 +386,111 @@ function ProceduresListSkeleton(): React.ReactElement {
     </div>
   );
 }
+
+function EmptyProceduresCard({
+  hasFilter,
+  hasQuery,
+  hasCategory,
+  hasScope,
+  categoryName,
+  onReset,
+  onClearCategory,
+  onClearScope,
+  isEs,
+  noneForText,
+}: {
+  hasFilter: boolean;
+  hasQuery: boolean;
+  hasCategory: boolean;
+  hasScope: boolean;
+  categoryName?: string;
+  onReset: () => void;
+  onClearCategory: () => void;
+  onClearScope: () => void;
+  isEs: boolean;
+  noneForText: string;
+}): React.ReactElement {
+  const icon = hasQuery ? (
+    <LuSearch className="size-8 text-[var(--color-ink-2)]" />
+  ) : hasScope ? (
+    <LuInbox className="size-8 text-[var(--color-ink-2)]" />
+  ) : hasCategory ? (
+    <LuFolderX className="size-8 text-[var(--color-ink-2)]" />
+  ) : (
+    <LuBookOpen className="size-8 text-[var(--color-ink-2)]" />
+  );
+
+  let title = isEs ? 'No se encontraron procedimientos' : 'No procedures found';
+  if (hasQuery) {
+    title = isEs ? 'Sin resultados de búsqueda' : 'No matching procedures';
+  } else if (hasScope) {
+    title = isEs ? 'Sin procedimientos asignados a ti' : 'No procedures directly assigned';
+  } else if (hasCategory && categoryName) {
+    title = isEs ? `Sin procedimientos en ${categoryName}` : `No procedures in ${categoryName}`;
+  } else if (!hasFilter) {
+    title = isEs ? 'No hay procedimientos disponibles' : 'No procedures assigned yet';
+  }
+
+  let body = isEs
+    ? 'Los procedimientos asignados a tu estación aparecerán aquí cuando tu gerente los publique.'
+    : 'Procedures assigned to your station will appear here once published by your manager.';
+  if (hasQuery) {
+    body = noneForText;
+  } else if (hasScope) {
+    body = isEs
+      ? 'No tienes procedimientos asignados directamente de forma individual. Puedes explorar los procedimientos disponibles para tu estación con el botón de abajo.'
+      : 'You have no individual procedures directly assigned to you. You can browse all procedures available for your station.';
+  } else if (hasCategory) {
+    body = isEs
+      ? 'Actualmente no hay procedimientos publicados bajo esta categoría para tu estación.'
+      : 'There are currently no procedures in this category assigned to your station.';
+  }
+
+  return (
+    <div className="mt-6 flex flex-col items-center justify-center rounded-[var(--radius-xl)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)] px-6 py-12 text-center sm:px-12 sm:py-16 shadow-xs transition-all">
+      <div className="flex size-16 items-center justify-center rounded-2xl border border-[var(--color-line)] bg-[var(--color-panel)] shadow-inner">
+        {icon}
+      </div>
+
+      <h3 className="mt-4 font-[family-name:var(--font-display)] text-lg font-bold tracking-tight text-[var(--color-ink)] sm:text-xl">
+        {title}
+      </h3>
+
+      <p className="mt-2 max-w-md text-sm text-[var(--color-ink-2)] leading-relaxed">
+        {body}
+      </p>
+
+      {hasFilter ? (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex min-h-[38px] items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 py-2 text-xs font-semibold text-[var(--color-surface)] shadow-xs transition hover:opacity-90 cursor-pointer"
+          >
+            <LuRotateCcw className="size-3.5" />
+            {isEs ? 'Restablecer todos los filtros' : 'Clear all filters'}
+          </button>
+          {hasScope ? (
+            <button
+              type="button"
+              onClick={onClearScope}
+              className="inline-flex min-h-[38px] items-center gap-2 rounded-full border border-[var(--color-line-2)] bg-[var(--color-panel)] px-4 py-2 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-panel-2)] cursor-pointer"
+            >
+              {isEs ? 'Ver procedimientos de estación' : 'Browse station procedures'}
+            </button>
+          ) : null}
+          {hasCategory ? (
+            <button
+              type="button"
+              onClick={onClearCategory}
+              className="inline-flex min-h-[38px] items-center gap-2 rounded-full border border-[var(--color-line-2)] bg-[var(--color-panel)] px-4 py-2 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-panel-2)] cursor-pointer"
+            >
+              {isEs ? 'Ver todas las categorías' : 'View all categories'}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+

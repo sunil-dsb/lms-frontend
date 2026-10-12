@@ -67,11 +67,21 @@ export function ProcedureViewClient({
       if (initialProcedure) return initialProcedure;
       const browse = queryClient.getQueryData<Procedure[]>([...PROCEDURES_QUERY_KEY, 'browse']);
       const hit = browse?.find((p) => p.id === slugOrId || p.slug === slugOrId);
-      return hit ?? getCachedProcedure(slugOrId);
+      if (hit) return hit;
+
+      const queries = queryClient.getQueriesData<{ procedures?: Procedure[] }>({
+        queryKey: ['procedures', 'assigned'],
+      });
+      for (const [, qData] of queries) {
+        const found = qData?.procedures?.find((p) => p.id === slugOrId || p.slug === slugOrId);
+        if (found) return found;
+      }
+
+      return getCachedProcedure(slugOrId);
     },
     // Only the first paint matters — the mount refetch below takes over.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [initialProcedure, slugOrId],
+    [initialProcedure, slugOrId, queryClient],
   );
   const [proc, setProc] = React.useState<Procedure | null>(
     () => (cached && canRead(cached, employee) ? cached : null),

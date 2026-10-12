@@ -4,9 +4,7 @@ import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMe } from '@/services/auth/hooks';
-import { useBrowseProcedures } from '@/services/library/hooks';
-import { useRoles } from '@/services/jobs/hooks';
-import { useStations } from '@/services/stations/hooks';
+import { useAssignedProcedures } from '@/services/library/hooks';
 import type { Procedure, ProcedureBlock, TrainingAssignmentRow } from '@/lib/types';
 import { parseAsParam, withAs } from '@/lib/view-as';
 import { TabBar } from '@/components/employee/tab-bar';
@@ -48,10 +46,7 @@ function dueLabel(
  * Employee home, client-first: the shell (header, toggle, tab bar) paints
  * immediately and each section resolves through the shared query caches —
  * greeting as soon as the session lands, training synchronously, procedure
- * rows as soon as the browse cache resolves. First visit streams behind
- * skeletons; every back-navigation renders from cache with no loading
- * state at all. Previously this whole page awaited 4 backend round-trips
- * server-side (on top of the layout's own) before first paint.
+ * rows as soon as the assigned procedures cache resolves.
  */
 export function EmployeeHomeClient({
   locale,
@@ -66,9 +61,7 @@ export function EmployeeHomeClient({
   const tTraining = useTranslations('employee.training');
 
   const { employee, isLoading: meLoading, error: meError } = useMe();
-  const proceduresQuery = useBrowseProcedures();
-  const rolesQuery = useRoles();
-  const stationsQuery = useStations({});
+  const assignedProceduresQuery = useAssignedProcedures({ limit: 100 });
 
   React.useEffect(() => {
     if (!meLoading && (meError || !employee)) router.replace(`/${locale}/login`);
@@ -79,10 +72,12 @@ export function EmployeeHomeClient({
 
   const procedures = React.useMemo<Procedure[]>(
     () =>
-      (proceduresQuery.data ?? []).filter((p) => p.status === 'published' && !p.isArchived),
-    [proceduresQuery.data],
+      (assignedProceduresQuery.data?.procedures ?? []).filter(
+        (p) => p.status === 'published' && !p.isArchived,
+      ),
+    [assignedProceduresQuery.data?.procedures],
   );
-  const proceduresLoading = proceduresQuery.isLoading;
+  const proceduresLoading = assignedProceduresQuery.isLoading;
 
   const titleOf = (p: { titleEn: string; titleEs: string }): string =>
     isEs ? p.titleEs || p.titleEn : p.titleEn || p.titleEs;
@@ -108,8 +103,6 @@ export function EmployeeHomeClient({
       employee={employee}
       procedures={procedures}
       proceduresLoading={proceduresLoading}
-      roles={rolesQuery.roles ?? []}
-      stations={stationsQuery.data ?? []}
       viewAs={viewAs}
       initialView={initialView ?? ''}
       t={t}
@@ -125,8 +118,6 @@ function HomeContent({
   employee,
   procedures,
   proceduresLoading,
-  roles,
-  stations,
   viewAs,
   initialView,
   t,
@@ -138,25 +129,27 @@ function HomeContent({
   employee: NonNullable<ReturnType<typeof useMe>['employee']>;
   procedures: Procedure[];
   proceduresLoading: boolean;
-  roles: Array<{ id: string; name: string }>;
-  stations: Array<{ id: string; name: string }>;
   viewAs: ReturnType<typeof parseAsParam>;
   initialView: string;
   t: (k: string, v?: Record<string, string | number>) => string;
   tTraining: (k: string, v?: Record<string, string | number>) => string;
 }): React.ReactElement {
-  const stationIds = employee.stationIds ?? [];
-  const roleId =
-    (employee.jobIds && employee.jobIds[0]) ?? (employee.roleIds && employee.roleIds[0]) ?? null;
+  const stationIds =
+    employee.stationIds ??
+    (employee.stations ? employee.stations.map((s) => s.id) : []);
 
-  const roleName = roleId ? roles.find((x) => x.id === roleId)?.name ?? null : null;
-  // Job-role name first; fall back to the access-level role so the subtitle
-  // never silently drops the role half ("Employee · Grill" beats "Grill").
+  // Prefer denormalised names from GET /me (no extra fetch, no loading flash).
+  const meJobName = employee.jobs?.[0]?.name ?? null;
   const displayRole =
-    roleName ?? (employee.role ? employee.role.charAt(0).toUpperCase() + employee.role.slice(1) : null);
-  const stationNames = stationIds
-    .map((id) => stations.find((s) => s.id === id)?.name)
+    meJobName ?? (employee.role ? employee.role.charAt(0).toUpperCase() + employee.role.slice(1) : null);
+  const meStationNames = (employee.stations ?? [])
+    .map((s) => s.name)
     .filter((n): n is string => Boolean(n));
+  const procStationNames = procedures
+    .map((p) => p.station?.name)
+    .filter((n): n is string => Boolean(n));
+  const stationNames =
+    meStationNames.length > 0 ? meStationNames : Array.from(new Set(procStationNames));
   const stationName = stationNames.length ? stationNames.join(', ') : null;
 
   const now = Date.now();
@@ -243,15 +236,17 @@ function HomeContent({
 
   const forMyStation = (p: Procedure): boolean =>
     Boolean(
-      stationIds.length &&
+      p.isStationProcedure ||
+      (stationIds.length &&
         ((p.stationScope?.mode === 'specific' && p.stationScope.stationIds.some((id) => stationIds.includes(id))) ||
-          (p.audience?.mode === 'some' && p.audience.stationIds.some((id) => stationIds.includes(id)))),
+          (p.station?.id && stationIds.includes(p.station.id)) ||
+          (p.audience?.mode === 'some' && p.audience.stationIds.some((id) => stationIds.includes(id))))),
     );
   const toRow = (p: Procedure, meta: string): HomeRow => {
     const facts = factsOf(p, isEs);
     const sub = p.subcategoryId
       ? p.category?.subcategories?.find((s) => s.id === p.subcategoryId) ?? null
-      : null;
+      : (p as any).subcategory ?? null;
     const purposeOf = (p: { purposeEn?: string; purposeEs?: string }): string =>
       isEs ? p.purposeEs || p.purposeEn || '' : p.purposeEn || p.purposeEs || '';
     return {
@@ -259,8 +254,8 @@ function HomeContent({
       slug: p.slug,
       updatedAt: p.updatedAt,
       href: withAs(`/${locale}/procedures/${p.slug}`, viewAs),
-      cover: coverOf(p.bodyEn?.blocks?.length ? p.bodyEn.blocks : (p.bodyEs?.blocks ?? [])),
-      iconImageUrl: p.iconImageUrl ?? null,
+      cover: p.procedureImage || coverOf(p.bodyEn?.blocks?.length ? p.bodyEn.blocks : (p.bodyEs?.blocks ?? [])),
+      iconImageUrl: p.iconImageUrl ?? p.procedureImage ?? null,
       category: p.category,
       subcategory: sub,
       title: titleOf(p),
@@ -281,17 +276,19 @@ function HomeContent({
   const isGuac = (p: Procedure) => p.id === 'proc-guacamole-fresco' || p.slug === 'guacamole-fresco';
   // Directly assigned to this person — its own section above the station's.
   // Assigned rows leave the station list so nothing appears twice.
-  const assignedIds = new Set(
-    procedures.filter((p) => p.assignUsers?.includes(employee.id)).map((p) => p.id),
-  );
   const assignedRows = procedures
-    .filter((p) => !promoIds.has(p.id) && assignedIds.has(p.id))
+    .filter(
+      (p) =>
+        !promoIds.has(p.id) &&
+        (p.isDirectlyAssigned === true || Boolean(p.assignUsers?.includes(employee.id))),
+    )
     .sort((a, b) => {
       const gA = isGuac(a) ? 1 : 0;
       const gB = isGuac(b) ? 1 : 0;
       if (gA !== gB) return gB - gA;
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     });
+  const assignedIds = new Set(assignedRows.map((p) => p.id));
   const stationRows = procedures
     .filter((p) => !promoIds.has(p.id) && !assignedIds.has(p.id))
     .sort((a, b) => {

@@ -130,7 +130,7 @@ export function buildAttention(input: HomeInput): AttentionGroup[] {
             title: t.spanishTitle(titleOf(p, 'en')),
             meta: [categoryName(p.category, locale) ?? t.uncategorised, t.spanishReaders(spanishReaders)],
             // The fix is adding the Spanish, which happens in the editor.
-            href: `/${locale}/admin/library/${p.id}/edit`,
+            href: `/${locale}/admin/library/${p.slug || p.id}/edit`,
             image: coverOf(p, locale),
             icon: LuLanguages,
             since: new Date(p.updatedAt).getTime(),
@@ -147,7 +147,7 @@ export function buildAttention(input: HomeInput): AttentionGroup[] {
         t.editedAgo(relativeDays(p.updatedAt, locale, now), nameById.get(p.createdBy) ?? ''),
         missingSpanish(p) ? t.noSpanishYet : undefined,
       ].filter((x): x is string => Boolean(x)),
-      href: `/${locale}/admin/library/${p.id}/edit`,
+      href: `/${locale}/admin/library/${p.slug || p.id}/edit`,
       image: coverOf(p, locale),
       icon: p.category ? getCategoryIcon(p.category) : LuFileText,
       since: new Date(p.updatedAt).getTime(),

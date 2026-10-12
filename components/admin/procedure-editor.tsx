@@ -258,6 +258,23 @@ export function ProcedureEditor({
     return () => cancelAnimationFrame(rafId);
   }, []);
 
+  // Deep-link from the library's Publish action: when a procedure isn't
+  // placed yet (categorized but no station attached), the click lands here
+  // on the Access step with the inline station error on — attach a station
+  // (or file it under General), then publish from the editor.
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('publishBlocked') !== '1') return;
+    setStep('access');
+    setStationsError(true);
+    toast.error(t('stationsRequired'));
+    const rafId = requestAnimationFrame(() => {
+      stationsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => cancelAnimationFrame(rafId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   React.useEffect(() => {
     let alive = true;
     void Promise.all([
@@ -634,11 +651,24 @@ export function ProcedureEditor({
       }
     }
 
-    // 2. Access validation on publish
+    // 2. Access validation on publish — every procedure needs its station
+    // allocation before going live. Station-tied: the manager must pick ≥1.
+    // General: the wizard auto-fills ALL station ids at save, but that only
+    // works when the stations catalog has loaded — an empty list would ship
+    // `stationIds: []` and the row could never appear in anyone's inbox.
     if ((scope === 'access' || scope === 'all') && status === 'published') {
       if (category?.kind === 'station-tied' && audience.stationIds.length === 0) {
         return {
           message: 'Please select at least one station for station-tied procedures before publishing.',
+          target: stationsSectionRef.current || 'proc-stations',
+          step: 'access',
+          field: 'stations',
+        };
+      }
+      if (category?.kind === 'general' && stations.length === 0) {
+        return {
+          message:
+            'The stations list has not loaded yet — wait a moment and publish again so every station is assigned.',
           target: stationsSectionRef.current || 'proc-stations',
           step: 'access',
           field: 'stations',
@@ -745,6 +775,36 @@ export function ProcedureEditor({
           categories.find((c) => c.id === categoryId)?.subcategories?.[0]?.id ||
           null;
 
+        // The picker's catalog is the local mock store — resolve the pick
+        // to a live backend UUID before saving. A stale/missing match used
+        // to be sent through and died with SUBCATEGORY_NOT_FOUND.
+        const { resolveLiveSubcategoryId } = await import('@/services/categories/api');
+        const pickedSub = categories
+          .flatMap((c) =>
+            (c.subcategories ?? []).map((s) => ({ ...s, categoryId: c.id, categorySlug: c.slug, categoryNameEn: c.nameEn })),
+          )
+          .find((s) => s.id === effectiveSubcategoryId);
+        const liveSubcategoryId = effectiveSubcategoryId
+          ? await resolveLiveSubcategoryId({
+              categoryId: categoryId || null,
+              categorySlug: category?.slug ?? null,
+              categoryNameEn: category?.nameEn ?? null,
+              subcategoryId: effectiveSubcategoryId,
+              subcategorySlug: pickedSub?.slug ?? null,
+              subcategoryNameEn: pickedSub?.nameEn ?? null,
+            })
+          : null;
+        if (effectiveSubcategoryId && !liveSubcategoryId) {
+          toast.error(
+            isEs
+              ? 'La subcategoría elegida no existe en el servidor. Elige otra subcategoría.'
+              : "The chosen subcategory doesn't exist on the server. Pick another subcategory.",
+          );
+          setStep('access');
+          scrollToTarget('proc-categories');
+          return;
+        }
+
         const effectiveTitleEn = (title.en.trim() || title.es.trim()).slice(0, 200);
         const effectiveTitleEs = (title.es.trim() || title.en.trim()).slice(0, 200);
         const effectivePurposeEn = purpose.en.trim() || purpose.es.trim() || effectiveTitleEn;
@@ -756,8 +816,18 @@ export function ProcedureEditor({
           purposeEn: effectivePurposeEn,
           purposeEs: effectivePurposeEs,
           categoryId: categoryId || null,
-          subcategoryId: effectiveSubcategoryId,
-          stationId: audience.stationIds[0] || null,
+          subcategoryId: liveSubcategoryId,
+          // General procedures allocate to EVERY live station — the full
+          // ids list travels in `stationIds` while `stationId` stays null
+          // (single-link field). Station-tied ones carry the picked ids.
+          stationIds:
+            category?.kind === "general"
+              ? stations.map((s) => s.id)
+              : audience.stationIds,
+          // General procedures broadcast everywhere — no single station
+          // link. Station-tied ones attach the picked station.
+          stationId:
+            category?.kind === "general" ? null : audience.stationIds[0] || null,
           assignUsers: audience.employeeIds,
           stationScope:
             category?.kind === "station-tied"
@@ -774,12 +844,37 @@ export function ProcedureEditor({
           audience: audience.mode === "everyone" ? null : audience,
           protection,
         };
-        if (initial) await updateProcedure(initial.id, input);
-        else await createProcedure(input);
+        let publishedNow = false;
+        if (initial) {
+          const { isUuid, publishProcedure } = await import('@/services/library/api');
+          // The draft → published flip belongs to POST /:id/publish, not the
+          // edit endpoint: the PUT ships the content edits at the procedure's
+          // CURRENT status, then the dedicated publish call is the one request
+          // that takes it live. Demo rows (non-UUID) live only in the local
+          // store, so they keep carrying the status through the PUT fallback.
+          const flipViaPublish =
+            status === 'published' && initial.status !== 'published' && isUuid(initial.id);
+          await updateProcedure(initial.id, {
+            ...input,
+            status: flipViaPublish ? 'draft' : input.status,
+          });
+          if (flipViaPublish) {
+            await publishProcedure(initial.id);
+            publishedNow = true;
+          }
+        } else {
+          await createProcedure(input);
+        }
         await queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY, refetchType: 'all' });
         queryClient.removeQueries({ queryKey: PROCEDURES_QUERY_KEY });
         setDirty(false);
-        toast.success(isEdit ? "Procedure updated successfully" : "Procedure created successfully");
+        toast.success(
+          publishedNow
+            ? "Procedure published successfully"
+            : isEdit
+              ? "Procedure updated successfully"
+              : "Procedure created successfully",
+        );
         router.push(`/${locale}/admin/library`);
         router.refresh();
       } catch (err) {
@@ -1020,16 +1115,35 @@ export function ProcedureEditor({
                     {t("stationsRequired")}
                   </p>
                 ) : null}
+                {category.kind === "general" ? (
+                  <div
+                    className="mt-3 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-panel)]/40 px-4 py-2"
+                    role="note"
+                    aria-label={t("stationsAddTitle")}
+                  >
+                    {stations.map((s) => (
+                      <span
+                        key={s.id}
+                        className="inline-flex shrink-0 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-1 text-xs font-medium text-[var(--color-ink-2)]"
+                      >
+                        {s.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
                 <div className="mt-3">
                   <MultiSelectChips
                     id="who-stations"
                     label={t("stationsAddTitle")}
                     value={audience.stationIds}
                     onChange={(v) => {
-                      // Picking any station clears the publish-time error
+                      // Station-specific procedures take exactly one
+                      // station — keep the most recent pick.
+                      const next = v.slice(-1);
+                      // Picking a station clears the publish-time error
                       // — the manager has acted on the inline hint.
-                      if (v.length > 0) setStationsError(false);
-                      edit(setAudience)({ ...audience, stationIds: v });
+                      if (next.length > 0) setStationsError(false);
+                      edit(setAudience)({ ...audience, stationIds: next });
                     }}
                     options={stations.map((s) => ({
                       value: s.id,
@@ -1037,8 +1151,10 @@ export function ProcedureEditor({
                     }))}
                     addLabel={t("whoAdd")}
                     emptyText={t("stationsEmpty")}
+                    maxSelected={1}
                   />
                 </div>
+                )}
               </section>
             ) : null}
 
@@ -1743,19 +1859,26 @@ function AssignBlock({
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
-    return people.filter((p) => {
-      if (filterStationIds && filterStationIds.length > 0) {
-        const overlap = p.stationIds.some((id) => filterStationIds.includes(id));
-        if (!overlap) return false;
-      }
-      if (!q) return true;
-      const role = (p.role ?? "").toLowerCase();
-      return (
-        p.name.toLowerCase().includes(q) ||
-        (p.employeeCode ?? "").toLowerCase().includes(q) ||
-        role.includes(q)
+    // Everyone stays visible: employees of the selected stations sort
+    // first, the rest follow alphabetically so extras can be assigned too.
+    const inStation = (p: (typeof people)[number]): boolean =>
+      !filterStationIds || filterStationIds.length === 0
+        ? true
+        : p.stationIds.some((id) => filterStationIds.includes(id));
+    return people
+      .filter((p) => {
+        if (!q) return true;
+        const role = (p.role ?? "").toLowerCase();
+        return (
+          p.name.toLowerCase().includes(q) ||
+          (p.employeeCode ?? "").toLowerCase().includes(q) ||
+          role.includes(q)
+        );
+      })
+      .sort(
+        (a, b) =>
+          Number(inStation(b)) - Number(inStation(a)) || a.name.localeCompare(b.name),
       );
-    });
   }, [people, filterStationIds, search]);
 
   const stationNameById = React.useMemo(
@@ -1784,7 +1907,7 @@ function AssignBlock({
             </span>
           ) : null}
         </div>
-        <div className="relative ml-auto flex w-[380px] max-w-full shrink-0 items-center rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-1.5 transition-colors focus-within:border-[var(--color-brand)]">
+        <div className="relative ml-auto flex w-[380px] max-w-full shrink-0 items-center rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 transition-colors focus-within:border-[var(--color-brand)]">
           <LuSearch aria-hidden="true" className="mr-2 size-4 shrink-0 text-[var(--color-ink-3)]" />
           <label className="sr-only" htmlFor="assign-search">
             {t("assignSearch")}
@@ -1808,18 +1931,17 @@ function AssignBlock({
             </button>
           ) : null}
         </div>
+        {filterStationIds && filterStationIds.length > 0 ? (
+          <p className="-mt-2 text-xs leading-meta text-[var(--color-ink-3)]">
+            {t("assignSubtitle")}
+          </p>
+        ) : null}
       </div>
 
       {/* Employee cards — three columns, generous tap targets. */}
       {filtered.length === 0 ? (
         <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-3)] bg-[var(--color-wash)] p-6 text-center text-sm text-[var(--color-ink-2)]">
-          {filterStationIds && filterStationIds.length > 0
-            ? t("assignEmptyStations", {
-              stations: filterStationIds
-                .map((id) => stationNameById.get(id) ?? id)
-                .join(", "),
-            })
-            : t("assignEmpty")}
+          {t("assignEmpty")}
         </div>
       ) : (
         <>

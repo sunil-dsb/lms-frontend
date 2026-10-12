@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { LuBookOpen } from 'react-icons/lu';
 import { ProcedureRow, type FlagLabels } from '@/components/employee/procedure-row';
 import { SectionHead } from './SectionHead';
 import { HomeRowsSkeleton } from './home-rows-skeleton';
@@ -42,7 +43,12 @@ export function StationSection({
         {loading ? (
           <HomeRowsSkeleton />
         ) : rows.length === 0 ? (
-          <p className="text-sm text-[var(--color-ink-2)]" style={{ marginTop: '10px' }}>{empty}</p>
+          <div className="flex flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-panel)]/40 py-6 px-4 text-center mt-3">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[var(--color-surface)] border border-[var(--color-line)] text-[var(--color-ink-2)]">
+              <LuBookOpen className="size-4" />
+            </div>
+            <p className="mt-2 text-xs sm:text-sm font-medium text-[var(--color-ink-2)] max-w-sm">{empty}</p>
+          </div>
         ) : (
           <ul style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {rows.map((r) => (

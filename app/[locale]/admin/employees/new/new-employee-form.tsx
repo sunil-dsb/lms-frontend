@@ -378,10 +378,7 @@ export function NewEmployeeForm({
     }
 
     const trimmedCode = form.employeeCode.trim();
-    if (!trimmedCode) {
-      errs.employeeCode = t('errorNeedCode');
-      firstErr = firstErr ?? errs.employeeCode;
-    } else if (trimmedCode.length !== 6) {
+    if (trimmedCode && trimmedCode.length !== 6) {
       errs.employeeCode = t('errorNeedCode');
       firstErr = firstErr ?? errs.employeeCode;
     }

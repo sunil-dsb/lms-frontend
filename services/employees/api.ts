@@ -20,13 +20,46 @@ function normalizeEmployee<T extends Employee>(raw: any): T {
       ? raw.roleIds
       : [];
   const stationIds = Array.isArray(raw?.stationIds) ? raw.stationIds : [];
+  const accessLevel =
+    raw?.accessLevel ??
+    (raw?.role === 'manager'
+      ? 'manager'
+      : raw?.role === 'super_admin' || raw?.role === 'admin'
+        ? 'manager'
+        : 'employee');
 
   return {
     ...raw,
+    accessLevel,
     roleIds,
     jobIds,
     stationIds,
   } as T;
+}
+
+export async function fetchEmployeeById(
+  id: string,
+  cookieHeader?: string,
+): Promise<{ employee: AdminEmployee }> {
+  const headers: Record<string, string> = {};
+
+  if (cookieHeader) {
+    headers['Cookie'] = cookieHeader;
+    const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
+    if (tokenMatch) {
+      headers['Authorization'] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+    }
+  }
+
+  const { data } = await http.get<{
+    success: boolean;
+    data: { employee: any };
+  }>(EMPLOYEES_ENDPOINTS.GET(id), {
+    headers: Object.keys(headers).length ? headers : undefined,
+  });
+
+  const raw = data.data?.employee;
+  return { employee: normalizeEmployee<AdminEmployee>(raw) };
 }
 
 export async function fetchEmployees(

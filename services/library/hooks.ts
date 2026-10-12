@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchProcedures,
+  fetchAssignedProcedures,
   fetchProcedureById,
   createProcedure,
   updateProcedure,
   archiveProcedure,
 } from './api';
 import { listProcedures } from '@/lib/api';
-import type { CreateProcedureInput, ProcedureFilterOptions } from './types';
+import type { CreateProcedureInput, ProcedureFilterOptions, AssignedProceduresFilterOptions } from './types';
 
 export const PROCEDURES_QUERY_KEY = ['procedures'] as const;
 
@@ -73,3 +74,14 @@ export function useBrowseProcedures() {
     queryFn: () => listProcedures({}).then((r) => r.procedures),
   });
 }
+
+export const ASSIGNED_PROCEDURES_QUERY_KEY = ['procedures', 'assigned'] as const;
+
+/** Employee-facing assigned procedures (GET /api/v1/procedures/assigned). */
+export function useAssignedProcedures(options: AssignedProceduresFilterOptions = {}) {
+  return useQuery({
+    queryKey: [...ASSIGNED_PROCEDURES_QUERY_KEY, options],
+    queryFn: () => fetchAssignedProcedures(options),
+  });
+}
+

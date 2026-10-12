@@ -60,5 +60,5 @@ export default async function AdminCategoryDetailPage({
   // the server; pass `null` and let the client resolve it from localStorage.
   const category = categories.find((c) => c.slug === slug) ?? null;
 
-  return <CategoryDetailClient initialCategory={category} slug={slug} locale={locale} />;
+  return <CategoryDetailClient initialCategory={category} slug={slug} locale={locale} locationId={locationId} />;
 }

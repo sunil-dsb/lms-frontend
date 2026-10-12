@@ -6,6 +6,8 @@ export interface Job {
   id: string;
   name: string;
   createdAt: string;
+  /** Station ids linked to this job (backend `station_ids`). */
+  stationIds?: string[];
 }
 
 export interface JobWithStations extends Job {

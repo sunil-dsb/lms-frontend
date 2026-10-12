@@ -2,17 +2,23 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { getCategoryIcon, getSubcategoryIcon } from '@/lib/category-icons';
-import type { Category, Subcategory } from '@/lib/types';
+import { useRouter } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getSubcategoryIcon } from '@/lib/category-icons';
+import type { Category, Procedure, Subcategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Popover } from '@/components/ui/popover';
-import { RowActions } from '@/components/ui/row-actions';
+import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
 import { cn } from '@/lib/utils';
 import { LuCheck, LuChevronRight, LuPlus, LuX } from 'react-icons/lu';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/admin/page-header';
+import { CategoryDetailSkeleton } from '@/components/admin/category-detail-skeleton';
+import { fetchProcedures, updateProcedureStation } from '@/services/library/api';
+import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
+import { backendSlug, categorySlugsMatch } from '@/services/categories/api';
+import { useStations } from '@/services/stations/hooks';
 
 interface CategoryDetailClientProps {
   /** The category the server saw. `null` when the category exists only in the
@@ -23,79 +29,69 @@ interface CategoryDetailClientProps {
    *  the server didn't find it. */
   slug: string;
   locale: string;
+  /** Manager's location — scopes the station picker options. */
+  locationId: string | null;
 }
 
-/** Stations available for station-tied categories. The id is the URL-stable
- *  slug the wizard reads from `?station=…`; the code is what the manager
- *  reads on the chip. Mirrors `SEED_STATIONS` in `lib/api.ts`. */
-const STATIONS: ReadonlyArray<{ id: string; name: string }> = [
-  { id: 'stn-gm', name: 'GM' },
-  { id: 'stn-grill', name: 'Grill' },
-  { id: 'stn-expo', name: 'Expo' },
-  { id: 'stn-prep', name: 'Prep Kitchen' },
-  { id: 'stn-dish', name: 'Dishwasher' },
-];
+function isUuid(val: string | null | undefined): boolean {
+  if (!val) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+}
 
+interface StationOption {
+  id: string;
+  name: string;
+}
+
+/** One rendered row — a published backend procedure with its single
+ *  station resolved (override → denormalised `station` → stations list). */
 interface ProcedureRow {
   id: string;
   slug: string;
   titleEn: string;
   titleEs: string;
-  /** The single station this procedure is attached to. `null` means the
-   *  manager hasn't picked one yet — the chip area renders the "No
-   *  station" hint and the picker is the entry point. */
-  station: string | null;
-  updatedAgoEn: string;
-  updatedAgoEs: string;
+  stationId: string | null;
+  stationName: string | null;
+  updatedAt: string;
 }
 
-/** Per-subcategory fixture. Each procedure carries the single station id
- *  it is currently attached to. Procedures outside the seeded list are
- *  generated with `station: null` so the row's chip area starts in the
- *  "No station" state and the manager can populate it via the picker. */
-const PROCEDURES_BY_SUBCATEGORY: Record<string, ReadonlyArray<ProcedureRow>> = {
-  plating: [
-    { id: 'proc-p1', slug: 'cold-section-plating-sop', titleEn: 'Cold Section Plating SOP', titleEs: 'Emplatado - Sección fría', station: 'stn-gm', updatedAgoEn: 'Updated 2 days ago', updatedAgoEs: 'Actualizado hace 2 días' },
-    { id: 'proc-p2', slug: 'grill-plating-sop', titleEn: 'Grill Plating SOP', titleEs: 'Emplatado - Parrilla', station: 'stn-grill', updatedAgoEn: 'Updated 3 days ago', updatedAgoEs: 'Actualizado hace 3 días' },
-    { id: 'proc-p3', slug: 'expo-plating-sop', titleEn: 'Expo Plating SOP', titleEs: 'Emplatado - Expo', station: 'stn-expo', updatedAgoEn: 'Updated 4 days ago', updatedAgoEs: 'Actualizado hace 4 días' },
-    { id: 'proc-p4', slug: 'prep-kitchen-plating-sop', titleEn: 'Prep Kitchen Plating SOP', titleEs: 'Emplatado - Cocina de preparación', station: 'stn-prep', updatedAgoEn: 'Updated 5 days ago', updatedAgoEs: 'Actualizado hace 5 días' },
-    { id: 'proc-p5', slug: 'shared-plating-sop', titleEn: 'Shared Plating SOP', titleEs: 'Emplatado - Procedimiento compartido', station: 'stn-grill', updatedAgoEn: 'Updated 1 day ago', updatedAgoEs: 'Actualizado hace 1 día' },
-  ],
-  cooking: [
-    { id: 'proc-c1', slug: 'hot-line-cooking-sop', titleEn: 'Hot Line Cooking SOP', titleEs: 'Cocción - Línea caliente', station: 'stn-grill', updatedAgoEn: 'Updated 1 day ago', updatedAgoEs: 'Actualizado hace 1 día' },
-    { id: 'proc-c2', slug: 'fryer-temperature-guide', titleEn: 'Fryer Temperature & Timing SOP', titleEs: 'Control de Temperatura de Freidora', station: 'stn-gm', updatedAgoEn: 'Updated 3 days ago', updatedAgoEs: 'Actualizado hace 3 días' },
-  ],
-  hygiene: [
-    { id: 'proc-h1', slug: 'handwashing-sanitization-sop', titleEn: 'Handwashing & Personal Sanitization', titleEs: 'Lavado de Manos y Sanitización', station: null, updatedAgoEn: 'Updated 1 day ago', updatedAgoEs: 'Actualizado hace 1 día' },
-    { id: 'proc-h2', slug: 'surface-disinfection-sop', titleEn: 'Surface Disinfection Standard', titleEs: 'Estándar de Desinfección de Superficies', station: null, updatedAgoEn: 'Updated 4 days ago', updatedAgoEs: 'Actualizado hace 4 días' },
-  ],
-};
+/** Relative "Updated … ago" label from an ISO timestamp. */
+function updatedAgoLabel(updatedAt: string, isEs: boolean): string {
+  const minutes = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60000));
+  if (minutes < 1) return isEs ? 'Actualizado justo ahora' : 'Updated just now';
+  if (minutes < 60) return isEs ? `Actualizado hace ${minutes} min` : `Updated ${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return hours === 1
+      ? isEs ? 'Actualizado hace 1 h' : 'Updated 1 hr ago'
+      : isEs ? `Actualizado hace ${hours} h` : `Updated ${hours} hrs ago`;
+  }
+  const days = Math.floor(hours / 24);
+  if (days === 1) return isEs ? 'Actualizado hace 1 día' : 'Updated 1 day ago';
+  if (days < 7) return isEs ? `Actualizado hace ${days} días` : `Updated ${days} days ago`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) {
+    return weeks === 1
+      ? isEs ? 'Actualizado hace 1 sem' : 'Updated 1 wk ago'
+      : isEs ? `Actualizado hace ${weeks} sem` : `Updated ${weeks} wks ago`;
+  }
+  const months = Math.floor(days / 30);
+  if (months < 12) {
+    return months === 1
+      ? isEs ? 'Actualizado hace 1 mes' : 'Updated 1 mo ago'
+      : isEs ? `Actualizado hace ${months} meses` : `Updated ${months} mos ago`;
+  }
+  return isEs ? 'Actualizado hace más de un año' : 'Updated over a year ago';
+}
 
 export function CategoryDetailClient({
   initialCategory,
   slug,
   locale,
+  locationId,
 }: CategoryDetailClientProps): React.ReactElement {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  // The chosen station(s) from the categories page travel via repeated
-  // `?station=` params (multi-select). The wizard's Access step reads them
-  // and pre-fills `audience.stationIds`. Dedup + intersect with the known
-  // list so a stale/unknown id never leaks through.
-  const stationIdsFromUrl = React.useMemo(() => {
-    const seen = new Set<string>();
-    const known = new Set(STATIONS.map((s) => s.id));
-    return searchParams
-      .getAll('station')
-      .filter((id) => {
-        if (seen.has(id) || !known.has(id)) return false;
-        seen.add(id);
-        return true;
-      });
-  }, [searchParams]);
-  // Legacy alias kept for the wizard URL: the first picked station is the
-  // one pre-filled when the manager opens the new-procedure wizard.
-  const stationFromUrl = stationIdsFromUrl[0] ?? null;
+  const queryClient = useQueryClient();
   const isEs = locale === 'es';
   const [category, setCategory] = React.useState<Category | null>(initialCategory);
   const [isResolving, setIsResolving] = React.useState<boolean>(initialCategory === null);
@@ -133,6 +129,102 @@ export function CategoryDetailClient({
   }, [initialCategory, slug]);
 
   const subcategories = category?.subcategories ?? [];
+  const categoryId = category?.id ?? null;
+
+  // Real procedures — published only, via the super_admin filter API.
+  // Rows are matched to panels below by subcategory (exact id, slug, or
+  // English name): backend rows never carry these mock ids, so joining on
+  // ids alone would leave every panel empty.
+  const proceduresQuery = useQuery({
+    queryKey: [...PROCEDURES_QUERY_KEY, 'category-detail', { categoryId }],
+    queryFn: () => fetchProcedures({ status: 'published' }, true).then((r) => r.procedures),
+    enabled: category !== null,
+    staleTime: 5000,
+  });
+
+  const stationsQuery = useStations({ locationId: locationId ?? undefined });
+
+  const stationsById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of stationsQuery.data ?? []) map.set(s.id, s.name);
+    return map;
+  }, [stationsQuery.data]);
+
+  // Picker options: live stations first; when the stations query is empty,
+  // fall back to the stations the loaded procedures already name.
+  const stationOptions = React.useMemo<StationOption[]>(() => {
+    const live = (stationsQuery.data ?? []).filter((s) => !s.isArchived);
+    if (live.length > 0) {
+      return [...live]
+        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+        .map((s) => ({ id: s.id, name: s.name }));
+    }
+    const seen = new Map<string, string>();
+    for (const p of proceduresQuery.data ?? []) {
+      if (p.station && !seen.has(p.station.id)) seen.set(p.station.id, p.station.name);
+    }
+    return [...seen].map(([id, name]) => ({ id, name }));
+  }, [stationsQuery.data, proceduresQuery.data]);
+
+  // Optimistic station changes, keyed by procedure id. Present while the
+  // PATCH is in flight; cleared on success (refetch brings the truth) or
+  // failure (row rolls back).
+  const [stationOverrides, setStationOverrides] = React.useState<
+    Record<string, { id: string | null; name: string | null }>
+  >({});
+
+  const toRow = React.useCallback(
+    (p: Procedure): ProcedureRow => {
+      const override = stationOverrides[p.id];
+      const stationId =
+        override !== undefined ? override.id : (p.station?.id ?? p.stationId ?? null);
+      const stationName =
+        override !== undefined
+          ? override.name
+          : (p.station?.name ?? (stationId ? stationsById.get(stationId) ?? null : null));
+      return {
+        id: p.id,
+        slug: p.slug,
+        titleEn: p.titleEn,
+        titleEs: p.titleEs,
+        stationId,
+        stationName: stationId ? stationName : null,
+        updatedAt: p.updatedAt,
+      };
+    },
+    [stationOverrides, stationsById],
+  );
+
+  // Published, non-archived procedures grouped per subcategory panel.
+  // A row belongs to a panel when its subcategory matches by exact id,
+  // slug, or English name. Drafts and archived rows never reach this
+  // surface.
+  const normName = (s: string): string => s.trim().toLowerCase();
+  const rowsBySubSlug = React.useMemo(() => {
+    const map: Record<string, Procedure[]> = {};
+    for (const sub of subcategories) {
+      const rows = (proceduresQuery.data ?? []).filter((p) => {
+        if (p.isArchived || p.status !== 'published') return false;
+        const ps = (
+          p as unknown as {
+            subcategory?: { id: string; nameEn: string } | null;
+          }
+        ).subcategory;
+        const pid = p.subcategoryId ?? ps?.id ?? null;
+        const pname = ps?.nameEn ?? '';
+        if (!pid && !pname) return false;
+        return (
+          (sub.id !== '' && pid !== null && sub.id === pid) ||
+          (pname !== '' &&
+            (categorySlugsMatch(backendSlug(pname), sub.slug) ||
+              normName(pname) === normName(sub.nameEn)))
+        );
+      });
+      rows.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      map[sub.slug] = rows;
+    }
+    return map;
+  }, [proceduresQuery.data, subcategories]);
 
   // Default the open subcategory to the first one so the page never lands
   // fully collapsed — the manager sees what the category contains without
@@ -140,50 +232,34 @@ export function CategoryDetailClient({
   const [openSubSlug, setOpenSubSlug] = React.useState<string | null>(
     subcategories[0]?.slug ?? null,
   );
-
-  // Procedures keyed by subcategory slug. State lives here (not inside the
-  // accordion) so toggling / clearing stations in one panel doesn't reset
-  // state in another. Initial copy is per-slug so a future "reset"
-  // affordance can return to the seed cleanly.
-  const [proceduresBySubSlug, setProceduresBySubSlug] = React.useState<
-    Record<string, ProcedureRow[]>
-  >(() => {
-    const out: Record<string, ProcedureRow[]> = {};
-    for (const sub of subcategories) {
-      out[sub.slug] = initialProceduresFor(sub, stationFromUrl);
-    }
-    return out;
-  });
-
-  // When the category resolves late (server missed → mock store has it),
-  // subcategories go from `[]` to the real list. Seed the procedures
-  // map once for the new subcategories.
   React.useEffect(() => {
-    setProceduresBySubSlug((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      for (const sub of subcategories) {
-        if (!next[sub.slug]) {
-          next[sub.slug] = initialProceduresFor(sub, stationFromUrl);
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-  }, [subcategories, stationFromUrl]);
+    if (openSubSlug === null && subcategories.length > 0) {
+      setOpenSubSlug(subcategories[0].slug);
+    }
+  }, [subcategories, openSubSlug]);
 
-  function toggleStation(procedureId: string, stationId: string): void {
-    if (!openSubSlug) return;
-    setProceduresBySubSlug((prev) => {
-      const list = prev[openSubSlug] ?? [];
-      const next = list.map((p) => {
-        if (p.id !== procedureId) return p;
-        // Single-select: clicking the same station clears it; clicking a
-        // different one replaces whatever was set.
-        return { ...p, station: p.station === stationId ? null : stationId };
-      });
-      return { ...prev, [openSubSlug]: next };
-    });
+  // Explicit station change committed from the picker's Save button —
+  // one click, one API call. `next` carries the exact value (null clears).
+  function toggleStation(
+    procedureId: string,
+    next: { id: string | null; name: string | null },
+  ): void {
+    setStationOverrides((prev) => ({ ...prev, [procedureId]: next }));
+    // Non-UUID rows can't go through the API — the optimistic value stands
+    // as the local state.
+    if (!isUuid(procedureId) || (next.id !== null && !isUuid(next.id))) return;
+    void (async () => {
+      try {
+        await updateProcedureStation(procedureId, next.id);
+      } finally {
+        setStationOverrides((prev) => {
+          const copy = { ...prev };
+          delete copy[procedureId];
+          return copy;
+        });
+        await queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY });
+      }
+    })();
   }
 
   // Loading: the server's seed fetch missed (only client mock store has it),
@@ -230,6 +306,8 @@ export function CategoryDetailClient({
     );
   }
 
+  const proceduresLoading = proceduresQuery.isLoading && category !== null;
+
   return (
     <div className="mx-auto max-w-page space-y-6">
       {/* The header every admin page wears. The eyebrow is the list this came
@@ -250,12 +328,32 @@ export function CategoryDetailClient({
         }
       />
 
+      {proceduresQuery.isError ? (
+        <p
+          role="alert"
+          className="rounded-[var(--radius-md)] bg-[var(--color-bad-tint)] px-3 py-2 text-sm text-[var(--color-bad)]"
+        >
+          {isEs ? 'No se pudieron cargar los procedimientos.' : 'Could not load procedures.'}{' '}
+          <button
+            type="button"
+            onClick={() => void proceduresQuery.refetch()}
+            className="font-semibold underline underline-offset-2"
+          >
+            {isEs ? 'Reintentar' : 'Retry'}
+          </button>
+        </p>
+      ) : null}
+
       {subcategories.length === 0 ? (
         <p className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)] p-6 text-center text-sm text-[var(--color-ink-3)]">
           {isEs
             ? 'Esta categoría no tiene subcategorías.'
             : 'This category has no subcategories.'}
         </p>
+      ) : proceduresLoading ? (
+        <CategoryDetailSkeleton
+          aria-label={isEs ? 'Cargando procedimientos' : 'Loading procedures'}
+        />
       ) : (
         <div className="space-y-3">
           {subcategories.map((sub) => (
@@ -263,7 +361,8 @@ export function CategoryDetailClient({
               key={sub.id || sub.slug}
               category={category}
               subcategory={sub}
-              procedures={proceduresBySubSlug[sub.slug] ?? []}
+              procedures={(rowsBySubSlug[sub.slug] ?? []).map(toRow)}
+              stations={stationOptions}
               isEs={isEs}
               isOpen={openSubSlug === sub.slug}
               onToggle={() =>
@@ -279,53 +378,18 @@ export function CategoryDetailClient({
   );
 }
 
-/** Build the seed procedure list for a subcategory. Known slugs use the
- *  fixture so the demo data (Plating → 5 procedures with one station each)
- *  lands as the client saw it. Anything else gets two generated rows with
- *  `station: null` — the manager can attach a station via the picker. */
-function initialProceduresFor(
-  sub: Subcategory,
-  stationFromUrl: string | null,
-): ProcedureRow[] {
-  const seeded = PROCEDURES_BY_SUBCATEGORY[sub.slug];
-  if (seeded) {
-    return seeded.map((p) => ({ ...p }));
-  }
-  // The chosen station on the categories page drives the wizard pre-fill
-  // for new procedures; the seed list here stays empty so the chip area
-  // renders the "No station" hint rather than inventing a fake tag.
-  void stationFromUrl;
-  return [
-    {
-      id: `proc-${sub.slug}-1`,
-      slug: `${sub.slug}-standard-sop`,
-      titleEn: `${sub.nameEn} Standard Operating Procedure`,
-      titleEs: `Procedimiento de ${sub.nameEs}`,
-      station: null,
-      updatedAgoEn: 'Updated 2 days ago',
-      updatedAgoEs: 'Actualizado hace 2 días',
-    },
-    {
-      id: `proc-${sub.slug}-2`,
-      slug: `${sub.slug}-safety-sop`,
-      titleEn: `${sub.nameEn} Safety Checklist`,
-      titleEs: `Lista de Seguridad de ${sub.nameEs}`,
-      station: null,
-      updatedAgoEn: 'Updated 4 days ago',
-      updatedAgoEs: 'Actualizado hace 4 días',
-    },
-  ];
-}
-
 /** One accordion row. The header is the clickable subcategory row; the
- *  body lists the procedures with one removable station chip + Add
- *  station picker. Mirrors the demo recipes view: aggregated stations
- *  strip lives in the header when the panel is open, per-row chip +
- *  picker live inside. */
+ *  body lists the published procedures with one station chip (or the
+ *  "All stations" label for general categories) + the change-station
+ *  picker. There is no Add affordance — the chip (or the "No station"
+ *  pill) opens the picker and picks the single station. Mirrors the demo
+ *  recipes view: aggregated stations strip lives in the header when the
+ *  panel is open, per-row chip + picker live inside. */
 function SubcategoryAccordion({
   category,
   subcategory,
   procedures,
+  stations,
   isEs,
   isOpen,
   onToggle,
@@ -335,10 +399,14 @@ function SubcategoryAccordion({
   category: Category;
   subcategory: Subcategory;
   procedures: ProcedureRow[];
+  stations: StationOption[];
   isEs: boolean;
   isOpen: boolean;
   onToggle: () => void;
-  onToggleStation: (procedureId: string, stationId: string) => void;
+  onToggleStation: (
+    procedureId: string,
+    next: { id: string | null; name: string | null },
+  ) => void;
   locale: string;
 }): React.ReactElement {
   const router = useRouter();
@@ -348,16 +416,19 @@ function SubcategoryAccordion({
   const panelId = `sub-panel-${subcategory.id || subcategory.slug}`;
   const SubIcon = getSubcategoryIcon(subcategory);
 
-  // Aggregated station list — the unique set of stations any procedure in
-  // this panel is attached to, intersected with the known list so an
-  // unknown id never bubbles up. Drawn in the header when the panel is
-  // open.
+  // General categories apply to every station — the header shows one
+  // "All stations" pill instead of per-station chips.
+  const isGeneral = category.kind === 'general';
+  // Aggregated station list — the unique set of stations the visible
+  // procedures resolve to. Drawn in the header when the panel is open.
   const linkedStations = React.useMemo(() => {
-    const set = new Set<string>();
+    const map = new Map<string, string>();
     for (const proc of procedures) {
-      if (proc.station) set.add(proc.station);
+      if (proc.stationId && proc.stationName && !map.has(proc.stationId)) {
+        map.set(proc.stationId, proc.stationName);
+      }
     }
-    return STATIONS.filter((s) => set.has(s.id));
+    return [...map].map(([id, name]) => ({ id, name }));
   }, [procedures]);
 
   return (
@@ -400,11 +471,16 @@ function SubcategoryAccordion({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          {isOpen && linkedStations.length > 0 && (
+          {isOpen && (isGeneral || linkedStations.length > 0) && (
             <div className="flex items-center gap-2">
               <span className="hidden text-xs font-medium text-[var(--color-ink-3)] md:inline">
                 {isEs ? 'Estaciones:' : 'Stations:'}
               </span>
+              {isGeneral ? (
+                <span className="inline-flex items-center rounded-md bg-[var(--color-brand-tint)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-700)]">
+                  {isEs ? 'Todas las estaciones' : 'All stations'}
+                </span>
+              ) : (
               <div className="flex flex-wrap items-center gap-2">
                 {linkedStations.map((s) => (
                   <span
@@ -415,6 +491,7 @@ function SubcategoryAccordion({
                   </span>
                 ))}
               </div>
+              )}
             </div>
           )}
 
@@ -462,8 +539,8 @@ function SubcategoryAccordion({
                 compact
                 title={
                   isEs
-                    ? 'Sin procedimientos aún en esta subcategoría.'
-                    : 'No procedures added yet in this subcategory.'
+                    ? 'Sin procedimientos publicados aún en esta subcategoría.'
+                    : 'No published procedures yet in this subcategory.'
                 }
               />
             </div>
@@ -474,8 +551,10 @@ function SubcategoryAccordion({
                   <ProcedureListItem
                     key={proc.id}
                     procedure={proc}
+                    stations={stations}
                     isEs={isEs}
-                    onToggleStation={(stationId) => onToggleStation(proc.id, stationId)}
+                    isGeneral={isGeneral}
+                    onToggleStation={(next) => onToggleStation(proc.id, next)}
                     onOpenProcedure={() =>
                       router.push(`/${locale}/admin/library/${proc.slug}`)
                     }
@@ -490,14 +569,20 @@ function SubcategoryAccordion({
                 <span>
                   {procedures.length} {isEs ? 'procedimientos' : 'procedures'}
                   {' · '}
-                  {linkedStations.length}{' '}
-                  {linkedStations.length === 1
-                    ? isEs
-                      ? 'estación enlazada'
-                      : 'linked station'
-                    : isEs
-                      ? 'estaciones enlazadas'
-                      : 'linked stations'}
+                  {isGeneral ? (
+                    isEs ? 'Todas las estaciones' : 'All stations'
+                  ) : (
+                    <>
+                      {linkedStations.length}{' '}
+                      {linkedStations.length === 1
+                        ? isEs
+                          ? 'estación enlazada'
+                          : 'linked station'
+                        : isEs
+                          ? 'estaciones enlazadas'
+                          : 'linked stations'}
+                    </>
+                  )}
                 </span>
               </div>
             </div>
@@ -508,31 +593,72 @@ function SubcategoryAccordion({
   );
 }
 
-/** One procedure row with one station chip + single-select radio popover
- *  + the usual View/Edit/Add station kebab. The chip IS the picker entry
- *  point — clicking it swaps to another station; the picker helper text
- *  tells the manager that clicking the same station again clears it. */
+/** One procedure row. General categories show a static "All stations"
+ *  label; station-tied rows show the station chip (or the "No station"
+ *  pill) which opens the change-station picker — one procedure, one
+ *  station, no separate Add affordance. Kebab holds View / Edit /
+ *  Change station. */
 function ProcedureListItem({
   procedure,
+  stations,
   isEs,
+  isGeneral,
   onToggleStation,
   onOpenProcedure,
   onEditProcedure,
 }: {
   procedure: ProcedureRow;
+  stations: StationOption[];
   isEs: boolean;
-  onToggleStation: (stationId: string) => void;
+  isGeneral: boolean;
+  onToggleStation: (next: { id: string | null; name: string | null }) => void;
   onOpenProcedure: () => void;
   onEditProcedure: () => void;
 }): React.ReactElement {
-  const addTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const pickerTriggerRef = React.useRef<HTMLButtonElement>(null);
   const [pickerOpen, setPickerOpen] = React.useState(false);
+  // Draft selection inside the picker — committed only via Save, so one
+  // click never fires the API by itself.
+  const [draftStationId, setDraftStationId] = React.useState<string | null>(null);
 
-  // Resolve the assigned station. Unknown ids (stale data) fall back to the
-  // "No station" pill rather than rendering a broken chip.
-  const assignedStation = procedure.station
-    ? STATIONS.find((s) => s.id === procedure.station) ?? null
-    : null;
+  const openPicker = (): void => {
+    setDraftStationId(procedure.stationId);
+    setPickerOpen(true);
+  };
+
+  const savePicker = (): void => {
+    const target = stations.find((s) => s.id === draftStationId) ?? null;
+    setPickerOpen(false);
+    if ((target?.id ?? null) === procedure.stationId) return;
+    onToggleStation(
+      target ? { id: target.id, name: target.name } : { id: null, name: null },
+    );
+  };
+
+  const canChangeStation = !isGeneral && stations.length > 0;
+  const assignedStation =
+    procedure.stationId && procedure.stationName
+      ? { id: procedure.stationId, name: procedure.stationName }
+      : null;
+
+  const rowActions: RowActionItem[] = [
+    {
+      label: isEs ? 'Ver procedimiento' : 'View procedure',
+      onSelect: onOpenProcedure,
+    },
+    {
+      label: isEs ? 'Editar' : 'Edit',
+      onSelect: onEditProcedure,
+    },
+    ...(canChangeStation
+      ? [
+          {
+            label: isEs ? 'Cambiar estación' : 'Change station',
+            onSelect: () => openPicker(),
+          } as RowActionItem,
+        ]
+      : []),
+  ];
 
   return (
     <li className="transition-colors hover:bg-[var(--color-wash)]">
@@ -558,16 +684,27 @@ function ProcedureListItem({
         </div>
 
         <div className="flex shrink-0 items-center gap-4 pl-2" onClick={(e) => e.stopPropagation()}>
+          {isGeneral ? (
+            <span className="inline-flex items-center rounded-md bg-[var(--color-panel-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-2)] border border-[var(--color-line-2)]">
+              {isEs ? 'Todas las estaciones' : 'All stations'}
+            </span>
+          ) : !canChangeStation ? (
+            assignedStation ? (
+              <span className="inline-flex items-center rounded-md bg-[var(--color-panel-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)] border border-[var(--color-line-2)]">
+                {assignedStation.name}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-3)]">
+                {isEs ? 'Sin estación' : 'No station'}
+              </span>
+            )
+          ) : (
           <div className="flex flex-wrap items-center justify-end gap-2">
             {assignedStation ? (
-              // When a station is already attached the chip IS the picker
-              // entry point — clicking it swaps to another station. The ×
-              // is a visual cue only; the picker helper text tells the
-              // manager "click the same station again to clear", so the
-              // chip doesn't need a separate destructive affordance.
               <button
+                ref={pickerTriggerRef}
                 type="button"
-                onClick={() => setPickerOpen(true)}
+                onClick={() => openPicker()}
                 aria-haspopup="menu"
                 aria-expanded={pickerOpen}
                 aria-label={
@@ -584,59 +721,39 @@ function ProcedureListItem({
                 />
               </button>
             ) : (
-              <>
-                <span className="inline-flex items-center rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-3)]">
-                  {isEs ? 'Sin estación' : 'No station'}
-                </span>
-                <button
-                  ref={addTriggerRef}
-                  type="button"
-                  onClick={() => setPickerOpen(true)}
-                  aria-haspopup="menu"
-                  aria-expanded={pickerOpen}
-                  className="ml-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line-2)] bg-transparent px-3 py-1 text-xs font-semibold text-[var(--color-ink-2)] transition-colors hover:border-[var(--color-line-hover)] hover:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
-                >
-                  <LuPlus aria-hidden="true" className="text-xs" />
-                  {isEs ? 'Añadir' : 'Add'}
-                </button>
-              </>
+              <button
+                ref={pickerTriggerRef}
+                type="button"
+                onClick={() => openPicker()}
+                aria-haspopup="menu"
+                aria-expanded={pickerOpen}
+                aria-label={
+                  isEs ? 'Cambiar estación' : 'Change station'
+                }
+                className="inline-flex items-center rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+              >
+                {isEs ? 'Sin estación' : 'No station'}
+              </button>
             )}
           </div>
+          )}
 
           <span className="hidden text-sm leading-meta text-[var(--color-ink-3)] sm:inline">
-            {isEs ? procedure.updatedAgoEs : procedure.updatedAgoEn}
+            {updatedAgoLabel(procedure.updatedAt, isEs)}
           </span>
 
           <RowActions
-            items={[
-              {
-                label: isEs ? 'Ver procedimiento' : 'View procedure',
-                onSelect: onOpenProcedure,
-              },
-              {
-                label: isEs ? 'Editar' : 'Edit',
-                onSelect: onEditProcedure,
-              },
-              {
-                label: assignedStation
-                  ? isEs
-                    ? 'Cambiar estación'
-                    : 'Change station'
-                  : isEs
-                    ? 'Añadir estación'
-                    : 'Add station',
-                onSelect: () => setPickerOpen(true),
-              },
-            ]}
+            items={rowActions}
             triggerLabel={procedure.titleEn}
           />
         </div>
       </div>
 
+      {canChangeStation ? (
       <Popover
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        triggerRef={addTriggerRef}
+        triggerRef={pickerTriggerRef}
         align="end"
         side="bottom"
         width={280}
@@ -646,15 +763,19 @@ function ProcedureListItem({
             {isEs ? 'Asignar estación' : 'Assign station'}
           </p>
           <ul className="space-y-0.5">
-            {STATIONS.map((s) => {
-              const checked = procedure.station === s.id;
+            {stations.map((s) => {
+              const checked = draftStationId === s.id;
               return (
                 <li key={s.id}>
                   <button
                     type="button"
                     role="menuitemradio"
                     aria-checked={checked}
-                    onClick={() => onToggleStation(s.id)}
+                    onClick={() =>
+                      // Single-select draft: picking the current pick clears
+                      // it (back to no station); picking another swaps.
+                      setDraftStationId((cur) => (cur === s.id ? null : s.id))
+                    }
                     className={cn(
                       'flex w-full cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-md)] px-2 py-1.5 text-left transition-colors',
                       'hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-brand-tint)] focus-visible:outline-none',
@@ -679,13 +800,36 @@ function ProcedureListItem({
               );
             })}
           </ul>
-          <p className="px-2 pb-1 text-[11px] text-[var(--color-ink-3)]">
+          <p className="px-2 text-[11px] text-[var(--color-ink-3)]">
             {isEs
-              ? 'Selecciona la misma estación para quitarla.'
-              : 'Pick the same station again to clear.'}
+              ? 'Selecciona una estación y guarda los cambios.'
+              : 'Pick a station, then save to apply.'}
           </p>
+          <div className="flex items-center justify-end gap-2 border-t border-[var(--color-line)] px-2 py-2">
+            <button
+              type="button"
+              onClick={() => setPickerOpen(false)}
+              className="rounded-[var(--radius-md)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+            >
+              {isEs ? 'Cancelar' : 'Cancel'}
+            </button>
+            <button
+              type="button"
+              onClick={savePicker}
+              disabled={draftStationId === procedure.stationId}
+              className={cn(
+                'rounded-[var(--radius-md)] px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]',
+                draftStationId === procedure.stationId
+                  ? 'cursor-not-allowed bg-[var(--color-panel-2)] text-[var(--color-ink-3)]'
+                  : 'bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)]',
+              )}
+            >
+              {isEs ? 'Guardar' : 'Save'}
+            </button>
+          </div>
         </div>
       </Popover>
+      ) : null}
     </li>
   );
 }
