@@ -134,9 +134,9 @@ export function ModalBody({ children, className }: { children: React.ReactNode; 
  * The actions, bottom right, on the faintest ground so they read as the end of
  * the dialog. One primary at most; Cancel is neutral.
  */
-export function ModalFooter({ children }: { children: React.ReactNode }): React.ReactElement {
+export function ModalFooter({ children, className }: { children: React.ReactNode; className?: string }): React.ReactElement {
   return (
-    <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--color-line)] bg-[var(--color-wash)] px-5 py-3">
+    <footer className={cn('flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--color-line)] bg-[var(--color-wash)] px-5 py-3', className)}>
       {children}
     </footer>
   );
