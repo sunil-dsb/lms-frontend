@@ -1,4 +1,4 @@
-import http from '@/lib/http';
+import http, { backendApiUrl } from '@/lib/http';
 import { AUTH_ENDPOINTS } from './endpoints';
 import type { LoginCredentials, LoginResponse, AuthMeResponse, SetPasswordInput } from './types';
 import type { Employee, EmployeeRole } from '@/lib/types';
@@ -191,10 +191,8 @@ export async function activate(input: { token?: string; password: string; email?
       token?: string;
       redirectTo?: string;
     };
-  }>(AUTH_ENDPOINTS.SET_PASSWORD, {
+  }>(backendApiUrl(AUTH_ENDPOINTS.SET_PASSWORD), {
     password: input.password,
-    token: input.token || undefined,
-    email: input.email || undefined,
   });
 
   const rawEmp = data.data?.employee as any;

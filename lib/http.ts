@@ -21,6 +21,23 @@ const serverBaseURL = (() => {
   return `${isLocal ? 'http' : 'https'}://${raw}`;
 })();
 
+const publicApiBaseURL = (() => {
+  const raw = (
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    ''
+  ).trim().replace(/\/+$/, '');
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const isLocal = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(raw);
+  return `${isLocal ? 'http' : 'https'}://${raw}`;
+})();
+
+export function backendApiUrl(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return publicApiBaseURL ? `${publicApiBaseURL}${normalizedPath}` : normalizedPath;
+}
+
 const baseURL =
   typeof window !== 'undefined'
     ? '' // In browser, use same-origin relative URLs to proxy through Next.js rewrites (zero CORS)
