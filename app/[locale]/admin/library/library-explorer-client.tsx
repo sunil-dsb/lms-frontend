@@ -58,7 +58,7 @@ export function LibraryExplorerClient({ locale }: { locale: string }): React.Rea
 
   return (
     <LibraryProcedureExplorer
-      procedures={proceduresQuery.data ?? EMPTY_PROCEDURES}
+      procedures={proceduresQuery.data?.procedures ?? EMPTY_PROCEDURES}
       categories={categories}
       stations={stationsQuery.data ?? EMPTY_STATIONS}
       locale={locale}

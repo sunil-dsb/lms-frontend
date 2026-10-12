@@ -147,7 +147,7 @@ export function ResendInviteModal({
                   {employee.email || 'No email provided'}
                 </p>
               </div>
-              <StatusPill tone={employee.status === 'pending' ? 'warn' : employee.status === 'active' ? 'success' : 'neutral'}>
+              <StatusPill tone={employee.status === 'pending' ? 'warn' : employee.status === 'active' ? 'ok' : 'neutral'}>
                 {t(`status${employee.status.charAt(0).toUpperCase()}${employee.status.slice(1)}`)}
               </StatusPill>
             </div>
