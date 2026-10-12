@@ -17,7 +17,7 @@ import { PageHeader } from '@/components/admin/page-header';
 import { CategoryDetailSkeleton } from '@/components/admin/category-detail-skeleton';
 import { fetchProcedures, updateProcedureStation } from '@/services/library/api';
 import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
-import { backendSlug, categorySlugsMatch } from '@/services/categories/api';
+import { backendSlug, categorySlugsMatch, fetchBackendSubcategories } from '@/services/categories/api';
 import { useStations } from '@/services/stations/hooks';
 
 interface CategoryDetailClientProps {
@@ -128,8 +128,25 @@ export function CategoryDetailClient({
     };
   }, [initialCategory, slug]);
 
-  const subcategories = category?.subcategories ?? [];
   const categoryId = category?.id ?? null;
+
+  const subcategoriesQuery = useQuery({
+    queryKey: ['categories', 'backend-subcategories', categoryId],
+    queryFn: () => fetchBackendSubcategories(categoryId!),
+    enabled: Boolean(categoryId && isUuid(categoryId)),
+    staleTime: 60 * 60 * 1000,
+  });
+  const subcategories = React.useMemo(() => {
+    const live = subcategoriesQuery.data;
+    if (!live) return category?.subcategories ?? [];
+    return live.map((sub) => ({
+      id: sub.id,
+      categoryId: sub.categoryId || categoryId || undefined,
+      slug: backendSlug(sub.nameEn),
+      nameEn: sub.nameEn,
+      nameEs: sub.nameEs,
+    }));
+  }, [category?.subcategories, categoryId, subcategoriesQuery.data]);
 
   // Real procedures — published only, via the super_admin filter API.
   // Rows are matched to panels below by subcategory (exact id, slug, or

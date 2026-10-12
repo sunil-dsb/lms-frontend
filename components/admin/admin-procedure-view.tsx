@@ -9,7 +9,6 @@ import {
   LuArchiveRestore,
   LuArrowLeft,
   LuCircleCheck,
-  LuCopy,
   LuPencil,
   LuTrash2,
 } from 'react-icons/lu';
@@ -143,22 +142,7 @@ export function AdminProcedureView({
             icon: LuArchive,
             onSelect: () => void transition({ isArchived: true }),
           },
-      // 3. Export / Copy JSON (with attached Quiz if present)
-      {
-        label: 'Copy JSON (with Quiz)',
-        icon: LuCopy,
-        onSelect: () => {
-          const quiz = proc.quizId ? getQuizById(proc.quizId) : null;
-          const payload = {
-            ...proc,
-            quiz: quiz ?? null,
-          };
-          if (typeof navigator !== 'undefined' && navigator.clipboard) {
-            void navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-          }
-        },
-      },
-      // 4. Delete — destructive, gets the inline-confirm panel from RowActions.
+      // 3. Delete — destructive, gets the inline-confirm panel from RowActions.
       {
         label: t('actionsDelete'),
         icon: LuTrash2,

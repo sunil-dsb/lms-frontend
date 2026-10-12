@@ -277,8 +277,8 @@ function normalizeBlocks(blocks: any[]): any[] {
 
         ingredients = validIngredients.map((ing: any) => {
           let amounts = Array.isArray(ing.amounts) ? [...ing.amounts] : [];
-          amounts = amounts.map((a: any) => (typeof a === 'string' && a.trim().length > 0 ? a.trim() : '1'));
-          while (amounts.length < factors!.length) amounts.push('1');
+          amounts = amounts.map((a: any) => (typeof a === 'string' ? a.trim() : ''));
+          while (amounts.length < factors!.length) amounts.push('');
           if (amounts.length > factors!.length) amounts = amounts.slice(0, factors!.length);
 
           return {
@@ -348,8 +348,8 @@ function normalizeBlocks(blocks: any[]): any[] {
 
         ingredients = validIngredients.map((ing: any) => {
           let amounts = Array.isArray(ing.amounts) ? [...ing.amounts] : [];
-          amounts = amounts.map((a: any) => (typeof a === 'string' && a.trim().length > 0 ? a.trim() : '1'));
-          while (amounts.length < factors!.length) amounts.push('1');
+          amounts = amounts.map((a: any) => (typeof a === 'string' ? a.trim() : ''));
+          while (amounts.length < factors!.length) amounts.push('');
           if (amounts.length > factors!.length) amounts = amounts.slice(0, factors!.length);
 
           return {
@@ -417,8 +417,45 @@ export function normalizeBackendProcedure(raw: any): Procedure {
     : raw.station?.id || raw.stationId
       ? [raw.station?.id || raw.stationId]
       : [];
+  const normalizeBodyAmounts = (body: any): any => {
+    if (!body || !Array.isArray(body.blocks)) return body;
+    return {
+      ...body,
+      blocks: body.blocks.map((block: any) => {
+        if (!block || !['recipe', 'ingredients'].includes(block.kind) || !Array.isArray(block.ingredients)) {
+          return block;
+        }
+        const factors = Array.isArray(block.factors) && block.factors.length > 0 ? block.factors : [1];
+        return {
+          ...block,
+          ingredients: block.ingredients.map((ingredient: any) => {
+            if (!Array.isArray(ingredient?.amounts)) return ingredient;
+            const amounts = [...ingredient.amounts];
+            const base = typeof amounts[0] === 'string' ? amounts[0].trim() : '';
+            // Older writes filled absent factor values with "1". Treat that
+            // generated placeholder as missing so the recipe view can scale
+            // from the base amount. Real factor values remain untouched.
+            for (let i = 1; i < amounts.length; i += 1) {
+              if (
+                typeof amounts[i] === 'string' &&
+                amounts[i].trim() === '1' &&
+                base !== '' &&
+                base !== '1' &&
+                (factors[i] ?? 1) > (factors[0] ?? 1)
+              ) {
+                amounts[i] = '';
+              }
+            }
+            return { ...ingredient, amounts };
+          }),
+        };
+      }),
+    };
+  };
   return {
     ...raw,
+    bodyEn: normalizeBodyAmounts(raw.bodyEn),
+    bodyEs: normalizeBodyAmounts(raw.bodyEs),
     status,
     stationIds,
     stationId: stationIds[0] ?? null,

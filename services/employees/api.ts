@@ -9,17 +9,18 @@ import type {
 } from './types';
 
 function normalizeEmployee<T extends Employee>(raw: any): T {
-  const roleIds = Array.isArray(raw?.roleIds)
+  const stationIds = Array.isArray(raw?.stationIds)
+    ? raw.stationIds
+    : Array.isArray(raw?.stations)
+      ? raw.stations.map((station: { id: string }) => station.id)
+      : [];
+  const normalizedRoleIds = Array.isArray(raw?.roleIds)
     ? raw.roleIds
     : Array.isArray(raw?.jobIds)
       ? raw.jobIds
-      : [];
-  const jobIds = Array.isArray(raw?.jobIds)
-    ? raw.jobIds
-    : Array.isArray(raw?.roleIds)
-      ? raw.roleIds
-      : [];
-  const stationIds = Array.isArray(raw?.stationIds) ? raw.stationIds : [];
+      : Array.isArray(raw?.jobs)
+        ? raw.jobs.map((job: { id: string }) => job.id)
+        : [];
   const accessLevel =
     raw?.accessLevel ??
     (raw?.role === 'manager'
@@ -31,8 +32,8 @@ function normalizeEmployee<T extends Employee>(raw: any): T {
   return {
     ...raw,
     accessLevel,
-    roleIds,
-    jobIds,
+    roleIds: normalizedRoleIds,
+    jobIds: normalizedRoleIds,
     stationIds,
   } as T;
 }
