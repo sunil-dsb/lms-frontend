@@ -35,7 +35,7 @@ export function useCreateCategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: CreateCategoryInput & { locationId: string }) => createCategory(input),
+    mutationFn: (input: CreateCategoryInput) => createCategory(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
     },

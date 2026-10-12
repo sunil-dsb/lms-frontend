@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { cookies } from 'next/headers';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { listLocations, ApiException, fetchMe } from '@/lib/api';
 import { fetchBackendCategories } from '@/services/categories/api';
 import type { Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -14,17 +13,6 @@ interface PageProps {
 }
 
 export const dynamic = 'force-dynamic';
-
-async function readFirstManagedLocation(
-  cookieHeader: string,
-): Promise<string | null> {
-  try {
-    const res = await listLocations(cookieHeader);
-    return res.locations[0]?.id ?? null;
-  } catch {
-    return null;
-  }
-}
 
 export default async function AdminLibraryCategoriesPage({
   params,
@@ -40,18 +28,6 @@ export default async function AdminLibraryCategoriesPage({
     .map((c) => `${c.name}=${c.value}`)
     .join('; ');
 
-  let locationId: string | null = null;
-  try {
-    const me = await fetchMe(cookieHeader);
-    locationId = me.employee.locationId;
-  } catch (err) {
-    if (!(err instanceof ApiException)) throw err;
-    locationId = await readFirstManagedLocation(cookieHeader);
-  }
-  if (!locationId) {
-    locationId = await readFirstManagedLocation(cookieHeader);
-  }
-
   let categories: Category[] = [];
   let loadError: string | null = null;
   try {
@@ -64,7 +40,7 @@ export default async function AdminLibraryCategoriesPage({
     <div className="mx-auto max-w-page space-y-6">
       <PageHeader
         title={t('pageTitle')}
-        actions={locationId ? <CreateCategoryButton locationId={locationId} /> : null}
+        actions={<CreateCategoryButton />}
       />
 
       {loadError ? (

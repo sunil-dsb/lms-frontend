@@ -10,11 +10,11 @@
 
 import {
   listCategories,
-  createCategory as mockCreateCategory,
   updateCategory as mockUpdateCategory,
   archiveCategory as mockArchiveCategory,
 } from '@/lib/api';
 import type { Category } from '@/lib/types';
+import http from '@/lib/http';
 import type {
   CreateCategoryInput,
   UpdateCategoryInput,
@@ -33,17 +33,29 @@ export async function fetchCategories(
 }
 
 export async function createCategory(
-  input: CreateCategoryInput & { locationId: string }
+  input: CreateCategoryInput
 ): Promise<Category> {
-  const { category } = await mockCreateCategory({
-    locationId: input.locationId,
+  const { data } = await http.post<{
+    success: boolean;
+    data: { category: { id: string; nameEn: string; nameEs: string; categoryType: string; categoryIcon: string } };
+  }>(CATEGORIES_ENDPOINTS.LIST, {
     nameEn: input.nameEn,
     nameEs: input.nameEs,
-    kind: input.kind,
-    icon: input.icon,
-    subcategories: input.subcategories,
+    categoryType: input.kind === 'station-tied' ? 'station_based' : 'general',
+    categoryIcon: input.icon || 'folder',
   });
-  return category;
+  clearBackendCategoriesCache();
+  const category = data.data.category;
+  return {
+    id: category.id,
+    slug: backendSlug(category.nameEn),
+    nameEn: category.nameEn,
+    nameEs: category.nameEs,
+    icon: category.categoryIcon,
+    isArchived: false,
+    kind: /station/i.test(category.categoryType) ? 'station-tied' : 'general',
+    subcategories: [],
+  };
 }
 
 export async function updateCategory(
@@ -124,15 +136,34 @@ const inFlightBackendCategories = new Map<string, Promise<Category[]>>();
 const cachedBackendCategories = new Map<string, { data: Category[]; expiresAt: number }>();
 const BACKEND_CATEGORIES_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour in-memory cache
 
+export function clearBackendCategoriesCache(): void {
+  inFlightBackendCategories.clear();
+  cachedBackendCategories.clear();
+}
+
+export function clearBackendSubcategoriesCache(categoryId?: string): void {
+  for (const key of cachedBackendSubcategories.keys()) {
+    if (!categoryId || key.endsWith(`::${categoryId}`)) cachedBackendSubcategories.delete(key);
+  }
+  for (const key of inFlightBackendSubcategories.keys()) {
+    if (!categoryId || key.endsWith(`::${categoryId}`)) inFlightBackendSubcategories.delete(key);
+  }
+}
+
 export async function fetchBackendCategories(
   options: BackendCategoryOptions = {},
   cookieHeader?: string,
 ): Promise<Category[]> {
+  // The server-rendered categories page is refreshed after a create. A
+  // process-wide server cache would keep showing the old list because the
+  // browser-side POST cannot clear that server memory. Keep the cache only
+  // in the browser, where mutations can invalidate it locally.
+  const useLocalCache = typeof window !== 'undefined';
   const cacheKey = `${cookieHeader || 'client'}::${options.search || ''}::${options.page || 1}::${options.limit || 100}`;
   const now = Date.now();
 
   const cached = cachedBackendCategories.get(cacheKey);
-  if (cached && cached.expiresAt > now) {
+  if (useLocalCache && cached && cached.expiresAt > now) {
     return cached.data;
   }
 
@@ -180,7 +211,9 @@ export async function fetchBackendCategories(
         }),
       );
 
-      cachedBackendCategories.set(cacheKey, { data: res, expiresAt: Date.now() + BACKEND_CATEGORIES_CACHE_TTL_MS });
+      if (useLocalCache) {
+        cachedBackendCategories.set(cacheKey, { data: res, expiresAt: Date.now() + BACKEND_CATEGORIES_CACHE_TTL_MS });
+      }
       return res;
     } finally {
       inFlightBackendCategories.delete(cacheKey);
@@ -242,6 +275,18 @@ export async function fetchBackendSubcategories(
 
   inFlightBackendSubcategories.set(cacheKey, request);
   return request;
+}
+
+export async function createBackendSubcategory(
+  categoryId: string,
+  input: { nameEn: string; nameEs: string },
+): Promise<LiveSubcategory> {
+  const { data } = await http.post<{
+    success: boolean;
+    data: { subcategory: LiveSubcategory };
+  }>(`/api/v1/categories/${categoryId}/subcategories`, input);
+  clearBackendSubcategoriesCache(categoryId);
+  return data.data.subcategory;
 }
 
 /** Resolve a wizard-picked subcategory to a live backend UUID.

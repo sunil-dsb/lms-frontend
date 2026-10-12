@@ -7,6 +7,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getSubcategoryIcon } from '@/lib/category-icons';
 import type { Category, Procedure, Subcategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui/modal';
+import { BilingualInput, type BilingualValue } from '@/components/ui/bilingual-input';
 import { IconTile } from '@/components/ui/icon-tile';
 import { Popover } from '@/components/ui/popover';
 import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
@@ -17,7 +19,7 @@ import { PageHeader } from '@/components/admin/page-header';
 import { CategoryDetailSkeleton } from '@/components/admin/category-detail-skeleton';
 import { fetchProcedures, updateProcedureStation } from '@/services/library/api';
 import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
-import { backendSlug, categorySlugsMatch, fetchBackendCategories, fetchBackendSubcategories } from '@/services/categories/api';
+import { backendSlug, categorySlugsMatch, createBackendSubcategory, fetchBackendCategories, fetchBackendSubcategories } from '@/services/categories/api';
 import { useStations } from '@/services/stations/hooks';
 
 interface CategoryDetailClientProps {
@@ -96,6 +98,10 @@ export function CategoryDetailClient({
   const [category, setCategory] = React.useState<Category | null>(initialCategory);
   const [isResolving, setIsResolving] = React.useState<boolean>(initialCategory === null);
   const [notFound, setNotFound] = React.useState<boolean>(false);
+  const [addSubcategoryOpen, setAddSubcategoryOpen] = React.useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = React.useState<BilingualValue>({ en: '', es: '' });
+  const [creatingSubcategory, setCreatingSubcategory] = React.useState(false);
+  const [subcategoryError, setSubcategoryError] = React.useState<string | null>(null);
 
   // If the server did not resolve the category, retry against the backend
   // category API instead of filling this page from demo data.
@@ -333,13 +339,79 @@ export function CategoryDetailClient({
         eyebrowHref={`/${locale}/admin/library/categories`}
         title={isEs ? category.nameEs : category.nameEn}
         actions={
-          <Link href={`/${locale}/admin/library/categories`}>
-            <Button variant="secondary">
-              {isEs ? 'Volver a categorías' : 'Back to categories'}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="primary" icon={LuPlus} onClick={() => setAddSubcategoryOpen(true)}>
+              {isEs ? 'Agregar subcategorÃ­a' : 'Add subcategory'}
             </Button>
-          </Link>
+            <Link href={`/${locale}/admin/library/categories`}>
+              <Button variant="secondary">
+                {isEs ? 'Volver a categorías' : 'Back to categories'}
+              </Button>
+            </Link>
+          </div>
         }
       />
+
+      <Modal
+        open={addSubcategoryOpen}
+        onClose={() => {
+          if (creatingSubcategory) return;
+          setAddSubcategoryOpen(false);
+          setSubcategoryError(null);
+        }}
+        size="md"
+      >
+        <form
+          className="flex min-h-0 max-h-full flex-col"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (!categoryId || creatingSubcategory) return;
+            const nameEn = newSubcategoryName.en.trim() || newSubcategoryName.es.trim();
+            const nameEs = newSubcategoryName.es.trim() || newSubcategoryName.en.trim();
+            if (!nameEn || !nameEs) return;
+            setCreatingSubcategory(true);
+            setSubcategoryError(null);
+            try {
+              await createBackendSubcategory(categoryId, { nameEn, nameEs });
+              await queryClient.invalidateQueries({ queryKey: ['categories', 'backend-subcategories', categoryId] });
+              setAddSubcategoryOpen(false);
+              setNewSubcategoryName({ en: '', es: '' });
+            } catch (error) {
+              setSubcategoryError(error instanceof Error ? error.message : 'Could not create subcategory.');
+            } finally {
+              setCreatingSubcategory(false);
+            }
+          }}
+        >
+          <ModalHeader
+            title={isEs ? 'Agregar subcategorÃ­a' : 'Add subcategory'}
+            description={isEs ? `Crear una subcategorÃ­a en ${category.nameEs}.` : `Create a subcategory in ${category.nameEn}.`}
+            onClose={() => {
+              if (creatingSubcategory) return;
+              setAddSubcategoryOpen(false);
+              setSubcategoryError(null);
+            }}
+          />
+          <ModalBody className="max-h-[calc(100dvh-14rem)] overscroll-contain">
+            <BilingualInput
+              label={isEs ? 'Nombre de subcategorÃ­a' : 'Subcategory name'}
+              value={newSubcategoryName}
+              onChange={setNewSubcategoryName}
+              maxLength={200}
+              placeholder={{ en: 'e.g. Plating', es: 'p. ej. Emplatado' }}
+            />
+            {subcategoryError ? <p role="alert" className="text-sm text-[var(--color-bad)]">{subcategoryError}</p> : null}
+          </ModalBody>
+          <ModalFooter className="mb-3">
+            <Button type="button" variant="neutral" disabled={creatingSubcategory} onClick={() => setAddSubcategoryOpen(false)}>
+              {isEs ? 'Cancelar' : 'Cancel'}
+            </Button>
+            <Button type="submit" variant="primary" disabled={creatingSubcategory || (!newSubcategoryName.en.trim() && !newSubcategoryName.es.trim())}>
+              {creatingSubcategory ? (isEs ? 'Guardando...' : 'Saving...') : (isEs ? 'Crear' : 'Create')}
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
 
       {proceduresQuery.isError ? (
         <p
