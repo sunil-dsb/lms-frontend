@@ -7,9 +7,15 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 // Tolerates a bare `host:port` (no scheme) — env files on the team mix
 // `http://192.168.0.153:8000` and `192.168.0.153:8000`, and Next rejects a
 // destination that doesn't start with `/`, `http://` or `https://`.
+// A bare public hostname gets https:// — the production backend 301s plain
+// HTTP to HTTPS, and the rewrite would hand that redirect to the browser,
+// which then calls the backend cross-origin instead of through this proxy.
+const LOCAL_HOST = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i;
+
 function normalizeOrigin(raw: string | undefined, fallback: string): string {
   const v = (raw ?? fallback).trim().replace(/\/+$/, '');
-  return /^https?:\/\//i.test(v) ? v : `http://${v}`;
+  if (/^https?:\/\//i.test(v)) return v;
+  return `${LOCAL_HOST.test(v) ? 'http' : 'https'}://${v}`;
 }
 
 const BACKEND_ORIGIN = normalizeOrigin(
