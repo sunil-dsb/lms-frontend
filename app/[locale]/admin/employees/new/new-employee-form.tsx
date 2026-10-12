@@ -14,8 +14,7 @@ import { LuUserPlus, LuLoader } from 'react-icons/lu';
 import { createEmployee } from '@/services/employees/api';
 import { toast } from '@/components/ui/toast';
 import { fetchLocations } from '@/services/locations/api';
-import { fetchJobs, fetchRoles, fetchJobStations } from '@/services/jobs/api';
-import { fetchStations } from '@/services/stations/api';
+import { fetchJobs, fetchJobStations } from '@/services/jobs/api';
 import { ApiException } from '@/lib/api';
 import type {
   AccessLevel,
@@ -96,7 +95,7 @@ export function NewEmployeeForm({
   const [result, setResult] = useState<{ employee: Employee; invite: InviteResult } | null>(null);
   const [isPending, startTransition] = useTransition();
   const hasLoadedRef = React.useRef(false);
-  // Role→stations fetches race when roles are toggled quickly: a slow
+  // Roleâ†’stations fetches race when roles are toggled quickly: a slow
   // response for an older selection must not overwrite the newer one
   // (stale role sets re-add stations the manager just removed).
   const roleFetchSeq = React.useRef(0);
@@ -279,7 +278,7 @@ export function NewEmployeeForm({
     setIsLoadingStations(true);
     try {
       const { stations: fetchedStations } = await fetchJobStations(nextRoleIds);
-      // A newer role change already fired — this response is stale, drop it.
+      // A newer role change already fired â€” this response is stale, drop it.
       if (seq !== roleFetchSeq.current) return;
       const newAvailableStations: Station[] = fetchedStations.map((s, idx) => ({
         id: s.id,
@@ -299,7 +298,7 @@ export function NewEmployeeForm({
         stationIds: f.stationIds.filter((id) => availableStationIdSet.has(id)),
       }));
     } catch (err) {
-      // Surface the backend message — a stuck "Loading stations..." with
+      // Surface the backend message â€” a stuck "Loading stations..." with
       // only a console line left the manager guessing.
       const msg =
         err instanceof ApiException && err.message
@@ -411,7 +410,7 @@ export function NewEmployeeForm({
 
     startTransition(async () => {
       try {
-        // Send EXACTLY what's checked — and only what's still offered for
+        // Send EXACTLY what's checked â€” and only what's still offered for
         // the current roles. Anything checked but no longer available (e.g.
         // roles changed while a stations fetch failed) is dropped rather
         // than silently persisted.
@@ -444,7 +443,7 @@ export function NewEmployeeForm({
         setResult(res);
       } catch (err) {
         // Surface the backend's own message field (ApiException.message is
-        // the server text) in both the inline alert and a toast — same
+        // the server text) in both the inline alert and a toast â€” same
         // pattern as the invite-accept flow. Falls back to generic strings
         // only when the server sent no text.
         const msg =
@@ -785,7 +784,7 @@ export function NewEmployeeForm({
                 disabled={isPending}
                 options={[
                   { value: 'en', label: 'English (EN)' },
-                  { value: 'es', label: 'Español (ES)' },
+                  { value: 'es', label: 'EspaÃ±ol (ES)' },
                 ]}
               />
             </div>

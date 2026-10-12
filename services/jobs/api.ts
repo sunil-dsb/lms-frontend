@@ -2,31 +2,44 @@ import http from '@/lib/http';
 import { JOBS_ENDPOINTS } from './endpoints';
 import type { Job, Role, JobWithStations, CreateRoleInput, UpdateRoleInput } from './types';
 
-export async function fetchJobs(
-  cookieHeader?: string,
-): Promise<{ jobs: Job[] }> {
-  const headers: Record<string, string> = {};
+const cacheTtlMs = 5 * 60 * 1000;
+const jobsCache = new Map<string, { value: { jobs: Job[] }; expiresAt: number }>();
+const jobsRequests = new Map<string, Promise<{ jobs: Job[] }>>();
+const stationsCache = new Map<string, { value: { stations: Array<{ id: string; name: string }> }; expiresAt: number }>();
+const stationsRequests = new Map<string, Promise<{ stations: Array<{ id: string; name: string }> }>>();
 
-  if (cookieHeader) {
-    headers['Cookie'] = cookieHeader;
-    const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
-    if (tokenMatch) {
-      headers['Authorization'] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
-    }
-  }
-
-  const { data } = await http.get<{
-    success: boolean;
-    data: { jobs: Job[] };
-  }>(JOBS_ENDPOINTS.LIST, {
-    headers: Object.keys(headers).length ? headers : undefined,
-    // Backend paginates (default 10) — the roles catalog is small, take all.
-    params: { limit: 200 },
-  });
-
-  return { jobs: data.data?.jobs ?? [] };
+function requestHeaders(cookieHeader?: string): Record<string, string> | undefined {
+  if (!cookieHeader) return undefined;
+  const headers: Record<string, string> = { Cookie: cookieHeader };
+  const tokenMatch = cookieHeader.match(/(?:^|;\\s*)lms_token=([^;]+)/);
+  if (tokenMatch) headers.Authorization = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+  return headers;
 }
 
+export function clearJobsCache(): void {
+  jobsCache.clear();
+  jobsRequests.clear();
+  stationsCache.clear();
+  stationsRequests.clear();
+}
+
+export async function fetchJobs(cookieHeader?: string): Promise<{ jobs: Job[] }> {
+  const key = cookieHeader || 'client';
+  const cached = jobsCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const pending = jobsRequests.get(key);
+  if (pending) return pending;
+  const request = http.get<{ success: boolean; data: { jobs: Job[] } }>(JOBS_ENDPOINTS.LIST, {
+    headers: requestHeaders(cookieHeader),
+    params: { page: 1, limit: 10, search: '' },
+  }).then(({ data }) => {
+    const value = { jobs: data.data?.jobs ?? [] };
+    jobsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
+    return value;
+  }).finally(() => jobsRequests.delete(key));
+  jobsRequests.set(key, request);
+  return request;
+}
 export async function fetchJobsWithStations(
   cookieHeader?: string,
 ): Promise<{ jobs: JobWithStations[] }> {
@@ -47,7 +60,7 @@ export async function fetchRoles(
     id: j.id,
     name: j.name,
     clearanceLevel: 'general',
-    stationIds: j.stations.map((s) => s.id),
+    stationIds: j.stationIds ?? [],
     createdAt: j.createdAt || new Date().toISOString(),
   }));
   return { roles };
@@ -57,33 +70,29 @@ export async function fetchJobStations(
   jobIds: string[],
   cookieHeader?: string,
 ): Promise<{ stations: Array<{ id: string; name: string }> }> {
-  if (!jobIds.length) {
-    return { stations: [] };
-  }
-
-  // No dedicated backend route derivable through the proxy
-  // (GET /jobs/stations is QUERY-only) — resolve locally instead: jobs
-  // carry their stationIds, names come from the stations list. Both
-  // calls below are cached, so this costs no extra round-trips.
-  const [{ jobs }, { stations }] = await Promise.all([
-    fetchJobs(cookieHeader),
-    import('@/services/stations/api').then((m) => m.fetchStations({}, cookieHeader)),
-  ]);
-  const wanted = new Set(jobIds);
-  const ids = new Set<string>();
-  for (const job of jobs) {
-    if (!wanted.has(job.id)) continue;
-    for (const sid of job.stationIds ?? []) ids.add(sid);
-  }
-  const byId = new Map(stations.map((s) => [s.id, s.name] as const));
-  return {
-    stations: [...ids]
-      .filter((id) => byId.has(id))
-      .map((id) => ({ id, name: byId.get(id)! }))
-      .sort((a, b) => a.name.localeCompare(b.name)),
-  };
+  if (!jobIds.length) return { stations: [] };
+  const ids = [...new Set(jobIds)].sort();
+  const key = `${cookieHeader || 'client'}:${ids.join(',')}`;
+  const cached = stationsCache.get(key);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  const pending = stationsRequests.get(key);
+  if (pending) return pending;
+  const request = http.request<{
+    success: boolean;
+    data: { stations: Array<{ id: string; name: string }> };
+  }>({
+    method: 'QUERY',
+    url: JOBS_ENDPOINTS.STATIONS,
+    headers: requestHeaders(cookieHeader),
+    params: { jobIds: ids.join(',') },
+  }).then(({ data }) => {
+    const value = { stations: data.data?.stations ?? [] };
+    stationsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
+    return value;
+  }).finally(() => stationsRequests.delete(key));
+  stationsRequests.set(key, request);
+  return request;
 }
-
 export async function createJob(
   input: { name: string },
 ): Promise<{ job: Job }> {
@@ -92,6 +101,7 @@ export async function createJob(
     data: { job: Job };
   }>(JOBS_ENDPOINTS.CREATE, input);
 
+  clearJobsCache();
   return { job: data.data.job };
 }
 
@@ -104,10 +114,12 @@ export async function updateJob(
     data: { job: Job };
   }>(JOBS_ENDPOINTS.UPDATE(id), patch);
 
+  clearJobsCache();
   return { job: data.data.job };
 }
 
 export async function deleteJob(id: string): Promise<{ ok: true }> {
   await http.delete(JOBS_ENDPOINTS.DELETE(id));
+  clearJobsCache();
   return { ok: true };
 }
