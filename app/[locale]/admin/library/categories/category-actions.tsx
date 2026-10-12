@@ -77,6 +77,7 @@ interface CategoryActionsProps {
 export function CategoryActions({ category }: CategoryActionsProps): React.ReactElement {
   const t = useTranslations('admin.library.categories');
   const tCommon = useTranslations('admin');
+  const isEs = useLocale() === 'es';
   const router = useRouter();
   const [isPending, setIsPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -107,6 +108,11 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
         label: t('archive'),
         icon: LuArchive,
         destructive: true,
+        confirmTitle: isEs ? 'Archivar categorÃ­a' : 'Archive category',
+        confirmDescription: isEs
+          ? `"${category.nameEs || category.nameEn}" se archivarÃ¡. Puedes restaurarla mÃ¡s tarde.`
+          : `"${category.nameEn}" will be archived. You can restore it later.`,
+        confirmLabel: isEs ? 'SÃ­, archivar' : 'Yes, archive',
         onSelect: () => {
           void runArchive(category);
         },
@@ -180,11 +186,7 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
   );
 }
 
-interface CreateButtonProps {
-  locationId: string;
-}
-
-export function CreateCategoryButton({ locationId }: CreateButtonProps): React.ReactElement {
+export function CreateCategoryButton(): React.ReactElement {
   const t = useTranslations('admin.library.categories');
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -212,7 +214,6 @@ export function CreateCategoryButton({ locationId }: CreateButtonProps): React.R
         <CategoryForm
           key="create"
           mode="create"
-          locationId={locationId}
           category={null}
           pending={pending}
           error={error}
@@ -233,7 +234,6 @@ export function CreateCategoryButton({ locationId }: CreateButtonProps): React.R
 
 interface CategoryFormProps {
   mode: 'create' | 'rename';
-  locationId?: string;
   category: Category | null;
   pending: boolean;
   error: string | null;
@@ -247,7 +247,6 @@ interface CategoryFormProps {
 
 function CategoryForm({
   mode,
-  locationId,
   category,
   pending,
   error,
@@ -279,8 +278,7 @@ function CategoryForm({
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault();
+  async function submitCategory(): Promise<void> {
     if (pending) return;
     onErrorChange(null);
     onPendingChange(true);
@@ -295,9 +293,7 @@ function CategoryForm({
 
     try {
       if (mode === 'create') {
-        if (!locationId) throw new Error('Missing locationId');
         await createMutation.mutateAsync({
-          locationId,
           nameEn: finalEn,
           nameEs: finalEs,
           kind,
@@ -319,6 +315,11 @@ function CategoryForm({
     } finally {
       onPendingChange(false);
     }
+  }
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>): void {
+    e.preventDefault();
+    void submitCategory();
   }
 
   // Either name is enough — Spanish is optional, English is optional, but at
@@ -355,7 +356,7 @@ function CategoryForm({
 
       {/* The header draws no icon: the chosen one is previewed beside Choose
           icon below, and a second copy in the header was the same mark twice. */}
-      <ModalBody className="space-y-4">
+      <ModalBody className="max-h-[calc(100dvh-14rem)] overscroll-contain space-y-4">
         {/* Bilingual adaptive input for category name */}
         <div className="space-y-1.5">
           <BilingualInput
@@ -462,23 +463,31 @@ function CategoryForm({
           )}
         </div>
 
-        {error && (
-          <p
-            role="alert"
-            className="rounded-[var(--radius-md)] bg-[var(--color-bad-tint)] px-3 py-2 text-sm font-medium text-[var(--color-bad)]"
-          >
-            {error}
-          </p>
-        )}
       </ModalBody>
 
-      <ModalFooter>
+      <ModalFooter className="mb-3">
         <Button type="button" variant="neutral" onClick={onCancel} disabled={pending}>
           {cancelLabel}
         </Button>
-        <Button type="submit" variant="primary" disabled={!canSubmit}>
-          {mode === 'create' ? (isEs ? 'Crear' : 'Create') : saveLabel}
-        </Button>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {error ? (
+            <p role="alert" className="min-w-0 flex-1 text-left text-xs font-medium text-[var(--color-bad)]">
+              {error}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            variant="primary"
+            disabled={!canSubmit}
+            onClick={() => void submitCategory()}
+          >
+            {pending
+              ? (isEs ? 'Guardando...' : 'Saving...')
+              : mode === 'create'
+                ? (isEs ? 'Crear' : 'Create')
+                : saveLabel}
+          </Button>
+        </div>
       </ModalFooter>
     </form>
   );
