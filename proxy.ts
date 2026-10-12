@@ -24,6 +24,19 @@ const intlMiddleware = createIntlMiddleware(routing);
  * any URL without `?as=`) snaps the chrome back to the default.
  */
 export default function proxy(request: NextRequest): NextResponse {
+  // Normalize malformed legacy invite links where the backend URL and API
+  // path were embedded in the frontend invite route, e.g.
+  // /en/invite/api.example.com/api/v1/auth/invites/en/<code>.
+  const legacyInviteMatch = request.nextUrl.pathname.match(
+    /^\/([a-z]{2})\/invite\/.+\/api\/v1\/auth\/invites\/[a-z]{2}\/([^/]+)\/?$/i,
+  );
+  if (legacyInviteMatch) {
+    const [, locale, inviteCode] = legacyInviteMatch;
+    const normalizedUrl = request.nextUrl.clone();
+    normalizedUrl.pathname = `/${locale}/invite/${encodeURIComponent(inviteCode)}`;
+    return NextResponse.redirect(normalizedUrl, 308);
+  }
+
   const asParam = request.nextUrl.searchParams.get('as');
   const viewAs = asParam === 'admin' || asParam === 'employee' ? asParam : null;
 
@@ -54,5 +67,5 @@ export default function proxy(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)', '/:locale/invite/:path*'],
 };
