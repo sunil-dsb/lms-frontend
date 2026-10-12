@@ -8,6 +8,22 @@ import type {
   EmployeeFilterOptions,
 } from './types';
 
+function frontendInviteUrl(inviteUrl: string): string {
+  if (!inviteUrl) return '';
+  try {
+    const parsed = new URL(inviteUrl, typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
+    const inviteMatch = parsed.pathname.match(/\/auth\/invites\/([^/]+)\/([^/]+)\/?$/);
+    if (inviteMatch) {
+      const [, locale, token] = inviteMatch;
+      const origin = typeof window === 'undefined' ? '' : window.location.origin;
+      return `${origin}/${locale}/invite/${encodeURIComponent(token)}`;
+    }
+  } catch {
+    // Keep an unrecognized invite URL as returned by the API.
+  }
+  return inviteUrl;
+}
+
 function normalizeEmployee<T extends Employee>(raw: any): T {
   const stationIds = Array.isArray(raw?.stationIds)
     ? raw.stationIds
@@ -116,7 +132,7 @@ export async function createEmployee(
   });
 
   const invite: InviteResult = {
-    url: data.data?.inviteUrl || '',
+    url: frontendInviteUrl(data.data?.inviteUrl || ''),
     code: '',
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   };
@@ -136,7 +152,7 @@ export async function resendInvite(
 
   return {
     invite: {
-      url: data.data?.inviteUrl || '',
+      url: frontendInviteUrl(data.data?.inviteUrl || ''),
       code: '',
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     },

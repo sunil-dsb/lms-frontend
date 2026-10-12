@@ -32,7 +32,21 @@ export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.Re
 
   useEffect(() => {
     const queryToken = searchParams.get('token');
-    const actualToken = (token && token !== 'token' ? token : queryToken) || queryToken || token;
+    const rawToken = (token && token !== 'token' ? token : queryToken) || queryToken || token;
+    let actualToken = rawToken;
+
+    // Older invite links could accidentally include the backend URL and API
+    // path in the route token. Keep only the final invite code in that case.
+    if (rawToken) {
+      try {
+        const parsed = new URL(rawToken, window.location.origin);
+        const inviteMatch = parsed.pathname.match(/\/auth\/invites\/[^/]+\/([^/]+)\/?$/);
+        if (inviteMatch) actualToken = inviteMatch[1];
+        else if (parsed.pathname.includes('/')) actualToken = parsed.pathname.split('/').filter(Boolean).at(-1) || rawToken;
+      } catch {
+        actualToken = rawToken.split('/').filter(Boolean).at(-1) || rawToken;
+      }
+    }
 
     if (actualToken && locale) {
       const isLocal =
@@ -47,7 +61,7 @@ export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.Re
            '');
 
       // Full browser redirect so backend can set the secure HttpOnly cookie
-      window.location.href = `${backendUrl}/api/v1/auth/invites/${locale}/${actualToken}`;
+      window.location.href = `${backendUrl.replace(/\/$/, '')}/api/v1/auth/invites/${locale}/${encodeURIComponent(actualToken)}`;
     } else {
       router.replace(`/${locale}/login`);
     }

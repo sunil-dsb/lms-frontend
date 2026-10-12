@@ -67,13 +67,10 @@ export function ResendInviteModal({
     if (!inviteResult?.url) return '';
     try {
       if (typeof window !== 'undefined') {
-        const isLocal =
-          window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1';
-        if (isLocal) {
-          const urlObj = new URL(inviteResult.url);
-          return `${window.location.origin}${urlObj.pathname}${urlObj.search}`;
-        }
+        const urlObj = new URL(inviteResult.url, window.location.origin);
+        const inviteMatch = urlObj.pathname.match(/\/auth\/invites\/([^/]+)\/([^/]+)\/?$/);
+        if (inviteMatch) return `${window.location.origin}/${inviteMatch[1]}/invite/${encodeURIComponent(inviteMatch[2])}`;
+        if (urlObj.pathname.match(/^\/[^/]+\/invite\/[^/]+\/?$/)) return `${window.location.origin}${urlObj.pathname}${urlObj.search}`;
       }
     } catch {
       // fallback
