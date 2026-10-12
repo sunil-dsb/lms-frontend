@@ -1,28 +1,5 @@
 allowBuilds:
-  '2': true
-  ',': true
-  '-': true
-  /: true
-  '@': true
   '@parcel/watcher': true
   '@swc/core': true
-  a: true
-  b: true
-  c: true
-  d: true
-  e: true
-  g: true
-  h: true
-  i: true
-  l: true
-  m: true
-  n: true
-  o: true
-  p: true
-  r: true
-  s: true
-  t: true
-  u: true
+  sharp: true
   unrs-resolver: true
-  v: true
-  w: true
