@@ -1,5 +1,6 @@
 import http from '@/lib/http';
 import { STATIONS_ENDPOINTS } from './endpoints';
+import { ApiException } from '@/lib/errors';
 import type { Station, CreateStationInput, UpdateStationInput, StationFilterOptions } from './types';
 
 const inFlightStations = new Map<string, Promise<{ stations: Station[] }>>();
@@ -15,17 +16,24 @@ export async function fetchStations(
   opts: StationFilterOptions = {},
   cookieHeader?: string,
 ): Promise<{ stations: Station[] }> {
-  const cacheKey = `${JSON.stringify(opts)}_${cookieHeader || (typeof window !== 'undefined' ? 'client' : 'server_default')}`;
+  // Browser-only cache: the module-level Maps persist in the server process
+  // across requests, so a cached server response would hide freshly created
+  // stations from the re-render after router.refresh() (same staleness bug
+  // as the jobs cache — see services/jobs/api.ts → fetchJobs).
+  const useCache = typeof window !== 'undefined';
+  const cacheKey = `${JSON.stringify(opts)}_${cookieHeader || (useCache ? 'client' : 'server_default')}`;
   const now = Date.now();
 
-  const cached = cachedStations.get(cacheKey);
-  if (cached && cached.expiresAt > now) {
-    return cached.data;
-  }
+  if (useCache) {
+    const cached = cachedStations.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+      return cached.data;
+    }
 
-  const existing = inFlightStations.get(cacheKey);
-  if (existing) {
-    return existing;
+    const existing = inFlightStations.get(cacheKey);
+    if (existing) {
+      return existing;
+    }
   }
 
   const stationsPromise = (async () => {
@@ -50,29 +58,33 @@ export async function fetchStations(
       });
 
       const rawStations = data.data?.stations ?? [];
-      const stations: Station[] = rawStations.map((s, idx) => ({
+      // Backend rows are `{ id, name }` — map them through untouched.
+      const stations: Station[] = rawStations.map((s) => ({
         id: s.id,
         name: s.name,
-        locationId: opts.locationId || '',
-        sortOrder: idx + 1,
-        isArchived: false,
       }));
 
       const res = { stations };
-      cachedStations.set(cacheKey, { data: res, expiresAt: Date.now() + STATIONS_CACHE_TTL_MS });
+      if (useCache) {
+        cachedStations.set(cacheKey, { data: res, expiresAt: Date.now() + STATIONS_CACHE_TTL_MS });
+      }
       return res;
     } finally {
       inFlightStations.delete(cacheKey);
     }
   })();
 
-  inFlightStations.set(cacheKey, stationsPromise);
+  if (useCache) {
+    inFlightStations.set(cacheKey, stationsPromise);
+  }
   return stationsPromise;
 }
 
 export async function createStation(
   input: CreateStationInput,
 ): Promise<{ station: Station }> {
+  // Backend `stationCreateSchema` accepts `{ name }` only — locationId /
+  // sortOrder are UI legacy and must not be sent (zod strips them anyway).
   const { data } = await http.post<{
     success: boolean;
     data: { station: { id: string; name: string } };
@@ -83,9 +95,6 @@ export async function createStation(
   const station: Station = {
     id: data.data.station.id,
     name: data.data.station.name,
-    locationId: input.locationId,
-    sortOrder: input.sortOrder ?? 1,
-    isArchived: false,
   };
 
   return { station };
@@ -95,19 +104,21 @@ export async function updateStation(
   stationId: string,
   patch: UpdateStationInput,
 ): Promise<{ station: Station }> {
+  // Backend `stationPatchSchema` accepts `{ name }` only — no archive flag
+  // (removal goes through DELETE) and no location/sort fields.
+  const payload: { name?: string } = {};
+  if (patch.name !== undefined) payload.name = patch.name;
+  if (Object.keys(payload).length === 0) {
+    throw new ApiException(400, 'INVALID_INPUT', 'Nothing to update');
+  }
   const { data } = await http.patch<{
     success: boolean;
     data: { station: { id: string; name: string } };
-  }>(STATIONS_ENDPOINTS.UPDATE(stationId), {
-    name: patch.name,
-  });
+  }>(STATIONS_ENDPOINTS.UPDATE(stationId), payload);
 
   const station: Station = {
     id: data.data.station.id,
     name: data.data.station.name,
-    locationId: '',
-    sortOrder: 1,
-    isArchived: patch.isArchived ?? false,
   };
 
   return { station };

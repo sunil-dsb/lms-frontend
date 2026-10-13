@@ -1,5 +1,6 @@
 import http from '@/lib/http';
 import { JOBS_ENDPOINTS } from './endpoints';
+import { ApiException } from '@/lib/errors';
 import type { Job, Role, JobWithStations, CreateRoleInput, UpdateRoleInput } from './types';
 
 const cacheTtlMs = 5 * 60 * 1000;
@@ -24,6 +25,21 @@ export function clearJobsCache(): void {
 }
 
 export async function fetchJobs(cookieHeader?: string): Promise<{ jobs: Job[] }> {
+  // Module-level caches live per runtime. The browser copy is cleared on
+  // every mutation (clearJobsCache), but the server copy survives across
+  // requests in the same process — after a client-side create followed by
+  // router.refresh(), the re-run Server Component would keep serving the
+  // pre-create list until the 5-minute TTL expired. So caching applies in
+  // the browser only; the server always reads fresh (SSR renders once per
+  // request, so there is nothing useful to memoize there anyway).
+  if (typeof window === 'undefined') {
+    const { data } = await http.get<{ success: boolean; data: { jobs: Job[] } }>(JOBS_ENDPOINTS.LIST, {
+      headers: requestHeaders(cookieHeader),
+      // Backend paginates (default 10) — org scale fits one page.
+      params: { page: 1, limit: 200 },
+    });
+    return { jobs: data.data?.jobs ?? [] };
+  }
   const key = cookieHeader || 'client';
   const cached = jobsCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
@@ -31,7 +47,8 @@ export async function fetchJobs(cookieHeader?: string): Promise<{ jobs: Job[] }>
   if (pending) return pending;
   const request = http.get<{ success: boolean; data: { jobs: Job[] } }>(JOBS_ENDPOINTS.LIST, {
     headers: requestHeaders(cookieHeader),
-    params: { page: 1, limit: 10, search: '' },
+    // Backend paginates (default 10) — org scale fits one page.
+    params: { page: 1, limit: 200 },
   }).then(({ data }) => {
     const value = { jobs: data.data?.jobs ?? [] };
     jobsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
@@ -72,6 +89,18 @@ export async function fetchJobStations(
 ): Promise<{ stations: Array<{ id: string; name: string }> }> {
   if (!jobIds.length) return { stations: [] };
   const ids = [...new Set(jobIds)].sort();
+  // Browser-only cache (see fetchJobs) — the server always reads fresh.
+  if (typeof window === 'undefined') {
+    const { data } = await http.post<{
+      success: boolean;
+      data: { stations: Array<{ id: string; name: string }> };
+    }>('/api/backend/jobs/stations', {
+      jobIds: ids,
+    }, {
+      headers: requestHeaders(cookieHeader),
+    });
+    return { stations: data.data?.stations ?? [] };
+  }
   const key = `${cookieHeader || 'client'}:${ids.join(',')}`;
   const cached = stationsCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
@@ -93,12 +122,16 @@ export async function fetchJobStations(
   return request;
 }
 export async function createJob(
-  input: { name: string },
+  input: { name: string; stationIds?: string[] },
 ): Promise<{ job: Job }> {
+  // Backend `jobCreateSchema` = `{ name, stationIds?: uuid[] }` — no
+  // clearance tier. `clearanceLevel` must not be sent.
+  const payload: { name: string; stationIds?: string[] } = { name: input.name };
+  if (input.stationIds !== undefined) payload.stationIds = input.stationIds;
   const { data } = await http.post<{
     success: boolean;
     data: { job: Job };
-  }>(JOBS_ENDPOINTS.CREATE, input);
+  }>(JOBS_ENDPOINTS.CREATE, payload);
 
   clearJobsCache();
   return { job: data.data.job };
@@ -106,12 +139,18 @@ export async function createJob(
 
 export async function updateJob(
   id: string,
-  patch: { name: string },
+  patch: { name?: string; stationIds?: string[] },
 ): Promise<{ job: Job }> {
+  const payload: { name?: string; stationIds?: string[] } = {};
+  if (patch.name !== undefined) payload.name = patch.name;
+  if (patch.stationIds !== undefined) payload.stationIds = patch.stationIds;
+  if (Object.keys(payload).length === 0) {
+    throw new ApiException(400, 'INVALID_INPUT', 'Nothing to update');
+  }
   const { data } = await http.patch<{
     success: boolean;
     data: { job: Job };
-  }>(JOBS_ENDPOINTS.UPDATE(id), patch);
+  }>(JOBS_ENDPOINTS.UPDATE(id), payload);
 
   clearJobsCache();
   return { job: data.data.job };

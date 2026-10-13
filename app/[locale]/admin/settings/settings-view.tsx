@@ -21,22 +21,6 @@ import {
   type StationsManagerState,
 } from './stations/stations-manager';
 
-const DEMO_COUNTS: Record<string, number> = {
-  'stn-gm': 2,
-  'stn-grill': 3,
-  'stn-expo': 1,
-  'stn-prep': 2,
-  'stn-dish': 0,
-  'role-exec': 1,
-  'role-sous': 1,
-  'role-cook': 4,
-  'role-prep': 2,
-  'role-pastry': 0,
-  'role-dish': 0,
-  'loc-main': 7,
-  'loc-express': 2,
-};
-
 export interface SettingsViewLabels {
   stationsHeading: string;
   rolesHeading: string;
@@ -44,12 +28,9 @@ export interface SettingsViewLabels {
   addStation: string;
   addRole: string;
   addLocation: string;
-  archivedBadge: string;
   emptyStations: string;
   emptyRoles: string;
   emptyLocations: string;
-  /** Localised "staff" / "del personal" suffix appended after a count. */
-  staffWord: string;
   employeesPlaceholder: string;
   drawerClose: string;
   rowActionsLabel: string;
@@ -61,43 +42,23 @@ interface SettingsViewProps {
   stations: Station[];
   roles: Role[];
   locations: Location[];
-  locationId: string | null;
   labels: SettingsViewLabels & StationsManagerLabels & RolesManagerLabels & LocationsManagerLabels;
 }
 
-type Chip = { id: string; name: string; count?: number; isArchived?: boolean };
-
-/**
- * Title-case for entity names. Preserves short all-caps tokens (acronyms like
- * "GM") and does not mutate the underlying DB values — applied at the display
- * layer only.
- */
-function toTitleCase(s: string): string {
-  return s
-    .split(/(\s+)/)
-    .map((part) => {
-      if (/^\s+$/.test(part)) return part;
-      if (/^[A-Z]{2,4}$/.test(part)) return part;
-      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
-    })
-    .join('');
-}
+type Chip = { id: string; name: string };
 
 /**
  * Settings page — Stations / Roles / Locations as three side-by-side panels.
  *
- * Each panel is a `SettingsCard`: a heading + total, an Add button, and a
- * flex of chips. Clicking a chip opens that entity's edit drawer; the Add
- * button opens the create drawer for the matching manager. Selection state
- * is not modelled here — there is no bulk action wired yet, and presenting
- * checkboxes that do nothing was misleading (DESIGN.md §1.4 "shape is the
- * only reliable signal of pressability").
+ * Each panel is a `SettingsCard`: a heading + total, a vertical stack of
+ * full-width entity chips, and a full-width Add button pinned at the bottom.
+ * Names render exactly as stored — no title-casing, so user-entered values
+ * ("McDonald", "GM") are never mangled at the display layer.
  */
 export function SettingsView({
   stations,
   roles,
   locations,
-  locationId,
   labels,
 }: SettingsViewProps): React.ReactElement {
   const [stationsState, setStationsState] = React.useState<StationsManagerState>({ mode: 'closed' });
@@ -106,23 +67,17 @@ export function SettingsView({
 
   const stationChips: Chip[] = stations.map((s) => ({
     id: s.id,
-    name: toTitleCase(s.name === 'GM' ? 'GM – Cold section + fryer' : s.name),
-    count: DEMO_COUNTS[s.id] ?? 0,
-    isArchived: s.isArchived,
+    name: s.name,
   }));
 
-  const roleChips: Chip[] = roles
-    .filter((r) => r.id !== 'role-pastry')
-    .map((r) => ({
-      id: r.id,
-      name: toTitleCase(r.name === 'Head Chef' ? 'Executive Chef' : r.name),
-      count: DEMO_COUNTS[r.id] ?? 0,
-    }));
+  const roleChips: Chip[] = roles.map((r) => ({
+    id: r.id,
+    name: r.name,
+  }));
 
   const locationChips: Chip[] = locations.map((l) => ({
     id: l.id,
-    name: toTitleCase(l.name),
-    count: DEMO_COUNTS[l.id] ?? 0,
+    name: l.name,
   }));
 
   return (
@@ -141,14 +96,10 @@ export function SettingsView({
               <EntityChip
                 key={chip.id}
                 name={chip.name}
-                count={chip.count}
-                isArchived={chip.isArchived}
-                staffWord={labels.staffWord}
                 onEdit={() => {
                   if (s) setStationsState({ mode: 'edit', entity: s });
                 }}
                 editLabel={labels.stationEdit}
-                archivedBadge={labels.archivedBadge}
               />
             );
           })}
@@ -167,8 +118,6 @@ export function SettingsView({
               <EntityChip
                 key={chip.id}
                 name={chip.name}
-                count={chip.count}
-                staffWord={labels.staffWord}
                 onEdit={() => {
                   if (r) setRolesState({ mode: 'edit', entity: r });
                 }}
@@ -191,8 +140,6 @@ export function SettingsView({
               <EntityChip
                 key={chip.id}
                 name={chip.name}
-                count={chip.count}
-                staffWord={labels.staffWord}
                 onEdit={() => {
                   if (l) setLocationsState({ mode: 'edit', entity: l });
                 }}
@@ -206,22 +153,24 @@ export function SettingsView({
       <StationsManager
         state={stationsState}
         onStateChange={setStationsState}
-        locations={locations}
-        locationId={locationId}
         labels={labels}
       />
-      <RolesManager state={rolesState} onStateChange={setRolesState} labels={labels} />
+      <RolesManager state={rolesState} onStateChange={setRolesState} stations={stations} labels={labels} />
       <LocationsManager state={locationsState} onStateChange={setLocationsState} labels={labels} />
     </div>
   );
 }
 
 /**
- * One card-shaped panel on the settings page: a heading with total, an Add
- * button, and a flex of chips. Sits on the page ground (DESIGN.md §2.1
- * `--bg-admin`), card surface is white with a hairline border. Height is
- * driven by content — no min-height, no flex-1 — so a panel with two
- * locations does not stretch to match a panel with five stations.
+ * One card-shaped panel on the settings page: a heading with total, a
+ * vertical stack of full-width entity chips, and a full-width Add button.
+ * Sits on the page ground (DESIGN.md §2.1 `--bg-admin`), card surface is
+ * white with a hairline border.
+ *
+ * The Add button lives below the chips (not beside the heading) so the
+ * heading row can never wrap, even in narrow `md:grid-cols-3` columns.
+ * Chips are full-width rows so entity names get the maximum available
+ * space before truncating.
  */
 function SettingsCard({
   heading,
@@ -239,79 +188,60 @@ function SettingsCard({
   children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <article className="rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-6">
-      <header className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="flex items-baseline gap-2 text-base font-semibold leading-heading text-[var(--color-ink)]">
+    <article className="flex flex-col rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-6">
+      <header className="mb-1">
+        <h2 className="whitespace-nowrap text-base font-semibold leading-heading text-[var(--color-ink)]">
           {heading}
-          <span className="text-sm font-medium tabular-nums text-[var(--color-ink-3)]">
+          <span className="ml-2 text-sm font-medium tabular-nums text-[var(--color-ink-3)]">
             · {total}
           </span>
         </h2>
-        <Button variant="secondary" onClick={onAdd}>
-          {addLabel}
-        </Button>
       </header>
 
       {total === 0 ? (
         <p className="text-sm text-[var(--color-ink-3)] py-2">{emptyLabel}</p>
       ) : (
-        <div className="flex flex-wrap gap-2 items-start">
+        <div className="mt-3 flex flex-col gap-2 items-stretch">
           {children}
         </div>
       )}
+
+      <Button variant="secondary" onClick={onAdd} className="mt-4 w-full">
+        {addLabel}
+      </Button>
     </article>
   );
 }
 
 /**
- * A single entity chip in a SettingsCard. The whole tile is one button that
- * opens the edit drawer for the entity. Mirrors the categories-page row
- * shape so the settings page reads as the same family as the rest of the
- * admin surfaces.
+ * A single entity row in a SettingsCard. The whole tile is one button that
+ * opens the edit drawer for the entity. Full-width so the name gets maximum
+ * room; overflow truncates with a native tooltip carrying the full name.
  */
 function EntityChip({
   name,
-  count,
-  isArchived,
-  staffWord,
   onEdit,
   editLabel,
-  archivedBadge,
 }: {
   name: string;
-  count?: number;
-  isArchived?: boolean;
-  staffWord: string;
   onEdit: () => void;
   editLabel: string;
-  archivedBadge?: string;
 }): React.ReactElement {
   return (
     <button
       type="button"
       onClick={onEdit}
+      title={name}
       aria-label={`${editLabel}: ${name}`}
       className={cn(
-        'group flex min-w-0 items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-left transition-colors',
+        'group flex w-full min-w-0 items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-left transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-inset',
-        isArchived
-          ? 'border-[var(--color-line-2)] bg-[var(--color-surface)] opacity-60'
-          : 'border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-panel)]',
+        'border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-panel)]',
       )}
     >
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium text-[var(--color-ink)]">{name}</span>
-        {typeof count === 'number' ? (
-          <span className="block text-xs text-[var(--color-ink-3)]">
-            {count} {staffWord}
-          </span>
-        ) : null}
       </span>
-      {isArchived && archivedBadge ? (
-        <span className="rounded-[var(--radius-sm)] bg-[var(--color-panel)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-ink-2)]">
-          {archivedBadge}
-        </span>
-      ) : null}
       <LuPencil
         aria-hidden="true"
         className="size-3.5 shrink-0 text-[var(--color-ink-3)] group-hover:text-[var(--color-ink-2)]"

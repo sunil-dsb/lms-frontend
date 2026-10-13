@@ -27,6 +27,9 @@ export interface RolesManagerLabels {
   roleCancel: string;
   roleSave: string;
   roleName: string;
+  roleStations: string;
+  roleStationsHint: string;
+  roleStationsEmpty: string;
   roleDelete: string;
   roleEdit: string;
   roleErrorInUse: string;
@@ -38,34 +41,37 @@ export interface RolesManagerLabels {
 interface RolesManagerProps {
   state: RolesManagerState;
   onStateChange: (next: RolesManagerState) => void;
+  stations: Array<{ id: string; name: string }>;
   labels: RolesManagerLabels;
 }
 
 interface CreateForm {
   name: string;
-}
-
-interface EditForm {
-  name: string;
+  stationIds: string[];
 }
 
 /**
- * Drawer-only CRUD for roles. The page-level panel renders the chips; this
- * component owns the create + edit drawers and the mutation calls. Roles do
- * not have an `isArchived` state — they are deleted outright, with a
- * `ROLE_IN_USE` error surfaced if employees still reference the role.
+ * Drawer-only CRUD for roles, backed 1:1 by the backend jobs API
+ * (`GET|POST /api/v1/jobs`, `PATCH|DELETE /api/v1/jobs/:id`).
+ *
+ * Payload is `{ name, stationIds }` — the backend links a role to stations
+ * via `stationIds: uuid[]` (empty = works any station). There is no
+ * clearance tier server-side, so none is sent. Deleting a role still
+ * referenced by employees surfaces `ROLE_IN_USE`.
  */
 export function RolesManager({
   state,
   onStateChange,
+  stations,
   labels,
 }: RolesManagerProps): React.ReactElement {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [createError, setCreateError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<EditForm | null>(null);
-  const [createForm, setCreateForm] = useState<CreateForm>({ name: '' });
+  const [editName, setEditName] = useState('');
+  const [editStationIds, setEditStationIds] = useState<string[]>([]);
+  const [createForm, setCreateForm] = useState<CreateForm>({ name: '', stationIds: [] });
 
   function refresh(): void {
     router.refresh();
@@ -74,31 +80,39 @@ export function RolesManager({
   function closeDrawer(): void {
     setCreateError(null);
     setEditError(null);
-    setEditForm(null);
+    setEditName('');
+    setEditStationIds([]);
     onStateChange({ mode: 'closed' });
   }
 
-  function startEdit(role: Role): void {
-    setEditForm({ name: role.name });
-    setEditError(null);
-    onStateChange({ mode: 'edit', entity: role });
+  function toggleCreateStation(stationId: string): void {
+    setCreateForm((prev) => ({
+      ...prev,
+      stationIds: prev.stationIds.includes(stationId)
+        ? prev.stationIds.filter((id) => id !== stationId)
+        : [...prev.stationIds, stationId],
+    }));
+  }
+
+  function toggleEditStation(stationId: string): void {
+    setEditStationIds((prev) =>
+      prev.includes(stationId)
+        ? prev.filter((id) => id !== stationId)
+        : [...prev, stationId],
+    );
   }
 
   function onCreate(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     setCreateError(null);
-    if (!createForm.name) return;
+    if (!createForm.name.trim()) return;
     startTransition(async () => {
       try {
         await createRole({
           name: createForm.name.trim(),
-          // Clearance isn't surfaced in the UI yet, but the backend still
-          // requires it. Default to `general` so a freshly-invited line cook
-          // can use the app; the role table does not represent a permission
-          // tier.
-          clearanceLevel: 'general',
+          stationIds: createForm.stationIds,
         });
-        setCreateForm({ name: '' });
+        setCreateForm({ name: '', stationIds: [] });
         closeDrawer();
         refresh();
       } catch (err) {
@@ -112,15 +126,13 @@ export function RolesManager({
   }
 
   function saveEdit(role: Role): void {
-    if (!editForm) return;
+    if (!editName.trim()) return;
     setEditError(null);
     startTransition(async () => {
       try {
         await updateRole(role.id, {
-          name: editForm.name.trim(),
-          // Round-trip the existing clearance value — the field is hidden in
-          // the UI but the backend still validates it.
-          clearanceLevel: role.clearanceLevel,
+          name: editName.trim(),
+          stationIds: editStationIds,
         });
         closeDrawer();
         refresh();
@@ -155,7 +167,8 @@ export function RolesManager({
 
   React.useEffect(() => {
     if (state.mode === 'edit') {
-      setEditForm({ name: state.entity.name });
+      setEditName(state.entity.name);
+      setEditStationIds(state.entity.stationIds ?? []);
       setEditError(null);
     }
   }, [state]);
@@ -163,6 +176,40 @@ export function RolesManager({
   const editingRole = state.mode === 'edit' ? state.entity : null;
   const isCreateOpen = state.mode === 'create';
   const isEditOpen = editingRole !== null;
+
+  function stationPicker(
+    selected: string[],
+    onToggle: (stationId: string) => void,
+    idPrefix: string,
+  ): React.ReactElement {
+    if (stations.length === 0) {
+      return <p className="text-sm text-[var(--color-ink-3)]">{labels.roleStationsEmpty}</p>;
+    }
+    return (
+      <div className="grid gap-1 rounded-[var(--radius-md)] border border-[var(--color-line-2)] p-2 max-h-48 overflow-y-auto">
+        {stations.map((s) => {
+          const checked = selected.includes(s.id);
+          return (
+            <label
+              key={s.id}
+              htmlFor={`${idPrefix}-${s.id}`}
+              className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-[var(--color-ink)] hover:bg-[var(--color-panel)]"
+            >
+              <input
+                id={`${idPrefix}-${s.id}`}
+                type="checkbox"
+                checked={checked}
+                onChange={() => onToggle(s.id)}
+                disabled={isPending}
+                className="rounded border-[var(--color-line-2)] text-[var(--color-brand)] focus:ring-[var(--color-ring)]"
+              />
+              <span className="min-w-0 flex-1 truncate">{s.name}</span>
+            </label>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -186,6 +233,11 @@ export function RolesManager({
                 disabled={isPending}
                 autoFocus
               />
+            </div>
+            <div className="grid gap-2">
+              <Label>{labels.roleStations}</Label>
+              <p className="text-xs text-[var(--color-ink-3)]">{labels.roleStationsHint}</p>
+              {stationPicker(createForm.stationIds, toggleCreateStation, 'newRoleStation')}
             </div>
             {createError ? (
               <p role="alert" className="text-sm text-[var(--color-bad)]">
@@ -219,11 +271,11 @@ export function RolesManager({
           onClose={closeDrawer}
           closeLabel={labels.drawerClose}
         />
-        {editingRole && editForm ? (
+        {editingRole ? (
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (editForm.name.trim()) saveEdit(editingRole);
+              if (editName.trim()) saveEdit(editingRole);
             }}
           >
             <ModalBody className="space-y-4">
@@ -231,12 +283,17 @@ export function RolesManager({
                 <Label htmlFor="editRoleName">{labels.roleName}</Label>
                 <Input
                   id="editRoleName"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
                   maxLength={120}
                   disabled={isPending}
                   autoFocus
                 />
+              </div>
+              <div className="grid gap-2">
+                <Label>{labels.roleStations}</Label>
+                <p className="text-xs text-[var(--color-ink-3)]">{labels.roleStationsHint}</p>
+                {stationPicker(editStationIds, toggleEditStation, 'editRoleStation')}
               </div>
               {editError ? (
                 <p role="alert" className="text-sm text-[var(--color-bad)]">
@@ -250,7 +307,7 @@ export function RolesManager({
                   type="button"
                   variant="ghost"
                   disabled={isPending}
-                  onClick={() => editingRole && onDelete(editingRole)}
+                  onClick={() => onDelete(editingRole)}
                   className="text-xs text-[var(--color-ink-3)] hover:text-[var(--color-bad)]"
                 >
                   {labels.roleDelete}
@@ -266,7 +323,7 @@ export function RolesManager({
               </Button>
               <Button
                 type="submit"
-                disabled={isPending || !editForm.name.trim()}
+                disabled={isPending || !editName.trim()}
               >
                 {labels.roleSave}
               </Button>

@@ -32,7 +32,6 @@ export default async function SettingsPage({
   let stations: Station[] = [];
   let roles: Role[] = [];
   let locations: Location[] = [];
-  let firstLocationId: string | null = null;
   let loadError: string | null = null;
 
   await Promise.all([
@@ -45,19 +44,16 @@ export default async function SettingsPage({
         else loadError = 'UNKNOWN';
       }),
     listLocations(cookieHeader)
-      .then(async (r) => {
+      .then((r) => {
         locations = r.locations;
-        firstLocationId = locations[0]?.id ?? null;
-        if (firstLocationId) {
-          try {
-            const s = await listStations(firstLocationId, cookieHeader, {
-              includeArchived: true,
-            });
-            stations = s.stations;
-          } catch {
-            // Stations fetch failing shouldn't blank the other panels.
-          }
-        }
+      })
+      .catch((err: unknown) => {
+        if (err instanceof ApiException) loadError = err.code;
+        else loadError = 'UNKNOWN';
+      }),
+    listStations(undefined, cookieHeader)
+      .then((r) => {
+        stations = r.stations;
       })
       .catch((err: unknown) => {
         if (err instanceof ApiException) loadError = err.code;
@@ -83,7 +79,6 @@ export default async function SettingsPage({
         stations={stations}
         roles={roles}
         locations={locations}
-        locationId={firstLocationId}
         labels={{
           stationsHeading: t('settingsTabStations'),
           rolesHeading: t('settingsTabRoles'),
@@ -91,22 +86,18 @@ export default async function SettingsPage({
           addStation: t('settingsAddStation'),
           addRole: t('settingsAddRole'),
           addLocation: t('settingsAddLocation'),
-          archivedBadge: t('stationArchivedBadge'),
           emptyStations: t('stationsEmpty'),
           emptyRoles: t('rolesEmpty'),
           emptyLocations: t('locationsEmpty'),
           employeesPlaceholder: t('settingsPanelEmployeesPlaceholder'),
           drawerClose: t('drawerClose'),
           stationName: t('stationsFieldName'),
-          stationLocation: t('stationsFieldLocation'),
           stationCreateHeading: t('stationsCreateHeading'),
           stationCreate: t('stationsCreate'),
           stationCreating: t('stationsCreating'),
           stationCancel: t('actionsCancel'),
           stationSave: t('actionsSave'),
-          stationErrorLocationNotFound: t('stationsErrorLocationNotFound'),
-          stationArchive: t('actionsArchive'),
-          stationUnarchive: t('actionsUnarchive'),
+          stationDelete: t('actionsDelete'),
           stationEdit: t('actionsEdit'),
           errorGeneric: t('errorGeneric'),
           errorNotFound: t('errorNotFound'),
@@ -116,6 +107,9 @@ export default async function SettingsPage({
           roleCancel: t('actionsCancel'),
           roleSave: t('actionsSave'),
           roleName: t('rolesFieldName'),
+          roleStations: t('rolesFieldStations'),
+          roleStationsHint: t('rolesFieldStationsHint'),
+          roleStationsEmpty: t('rolesFieldStationsEmpty'),
           roleDelete: t('actionsDelete'),
           roleEdit: t('actionsEdit'),
           roleErrorInUse: t('rolesErrorInUse'),
@@ -129,7 +123,6 @@ export default async function SettingsPage({
           locationEdit: t('actionsEdit'),
           locationErrorInUse: t('locationsErrorInUse'),
           rowActionsLabel: t('rowActionsLabel'),
-          staffWord: t('settingsStaffWord'),
         }}
       />
     </>

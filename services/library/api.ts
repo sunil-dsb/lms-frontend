@@ -131,6 +131,48 @@ function normalizeStep(st: any, idx = 1): any {
   };
 }
 
+function normalizeIngredientAmounts(
+  validIngredients: any[],
+  factors: number[],
+): { factors: number[]; ingredients: any[] } {
+  // Trim + pad to factors length first (legacy shape).
+  let ingredients = validIngredients.map((ing: any) => {
+    let amounts = Array.isArray(ing.amounts) ? [...ing.amounts] : [];
+    amounts = amounts.map((a: any) => (typeof a === 'string' ? a.trim() : ''));
+    while (amounts.length < factors.length) amounts.push('');
+    if (amounts.length > factors.length) amounts = amounts.slice(0, factors.length);
+    return {
+      name: ing.name.trim(),
+      ...(ing.form?.trim() ? { form: ing.form.trim() } : {}),
+      allergen: !!ing.allergen,
+      ...(ing.unit?.trim() ? { unit: ing.unit.trim() } : {}),
+      amounts,
+    };
+  });
+
+  // Single-column UI (recipe-block-body / ingredients-block-body) only fills
+  // amounts[0]. Sending ["2.8kg","",""] fails backend min(1). Collapse the
+  // whole block to factors [1] when no ingredient carries a real 2nd+ value.
+  const onlyBaseFilled = ingredients.every((ing) =>
+    ing.amounts.slice(1).every((a: string) => !a || a.trim() === '' || a.trim() === '1'),
+  );
+  if (onlyBaseFilled) {
+    ingredients = ingredients.map((ing) => {
+      const base = (ing.amounts[0] || '').trim() || '1';
+      return { ...ing, amounts: [base] };
+    });
+    return { factors: [1], ingredients };
+  }
+
+  // Mixed case: legacy multi-factor row with a gap — backfill the gap from
+  // the base so no empty string reaches backend validation.
+  ingredients = ingredients.map((ing) => {
+    const base = (ing.amounts[0] || '').trim() || '1';
+    return { ...ing, amounts: ing.amounts.map((a: string) => (a && a.trim() ? a : base)) };
+  });
+  return { factors, ingredients };
+}
+
 function normalizeBlocks(blocks: any[]): any[] {
   if (!Array.isArray(blocks) || blocks.length === 0) return [];
 
@@ -275,20 +317,9 @@ function normalizeBlocks(blocks: any[]): any[] {
           ? block.factors.map((f: any) => Math.max(1, Math.round(Number(f) || 1)))
           : [1];
 
-        ingredients = validIngredients.map((ing: any) => {
-          let amounts = Array.isArray(ing.amounts) ? [...ing.amounts] : [];
-          amounts = amounts.map((a: any) => (typeof a === 'string' ? a.trim() : ''));
-          while (amounts.length < factors!.length) amounts.push('');
-          if (amounts.length > factors!.length) amounts = amounts.slice(0, factors!.length);
-
-          return {
-            name: ing.name.trim(),
-            ...(ing.form?.trim() ? { form: ing.form.trim() } : {}),
-            allergen: !!ing.allergen,
-            ...(ing.unit?.trim() ? { unit: ing.unit.trim() } : {}),
-            amounts,
-          };
-        });
+        const fixed = normalizeIngredientAmounts(validIngredients, factors!);
+        factors = fixed.factors;
+        ingredients = fixed.ingredients;
       }
 
       let allergen = undefined;
@@ -346,20 +377,9 @@ function normalizeBlocks(blocks: any[]): any[] {
           ? block.factors.map((f: any) => Math.max(1, Math.round(Number(f) || 1)))
           : [1];
 
-        ingredients = validIngredients.map((ing: any) => {
-          let amounts = Array.isArray(ing.amounts) ? [...ing.amounts] : [];
-          amounts = amounts.map((a: any) => (typeof a === 'string' ? a.trim() : ''));
-          while (amounts.length < factors!.length) amounts.push('');
-          if (amounts.length > factors!.length) amounts = amounts.slice(0, factors!.length);
-
-          return {
-            name: ing.name.trim(),
-            ...(ing.form?.trim() ? { form: ing.form.trim() } : {}),
-            allergen: !!ing.allergen,
-            ...(ing.unit?.trim() ? { unit: ing.unit.trim() } : {}),
-            amounts,
-          };
-        });
+        const fixed = normalizeIngredientAmounts(validIngredients, factors!);
+        factors = fixed.factors;
+        ingredients = fixed.ingredients;
       }
 
       let allergen = undefined;

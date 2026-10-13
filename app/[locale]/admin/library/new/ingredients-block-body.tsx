@@ -78,6 +78,7 @@ export function IngredientsBlockBody({
   function updateIngredient(idx: number, patch: Partial<ProcedureIngredient>): void {
     onPatch({
       ...block,
+      factors: [1],
       ingredients: ingredients.map((x, j) => (j === idx ? { ...x, ...patch } : x)),
     });
   }
@@ -85,6 +86,7 @@ export function IngredientsBlockBody({
   function setAmount(ingIdx: number, factorIdx: number, value: string): void {
     onPatch({
       ...block,
+      factors: [1],
       ingredients: ingredients.map((x, j) => {
         if (j !== ingIdx) return x;
         const nextAmounts = [...x.amounts];
@@ -98,6 +100,7 @@ export function IngredientsBlockBody({
   function addIngredient(): void {
     onPatch({
       ...block,
+      factors: [1],
       ingredients: [...ingredients, emptyIngredient(factors.length)],
     });
   }
@@ -105,6 +108,7 @@ export function IngredientsBlockBody({
   function removeIngredient(idx: number): void {
     onPatch({
       ...block,
+      factors: [1],
       ingredients: ingredients.filter((_, j) => j !== idx),
     });
   }

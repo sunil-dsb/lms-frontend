@@ -68,6 +68,7 @@ import {
   isBlockEmpty,
   toEditorContent,
 } from "@/lib/procedure-draft";
+import { backendSlug, categorySlugsMatch } from "@/services/categories/api";
 import type {
   AdminEmployee,
   Category,
@@ -260,7 +261,7 @@ export function ProcedureEditor({
   React.useEffect(() => {
     let alive = true;
     void Promise.all([
-      listStations("loc-main"),
+      listStations(),
       listEmployees({ status: "active" }),
     ])
       .then(([s, e]) => {
@@ -276,6 +277,48 @@ export function ProcedureEditor({
       alive = false;
     };
   }, []);
+
+  // Edit mode only, one time, once the live stations land: the saved station
+  // ids may belong to a dead catalog (mock seed handles such as `stn-gm`
+  // vs live backend UUIDs). Exact live matches are kept; otherwise the
+  // handle's tail (`stn-gm` → `gm`) is matched against live slugs, applied
+  // only on a single unambiguous hit. Anything still unresolvable is
+  // dropped — MultiSelectChips hides unknown ids anyway, and dead ids must
+  // not travel into the PUT payload. Runs through the raw setter (not the
+  // `edit()` wrapper) so reconciliation alone never marks the form dirty.
+  const stationsReconciled = React.useRef(false);
+  React.useEffect(() => {
+    if (!initial || stationsReconciled.current || stations.length === 0) return;
+    stationsReconciled.current = true;
+    setAudience((prev) => {
+      if (prev.stationIds.length === 0) return prev;
+      const liveIds = new Set(stations.map((s) => s.id));
+      const normLive = (name: string): string =>
+        backendSlug(name).replace(/-/g, "");
+      const next: string[] = [];
+      for (const savedId of prev.stationIds) {
+        if (liveIds.has(savedId)) {
+          if (!next.includes(savedId)) next.push(savedId);
+          continue;
+        }
+        const tail = savedId
+          .replace(/^(stn|role|loc|sub|cat)-/i, "")
+          .replace(/[^a-z0-9]/gi, "")
+          .toLowerCase();
+        if (tail.length < 2) continue;
+        const matches = stations.filter((s) =>
+          normLive(s.name).includes(tail),
+        );
+        if (matches.length === 1 && !next.includes(matches[0].id)) {
+          next.push(matches[0].id);
+        }
+      }
+      return next.length === prev.stationIds.length &&
+        next.every((v, i) => v === prev.stationIds[i])
+        ? prev
+        : { ...prev, stationIds: next };
+    });
+  }, [initial, stations]);
 
   // Opened from a category page ("Add procedure" on Cleaning → Dishwashing),
   // the URL names where it goes: ?category=<slug>&subcategory=<slug>. Stations
@@ -314,6 +357,52 @@ export function ProcedureEditor({
       }
     }
   }, [categoryId, initial, subcategoryId, categories]);
+
+  // Edit mode only, one time, once the live catalog lands: the saved
+  // category / subcategory ids may be mock handles (`cat-recipes` /
+  // `sub-plating`) that exist in no live row. An exact live subcategory hit
+  // adopts its parent; otherwise the saved subcategory's own slug + names
+  // (carried on `initial`) are matched against live rows, applied only on a
+  // single unambiguous hit. A dead subcategory that cannot be mapped is
+  // cleared so the manager re-picks instead of carrying a stale id into
+  // SUBCATEGORY_NOT_FOUND at save time.
+  const catalogReconciled = React.useRef(false);
+  React.useEffect(() => {
+    if (!initial || catalogReconciled.current || categories.length === 0) return;
+    const liveSubs = categories.flatMap((c) =>
+      (c.subcategories ?? []).map((s) => ({ sub: s, parentId: c.id })),
+    );
+    const exact = liveSubs.find((s) => s.sub.id === subcategoryId);
+    if (exact) {
+      catalogReconciled.current = true;
+      if (exact.parentId !== categoryId) setCategoryId(exact.parentId);
+      return;
+    }
+    const savedSub = initial.category?.subcategories?.find(
+      (s) => s.id === subcategoryId || s.slug === subcategoryId,
+    );
+    if (!savedSub) {
+      catalogReconciled.current = true;
+      if (subcategoryId) setSubcategoryId("");
+      return;
+    }
+    const normName = (v: string | undefined): string =>
+      (v || "").trim().toLowerCase();
+    const hits = liveSubs.filter(
+      ({ sub }) =>
+        (savedSub.slug &&
+          categorySlugsMatch(backendSlug(sub.nameEn), savedSub.slug)) ||
+        (savedSub.nameEn &&
+          normName(sub.nameEn) === normName(savedSub.nameEn)),
+    );
+    catalogReconciled.current = true;
+    if (hits.length === 1) {
+      setCategoryId(hits[0].parentId);
+      setSubcategoryId(hits[0].sub.id);
+    } else if (subcategoryId) {
+      setSubcategoryId("");
+    }
+  }, [initial, categories, categoryId, subcategoryId]);
 
   // Every edit marks the page dirty; one wrapper instead of a line per field.
   const edit =

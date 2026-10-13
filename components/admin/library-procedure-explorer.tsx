@@ -599,7 +599,7 @@ export function LibraryProcedureExplorer({
   const stationOptions = React.useMemo(() => {
     const visible = (liveStations ?? []).filter((s) => !s.isArchived);
     if (visible.length === 0) return [];
-    const sorted = [...visible].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+    const sorted = [...visible].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
     return [
       {
         value: 'all',
