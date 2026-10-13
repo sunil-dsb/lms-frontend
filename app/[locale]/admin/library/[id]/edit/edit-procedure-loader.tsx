@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocations } from '@/services/locations/hooks';
-import { useCategories } from '@/services/categories/hooks';
-import { getCachedProcedure, getProcedureBySlug, SEED_CATEGORIES } from '@/lib/api';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { backendSlug, fetchBackendSubcategories } from '@/services/categories/api';
+import { useBackendCategories } from '@/services/categories/hooks';
+import { getCachedProcedure, getProcedureBySlug } from '@/lib/api';
 import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
 import { ProcedureEditor } from '@/components/admin/procedure-editor';
 import { EditProcedureSkeleton } from '@/components/admin/edit-procedure-skeleton';
@@ -17,9 +17,12 @@ import type { Procedure } from '@/lib/types';
  * The server hands in the procedure when it can see it; when it can't
  * (cached-only procedure, backend down), the query resolves it here:
  * TanStack cache → on-device store → API. The editor mounts as soon as
- * the procedure is known; the category picker fills in behind it.
- * A terminal miss renders a not-found state instead of the editor
- * silently opening in "new" mode.
+ * the procedure is known.
+ *
+ * The Access-step category picker is the live backend catalog
+ * (GET /api/v1/categories + per-category subcategories — the same source
+ * the new-procedure wizard uses). There is intentionally no seed fallback:
+ * an empty or erroring catalog must read as empty, never as mock rows.
  */
 export function EditProcedureLoader({
   locale,
@@ -48,12 +51,30 @@ export function EditProcedureLoader({
 
   const procedure = initial ?? procedureQuery.data ?? null;
 
-  const { data: locationsData } = useLocations();
-  const locationId = locationsData?.locations?.[0]?.id ?? 'loc-main';
-  const { data: categories = [] } = useCategories(locationId);
-
-  // Picker categories come from the query, seed list until it lands.
-  const effectiveCategories = categories.length > 0 ? categories : SEED_CATEGORIES;
+  const categoriesQuery = useBackendCategories();
+  const backendCategories = categoriesQuery.data ?? [];
+  const subcategoryQueries = useQueries({
+    queries: backendCategories.map((category) => ({
+      queryKey: ['categories', 'backend-subcategories', category.id],
+      queryFn: () => fetchBackendSubcategories(category.id),
+      enabled: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(category.id),
+      staleTime: 60 * 60 * 1000,
+    })),
+  });
+  const categories = React.useMemo(
+    () => backendCategories.map((category, index) => ({
+      ...category,
+      subcategories: (subcategoryQueries[index]?.data ?? []).map((subcategory) => ({
+        id: subcategory.id,
+        categoryId: subcategory.categoryId || category.id,
+        slug: backendSlug(subcategory.nameEn),
+        nameEn: subcategory.nameEn,
+        nameEs: subcategory.nameEs,
+      })),
+    })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [backendCategories, subcategoryQueries],
+  );
 
   if (!procedure && procedureQuery.isLoading) {
     return <EditProcedureSkeleton />;
@@ -84,6 +105,5 @@ export function EditProcedureLoader({
     );
   }
 
-  return <ProcedureEditor locale={locale} categories={effectiveCategories} initial={procedure} />;
+  return <ProcedureEditor locale={locale} categories={categories} initial={procedure} />;
 }
-

@@ -1882,49 +1882,30 @@ export async function fetchMe(
 // ----------------------------------------------------------------------------
 
 export async function listRoles(cookieHeader?: string): Promise<{ roles: Role[] }> {
-  try {
-    const { fetchRoles } = await import('@/services/jobs/api');
-    const res = await fetchRoles(cookieHeader);
-    if (res.roles) {
-      return res;
-    }
-  } catch {
-    // fallback
-  }
-  return { roles: [...getRolesStore()] };
+  // Always live data — no mock fallback. Failures propagate so the UI can
+  // surface the backend error instead of rendering stale seed rows.
+  const { fetchRoles } = await import('@/services/jobs/api');
+  return fetchRoles(cookieHeader);
 }
 
 export async function listStations(
-  locationId: string,
+  locationId?: string,
   cookieHeader?: string,
-  opts: { includeArchived?: boolean } = {},
+  _opts: { includeArchived?: boolean } = {},
 ): Promise<{ stations: Station[] }> {
-  try {
-    const { fetchStations } = await import('@/services/stations/api');
-    const res = await fetchStations({ locationId, includeArchived: opts.includeArchived }, cookieHeader);
-    if (res.stations) {
-      return res;
-    }
-  } catch {
-    // fallback
-  }
-  const filtered = getStationsStore().filter(
-    (s) => s.locationId === locationId && (opts.includeArchived || !s.isArchived),
-  );
-  return { stations: filtered };
+  // `locationId` / `includeArchived` are legacy parameters kept for
+  // backward compatibility — backend stations are global `{ id, name }`
+  // rows with no location scoping or archive flag, so they are ignored.
+  // Always live data — no mock fallback.
+  void locationId;
+  const { fetchStations } = await import('@/services/stations/api');
+  return fetchStations({}, cookieHeader);
 }
 
 export async function listLocations(cookieHeader?: string): Promise<{ locations: Location[] }> {
-  try {
-    const { fetchLocations } = await import('@/services/locations/api');
-    const res = await fetchLocations(cookieHeader);
-    if (res.locations) {
-      return res;
-    }
-  } catch {
-    // fallback
-  }
-  return { locations: [...getLocationsStore()] };
+  // Always live data — no mock fallback.
+  const { fetchLocations } = await import('@/services/locations/api');
+  return fetchLocations(cookieHeader);
 }
 
 // ----------------------------------------------------------------------------
@@ -1977,128 +1958,84 @@ export async function reactivateEmployee(employeeId: string): Promise<{ employee
 // ----------------------------------------------------------------------------
 
 export async function createStation(input: CreateStationInput): Promise<{ station: Station }> {
-  try {
-    const { createStation: apiCreate } = await import('@/services/stations/api');
-    return await apiCreate(input);
-  } catch {
-    const newStation: Station = {
-      id: `stn-${Date.now()}`,
-      name: input.name,
-      locationId: input.locationId,
-      sortOrder: input.sortOrder ?? mockStations.length + 1,
-      isArchived: false,
-    };
-    mockStations = [...mockStations, newStation];
-    setStored('stations', mockStations);
-    return { station: newStation };
-  }
+  // Backend `POST /api/v1/stations` takes `{ name }` only. Errors propagate
+  // to the caller — no mock fallback, so a failed write can never render
+  // as a saved chip.
+  const { createStation: apiCreate } = await import('@/services/stations/api');
+  return apiCreate({ name: input.name.trim() });
 }
 
 export async function updateStation(stationId: string, patch: UpdateStationInput): Promise<{ station: Station }> {
-  try {
-    const { updateStation: apiUpdate } = await import('@/services/stations/api');
-    return await apiUpdate(stationId, patch);
-  } catch {
-    mockStations = mockStations.map((s) => (s.id === stationId ? { ...s, ...patch } : s));
-    setStored('stations', mockStations);
-    const updated = mockStations.find((s) => s.id === stationId)!;
-    return { station: updated };
+  // Backend `PATCH /api/v1/stations/:id` takes `{ name }` only. Removal
+  // goes through `deleteStation` (DELETE), not an archive flag.
+  if (patch.name === undefined) {
+    throw new ApiException(400, 'INVALID_INPUT', 'Nothing to update');
   }
+  const { updateStation: apiUpdate } = await import('@/services/stations/api');
+  return apiUpdate(stationId, { name: patch.name.trim() });
 }
 
-export async function archiveStation(stationId: string): Promise<{ station: Station }> {
-  return updateStation(stationId, { isArchived: true });
+export async function deleteStation(stationId: string): Promise<{ ok: true }> {
+  const { deleteStation: apiDelete } = await import('@/services/stations/api');
+  return apiDelete(stationId);
 }
 
 export async function createRole(input: CreateRoleInput): Promise<{ role: Role }> {
-  try {
-    const { createJob } = await import('@/services/jobs/api');
-    const { job } = await createJob({ name: input.name });
-    const role: Role = {
-      id: job.id,
-      name: job.name,
-      clearanceLevel: input.clearanceLevel,
-      stationIds: input.stationIds ?? [],
-      createdAt: job.createdAt || new Date().toISOString(),
-    };
-    return { role };
-  } catch {
-    const newRole: Role = {
-      id: `role-${Date.now()}`,
-      name: input.name,
-      clearanceLevel: input.clearanceLevel,
-      stationIds: input.stationIds ?? [],
-      createdAt: new Date().toISOString(),
-    };
-    mockRoles = [...mockRoles, newRole];
-    setStored('roles', mockRoles);
-    return { role: newRole };
-  }
+  // Backend `POST /api/v1/jobs` takes `{ name, stationIds? }` — there is no
+  // clearance tier. Errors propagate (no mock fallback).
+  const { createJob } = await import('@/services/jobs/api');
+  const { job } = await createJob({ name: input.name.trim(), stationIds: input.stationIds ?? [] });
+  const role: Role = {
+    id: job.id,
+    name: job.name,
+    clearanceLevel: input.clearanceLevel ?? 'general',
+    stationIds: job.stationIds ?? input.stationIds ?? [],
+    createdAt: job.createdAt || new Date().toISOString(),
+  };
+  return { role };
 }
 
 export async function updateRole(roleId: string, patch: UpdateRoleInput): Promise<{ role: Role }> {
-  try {
-    if (patch.name) {
-      const { updateJob } = await import('@/services/jobs/api');
-      await updateJob(roleId, { name: patch.name });
-    }
-  } catch {
-    // ignore
+  // Backend `PATCH /api/v1/jobs/:id` takes `{ name?, stationIds? }` —
+  // `clearanceLevel` is UI legacy and is never sent.
+  const payload: { name?: string; stationIds?: string[] } = {};
+  if (patch.name !== undefined) payload.name = patch.name.trim();
+  if (patch.stationIds !== undefined) payload.stationIds = patch.stationIds;
+  if (Object.keys(payload).length === 0) {
+    throw new ApiException(400, 'INVALID_INPUT', 'Nothing to update');
   }
-  mockRoles = mockRoles.map((r) => (r.id === roleId ? { ...r, ...patch } : r));
-  setStored('roles', mockRoles);
-  const updated = mockRoles.find((r) => r.id === roleId)!;
-  return { role: updated };
+  const { updateJob } = await import('@/services/jobs/api');
+  const { job } = await updateJob(roleId, payload);
+  const role: Role = {
+    id: job.id,
+    name: job.name,
+    clearanceLevel: patch.clearanceLevel ?? 'general',
+    stationIds: job.stationIds ?? payload.stationIds ?? [],
+    createdAt: job.createdAt || new Date().toISOString(),
+  };
+  return { role };
 }
 
 export async function deleteRole(roleId: string): Promise<{ ok: true }> {
-  try {
-    const { deleteJob } = await import('@/services/jobs/api');
-    await deleteJob(roleId);
-  } catch {
-    // ignore
-  }
-  mockRoles = mockRoles.filter((r) => r.id !== roleId);
-  setStored('roles', mockRoles);
+  const { deleteJob } = await import('@/services/jobs/api');
+  await deleteJob(roleId);
   return { ok: true };
 }
 
 export async function createLocation(input: CreateLocationInput): Promise<{ location: Location }> {
-  try {
-    const { createLocation: apiCreate } = await import('@/services/locations/api');
-    return await apiCreate(input);
-  } catch {
-    const newLoc: Location = {
-      id: `loc-${Date.now()}`,
-      name: input.name,
-    };
-    mockLocations = [...mockLocations, newLoc];
-    setStored('locations', mockLocations);
-    return { location: newLoc };
-  }
+  // Backend `POST /api/v1/locations` takes `{ name }`. Errors propagate.
+  const { createLocation: apiCreate } = await import('@/services/locations/api');
+  return apiCreate({ name: input.name.trim() });
 }
 
 export async function updateLocation(locationId: string, patch: UpdateLocationInput): Promise<{ location: Location }> {
-  try {
-    const { updateLocation: apiUpdate } = await import('@/services/locations/api');
-    return await apiUpdate(locationId, patch);
-  } catch {
-    mockLocations = mockLocations.map((l) => (l.id === locationId ? { ...l, ...patch } : l));
-    setStored('locations', mockLocations);
-    const updated = mockLocations.find((l) => l.id === locationId)!;
-    return { location: updated };
-  }
+  const { updateLocation: apiUpdate } = await import('@/services/locations/api');
+  return apiUpdate(locationId, { name: patch.name.trim() });
 }
 
 export async function deleteLocation(locationId: string): Promise<{ ok: true }> {
-  try {
-    const { deleteLocation: apiDelete } = await import('@/services/locations/api');
-    await apiDelete(locationId);
-  } catch {
-    // ignore
-  }
-  mockLocations = mockLocations.filter((l) => l.id !== locationId);
-  setStored('locations', mockLocations);
+  const { deleteLocation: apiDelete } = await import('@/services/locations/api');
+  await apiDelete(locationId);
   return { ok: true };
 }
 

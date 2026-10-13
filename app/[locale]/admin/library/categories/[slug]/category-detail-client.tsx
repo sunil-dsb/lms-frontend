@@ -175,7 +175,7 @@ export function CategoryDetailClient({
     const live = (stationsQuery.data ?? []).filter((s) => !s.isArchived);
     if (live.length > 0) {
       return [...live]
-        .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))
         .map((s) => ({ id: s.id, name: s.name }));
     }
     const seen = new Map<string, string>();

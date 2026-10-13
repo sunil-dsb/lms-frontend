@@ -35,9 +35,13 @@ export interface Role {
 export interface Station {
   id: string;
   name: string;
-  locationId: string;
-  sortOrder: number;
-  isArchived: boolean;
+  // Backend `stations` rows carry only `{ id, name }` — no location scoping,
+  // sort order, or archive flag. The extras below are legacy UI-only fields
+  // kept optional so older call sites still compile; new code must not rely
+  // on them (fetchStations no longer fabricates them).
+  locationId?: string;
+  sortOrder?: number;
+  isArchived?: boolean;
 }
 
 export interface Location {
@@ -101,19 +105,23 @@ export interface ApiError {
 
 export interface CreateStationInput {
   name: string;
-  locationId: string;
+  // Legacy UI-only extras — stripped before POST (backend accepts `{ name }`).
+  locationId?: string;
   sortOrder?: number;
 }
 
 export interface UpdateStationInput {
   name?: string;
+  // Legacy UI-only extras — never sent (backend PATCH accepts `{ name }`).
   sortOrder?: number;
   isArchived?: boolean;
 }
 
 export interface CreateRoleInput {
   name: string;
-  clearanceLevel: ClearanceLevel;
+  // No backend equivalent (`jobs` carry `stationIds`, not a clearance tier).
+  // Kept optional for backward compatibility; new code sends `stationIds`.
+  clearanceLevel?: ClearanceLevel;
   /** Stations this role works on. Empty array = "any station". */
   stationIds?: string[];
 }
