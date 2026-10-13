@@ -11,5 +11,6 @@ export const LIBRARY_ENDPOINTS = {
   PUBLISH: (id: string) => `/api/v1/procedures/${id}/publish`,
   ARCHIVE: (id: string) => `/api/v1/procedures/${id}/archive`,
   UNARCHIVE: (id: string) => `/api/v1/procedures/${id}/unarchive`,
+  DELETE: (id: string) => `/api/v1/procedures/${id}`,
   IMPORT: '/api/v1/procedures/import',
 } as const;

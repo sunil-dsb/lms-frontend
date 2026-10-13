@@ -153,8 +153,11 @@ export function getCategoryIcon(category: Pick<Category, 'slug'> & { icon?: stri
 }
 
 export function getSubcategoryIcon(
-  sub: Pick<Subcategory, 'slug'> & { icon?: string },
+  sub: Pick<Subcategory, 'slug'> & { icon?: string; subcategoryIcon?: string },
 ): IconType {
+  if (sub.subcategoryIcon && CATEGORY_MAP[sub.subcategoryIcon]) {
+    return CATEGORY_MAP[sub.subcategoryIcon];
+  }
   if (sub.icon && CATEGORY_MAP[sub.icon]) {
     return CATEGORY_MAP[sub.icon];
   }

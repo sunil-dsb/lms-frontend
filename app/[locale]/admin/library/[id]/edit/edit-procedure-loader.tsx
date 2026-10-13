@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
-import { backendSlug, fetchBackendSubcategories } from '@/services/categories/api';
-import { useBackendCategories } from '@/services/categories/hooks';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { backendSlug } from '@/services/categories/api';
+import { useBackendCategories, useAllSubcategories } from '@/services/categories/hooks';
 import { getCachedProcedure, getProcedureBySlug } from '@/lib/api';
 import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
 import { ProcedureEditor } from '@/components/admin/procedure-editor';
@@ -53,28 +53,30 @@ export function EditProcedureLoader({
 
   const categoriesQuery = useBackendCategories();
   const backendCategories = categoriesQuery.data ?? [];
-  const subcategoryQueries = useQueries({
-    queries: backendCategories.map((category) => ({
-      queryKey: ['categories', 'backend-subcategories', category.id],
-      queryFn: () => fetchBackendSubcategories(category.id),
-      enabled: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(category.id),
-      staleTime: 60 * 60 * 1000,
-    })),
-  });
-  const categories = React.useMemo(
-    () => backendCategories.map((category, index) => ({
+  // Subcategories arrive in ONE call (GET /api/v1/categories/subcategories)
+  // and are grouped by `categoryId` client-side — never one request per
+  // category.
+  const subcategoriesQuery = useAllSubcategories();
+  const allSubcategories = subcategoriesQuery.data ?? [];
+  const categories = React.useMemo(() => {
+    const byCategory = new Map<string, typeof allSubcategories>();
+    for (const sub of allSubcategories) {
+      const list = byCategory.get(sub.categoryId) ?? [];
+      list.push(sub);
+      byCategory.set(sub.categoryId, list);
+    }
+    return backendCategories.map((category) => ({
       ...category,
-      subcategories: (subcategoryQueries[index]?.data ?? []).map((subcategory) => ({
+      subcategories: (byCategory.get(category.id) ?? []).map((subcategory) => ({
         id: subcategory.id,
         categoryId: subcategory.categoryId || category.id,
         slug: backendSlug(subcategory.nameEn),
         nameEn: subcategory.nameEn,
         nameEs: subcategory.nameEs,
+        subcategoryIcon: subcategory.subcategoryIcon || undefined,
       })),
-    })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [backendCategories, subcategoryQueries],
-  );
+    }));
+  }, [backendCategories, allSubcategories]);
 
   if (!procedure && procedureQuery.isLoading) {
     return <EditProcedureSkeleton />;

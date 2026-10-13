@@ -13,13 +13,15 @@ import { IconTile } from '@/components/ui/icon-tile';
 import { Popover } from '@/components/ui/popover';
 import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
 import { cn } from '@/lib/utils';
-import { LuCheck, LuChevronRight, LuPlus, LuX } from 'react-icons/lu';
+import { LuCheck, LuChevronDown, LuChevronRight, LuPlus, LuX } from 'react-icons/lu';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/admin/page-header';
+import { Label } from '@/components/ui/label';
 import { CategoryDetailSkeleton } from '@/components/admin/category-detail-skeleton';
 import { fetchProcedures, updateProcedureStation } from '@/services/library/api';
 import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
 import { backendSlug, categorySlugsMatch, createBackendSubcategory, fetchBackendCategories, fetchBackendSubcategories } from '@/services/categories/api';
+import { AVAILABLE_ICONS } from '../category-actions';
 import { useStations } from '@/services/stations/hooks';
 
 interface CategoryDetailClientProps {
@@ -100,6 +102,8 @@ export function CategoryDetailClient({
   const [notFound, setNotFound] = React.useState<boolean>(false);
   const [addSubcategoryOpen, setAddSubcategoryOpen] = React.useState(false);
   const [newSubcategoryName, setNewSubcategoryName] = React.useState<BilingualValue>({ en: '', es: '' });
+  const [newSubcategoryIcon, setNewSubcategoryIcon] = React.useState('folder');
+  const [showSubcategoryIconPicker, setShowSubcategoryIconPicker] = React.useState(false);
   const [creatingSubcategory, setCreatingSubcategory] = React.useState(false);
   const [subcategoryError, setSubcategoryError] = React.useState<string | null>(null);
 
@@ -372,10 +376,13 @@ export function CategoryDetailClient({
             setCreatingSubcategory(true);
             setSubcategoryError(null);
             try {
-              await createBackendSubcategory(categoryId, { nameEn, nameEs });
+              await createBackendSubcategory(categoryId, { nameEn, nameEs, subcategoryIcon: newSubcategoryIcon });
               await queryClient.invalidateQueries({ queryKey: ['categories', 'backend-subcategories', categoryId] });
+              await queryClient.invalidateQueries({ queryKey: ['categories', 'all-subcategories'] });
               setAddSubcategoryOpen(false);
               setNewSubcategoryName({ en: '', es: '' });
+              setNewSubcategoryIcon('folder');
+              setShowSubcategoryIconPicker(false);
             } catch (error) {
               setSubcategoryError(error instanceof Error ? error.message : 'Could not create subcategory.');
             } finally {
@@ -400,6 +407,53 @@ export function CategoryDetailClient({
               maxLength={200}
               placeholder={{ en: 'e.g. Plating', es: 'p. ej. Emplatado' }}
             />
+            <div className="space-y-1.5 mt-4">
+              <Label>{isEs ? 'Icono' : 'Icon'}</Label>
+              <div className="flex items-center gap-3">
+                <IconTile
+                  size="md"
+                  icon={(AVAILABLE_ICONS.find((i) => i.id === newSubcategoryIcon) ?? AVAILABLE_ICONS[AVAILABLE_ICONS.length - 1]).icon}
+                />
+                <Button
+                  type="button"
+                  variant="neutral"
+                  icon={LuChevronDown}
+                  aria-expanded={showSubcategoryIconPicker}
+                  onClick={() => setShowSubcategoryIconPicker(!showSubcategoryIconPicker)}
+                >
+                  {isEs ? 'Elegir icono' : 'Choose icon'}
+                </Button>
+              </div>
+              {showSubcategoryIconPicker ? (
+                <div className="mt-2 grid grid-cols-4 gap-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] p-2">
+                  {AVAILABLE_ICONS.map((item) => {
+                    const isSelected = newSubcategoryIcon === item.id;
+                    const IconComponent = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        title={item.label}
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          setNewSubcategoryIcon(item.id);
+                          setShowSubcategoryIconPicker(false);
+                        }}
+                        className={cn(
+                          'flex flex-col items-center gap-1 rounded-[var(--radius-md)] border p-2 text-sm transition-colors',
+                          isSelected
+                            ? 'border-[var(--color-ring)] bg-[var(--color-brand-tint)] font-semibold text-[var(--color-brand-700)]'
+                            : 'border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-panel)]',
+                        )}
+                      >
+                        <IconComponent aria-hidden="true" className="text-lg" />
+                        <span className="w-full truncate text-center">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
             {subcategoryError ? <p role="alert" className="text-sm text-[var(--color-bad)]">{subcategoryError}</p> : null}
           </ModalBody>
           <ModalFooter className="mb-3">

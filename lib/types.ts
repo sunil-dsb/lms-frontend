@@ -70,6 +70,9 @@ export interface AdminEmployee extends Employee {
   /** Highest clearance level across all assigned job roles, surfaced in
    *  the admin list. `null` when the employee has no job roles. */
   roleClearance: ClearanceLevel | null;
+  /** Active magic-link invite URL. Returned by the backend for `pending`
+   *  employees (GET detail + PUT when an email change re-invites). */
+  inviteUrl?: string;
 }
 
 export interface CreateEmployeeInput {
@@ -159,6 +162,9 @@ export interface Subcategory {
   nameEn: string;
   nameEs: string;
   categoryId?: string;
+  /** Backend `subcategory_icon` column — picked at create time from the
+   *  shared icon set. Resolved by `getSubcategoryIcon`. */
+  subcategoryIcon?: string;
 }
 
 export interface Category {
@@ -168,6 +174,12 @@ export interface Category {
   nameEs: string;
   icon?: string;
   isArchived: boolean;
+  /** Backend `status` column (`active` | `archived`). Mirrors `isArchived`
+   *  — mapped from the same response field. */
+  status?: 'active' | 'archived';
+  /** Real-time procedure count from the backend (procedures assigned to
+   *  subcategories under this category). */
+  proceduresCount?: number;
   /** Whether the category applies to every station or is station-tied.
    *  `general` → subcategory procedures save with `stationScope: null`.
    *  `station-tied` → the procedure wizard's Access step pre-fills with the

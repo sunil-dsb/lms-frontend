@@ -444,6 +444,7 @@
         "saveChanges": "Guardar cambios",
         "cancel": "Cancelar",
         "titleRequired": "Primero ponle un título.",
+        "purposeRequired": "Agrega un propósito antes de continuar.",
         "stationsRequired": "Elige al menos una estación antes de publicar.",
         "loading": "Abriendo el procedimiento…",
         "notFound": "No se encontró este procedimiento. Puede que se haya eliminado.",

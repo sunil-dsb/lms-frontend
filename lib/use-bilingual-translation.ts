@@ -3,16 +3,15 @@
 import * as React from 'react';
 
 import {
-  hasGeminiConfig,
   TranslationError,
-  translateText,
   type TranslationLang,
 } from '@/lib/gemini-translate';
+import { translateViaServer } from '@/lib/translate-api';
 
 export type { TranslationLang };
 
-/** Keystrokes stop → one Gemini call. Originally specified at 1500-2000ms;
- *  relaxed to 800ms so the opposite field fills in before the user moves on. */
+/** Keystrokes stop → one server translate call after 800ms. No caching — every
+ *  debounced edit fires a fresh request, even for previously seen text. */
 export const TRANSLATE_DEBOUNCE_MS = 800;
 
 /** How long a failed-translation hint stays on screen before it fades out. */
@@ -23,34 +22,12 @@ const DEFAULT_WAIT_TIMEOUT_MS = 8000;
 
 export type TranslationStatus = 'idle' | 'waiting' | 'translating' | 'error';
 
-/**
- * Who owns the text in a field right now.
- *
- * - `initial`   — loaded from storage. Replacable by a newer translation, but
- *                 never cleared when the other side is emptied (it may be
- *                 somebody's hand-written copy).
- * - `generated` — written by a translation in this session. Replacable, and
- *                 cleared if its source is emptied.
- * - `user`      — hand-edited in this session. Never written to again until
- *                 the user empties it themselves.
- * - `empty`     — nothing there.
- */
 type FieldOwner = 'user' | 'generated' | 'initial' | 'empty';
 
 function otherSide(side: TranslationLang): TranslationLang {
   return side === 'en' ? 'es' : 'en';
 }
 
-/* ------------------------------------------------------------- tracker -- */
-
-/**
- * Counts outstanding translation work across every field on the page so a
- * save can wait for all of them at once (spec edge cases #8 and #13).
- *
- * A "slot" is acquired the moment a translation is scheduled — including the
- * debounce wait, not just the network call — and released when it settles or
- * is cancelled. So a save right after a keystroke still waits.
- */
 let slotSeq = 0;
 const activeSlots = new Set<number>();
 const slotListeners = new Set<() => void>();
@@ -127,13 +104,17 @@ export interface UseBilingualTranslationParams {
   debounceMs?: number;
   /** Applied to translated OUTPUT only — the source text is never clipped. */
   maxLength?: number;
-  /** Override the translator. Defaults to Gemini. */
+  /** Override the translator. Defaults to the server `/api/backend/translate`
+   *  route. Receives an `AbortSignal` so in-flight requests can be cancelled
+   *  when a newer edit arrives. */
   translate?: (
     text: string,
     from: TranslationLang,
     to: TranslationLang,
+    signal?: AbortSignal,
   ) => string | Promise<string>;
-  /** Default: a key is configured, or an override translator was supplied. */
+  /** Default true — the server route needs no client-side key. Set false to
+   *  disable auto-translation for a field. */
   enabled?: boolean;
 }
 
@@ -160,9 +141,9 @@ export function useBilingualTranslation({
   debounceMs = TRANSLATE_DEBOUNCE_MS,
   maxLength,
   translate,
-  enabled = translate ? true : hasGeminiConfig(),
+  enabled = true,
 }: UseBilingualTranslationParams): BilingualTranslationApi {
-  const translateFn = translate ?? translateText;
+  const translateFn = translate ?? translateViaServer;
   const [status, setStatus] = React.useState<TranslationStatus>('idle');
   const [activeTarget, setActiveTarget] = React.useState<TranslationLang | null>(null);
 
@@ -173,6 +154,8 @@ export function useBilingualTranslation({
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const errorTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const slotRef = React.useRef<number | null>(null);
+  /** Cancels the in-flight fetch when a newer edit arrives or on unmount. */
+  const abortRef = React.useRef<AbortController | null>(null);
 
   const ownerRef = React.useRef<Record<TranslationLang, FieldOwner>>({
     en: englishValue.trim() ? 'initial' : 'empty',
@@ -190,6 +173,10 @@ export function useBilingualTranslation({
     if (errorTimerRef.current !== null) {
       clearTimeout(errorTimerRef.current);
       errorTimerRef.current = null;
+    }
+    if (abortRef.current !== null) {
+      abortRef.current.abort();
+      abortRef.current = null;
     }
     if (slotRef.current !== null) {
       releaseSlot(slotRef.current);
@@ -248,7 +235,12 @@ export function useBilingualTranslation({
         setStatus('translating');
         setActiveTarget(target);
 
-        const translated = await Promise.resolve(translateFn(text, source, target));
+        const controller = new AbortController();
+        abortRef.current = controller;
+        const translated = await Promise.resolve(
+          translateFn(text, source, target, controller.signal),
+        );
+        if (abortRef.current === controller) abortRef.current = null;
         if (!translated || !translated.trim()) {
           throw new TranslationError('empty-response', 'Translator returned no text');
         }
@@ -264,6 +256,7 @@ export function useBilingualTranslation({
         ownerRef.current[target] = 'generated';
         settle();
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         if (!mountedRef.current) return;
         if (mySeq !== seqRef.current) return;
         // Keep both sides exactly as they are — no clearing, no retry (edge #9).

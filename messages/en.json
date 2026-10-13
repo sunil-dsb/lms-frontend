@@ -444,6 +444,7 @@
         "saveChanges": "Save changes",
         "cancel": "Cancel",
         "titleRequired": "Give it a title first.",
+        "purposeRequired": "Add a purpose before continuing.",
         "stationsRequired": "Pick at least one station before publishing.",
         "loading": "Opening the procedure…",
         "notFound": "This procedure could not be found. It may have been deleted.",

@@ -5,7 +5,7 @@ import { queryWords, scoreProcedure } from '@/lib/procedure-search';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCategories, useBackendCategories } from '@/services/categories/hooks';
+import { useBackendCategories } from '@/services/categories/hooks';
 import { backendSlug, categorySlugsMatch } from '@/services/categories/api';
 import { useAssignedProcedures } from '@/services/library/hooks';
 import { getCategoryIcon } from '@/lib/category-icons';
@@ -42,7 +42,6 @@ interface ProceduresClientListProps {
 export function ProceduresClientList({
   initialQuery,
   initialCategory,
-  locationId,
   locale,
   readsSpanish,
   viewAs,
@@ -87,18 +86,14 @@ export function ProceduresClientList({
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Both lists resolve through TanStack Query (1-hour cache for categories so
+  // Categories resolve through TanStack Query (1-hour cache for categories so
   // tab-back navigation is instant and no redundant API calls are made).
+  // Backend only — no mock merge.
   const queryClient = useQueryClient();
-  const { data: mockCategories = [] } = useCategories(locationId);
   const { data: backendCategories = [] } = useBackendCategories();
   const categories = React.useMemo(() => {
-    // Backend first (real data wins), mock after for demo content. Sources
-    // spell one shelf differently (`recipe`/`recipes`), so collapse on a
-    // tolerant slug match instead of exact equality — otherwise the same
-    // category renders two chips.
     const merged: Category[] = [];
-    for (const c of [...backendCategories, ...mockCategories]) {
+    for (const c of backendCategories) {
       const slug = c.slug || backendSlug(c.nameEn);
       const dup = merged.find(
         (m) => categorySlugsMatch(m.slug, slug) || (Boolean(m.id) && Boolean(c.id) && m.id === c.id),
@@ -106,7 +101,7 @@ export function ProceduresClientList({
       if (!dup) merged.push({ ...c, slug });
     }
     return merged;
-  }, [backendCategories, mockCategories]);
+  }, [backendCategories]);
 
   const selectedCategoryObj = React.useMemo(
     () =>
