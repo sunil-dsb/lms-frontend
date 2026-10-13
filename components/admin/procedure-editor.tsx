@@ -197,6 +197,7 @@ export function ProcedureEditor({
   const [dirty, setDirty] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [titleError, setTitleError] = React.useState<string | null>(null);
+  const [purposeError, setPurposeError] = React.useState<string | null>(null);
   const [blockErrors, setBlockErrors] = React.useState<Record<string, string>>({});
   const [stationsError, setStationsError] = React.useState<boolean>(false);
   const [pending, startTransition] = React.useTransition();
@@ -606,6 +607,16 @@ export function ProcedureEditor({
           field: 'title',
         };
       }
+      const purposeEn = purpose.en.trim();
+      const purposeEs = purpose.es.trim();
+      if (!purposeEn && !purposeEs) {
+        return {
+          message: t('purposeRequired'),
+          target: 'field-purpose',
+          step: 'details',
+          field: 'purpose',
+        };
+      }
 
       // Empty text blocks and empty drafts do NOT error.
       // Only when publishing, verify that there is at least one block with actual content.
@@ -766,6 +777,8 @@ export function ProcedureEditor({
   function applyValidationError(valErr: ValidationErrorResult): void {
     if (valErr.field === 'title') {
       setTitleError(valErr.message);
+    } else if (valErr.field === 'purpose') {
+      setPurposeError(valErr.message);
     } else if (valErr.blockId) {
       setBlockErrors({ [valErr.blockId]: valErr.message });
     }
@@ -799,6 +812,7 @@ export function ProcedureEditor({
     }
 
     setTitleError(null);
+    setPurposeError(null);
     setBlockErrors({});
     setStationsError(false);
     if (stepIdx < STEPS.length - 1) {
@@ -828,6 +842,7 @@ export function ProcedureEditor({
       }
     }
     setTitleError(null);
+    setPurposeError(null);
     setBlockErrors({});
     setStationsError(false);
     setStep(newStepId);
@@ -853,6 +868,7 @@ export function ProcedureEditor({
     }
 
     setTitleError(null);
+    setPurposeError(null);
     setBlockErrors({});
     setStationsError(false);
 
@@ -1095,12 +1111,24 @@ export function ProcedureEditor({
                     multiline
                     maxLength={500}
                     value={purpose}
-                    onChange={(next) => edit(setPurpose)(next)}
+                    onChange={(next) => {
+                      setPurposeError(null);
+                      edit(setPurpose)(next);
+                    }}
                     placeholder={{
                       en: "Enter the purpose of this procedure...",
                       es: "Ingresa el propósito de este procedimiento...",
                     }}
                   />
+                  {purposeError ? (
+                    <p
+                      role="alert"
+                      className="mt-1.5 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+                    >
+                      <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
+                      <span>{purposeError}</span>
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </FormSection>

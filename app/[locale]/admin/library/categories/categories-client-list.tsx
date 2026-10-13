@@ -2,10 +2,8 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueries, useQuery } from '@tanstack/react-query';
-import { backendSlug, categorySlugsMatch, fetchBackendSubcategories } from '@/services/categories/api';
-import { fetchProcedures } from '@/services/library/api';
-import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
+import { backendSlug } from '@/services/categories/api';
+import { useAllSubcategories } from '@/services/categories/hooks';
 import { getCategoryIcon } from '@/lib/category-icons';
 import type { Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -40,74 +38,40 @@ export function CategoriesClientList({
   initialCategories: Category[];
   locale: string;
 }): React.ReactElement {
-  const subcategoryQueries = useQueries({
-    queries: initialCategories.map((category) => ({
-      queryKey: ['categories', 'backend-subcategories', category.id],
-      queryFn: () => fetchBackendSubcategories(category.id),
-      enabled: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(category.id),
-      staleTime: 60 * 60 * 1000,
-    })),
-  });
-  const categories = React.useMemo(
-    () => initialCategories.map((category, index) => ({
+  // Subcategories in ONE call (GET /api/v1/categories/subcategories),
+  // grouped by `categoryId` client-side — never one request per category.
+  const { data: allSubcategories = [] } = useAllSubcategories();
+  const categories = React.useMemo(() => {
+    const byCategory = new Map<string, typeof allSubcategories>();
+    for (const sub of allSubcategories) {
+      const list = byCategory.get(sub.categoryId) ?? [];
+      list.push(sub);
+      byCategory.set(sub.categoryId, list);
+    }
+    return initialCategories.map((category) => ({
       ...category,
-      subcategories: (subcategoryQueries[index]?.data ?? []).map((subcategory) => ({
+      isArchived: category.status === 'archived' || category.isArchived,
+      subcategories: (byCategory.get(category.id) ?? []).map((subcategory) => ({
         id: subcategory.id,
         categoryId: subcategory.categoryId || category.id,
         slug: backendSlug(subcategory.nameEn),
         nameEn: subcategory.nameEn,
         nameEs: subcategory.nameEs,
+        subcategoryIcon: subcategory.subcategoryIcon || undefined,
       })),
-    })),
-    [initialCategories, subcategoryQueries],
-  );
+    }));
+  }, [initialCategories, allSubcategories]);
   const isEs = locale === 'es';
 
-  // Real procedure counts per category — published, non-archived rows via
-  // the filter API (shared query cache with the library explorer). Rows
-  // resolve through their denormalised category first, then through the
-  // subcategory map for rows that only carry a subcategory.
-  const { data: publishedProcedures = [] } = useQuery({
-    queryKey: [...PROCEDURES_QUERY_KEY, 'category-counts'],
-    queryFn: () => fetchProcedures({ status: 'published' }, true).then((r) => r.procedures),
-    staleTime: 30_000,
-  });
-
-  // Real procedure counts per card. Backend rows link to backend
-  // subcategories (or nothing), never to these mock ids — so match at
-  // the subcategory level by exact id, slug, or English name instead of
-  // comparing category ids (which would read 0 forever).
+  // Procedure counts come straight from the backend (`proceduresCount` on
+  // each category row) — no client-side counting over fetched procedures.
   const procedureCounts = React.useMemo(() => {
-    const normName = (s: string): string => s.trim().toLowerCase();
     const counts = new Map<string, number>();
     for (const c of categories) {
-      const subs = c.subcategories ?? [];
-      let n = 0;
-      if (subs.length > 0) {
-        for (const p of publishedProcedures) {
-          if (p.isArchived) continue;
-          const ps = (
-            p as unknown as {
-              subcategory?: { id: string; nameEn: string } | null;
-            }
-          ).subcategory;
-          const pid = p.subcategoryId ?? ps?.id ?? null;
-          const pname = ps?.nameEn ?? '';
-          if (!pid && !pname) continue;
-          const hit = subs.some(
-            (s) =>
-              (s.id !== '' && pid !== null && s.id === pid) ||
-              (pname !== '' &&
-                (categorySlugsMatch(backendSlug(pname), s.slug) ||
-                  normName(pname) === normName(s.nameEn))),
-          );
-          if (hit) n += 1;
-        }
-      }
-      counts.set(c.id, n);
+      counts.set(c.id, c.proceduresCount ?? 0);
     }
     return counts;
-  }, [categories, publishedProcedures]);
+  }, [categories]);
 
   const validCategories = categories.filter(
     (c) => Boolean(c && (c.nameEn?.trim() || c.nameEs?.trim())),

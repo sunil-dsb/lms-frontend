@@ -11,6 +11,7 @@ import {
   LuCheck,
   LuCircleAlert,
   LuClock,
+  LuCopy,
   LuMail,
   LuMapPin,
   LuPencil,
@@ -37,11 +38,8 @@ import { fetchEmployeeById } from '@/services/employees/api';
 import { useRoles } from '@/services/jobs/hooks';
 import { useStations } from '@/services/stations/hooks';
 import { useLocations } from '@/services/locations/hooks';
-import {
-  getEmployeeById,
-  EMPLOYEES_UPDATED_EVENT,
-  type UpdateEmployeeInput,
-} from '@/lib/mock-employees';
+import { EMPLOYEES_UPDATED_EVENT } from '@/lib/mock-employees';
+import type { UpdateEmployeeInput } from '@/lib/mock-employees';
 import { getTrainingRowsForEmployee } from '@/lib/mock-training';
 import type {
   AdminEmployee,
@@ -66,20 +64,18 @@ export function EmployeeDetailClient({
   // The detail API is the ONE source for this page — called client-side
   // so the request is visible in the Network tab. React Query dedupes
   // StrictMode's double-mount into a single request and caches the
-  // result for the session.
+  // result for the session. Always live data: the backend returns the
+  // active `inviteUrl` for pending employees, merged here so the banner
+  // below can offer it for copy.
   const queryClient = useQueryClient();
   const employeeQuery = useQuery({
     queryKey: ['employee', id],
     enabled: Boolean(id),
     queryFn: async (): Promise<AdminEmployee> => {
-      try {
-        const res = await fetchEmployeeById(id);
-        if (res.employee) return res.employee;
-      } catch {
-        // API unreachable / mock id — fall through to the local store.
+      const res = await fetchEmployeeById(id);
+      if (res.employee) {
+        return res.inviteUrl ? { ...res.employee, inviteUrl: res.inviteUrl } : res.employee;
       }
-      const local = getEmployeeById(id);
-      if (local) return local;
       throw new Error('Employee not found');
     },
     staleTime: 60_000,
@@ -108,6 +104,7 @@ export function EmployeeDetailClient({
   const { data: locationsData } = useLocations();
   const locations = locationsData?.locations ?? [];
   const [editOpen, setEditOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   function openEdit(): void {
     if (!employee) return;
@@ -118,9 +115,45 @@ export function EmployeeDetailClient({
   // location in the modal needs no refetch.
   function onLocationChange(): void {}
 
-  function onSaved(next: AdminEmployee, _prior: UpdateEmployeeInput): void {
-    if (id) queryClient.setQueryData(['employee', id], next);
+  function onSaved(next: AdminEmployee, _prior: UpdateEmployeeInput, inviteUrl?: string): void {
+    const merged = inviteUrl ? { ...next, inviteUrl } : next;
+    if (id) {
+      queryClient.setQueryData(['employee', id], merged);
+    }
+    if (inviteUrl) {
+      // The edit modal owns the inline invite panel. Keep it open and avoid
+      // a refetch/refresh replacing the fresh link before it can be copied.
+      return;
+    }
+    if (id) {
+      // Re-read the row: the PUT response only carries `inviteUrl` when it
+      // just re-invited (email change). A pending employee may still hold
+      // an older active link that only GET returns — refetch so the banner
+      // below converges instead of waiting out the query staleTime.
+      void queryClient.invalidateQueries({ queryKey: ['employee', id] });
+    }
     router.refresh();
+  }
+
+  async function copyInvite(): Promise<void> {
+    if (!employee?.inviteUrl) return;
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(employee.inviteUrl);
+      ok = true;
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = employee.inviteUrl;
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        ta.remove();
+      } catch {
+        ok = false;
+      }
+    }
+    setCopied(ok);
   }
 
   // Lookup maps for the role / station chips
@@ -254,6 +287,33 @@ export function EmployeeDetailClient({
           </div>
         </CardContent>
       </Card>
+
+      {/* Pending invite — the backend returns the active magic-link
+          `inviteUrl` for pending employees. Offer it for copy for the
+          kitchens where email delivery is unreliable. */}
+      {employee?.status === 'pending' && employee?.inviteUrl ? (
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4">
+          <p className="text-sm font-semibold text-[var(--color-ink)]">
+            {t('inviteCreatedHeading')}
+          </p>
+          <p className="mt-1 text-xs text-[var(--color-ink-2)]">
+            {t('inviteEmailSent')}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <p className="min-w-0 flex-1 break-all rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-panel)] px-3 py-2 text-xs text-[var(--color-ink-2)]">
+              {employee.inviteUrl}
+            </p>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => void copyInvite()}
+              icon={copied ? LuCheck : LuCopy}
+            >
+              {copied ? t('copied') : t('copyUrl')}
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Employee information. Six facts in the .facts grid. */}
       <FormSection

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { deleteProcedure, listCategories, listProcedures, clearLibraryListCache, canPublishProcedure, setProcedureState } from '@/lib/api';
+import { deleteProcedure, listProcedures, clearLibraryListCache, canPublishProcedure, setProcedureState } from '@/lib/api';
 import type { Procedure, Category, ProcedureStatus, Station, Subcategory, ProcedureBlock } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import {
   LuFilter,
   LuRefreshCw,
   LuSearch,
+  LuTrash2,
   LuX,
 } from 'react-icons/lu';
 import {
@@ -1086,6 +1087,17 @@ export function LibraryProcedureExplorer({
                       p.isArchived
                         ? null
                         : { label: isEs ? 'Archivar' : 'Archive', icon: LuArchive, onSelect: () => void onArchive(p.id) },
+                      {
+                        label: isEs ? 'Eliminar' : 'Delete',
+                        icon: LuTrash2,
+                        destructive: true,
+                        confirmTitle: isEs ? 'Eliminar procedimiento' : 'Delete procedure',
+                        confirmDescription: isEs
+                          ? `"${title}" se eliminará permanentemente. Esta acción no se puede deshacer.`
+                          : `"${title}" will be permanently deleted. This cannot be undone.`,
+                        confirmLabel: isEs ? 'Sí, eliminar' : 'Yes, delete',
+                        onSelect: () => void handleDelete(p.id),
+                      },
                     ].filter(Boolean) as RowActionItem[]
                   }
                 />

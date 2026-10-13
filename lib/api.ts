@@ -1531,57 +1531,6 @@ function getStored<T>(key: string, seed: T): T {
  *  every station and never ask the manager to pick one. Used by the local-
  *  Storage migration (and any future fixtures) to backfill `kind` on
  *  pre-existing records that predate the field. */
-const GENERAL_CATEGORY_SLUGS = new Set(['onboarding', 'food-safety', 'cleaning']);
-
-/** One-shot normalisation for `categories_v3`. Pre-existing records stored
- *  before `kind` was introduced get it backfilled by slug, and legacy
- *  subcategory fields (`isStationSpecific`, `stations`) are stripped so the
- *  rest of the app never sees the dead shape. Re-saves once so the next
- *  read is a no-op. Wrapped in try/catch so a corrupted store does not
- *  brick the page — the seed is the fallback. */
-function normaliseCategories(stored: Category[]): Category[] {
-  let mutated = false;
-  // Discard any empty/corrupted category entries (e.g. without a name)
-  const valid = (stored || []).filter(
-    (c) => Boolean(c && (c.nameEn?.trim() || c.nameEs?.trim())),
-  );
-  if (valid.length !== (stored || []).length) {
-    mutated = true;
-  }
-  const normalised = valid.map((c) => {
-    let touched = false;
-    const nextKind = c.kind ?? (GENERAL_CATEGORY_SLUGS.has(c.slug) ? 'general' : 'station-tied');
-    if (nextKind !== c.kind) touched = true;
-    const subs = c.subcategories ?? [];
-    const cleanSubs = subs.map((s) => {
-      // Subcategory shape is now `{ id, slug, nameEn, nameEs }` only. The
-      // legacy `isStationSpecific` and `stations` fields were dropped when
-      // scope moved up to the category — strip them on read so nothing
-      // downstream has to defend against them.
-      const hasLegacy =
-        (s as Subcategory & { isStationSpecific?: boolean; stations?: string[] })
-          .isStationSpecific !== undefined ||
-        (s as Subcategory & { isStationSpecific?: boolean; stations?: string[] })
-          .stations !== undefined;
-      if (!hasLegacy) return s;
-      touched = true;
-      return {
-        id: s.id,
-        slug: s.slug,
-        nameEn: s.nameEn,
-        nameEs: s.nameEs,
-      };
-    });
-    if (!touched) return c;
-    mutated = true;
-    return { ...c, kind: nextKind, subcategories: cleanSubs };
-  });
-  if (mutated) {
-    setStored('categories_v3', normalised);
-  }
-  return mutated ? normalised : stored;
-}
-
 function setStored<T>(key: string, data: T): void {
   if (typeof window === 'undefined') return;
   try {
@@ -1591,73 +1540,36 @@ function setStored<T>(key: string, data: T): void {
   }
 }
 
-let mockLocations: Location[] = getStored('locations', SEED_LOCATIONS);
-let mockRoles: Role[] = getStored('roles_v2', SEED_ROLES);
-let mockStations: Station[] = getStored('stations_v2', SEED_STATIONS);
-let mockCategories: Category[] = normaliseCategories(getStored('categories_v3', SEED_CATEGORIES));
-let mockEmployees: AdminEmployee[] = getStored('employees_v3', SEED_EMPLOYEES);
-let mockProcedures: Procedure[] = getStored('procedures_v2', SEED_PROCEDURES);
+// One-time purge of pre-live demo payloads: browsers that ran the mock
+// era still carry seed rows under these keys, and the readers above would
+// keep serving them. Mirrors refill from the API on the next list fetch.
+if (typeof window !== 'undefined') {
+  try {
+    if (!window.localStorage.getItem('lms_demo_purged_v1')) {
+      for (const key of ['locations', 'roles_v2', 'stations_v2', 'categories_v3', 'employees_v3', 'procedures_v2', 'quizzes']) {
+        window.localStorage.removeItem(`lms_demo_${key}`);
+      }
+      window.localStorage.setItem('lms_demo_purged_v1', '1');
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+// Local stores below are write-through mirrors of API rows only (first
+// paint via getCachedProcedure, optimistic explorer updates). They are
+// seeded from EMPTY defaults — seed constants never materialise here, so
+// no mock row can ever render as data.
+let mockProcedures: Procedure[] = getStored('procedures_v2', []);
 // Centralised quizzes table. The wizard authors quizzes locally in form
 // state and on save calls `createQuiz()` to materialise a row here and
 // stamp its id onto the procedure. Stage 3 (course creation) writes to
 // the same store — that is the whole point of having one table.
 let mockQuizzes: Quiz[] = getStored('quizzes', SEED_QUIZZES);
 
-function getLocationsStore(): Location[] {
-  if (typeof window !== 'undefined') mockLocations = getStored('locations', SEED_LOCATIONS);
-  return mockLocations;
-}
-function getRolesStore(): Role[] {
-  if (typeof window !== 'undefined') mockRoles = getStored('roles_v2', SEED_ROLES);
-  return mockRoles;
-}
-function getStationsStore(): Station[] {
-  if (typeof window !== 'undefined') mockStations = getStored('stations_v2', SEED_STATIONS);
-  return mockStations;
-}
-function getCategoriesStore(): Category[] {
-  if (typeof window !== 'undefined') {
-    // Re-read each call so concurrent tab edits surface without a reload.
-    // Normalise every read so a freshly-pasted localStorage entry from a
-    // backup that pre-dates `kind` still renders correctly.
-    mockCategories = normaliseCategories(getStored('categories_v3', SEED_CATEGORIES));
-  }
-  return mockCategories;
-}
-function getEmployeesStore(): AdminEmployee[] {
-  if (typeof window !== 'undefined') mockEmployees = getStored('employees_v3', SEED_EMPLOYEES);
-  return mockEmployees;
-}
 function getProceduresStore(): Procedure[] {
   if (typeof window !== 'undefined') {
-    mockProcedures = getStored('procedures_v2', SEED_PROCEDURES);
-
-    // Keep ONLY allowed demo procedures (Guacamole Fresco, Herb-Crusted Sea Bass)
-    // and any non-demo custom procedures created by the user
-    const allowedDemoIds = new Set(['proc-guacamole-fresco', 'proc-promo-sea-bass']);
-    const allowedDemoSlugs = new Set(['guacamole-fresco', 'herb-crusted-sea-bass']);
-    const isAllowedDemo = (p: Procedure) =>
-      allowedDemoIds.has(p.id) || allowedDemoSlugs.has(p.slug);
-    const isCustomProcedure = (p: Procedure) =>
-      !p.id.startsWith('proc-') && !p.id.startsWith('demo-') && !p.id.startsWith('master-');
-
-    mockProcedures = mockProcedures.filter((p) => isAllowedDemo(p) || isCustomProcedure(p));
-
-    const guacIdx = mockProcedures.findIndex(
-      (p) => p.id === 'proc-guacamole-fresco' || p.slug === 'guacamole-fresco',
-    );
-    if (guacIdx !== -1) {
-      const [guac] = mockProcedures.splice(guacIdx, 1);
-      guac.updatedAt = '2026-09-30T12:00:00Z';
-      mockProcedures.unshift(guac);
-    }
-
-    const cachedIds = new Set(mockProcedures.map((p) => p.id));
-    const missing = SEED_PROCEDURES.filter((p) => !cachedIds.has(p.id));
-    if (missing.length > 0) {
-      mockProcedures = [...mockProcedures, ...missing];
-    }
-    setStored('procedures_v2', mockProcedures);
+    mockProcedures = getStored('procedures_v2', []);
   }
   return mockProcedures;
 }
@@ -1916,19 +1828,11 @@ export async function listEmployees(
   opts: { status?: EmployeeStatus | 'all' } = {},
   cookieHeader?: string,
 ): Promise<{ employees: AdminEmployee[] }> {
+  // Always live data — no mock fallback. Failures propagate so screens
+  // render the backend error instead of stale seed rows.
   const status = opts.status ?? 'all';
-  try {
-    const { fetchEmployees } = await import('@/services/employees/api');
-    const res = await fetchEmployees({ status }, cookieHeader);
-    if (res.employees) {
-      return res;
-    }
-  } catch {
-    // fallback
-  }
-  const emps = getEmployeesStore();
-  const filtered = status === 'all' ? emps : emps.filter((e) => e.status === status);
-  return { employees: [...filtered] };
+  const { fetchEmployees } = await import('@/services/employees/api');
+  return fetchEmployees({ status }, cookieHeader);
 }
 
 export async function createEmployee(
@@ -2074,74 +1978,17 @@ function uniqueSlug(title: string, exceptId?: string): string {
 }
 
 export async function createProcedure(input: CreateProcedureInput): Promise<{ procedure: Procedure }> {
-  try {
-    const { createProcedure: apiCreate } = await import('@/services/library/api');
-    const proc = await apiCreate(input);
-    if (proc) {
-      mockProcedures = [proc, ...getProceduresStore().filter((p) => p.id !== proc.id && p.slug !== proc.slug)];
-      setStored('procedures_v2', mockProcedures);
-      clearLibraryListCache();
-      return { procedure: proc };
-    }
-  } catch (err) {
-    console.error('API createProcedure error, falling back to local store:', err);
-    if (err instanceof ApiException) throw err;
+  // Always live data — no mock fallback. The backend validates the full
+  // payload; failures propagate so the editor shows them.
+  const { createProcedure: apiCreate } = await import('@/services/library/api');
+  const proc = await apiCreate(input);
+  if (!proc) {
+    throw new Error('Backend did not return created procedure');
   }
-
-  const cats = getCategoriesStore();
-  const cat = cats.find((c) => c.id === input.categoryId) ?? null;
-  const slug = uniqueSlug(input.titleEn || input.titleEs);
-
-  const newProc: Procedure = {
-    id: `proc-${Date.now()}`,
-    slug,
-    titleEn: input.titleEn,
-    titleEs: input.titleEs,
-    purposeEn: input.purposeEn,
-    purposeEs: input.purposeEs,
-    category: cat,
-    status: input.status ?? 'draft',
-    bodyEn: input.bodyEn,
-    bodyEs: input.bodyEs,
-    // Subcategory under `categoryId`. Stored alongside the procedure so
-    // the library can filter by it without re-joining categories.
-    subcategoryId: input.subcategoryId ?? null,
-    // Per-procedure station scope. Stored alongside the procedure so
-    // the cook's station assignment can be matched against it on read.
-    stationScope: input.stationScope ?? null,
-    createdBy: 'emp-admin',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    // Per PROJECT_OVERVIEW §02 SOP Library: every print carries a QR
-    // pointing at the current version. New procedures start at v1; the
-    // backend bumps the version inside a SELECT FOR UPDATE on every
-    // publish. The wizard never sets this explicitly.
-    version: input.version ?? 1,
-    // Per PROJECT_OVERVIEW §02 Content Creation: "Content moves through
-    // draft, published and archived states." New procedures start
-    // unarchived; archive is a separate admin action (⋯ kebab → Archive
-    // → modal confirm).
-    isArchived: input.isArchived ?? false,
-    audience: input.audience ?? null,
-    protection: input.protection ?? 'standard',
-    // FK to the centralised quizzes table. The wizard authors a quiz
-    // locally in form state, calls createQuiz() first to materialise a
-    // row, then passes that id here. `null` means the SOP has no quiz.
-    quizId: input.quizId ?? null,
-    // FK to a training course this SOP feeds into. `null` means the SOP
-    // is standalone — not part of any training plan. The Training &
-    // Quiz step captures this in the wizard.
-    linkedTrainingId: input.linkedTrainingId ?? null,
-    // Quiz visibility on the employee side. Defaults to 'training' so
-    // standalone reads of the SOP hide the quiz; 'always' surfaces it on
-    // every read. Ignored when quizId is null.
-    quizMode: (input.quizMode ?? 'training') as ProcedureQuizMode,
-  };
-
-  mockProcedures = [newProc, ...getProceduresStore()];
+  mockProcedures = [proc, ...getProceduresStore().filter((p) => p.id !== proc.id && p.slug !== proc.slug)];
   setStored('procedures_v2', mockProcedures);
   clearLibraryListCache();
-  return { procedure: newProc };
+  return { procedure: proc };
 }
 
 export type UpdateProcedureInput = Partial<Omit<CreateProcedureInput, 'titleEn'>> & {
@@ -2152,72 +1999,20 @@ export async function updateProcedure(
   id: string,
   patch: UpdateProcedureInput,
 ): Promise<{ procedure: Procedure }> {
-  // Real backend first: PUT /:id with the whole body (the route validates
-  // against the full create schema — partial bodies 400). The shared payload
-  // builder maps mock-only ids to real UUIDs and nulls the rest, so demo
-  // rows degrade to a backend-valid shape instead of failing validation.
-  try {
-    const { updateProcedure: apiUpdate } = await import('@/services/library/api');
-    const proc = await apiUpdate(id, patch);
-    if (proc) {
-      mockProcedures = [proc, ...getProceduresStore().filter((p) => p.id !== proc.id && p.slug !== proc.slug)];
-      setStored('procedures_v2', mockProcedures);
-      clearLibraryListCache();
-      if (typeof window !== 'undefined') window.dispatchEvent(new Event('lms_procedures_updated'));
-      return { procedure: proc };
-    }
-  } catch (err) {
-    // Row lives only locally (backend 404 NOT_FOUND) or backend unreachable
-    // (status 0): fall through to the mock store below. Real validation
-    // (400), auth (401/403) and conflict (409) errors propagate so the
-    // editor shows them instead of pretending the save landed.
-    const fallback =
-      !(err instanceof ApiException) ||
-      err.status === 0 ||
-      err.status === 404;
-    if (!fallback) throw err;
+  // Always live data — PUT /:id with the whole body (the route validates
+  // against the full create schema — partial bodies 400). Failures
+  // propagate so the editor shows them instead of pretending the save
+  // landed; no local-store fallback.
+  const { updateProcedure: apiUpdate } = await import('@/services/library/api');
+  const proc = await apiUpdate(id, patch);
+  if (!proc) {
+    throw new Error('Backend did not return updated procedure');
   }
-
-  const procs = getProceduresStore();
-  const idx = procs.findIndex((p) => p.id === id || p.slug === id);
-  if (idx === -1) {
-    throw new ApiException(404, 'PROCEDURE_NOT_FOUND', `Procedure ${id} not found`);
-  }
-  const existing = procs[idx];
-
-  // Resolve category from the patch (if provided)
-  const cats = getCategoriesStore();
-  const cat = patch.categoryId != null
-    ? (cats.find((c) => c.id === patch.categoryId) ?? existing.category)
-    : existing.category;
-
-  const updated: Procedure = {
-    ...existing,
-    ...(patch.titleEn != null && { titleEn: patch.titleEn }),
-    ...(patch.titleEs != null && { titleEs: patch.titleEs }),
-    ...(patch.purposeEn != null && { purposeEn: patch.purposeEn }),
-    ...(patch.purposeEs != null && { purposeEs: patch.purposeEs }),
-    ...(patch.categoryId != null && { category: cat }),
-    ...(patch.subcategoryId !== undefined && { subcategoryId: patch.subcategoryId }),
-    ...(patch.stationScope !== undefined && { stationScope: patch.stationScope }),
-    ...(patch.status != null && { status: patch.status }),
-    ...(patch.bodyEn != null && { bodyEn: patch.bodyEn }),
-    ...(patch.bodyEs != null && { bodyEs: patch.bodyEs }),
-    ...(patch.iconImageUrl !== undefined && { iconImageUrl: patch.iconImageUrl }),
-    ...(patch.audience !== undefined && { audience: patch.audience }),
-    ...(patch.protection !== undefined && { protection: patch.protection }),
-    ...(patch.quizId !== undefined && { quizId: patch.quizId }),
-    ...(patch.linkedTrainingId !== undefined && { linkedTrainingId: patch.linkedTrainingId }),
-    ...(patch.quizMode != null && { quizMode: patch.quizMode as ProcedureQuizMode }),
-    updatedAt: new Date().toISOString(),
-  };
-
-  mockProcedures = [...procs];
-  mockProcedures[idx] = updated;
+  mockProcedures = [proc, ...getProceduresStore().filter((p) => p.id !== proc.id && p.slug !== proc.slug)];
   setStored('procedures_v2', mockProcedures);
-  if (typeof window !== 'undefined') window.dispatchEvent(new Event('lms_procedures_updated'));
   clearLibraryListCache();
-  return { procedure: updated };
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('lms_procedures_updated'));
+  return { procedure: proc };
 }
 
 export interface AccessLogEntry {
@@ -2282,7 +2077,7 @@ export function canRead(p: Procedure, viewer: Employee): boolean {
 // Server-side list cache (procedures & categories)
 // ----------------------------------------------------------------------------
 // Every server page (library, procedures browse, edit wizard, …) re-calls
-// listProcedures/listCategories on each request, so even a second look pays
+// listProcedures on each request, so even a second look pays
 // the full API round-trip. Server calls (the ones that carry a cookieHeader)
 // are cached per session for a short TTL and concurrent loads are deduped —
 // the same pattern fetchMe uses. Client calls (no cookieHeader) pass straight
@@ -2294,16 +2089,12 @@ const LIST_CACHE_TTL_MS = 30_000;
 
 const proceduresListCache = new Map<string, { data: Procedure[]; expiresAt: number }>();
 const proceduresListInFlight = new Map<string, Promise<Procedure[]>>();
-const categoriesListCache = new Map<string, { data: Category[]; expiresAt: number }>();
-const categoriesListInFlight = new Map<string, Promise<Category[]>>();
 
 /** Drop every cached/in-flight list read. Called by each mutation so a saved
  *  change shows up on the very next request, not up to the TTL later. */
 export function clearLibraryListCache(): void {
   proceduresListCache.clear();
   proceduresListInFlight.clear();
-  categoriesListCache.clear();
-  categoriesListInFlight.clear();
 }
 
 export async function listProcedures(
@@ -2334,81 +2125,35 @@ async function loadProceduresList(
   filter: { status?: Procedure['status'] },
   cookieHeader?: string,
 ): Promise<Procedure[]> {
-  const allowedDemoSlugs = new Set(['guacamole-fresco', 'herb-crusted-sea-bass']);
-  const allowedDemoIds = new Set(['proc-guacamole-fresco', 'proc-promo-sea-bass']);
+  // Always live data — no mock fallback and no demo-row merge. The rows
+  // and the viewer resolve together: canRead filtering is local, so
+  // awaiting fetchMe after fetchProcedures wastes a full backend
+  // round-trip on every procedure list.
+  const { fetchProcedures } = await import('@/services/library/api');
+  const [apiRes, { employee: viewer }] = await Promise.all([
+    fetchProcedures({ status: filter.status }, false, cookieHeader),
+    fetchMe(cookieHeader),
+  ]);
+  const dbProcs = apiRes.procedures || [];
 
-  try {
-    const { fetchProcedures } = await import('@/services/library/api');
-    // The procedure rows and the viewer resolve together: canRead filtering
-    // is local, so awaiting fetchMe after fetchProcedures wastes a full
-    // backend round-trip on every procedure list.
-    const [apiRes, { employee: viewer }] = await Promise.all([
-      fetchProcedures({ status: filter.status }, false, cookieHeader),
-      fetchMe(cookieHeader),
-    ]);
-    const dbProcs = apiRes.procedures || [];
-
-    const localStore = getProceduresStore();
-    const existingDbSlugsOrIds = new Set(
-      dbProcs.flatMap((p) => [p.id, p.slug].filter(Boolean)),
-    );
-
-    // Pick ONLY the 2 allowed demo procedures if not already in DB
-    const demoProcs = localStore.filter(
-      (p) =>
-        (allowedDemoSlugs.has(p.slug) || allowedDemoIds.has(p.id)) &&
-        !existingDbSlugsOrIds.has(p.id) &&
-        !existingDbSlugsOrIds.has(p.slug),
-    );
-
-    const combined = [...dbProcs, ...demoProcs];
-    if (typeof window !== 'undefined') {
-      // Persist the merged list so detail pages can paint instantly via
-      // getCachedProcedure (and a fresh tab keeps everything the API
-      // already handed us). Rows the API didn't return stay untouched.
-      const combinedKeys = new Set(combined.flatMap((p) => [p.id, p.slug].filter(Boolean)));
-      const others = localStore.filter((p) => !combinedKeys.has(p.id) && !combinedKeys.has(p.slug));
-      mockProcedures = [...combined, ...others];
-      setStored('procedures_v2', mockProcedures);
-    }
-    const visible = combined.filter((p) => canRead(p, viewer));
-    const filtered = filter.status ? visible.filter((p) => p.status === filter.status) : visible;
-    return filtered;
-  } catch {
-    // fallback
+  if (typeof window !== 'undefined') {
+    // Persist what the API handed us so detail pages can paint instantly
+    // via getCachedProcedure (and a fresh tab keeps it). Server truth
+    // wins: rows the API didn't return are dropped from the mirror.
+    mockProcedures = [...dbProcs];
+    setStored('procedures_v2', mockProcedures);
   }
-
-  let viewer: Employee | null = null;
-  try {
-    const meRes = await fetchMe(cookieHeader);
-    viewer = meRes.employee;
-  } catch {
-    viewer = getEmployeesStore()[0] || null;
-  }
-
-  const procs = getProceduresStore().filter(
-    (p) =>
-      (allowedDemoSlugs.has(p.slug) || allowedDemoIds.has(p.id)) &&
-      (viewer ? canRead(p, viewer) : true),
-  );
-  const filtered = filter.status ? procs.filter((p) => p.status === filter.status) : procs;
-  return [...filtered];
+  const visible = dbProcs.filter((p) => canRead(p, viewer));
+  const filtered = filter.status ? visible.filter((p) => p.status === filter.status) : visible;
+  return filtered;
 }
 
-/** One procedure by id, for the editor. */
+/** One procedure by id, for the editor. Always live — no mock fallback. */
 export async function getProcedureById(id: string): Promise<{ procedure: Procedure }> {
-  try {
-    const { fetchProcedureById } = await import('@/services/library/api');
-    const apiProc = await fetchProcedureById(id);
-    if (apiProc) {
-      return { procedure: apiProc };
-    }
-  } catch {
-    // fallback
-  }
-  const found = getProceduresStore().find((p) => p.id === id || p.slug === id);
-  if (!found) throw new ApiException(404, 'NOT_FOUND', 'Procedure not found');
-  return { procedure: found };
+  const { fetchProcedureById } = await import('@/services/library/api');
+  const apiProc = await fetchProcedureById(id);
+  if (!apiProc) throw new ApiException(404, 'NOT_FOUND', 'Procedure not found');
+  return { procedure: apiProc };
 }
 
 /** Publishing rule (multi-station): a procedure may go live only when it
@@ -2427,25 +2172,13 @@ export function canPublishProcedure(p: Procedure): boolean {
   return Boolean(stationId);
 }
 
-/** A 404 with Express' default HTML body (no API envelope, so code stays
- *  'UNKNOWN') or a 405 means the route itself doesn't exist yet — as opposed
- *  to a real 404/400 the API returns with its own `code`. Used to fall back
- *  to the local store only while a backend route is still landing. */
-function isRouteMissing(err: unknown): boolean {
-  if (!(err instanceof ApiException)) return false;
-  return err.status === 405 || (err.status === 404 && err.code === 'UNKNOWN');
-}
-
 /** Move a procedure through its states: draft -> published -> archived, and
  *  back. Publishing bumps the version, which the printed QR code points at.
  *
- *  Real APIs first, mock fallback while they land:
- *  - publish guard runs before anything: unplaced procedures stay drafts.
- *  - `isArchived` goes to the dedicated archive/unarchive routes (exist).
- *  - publish is a single POST /:id/publish (mounted; returns the updated
- *  row). Moving back to draft has no endpoint and is no longer offered in
- *  the UI: local update only. Real failures (409 already published /
- *  archived, 401/403, row-not-found) propagate so the UI can show them. */
+ *  Backend-backed rows go through the dedicated routes (POST /:id/publish,
+ *  /:id/archive, /:id/unarchive); failures propagate so the UI can show
+ *  them. Demo-only rows (non-UUID, never existed server-side) flip in the
+ *  local mirror instead. */
 export async function setProcedureState(
   id: string,
   change: { status?: Procedure['status']; isArchived?: boolean },
@@ -2468,66 +2201,64 @@ export async function setProcedureState(
     }
   }
 
-  if (change.isArchived !== undefined) {
-    try {
-      const { archiveProcedure, unarchiveProcedure } = await import('@/services/library/api');
-      const updated = change.isArchived
-        ? await archiveProcedure(id)
-        : await unarchiveProcedure(id);
-      mockProcedures = getProceduresStore().map((p) =>
-        p.id === id || p.slug === id ? { ...updated, id: p.id } : p,
-      );
-      setStored('procedures_v2', mockProcedures);
-      clearLibraryListCache();
-      return { ...updated, id };
-    } catch (err) {
-      if (!isRouteMissing(err)) throw err;
-    }
-  } else if (change.status === 'published') {
-    // One call: POST /:id/publish returns the updated row. Mock/demo
-    // ids skip the API and go straight to the local update below.
-    try {
-      const { publishProcedure, isUuid } = await import('@/services/library/api');
-      if (isUuid(id)) {
-        const updated = await publishProcedure(id);
-        mockProcedures = getProceduresStore().map((p) =>
-          p.id === id || p.slug === id ? { ...updated, id: p.id } : p,
-        );
-        setStored('procedures_v2', mockProcedures);
-        clearLibraryListCache();
-        return { ...updated, id };
-      }
-    } catch (err) {
-      if (!isRouteMissing(err)) throw err;
-    }
+  const { isUuid } = await import('@/services/library/api');
+  if (!isUuid(id)) {
+    // Demo-only row (never existed server-side): flip it in the local
+    // mirror. Backend-backed rows always go through the API below.
+    const now = new Date().toISOString();
+    mockProcedures = getProceduresStore().map((p) =>
+      p.id === id
+        ? {
+            ...p,
+            ...change,
+            updatedAt: now,
+            version: change.status === 'published' && p.status !== 'published' ? (p.version ?? 0) + 1 : p.version,
+          }
+        : p,
+    );
+    setStored('procedures_v2', mockProcedures);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('lms_procedures_updated'));
+    clearLibraryListCache();
+    const updated = mockProcedures.find((p) => p.id === id);
+    if (!updated) throw new ApiException(404, 'NOT_FOUND', 'Procedure not found');
+    return updated;
   }
 
-  const now = new Date().toISOString();
+  // Backend-backed row: dedicated routes, failures propagate (no silent
+  // local flip — a failed archive must never render as archived).
+  const { archiveProcedure, unarchiveProcedure, publishProcedure } = await import('@/services/library/api');
+  let updated: Procedure;
+  if (change.isArchived !== undefined) {
+    updated = change.isArchived ? await archiveProcedure(id) : await unarchiveProcedure(id);
+  } else if (change.status === 'published') {
+    updated = await publishProcedure(id);
+  } else {
+    throw new ApiException(400, 'INVALID_INPUT', 'Nothing to update');
+  }
   mockProcedures = getProceduresStore().map((p) =>
-    p.id === id
-      ? {
-          ...p,
-          ...change,
-          updatedAt: now,
-          version: change.status === 'published' && p.status !== 'published' ? (p.version ?? 0) + 1 : p.version,
-        }
-      : p,
+    p.id === id || p.slug === id ? { ...updated, id: p.id } : p,
   );
   setStored('procedures_v2', mockProcedures);
-  if (typeof window !== 'undefined') window.dispatchEvent(new Event('lms_procedures_updated'));
   clearLibraryListCache();
-  const updated = mockProcedures.find((p) => p.id === id);
-  if (!updated) throw new ApiException(404, 'NOT_FOUND', 'Procedure not found');
-  return updated;
+  return { ...updated, id };
 }
 
 export async function deleteProcedure(id: string): Promise<{ ok: true }> {
-  const procs = getProceduresStore();
-  const next = procs.filter((p) => p.id !== id && p.slug !== id);
-  if (next.length === procs.length) {
-    throw new ApiException(404, 'PROCEDURE_NOT_FOUND', `Procedure ${id} not found`);
+  // Live backend first: DELETE /api/v1/procedures/:id (super_admin,
+  // permanent). A backend 404 means the row is already gone server-side,
+  // so the local mirror is still dropped to converge with that truth.
+  // Rows that live only on this device (non-UUID demo ids the backend
+  // will never know) are removed locally instead.
+  const { isUuid, deleteProcedure: apiDelete } = await import('@/services/library/api');
+  if (isUuid(id)) {
+    try {
+      await apiDelete(id);
+    } catch (err) {
+      if (!(err instanceof ApiException) || err.status !== 404) throw err;
+    }
   }
-  mockProcedures = next;
+  const procs = getProceduresStore();
+  mockProcedures = procs.filter((p) => p.id !== id && p.slug !== id);
   setStored('procedures_v2', mockProcedures);
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('lms_procedures_updated'));
   clearLibraryListCache();
@@ -2728,27 +2459,18 @@ export async function getProcedureBySlug(
   slug: string,
   cookieHeader?: string,
 ): Promise<{ procedure: Procedure }> {
-  try {
-    const { fetchProcedureById } = await import('@/services/library/api');
-    const apiProc = await fetchProcedureById(slug, false, cookieHeader);
-    if (apiProc) {
-      return { procedure: apiProc };
-    }
-  } catch {
-    // fallback
-  }
-
-  const normSlug = slug.toLowerCase();
-  const procs = getProceduresStore();
-  const found = procs.find((p) => p.slug.toLowerCase() === normSlug || p.id.toLowerCase() === normSlug);
-  const { employee: viewer } = await fetchMe(cookieHeader);
-  // Not cleared reads exactly as not there: the cook is not told it exists.
-  const proc = found && canRead(found, viewer) ? found : null;
-
-  if (!proc) {
+  // Always live data — no mock fallback. A miss is a real 404.
+  const { fetchProcedureById } = await import('@/services/library/api');
+  const apiProc = await fetchProcedureById(slug, false, cookieHeader);
+  if (!apiProc) {
     throw new ApiException(404, 'PROCEDURE_NOT_FOUND', `Procedure ${slug} not found`);
   }
-  return { procedure: proc };
+  const { employee: viewer } = await fetchMe(cookieHeader);
+  // Not cleared reads exactly as not there: the cook is not told it exists.
+  if (!canRead(apiProc, viewer)) {
+    throw new ApiException(404, 'PROCEDURE_NOT_FOUND', `Procedure ${slug} not found`);
+  }
+  return { procedure: apiProc };
 }
 
 /** The procedure as cached on this device (the procedures list keeps
@@ -2766,123 +2488,12 @@ export function getCachedProcedure(slugOrId: string): Procedure | null {
 }
 
 // ----------------------------------------------------------------------------
-// Library — categories
+// Library — categories: live backend only.
+// Reads go through `services/categories/api.ts → fetchBackendCategories`
+// (GET /api/v1/categories) and writes through the category hooks
+// (create → POST /, rename → PATCH /:id, archive → POST /:id/archive,
+// unarchive → POST /:id/unarchive). No mock store on this path.
 // ----------------------------------------------------------------------------
-
-export async function listCategories(
-  _locationId: string,
-  opts: { includeArchived?: boolean } = {},
-  _cookieHeader?: string,
-): Promise<{ categories: Category[] }> {
-  // Client-side or cookieless: no shared cache (see listProcedures).
-  if (!_cookieHeader) return { categories: await loadCategoriesList(opts.includeArchived ?? false) };
-
-  const cacheKey = `${_cookieHeader}::${opts.includeArchived ? 'arch' : 'live'}`;
-  const cached = categoriesListCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) return { categories: cached.data };
-
-  const inFlight = categoriesListInFlight.get(cacheKey);
-  if (inFlight) return { categories: await inFlight };
-
-  const promise = loadCategoriesList(opts.includeArchived ?? false)
-    .then((categories) => {
-      categoriesListCache.set(cacheKey, { data: categories, expiresAt: Date.now() + LIST_CACHE_TTL_MS });
-      return categories;
-    })
-    .finally(() => categoriesListInFlight.delete(cacheKey));
-  categoriesListInFlight.set(cacheKey, promise);
-  return { categories: await promise };
-}
-
-async function loadCategoriesList(includeArchived: boolean): Promise<Category[]> {
-  const cats = getCategoriesStore();
-  const filtered = includeArchived ? cats : cats.filter((c) => !c.isArchived);
-  return [...filtered];
-}
-
-export async function createCategory(input: {
-  locationId: string;
-  slug?: string;
-  nameEn: string;
-  nameEs: string;
-  /** `'general'` → applies at every station. `'station-tied'` → manager
-   *  picks a station on the categories page; the procedure wizard's Access
-   *  step pre-fills with that station. */
-  kind: 'general' | 'station-tied';
-  icon?: string;
-  subcategories?: Array<{ nameEn: string; nameEs: string }>;
-}): Promise<{ category: Category }> {
-  const derivedSlug =
-    input.slug ??
-    input.nameEn
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  const newCat: Category = {
-    id: `cat-${Date.now()}`,
-    slug: derivedSlug,
-    nameEn: input.nameEn,
-    nameEs: input.nameEs,
-    isArchived: false,
-    kind: input.kind,
-    icon: input.icon,
-    subcategories: input.subcategories?.map((s, i) => ({
-      id: `sub-${Date.now()}-${i}`,
-      slug: s.nameEn.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
-      nameEn: s.nameEn,
-      nameEs: s.nameEs,
-    })),
-  };
-  mockCategories = [...getCategoriesStore(), newCat];
-  setStored('categories_v3', mockCategories);
-  clearLibraryListCache();
-  return { category: newCat };
-}
-
-export async function updateCategory(
-  id: string,
-  patch: {
-    nameEn?: string;
-    nameEs?: string;
-    kind?: 'general' | 'station-tied';
-    icon?: string;
-    isArchived?: boolean;
-    subcategories?: Array<{ nameEn: string; nameEs: string }>;
-  },
-): Promise<{ category: Category }> {
-  const cats = getCategoriesStore();
-  mockCategories = cats.map((c) => {
-    if (c.id !== id) return c;
-    // Spread patch (sans subcategories) first; then overwrite subcategories
-    // with the rebuilt shape so the result always satisfies `Subcategory[]`.
-    const { subcategories: _ignored, ...patchRest } = patch;
-    const next: Category = { ...c, ...patchRest };
-    if (patch.subcategories) {
-      const existing = c.subcategories ?? [];
-      const rebuilt: Subcategory[] = patch.subcategories.map((s, i) => {
-        const prev = existing[i];
-        return {
-          id: prev?.id ?? `sub-${Date.now()}-${i}`,
-          slug:
-            prev?.slug ??
-            s.nameEn.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
-          nameEn: s.nameEn,
-          nameEs: s.nameEs,
-        };
-      });
-      next.subcategories = rebuilt;
-    }
-    return next;
-  });
-  setStored('categories_v3', mockCategories);
-  const updated = mockCategories.find((c) => c.id === id)!;
-  clearLibraryListCache();
-  return { category: updated };
-}
-
-export async function archiveCategory(id: string): Promise<{ category: Category }> {
-  return updateCategory(id, { isArchived: true });
-}
 
 // ----------------------------------------------------------------------------
 // Uploads & AI Import (Mock Presigned Uploads)

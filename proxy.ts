@@ -4,25 +4,7 @@ import { routing } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-/**
- * View-as override.
- *
- * Until the real login flow lands, every demo session resolves as the seed
- * admin. Procedures routes default to employee chrome (they're reading
- * content, not management screens), so `?as=admin` on a URL is what opts a
- * procedure page into the `AdminShell`. The procedure layout (which only
- * receives `params`, not `searchParams` in this version of Next.js) reads
- * the override from the request header set here.
- *
- *   ?as=admin    → x-lms-view-as: admin     + cookie `lms_view_as=admin`
- *   ?as=employee → x-lms-view-as: employee  + cookie `lms_view_as=employee`
- *   (no param)   → header unset, layout defaults to employee chrome
- *
- * The cookie is what makes the override survive navigation: links emitted
- * from a procedure surface already carry `?as=` (via `withAs`), so the proxy
- * keeps stamping the header on every page. Clearing the cookie (or visiting
- * any URL without `?as=`) snaps the chrome back to the default.
- */
+
 export default function proxy(request: NextRequest): NextResponse {
   // Normalize malformed legacy invite links where the backend URL and API
   // path were embedded in the frontend invite route, e.g.

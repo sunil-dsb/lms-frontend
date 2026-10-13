@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import { useState, useTransition, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { LuChefHat, LuShield } from 'react-icons/lu';
+import { useLocale, useTranslations } from 'next-intl';
+import { LuChefHat, LuCheck, LuCopy, LuLoader, LuShield } from 'react-icons/lu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,9 +11,13 @@ import { CustomSelect } from '@/components/ui/custom-select';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { MultiSelectDropdown } from '@/components/ui/multi-select-dropdown';
 import {
+  fetchEmployeeById,
+  resendInvite,
   updateEmployee,
-  type UpdateEmployeeInput,
-} from '@/lib/mock-employees';
+  type UpdateEmployeeRequest,
+} from '@/services/employees/api';
+import type { UpdateEmployeeInput } from '@/lib/mock-employees';
+import { ApiException } from '@/lib/errors';
 import { fetchJobStations } from '@/services/jobs/api';
 import type { AdminEmployee, Role, Station } from '@/lib/types';
 
@@ -33,8 +37,10 @@ interface EditRolesModalProps {
   onLocationChange: (locationId: string) => Promise<void> | void;
   /** Called after a successful save. The detail page uses this to refresh
    *  the local employee state and call `router.refresh()`. The toast is a
-   *  separate later UI task that captures `prior` for an Undo. */
-  onSaved: (next: AdminEmployee, prior: UpdateEmployeeInput) => void;
+   *  separate later UI task that captures `prior` for an Undo. `inviteUrl`
+   *  arrives when the backend re-invited a pending employee (email change)
+   *  so the detail page can surface the fresh link. */
+  onSaved: (next: AdminEmployee, prior: UpdateEmployeeInput, inviteUrl?: string) => void;
 }
 
 /**
@@ -69,7 +75,32 @@ export function EditRolesModal({
   onSaved,
 }: EditRolesModalProps): React.ReactElement {
   const t = useTranslations('admin');
-  const [_pending, startTransition] = useTransition();
+  const isEs = useLocale() === 'es';
+  const [pending, startTransition] = useTransition();
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // Fresh magic-link invite returned when saving re-invites a pending
+  // employee (email change). Shown in place of the form with a copy
+  // button — email delivery can't be relied on in every kitchen.
+  const [savedInvite, setSavedInvite] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [inviteFresh, setInviteFresh] = useState(false);
+  const [inviteEmpty, setInviteEmpty] = useState(false);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const inviteBoxRef = React.useRef<HTMLDivElement | null>(null);
+  const deferredInviteSave = React.useRef<{
+    employee: AdminEmployee;
+    prior: UpdateEmployeeInput;
+    inviteUrl: string;
+  } | null>(null);
+
+  function closeModal(): void {
+    const deferred = deferredInviteSave.current;
+    if (deferred) {
+      deferredInviteSave.current = null;
+      onSaved(deferred.employee, deferred.prior, deferred.inviteUrl);
+    }
+    onClose();
+  }
 
   // Working form state — mirrors the invite form's shape, plus email-as-string
   // (the type carries `null` for "no email" which we materialise as '').
@@ -87,7 +118,9 @@ export function EditRolesModal({
   const [stationIds, setStationIds] = useState<string[]>(employee.stationIds);
 
   // Reset the working state whenever the modal opens — a previous edit's
-  // draft must not leak into the next one.
+  // draft must not leak into the next one. The invite box starts hidden:
+  // it appears only as a result of pressing Save (fresh link from the
+  // PUT, or the active link re-read for a pending employee).
   React.useEffect(() => {
     if (!open) return;
     setName(employee.name);
@@ -96,7 +129,13 @@ export function EditRolesModal({
     setTier(employee.accessLevel ?? (employee.role === 'manager' ? 'manager' : 'employee'));
     setRoleIds(employee.roleIds);
     setStationIds(employee.stationIds);
-  }, [open, employee]);
+    setSaveError(null);
+    setSavedInvite(null);
+    setCopied(false);
+    setInviteFresh(false);
+    setInviteEmpty(false);
+    setInviteLoading(false);
+  }, [open, employee.id]);
 
   // Stations are location-scoped. Drop any already-selected stations that
   // don't exist at the new location so the save payload never carries an
@@ -222,7 +261,16 @@ export function EditRolesModal({
   const dirty = priorSnapshot !== nextSnapshot;
 
   function onSave(): void {
-    if (!canSave) return;
+    if (!canSave || pending) return;
+    setSaveError(null);
+    // The backend validates PUT against the full create schema (minus
+    // employeeCode): every field travels, including the current status and
+    // language (an omitted status would default back to `pending`).
+    const effectiveEmail = email.trim() || employee.email || '';
+    if (!effectiveEmail) {
+      setSaveError(t('errorNeedEmail'));
+      return;
+    }
     const prior: UpdateEmployeeInput = {
       name: employee.name,
       email: employee.email ?? null,
@@ -232,33 +280,147 @@ export function EditRolesModal({
       roleIds: [...employee.roleIds],
       stationIds: [...employee.stationIds],
     };
-    const patch: UpdateEmployeeInput = {
+    const payload: UpdateEmployeeRequest = {
       name: name.trim(),
-      email: email.trim() ? email.trim() : null,
+      email: effectiveEmail,
       locationId,
-      accessLevel: tier,
-      // Role ('admin' | 'employee') is not editable from this modal — admin
-      // stays admin; everyone else is 'employee'. The picker only moves
-      // them between Manager and Employee inside that 'employee' bucket.
-      role: employee.role,
-      roleIds: [...roleIds],
+      // Backend role enum is super_admin | manager | employee. Admins keep
+      // their tier; everyone else follows the Manager ⇄ Employee picker.
+      role: employee.role === 'super_admin' ? 'super_admin' : tier === 'manager' ? 'manager' : 'employee',
+      jobIds: [...roleIds],
       stationIds: [...stationIds],
+      languagePref: employee.languagePref ?? 'en',
+      status: employee.status,
     };
-    startTransition(() => {
-      const updated = updateEmployee(employee.id, patch);
-      if (updated) onSaved(updated, prior);
-      onClose();
+    startTransition(async () => {
+      try {
+        const { employee: updated, inviteUrl } = await updateEmployee(employee.id, payload);
+        if (inviteUrl) {
+          // Fresh link, just mailed to the new address: show it and stay
+          // open — the admin copies it here and closes the modal themself.
+          deferredInviteSave.current = {
+            employee: { ...updated, inviteUrl },
+            prior,
+            inviteUrl,
+          };
+          setSavedInvite(inviteUrl);
+          setInviteFresh(true);
+          setInviteEmpty(false);
+          setCopied(false);
+          return;
+        }
+        onSaved(updated, prior);
+        // No fresh link in the PUT response (email unchanged, or the row
+        // was already invited): a pending employee may still hold an
+        // active link that only GET returns. Re-read (side-effect free)
+        // and surface it instead of closing silently.
+        if (updated.status === 'pending') {
+          setInviteLoading(true);
+          try {
+            const refetched = await fetchEmployeeById(employee.id);
+            if (refetched.inviteUrl) {
+              onSaved(
+                { ...refetched.employee, inviteUrl: refetched.inviteUrl },
+                prior,
+                refetched.inviteUrl,
+              );
+              setSavedInvite(refetched.inviteUrl);
+              setInviteFresh(false);
+              setInviteEmpty(false);
+              setCopied(false);
+              return;
+            }
+          } catch {
+            // Read failed — fall through to the empty state below, which
+            // offers an explicit resend instead of closing silently.
+          } finally {
+            setInviteLoading(false);
+          }
+          // Pending, saved, but no active link anywhere (usually expired):
+          // stay open on an explicit resend offer — never close silently.
+          setInviteEmpty(true);
+          return;
+        }
+        // Close on save only when there is no link on screen. A visible
+        // link means the admin is here to copy it — they close the modal
+        // themself.
+        if (!savedInvite) onClose();
+      } catch (err) {
+        setSaveError(err instanceof ApiException ? err.message : err instanceof Error ? err.message : String(err));
+      }
     });
   }
+
+  // Last resort for a pending save with no link: mint a fresh invite
+  // (explicit admin tap — this mails the employee).
+  function onResendInvite(): void {
+    setSaveError(null);
+    setInviteLoading(true);
+    startTransition(async () => {
+      try {
+        const { invite } = await resendInvite(employee.id);
+        if (invite.url) {
+          onSaved({ ...employee, inviteUrl: invite.url }, {
+            name: employee.name,
+            email: employee.email ?? null,
+            locationId: employee.locationId,
+            accessLevel: employee.accessLevel ?? 'employee',
+            role: employee.role,
+            roleIds: [...employee.roleIds],
+            stationIds: [...employee.stationIds],
+          }, invite.url);
+          setSavedInvite(invite.url);
+          setInviteFresh(true);
+          setInviteEmpty(false);
+          setCopied(false);
+        } else {
+          setSaveError(isEs ? 'No se pudo generar el enlace.' : 'Could not generate the link.');
+        }
+      } catch (err) {
+        setSaveError(err instanceof ApiException ? err.message : err instanceof Error ? err.message : String(err));
+      } finally {
+        setInviteLoading(false);
+      }
+    });
+  }
+
+  async function copyInvite(): Promise<void> {
+    if (!savedInvite) return;
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(savedInvite);
+      ok = true;
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = savedInvite;
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        ta.remove();
+      } catch {
+        ok = false;
+      }
+    }
+    setCopied(ok);
+  }
+
+  // When the link box appears it can sit below the fold of the
+  // scrollable modal body — bring it into view so the link + copy
+  // button are never hidden behind the footer.
+  React.useEffect(() => {
+    if (!savedInvite) return;
+    inviteBoxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [savedInvite]);
 
   const locationOptions = locations;
 
   return (
-    <Modal open={open} onClose={onClose} size="2xl">
+    <Modal open={open} onClose={closeModal} size="2xl">
       <ModalHeader
         title={t('detailEditProfileHeading')}
         description={employee.name}
-        onClose={onClose}
+        onClose={closeModal}
         closeLabel={t('detailEditRolesCancel')}
       />
       <ModalBody className="space-y-4 p-5 sm:p-6">
@@ -402,20 +564,88 @@ export function EditRolesModal({
             />
           </div>
         </div>
+
+        {/* Fresh invite link, appended last: saving re-invites a pending
+            employee when their email changes (or the reads above find
+            their active link). Stays in this same modal with a copy
+            button — email delivery can't be relied on in every kitchen.
+            While the link is being fetched the box reads as generating,
+            never as a sent link with nothing under it. */}
+        {inviteLoading || savedInvite || inviteEmpty ? (
+          <div ref={inviteBoxRef} className="border-t border-[var(--color-line)] pt-4">
+            {savedInvite ? (
+              <>
+                <p className="text-sm font-semibold text-[var(--color-ink)]">
+                  {inviteFresh ? t('inviteCreatedHeading') : t('inviteUrlLabel')}
+                </p>
+                {inviteFresh ? (
+                  <p className="mt-0.5 text-xs text-[var(--color-ink-2)]">
+                    {t('inviteEmailSent')}
+                  </p>
+                ) : null}
+                <p className="mt-2 break-all rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-panel)] px-3 py-2 text-xs text-[var(--color-ink-2)]">
+                  {savedInvite}
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void copyInvite()}
+                  icon={copied ? LuCheck : LuCopy}
+                  className="mt-2"
+                >
+                  {copied ? t('copied') : t('copyUrl')}
+                </Button>
+              </>
+            ) : inviteEmpty ? (
+              <>
+                <p className="text-sm font-semibold text-[var(--color-ink)]">
+                  {t('inviteUrlLabel')}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--color-ink-2)]">
+                  {isEs
+                    ? 'No hay ningún enlace activo. Genera uno nuevo para este empleado pendiente.'
+                    : 'There is no active link. Generate a fresh one for this pending employee.'}
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onResendInvite}
+                  icon={LuCopy}
+                  className="mt-2"
+                  disabled={inviteLoading}
+                >
+                  {isEs ? 'Generar enlace' : 'Generate link'}
+                </Button>
+              </>
+            ) : (
+              <p className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-ink-2)]">
+                <LuLoader className="size-4 animate-spin text-[var(--color-brand-600)]" aria-hidden="true" />
+                <span>{t('submitting')}</span>
+              </p>
+            )}
+          </div>
+        ) : null}
       </ModalBody>
       <ModalFooter>
         {/* Cancel first per the focus rule (DESIGN.md §3.6). */}
-        <Button type="button" variant="neutral" onClick={onClose}>
+        <Button type="button" variant="neutral" onClick={closeModal} disabled={pending}>
           {t('detailEditRolesCancel')}
         </Button>
-        <Button
-          type="button"
-          variant="primary"
-          onClick={onSave}
-          disabled={!canSave || !dirty}
-        >
-          {t('detailEditRolesSave')}
-        </Button>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          {saveError ? (
+            <p role="alert" className="min-w-0 flex-1 text-left text-xs font-medium text-[var(--color-bad)]">
+              {saveError}
+            </p>
+          ) : null}
+          <Button
+            type="button"
+            variant="primary"
+            onClick={onSave}
+            disabled={!canSave || !dirty || pending}
+          >
+            {t('detailEditRolesSave')}
+          </Button>
+        </div>
       </ModalFooter>
     </Modal>
   );

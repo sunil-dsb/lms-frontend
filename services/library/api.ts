@@ -873,8 +873,8 @@ export async function publishProcedure(id: string): Promise<Procedure> {
   throw new Error('Backend did not return published procedure');
 }
 
-/** POST /api/v1/procedures/:id/archive — soft delete; the backend has
- *  no hard-delete route, archive is the remove. */
+/** POST /api/v1/procedures/:id/archive — soft delete (recoverable via
+ *  unarchive). For permanent removal see `deleteProcedure` (DELETE). */
 export async function archiveProcedure(id: string): Promise<Procedure> {
   const { data } = await http.post<{
     success: boolean;
@@ -902,6 +902,13 @@ export async function unarchiveProcedure(id: string): Promise<Procedure> {
   }
 
   throw new Error('Backend did not return unarchived procedure');
+}
+
+/** DELETE /api/v1/procedures/:id — permanent removal (super_admin).
+ *  404 when the row doesn't exist. */
+export async function deleteProcedure(id: string): Promise<{ ok: true }> {
+  await http.delete(LIBRARY_ENDPOINTS.DELETE(id));
+  return { ok: true };
 }
 
 /** Fields a partial update may carry. The backend PATCH (when it lands)

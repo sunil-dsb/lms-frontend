@@ -18,6 +18,13 @@ function frontendInviteUrl(inviteUrl: string): string {
       const origin = typeof window === 'undefined' ? '' : window.location.origin;
       return `${origin}/${locale}/invite/${encodeURIComponent(token)}`;
     }
+    // Already a frontend invite URL (e.g. `/en/invite/token?token=…`) on
+    // another host (production, tunnel): keep path + query, but point it
+    // at the app the admin is actually using so copy → open → activate
+    // works in this environment. Server-side has no origin — keep as-is.
+    if (typeof window !== 'undefined' && /^\/[a-z]{2}\/invite(\/|$)/i.test(parsed.pathname)) {
+      return `${window.location.origin}${parsed.pathname}${parsed.search}`;
+    }
   } catch {
     // Keep an unrecognized invite URL as returned by the API.
   }
@@ -57,7 +64,7 @@ function normalizeEmployee<T extends Employee>(raw: any): T {
 export async function fetchEmployeeById(
   id: string,
   cookieHeader?: string,
-): Promise<{ employee: AdminEmployee }> {
+): Promise<{ employee: AdminEmployee; inviteUrl?: string }> {
   const headers: Record<string, string> = {};
 
   if (cookieHeader) {
@@ -70,13 +77,19 @@ export async function fetchEmployeeById(
 
   const { data } = await http.get<{
     success: boolean;
-    data: { employee: any };
+    data: { employee: any; inviteUrl?: string };
   }>(EMPLOYEES_ENDPOINTS.GET(id), {
     headers: Object.keys(headers).length ? headers : undefined,
   });
 
   const raw = data.data?.employee;
-  return { employee: normalizeEmployee<AdminEmployee>(raw) };
+  // The backend returns `inviteUrl` for pending employees both top-level
+  // and nested on the employee — surface it explicitly (normalizeEmployee
+  // spreads unknown fields, but the UI should not rely on that).
+  const rawInvite: string | undefined =
+    data.data?.inviteUrl || (typeof raw?.inviteUrl === 'string' ? raw.inviteUrl : undefined);
+  const inviteUrl = rawInvite ? frontendInviteUrl(rawInvite) : undefined;
+  return { employee: normalizeEmployee<AdminEmployee>(raw), inviteUrl };
 }
 
 export async function fetchEmployees(
@@ -203,14 +216,22 @@ export interface UpdateEmployeeRequest {
 export async function updateEmployee(
   employeeId: string,
   input: UpdateEmployeeRequest,
-): Promise<{ employee: AdminEmployee }> {
+): Promise<{ employee: AdminEmployee; inviteUrl?: string }> {
   const { data } = await http.put<{
     success: boolean;
     data: {
       employee: AdminEmployee;
+      inviteUrl?: string;
     };
   }>(EMPLOYEES_ENDPOINTS.UPDATE(employeeId), input);
 
-  return { employee: normalizeEmployee<AdminEmployee>(data.data.employee) };
+  // When a pending employee's email changes, the backend mails a fresh
+  // magic link and returns its `inviteUrl` — the caller surfaces it so
+  // the admin can copy it when email delivery is unreliable.
+  const rawInvite: string | undefined = data.data?.inviteUrl || undefined;
+  return {
+    employee: normalizeEmployee<AdminEmployee>(data.data.employee),
+    inviteUrl: rawInvite ? frontendInviteUrl(rawInvite) : undefined,
+  };
 }
 

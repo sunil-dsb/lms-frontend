@@ -21,7 +21,7 @@ export interface BilingualInputProps {
   placeholder?: { en?: string; es?: string };
   /**
    * Optional override for the translator. Left unset, the field auto-translates
-   * with Gemini (see `lib/gemini-translate.ts`) after the user stops typing.
+   * via the server route (see `lib/translate-api.ts`) after the user stops typing.
    */
   translate?: (text: string, from: 'en' | 'es', to: 'en' | 'es') => string | Promise<string>;
   defaultLang?: 'en' | 'es';

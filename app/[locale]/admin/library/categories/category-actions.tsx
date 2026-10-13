@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
 import { cn } from '@/lib/utils';
 import { BilingualInput, type BilingualValue } from '@/components/ui/bilingual-input';
-import { useCreateCategory, useUpdateCategory, useArchiveCategory } from '@/services/categories/hooks';
+import { useCreateCategory, useUpdateCategory, useArchiveCategory, useUnarchiveCategory } from '@/services/categories/hooks';
 import type { Category } from '@/lib/types';
 import {
   LuArchive,
@@ -45,7 +45,7 @@ import {
   PiUsers,
 } from 'react-icons/pi';
 
-const AVAILABLE_ICONS = [
+export const AVAILABLE_ICONS = [
   { id: 'onboarding', label: 'Onboarding', icon: PiUserCirclePlus },
   { id: 'food-safety', label: 'Food Safety', icon: PiShieldCheck },
   { id: 'kitchen-operations', label: 'Kitchen Ops', icon: PiCookingPot },
@@ -84,8 +84,11 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
   const [renameOpen, setRenameOpen] = React.useState(false);
 
   const archiveMutation = useArchiveCategory();
+  const unarchiveMutation = useUnarchiveCategory();
   const updateMutation = useUpdateCategory();
-  const pending = isPending || archiveMutation.isPending || updateMutation.isPending;
+  const pending = isPending || archiveMutation.isPending || unarchiveMutation.isPending || updateMutation.isPending;
+
+  const isArchived = category.status === 'archived' || category.isArchived;
 
   const items: RowActionItem[] = React.useMemo(() => {
     const out: RowActionItem[] = [
@@ -95,7 +98,7 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
         onSelect: () => setRenameOpen(true),
       },
     ];
-    if (category.isArchived) {
+    if (isArchived) {
       out.push({
         label: t('unarchive'),
         icon: LuUndo2,
@@ -119,7 +122,7 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
       });
     }
     return out;
-  }, [category, t]);
+  }, [category, isArchived, t]);
 
   async function runArchive(target: Category): Promise<void> {
     setError(null);
@@ -134,7 +137,7 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
   async function runUnarchive(target: Category): Promise<void> {
     setError(null);
     try {
-      await updateMutation.mutateAsync({ id: target.id, input: { isArchived: false } });
+      await unarchiveMutation.mutateAsync(target.id);
       router.refresh();
     } catch (err: any) {
       setError(err?.message || String(err));
