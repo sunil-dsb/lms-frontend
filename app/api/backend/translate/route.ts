@@ -5,21 +5,37 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
-
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { text, sourceLanguage, targetLanguage } = body;
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON request body" },
+        { status: 400 }
+      );
+    }
+
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { error: "Invalid translation request" },
+        { status: 400 }
+      );
+    }
+
+    const { text, sourceLanguage, targetLanguage } = body as {
+      text?: unknown;
+      sourceLanguage?: unknown;
+      targetLanguage?: unknown;
+    };
 
     if (
       typeof text !== "string" ||
       !text.trim() ||
       text.length > 10000 ||
-      !["en", "es"].includes(sourceLanguage) ||
-      !["en", "es"].includes(targetLanguage) ||
+      (sourceLanguage !== "en" && sourceLanguage !== "es") ||
+      (targetLanguage !== "en" && targetLanguage !== "es") ||
       sourceLanguage === targetLanguage
     ) {
       return NextResponse.json(
@@ -32,6 +48,17 @@ export async function POST(request: Request) {
       sourceLanguage === "en" ? "English" : "Spanish";
     const target =
       targetLanguage === "en" ? "English" : "Spanish";
+
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      console.error("Translation provider is not configured: OPENROUTER_API_KEY is missing");
+      return NextResponse.json(
+        { error: "Translation service is not configured" },
+        { status: 503 }
+      );
+    }
+
+    const openrouter = createOpenRouter({ apiKey });
 
     const { text: translation } = await generateText({
       model: openrouter("tencent/hy-mt2-7b"),
@@ -50,11 +77,11 @@ export async function POST(request: Request) {
       translation: translation.trim(),
     });
   } catch (error) {
-    console.error("Translation failed:", error);
+    console.error("Translation provider request failed:", error);
 
     return NextResponse.json(
-      { error: "Translation failed" },
-      { status: 500 }
+      { error: "Translation provider request failed" },
+      { status: 502 }
     );
   }
 }
