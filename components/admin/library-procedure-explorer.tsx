@@ -49,6 +49,7 @@ import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
 import { getProcedureIcon } from '@/lib/category-icons';
 import { backendSlug, categorySlugsMatch } from '@/services/categories/api';
 import { LibraryExplorerSkeleton } from '@/components/admin/library-explorer-skeleton';
+import { Pagination } from '@/components/ui/pagination';
 
 interface LibraryProcedureExplorerProps {
   procedures: Procedure[];
@@ -171,9 +172,8 @@ export function getCategoryTheme(slug: string): {
   }
 }
 
-/** Rows revealed per "Show more" press. The list grows in place instead of
- *  paging, so filters, counts and search always see the whole dataset. */
-const PAGE_SIZE = 25;
+/** Rows per page. Fixed at 10 so long lists page instead of scrolling. */
+const PAGE_SIZE = 10;
 
 export function LibraryProcedureExplorer({
   procedures,
@@ -264,7 +264,7 @@ export function LibraryProcedureExplorer({
     if (lastCategoryRef.current !== selectedCategorySlug) {
       lastCategoryRef.current = selectedCategorySlug;
       setSelectedSubcategoryId('all');
-      setVisibleCount(PAGE_SIZE);
+      setCurrentPage(1);
     }
   }, [selectedCategorySlug]);
 
@@ -289,7 +289,7 @@ export function LibraryProcedureExplorer({
   const [sortBy, setSortBy] = React.useState<'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc'>(
     'updated_desc',
   );
-  const [visibleCount, setVisibleCount] = React.useState<number>(PAGE_SIZE);
+  const [currentPage, setCurrentPage] = React.useState<number>(1);
 
   const isUuid = (val: string | null | undefined): boolean => {
     if (!val) return false;
@@ -715,14 +715,20 @@ export function LibraryProcedureExplorer({
     setStatusFilter('all');
     setStationFilter('all');
     setSearchQuery('');
-    setVisibleCount(PAGE_SIZE);
+    setCurrentPage(1);
   };
 
-  // Incremental reveal, not pages: the list grows in place so filters,
-  // counts and search always operate on the whole dataset. The DOM stays
-  // bounded (PAGE_SIZE rows at a time) no matter how large the library gets.
+  // Pagination: 10 rows per page. Filters always run on the whole dataset;
+  // only the rendered slice is paged.
   const totalItems = filteredProcedures.length;
-  const visibleProcedures = filteredProcedures.slice(0, visibleCount);
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const visibleProcedures = filteredProcedures.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Clamp back into range when a filter shrinks the list under the page.
+  React.useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   /** Remove the procedure from state immediately (optimistic) then persist. */
   const handleDelete = React.useCallback(
@@ -754,7 +760,7 @@ export function LibraryProcedureExplorer({
           value={selectedCategorySlug}
           onChange={(slug) => {
             setSelectedCategorySlug(slug);
-            setVisibleCount(PAGE_SIZE);
+            setCurrentPage(1);
           }}
           chips={[
             { value: 'all', label: isEs ? 'Todas' : 'All', count: categoryCounts.all || 0 },
@@ -766,7 +772,7 @@ export function LibraryProcedureExplorer({
             value={selectedCategorySlug}
             onChange={(val) => {
               setSelectedCategorySlug(val);
-              setVisibleCount(PAGE_SIZE);
+              setCurrentPage(1);
             }}
             options={categorySelectOptions}
             size="sm"
@@ -778,7 +784,7 @@ export function LibraryProcedureExplorer({
             value={selectedSubcategoryId}
             onChange={(val) => {
               setSelectedSubcategoryId(val);
-              setVisibleCount(PAGE_SIZE);
+              setCurrentPage(1);
             }}
             options={subcategoryOptions}
             size="sm"
@@ -791,7 +797,7 @@ export function LibraryProcedureExplorer({
               value={stationFilter}
               onChange={(val) => {
                 setStationFilter(val);
-                setVisibleCount(PAGE_SIZE);
+                setCurrentPage(1);
               }}
               options={stationOptions}
               size="sm"
@@ -804,7 +810,7 @@ export function LibraryProcedureExplorer({
             value={statusFilter}
             onChange={(val) => {
               setStatusFilter(val as ProcedureStatus | 'all' | 'archived');
-              setVisibleCount(PAGE_SIZE);
+              setCurrentPage(1);
             }}
             options={statusOptions}
             size="sm"
@@ -824,7 +830,7 @@ export function LibraryProcedureExplorer({
             placeholder={isEs ? 'Buscar procedimientos…' : 'Search procedures…'}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setVisibleCount(PAGE_SIZE);
+              setCurrentPage(1);
             }}
           />
           {searchQuery ? (
@@ -1107,28 +1113,17 @@ export function LibraryProcedureExplorer({
         </ul>
       )}
 
-      {/* Pagination Footer */}
-      {/* Show-more footer. The count always reflects the whole filtered set;
-          revealing is incremental so the DOM stays bounded at PAGE_SIZE rows
-          per press no matter how large the library grows. */}
+      {/* Pagination footer — 10 rows per page, no long scroll. */}
       {totalItems > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--color-line)] text-sm text-[var(--color-ink-3)]">
-          <div>
-            {isEs ? 'Mostrando' : 'Showing'} {Math.min(visibleCount, totalItems)} {isEs ? 'de' : 'of'}{' '}
-            {totalItems} {isEs ? 'procedimientos' : 'procedures'}
-          </div>
-
-          {visibleCount < totalItems ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-            >
-              {isEs ? 'Mostrar más' : 'Show more'}
-            </Button>
-          ) : null}
-        </div>
+        <Pagination
+          page={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+          isEs={isEs}
+          itemLabel={isEs ? 'procedimientos' : 'procedures'}
+        />
       )}
     </div>
   );

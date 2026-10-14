@@ -17,6 +17,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { getTrainingRowsForEmployee } from '@/lib/mock-training';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEmployees, EMPLOYEES_QUERY_KEY } from '@/services/employees/hooks';
+import { Pagination } from '@/components/ui/pagination';
 import { useRoles } from '@/services/jobs/hooks';
 import { useStations } from '@/services/stations/hooks';
 import { useLocations } from '@/services/locations/hooks';
@@ -75,6 +76,11 @@ export function EmployeesClientTable({
   // without losing the list (and without paying a full route change).
   const [editing, setEditing] = useState<AdminEmployee | null>(null);
 
+  /** 10 rows per page — long rosters page instead of scrolling. */
+  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const isEs = locale === 'es';
+
   function openEdit(employee: AdminEmployee): void {
     setEditing(employee);
   }
@@ -117,6 +123,21 @@ export function EmployeesClientTable({
       return aHas - bHas;
     });
   }, [employees, statusFilter, searchQuery]);
+
+  // Reset to page 1 whenever the filter set changes; clamp when the list
+  // shrinks under the current page (e.g. deactivation).
+  const totalItems = visible.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const paged = visible.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchQuery]);
+
+  React.useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   // Lookup maps for the role/station cells. The whole catalog is small and
   // stable for the lifetime of the page, so we pay the map cost once.
@@ -179,7 +200,7 @@ export function EmployeesClientTable({
                 </tr>
               </thead>
               <tbody>
-                {visible.map((e) => {
+                {paged.map((e) => {
                   const tone: StatusTone =
                     e.status === 'active'
                       ? 'ok'
@@ -270,6 +291,22 @@ export function EmployeesClientTable({
         )}
       </CardContent>
     </Card>
+    {totalItems > 0 && !isLoading ? (
+      <div className="pt-2">
+        <Pagination
+          page={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={PAGE_SIZE}
+          onPageChange={(p) => {
+            setCurrentPage(p);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          isEs={isEs}
+          itemLabel={isEs ? 'empleados' : 'employees'}
+        />
+      </div>
+    ) : null}
     {/* In-place edit modal. Mounted at the table level so the kebab Edit
         can open it without a route change. The list re-renders off the
         same `lms_employees_updated` event the modal dispatches on save,
