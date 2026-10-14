@@ -270,3 +270,35 @@
 .i-sm { font-size: 1em; }
 .i-lg { font-size: 1.5em; }
 }
+
+/* ============================================================
+   Procedure creation flow — micro-interaction keyframes
+   Named with proc- prefix to avoid collisions.
+   ============================================================ */
+@keyframes proc-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes proc-slidein {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes proc-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+@keyframes proc-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes proc-fadein  { from { opacity: 1; } }
+  @keyframes proc-slidein { from { opacity: 1; transform: none; } }
+  @keyframes proc-pulse   { 50% { opacity: 1; transform: none; } }
+  @keyframes proc-shimmer { 100% { transform: none; } }
+}
+

@@ -10,10 +10,12 @@ import {
   LuArrowLeft,
   LuCheck,
   LuChevronRight,
+  LuCircle,
   LuEye,
   LuFileText,
   LuImagePlus,
   LuLayoutGrid,
+  LuPencilLine,
   LuSearch,
   LuSignature,
   LuSparkles,
@@ -52,6 +54,7 @@ import {
   ApiException,
   createProcedure,
   createQuiz,
+  deleteQuiz,
   fetchQuizById,
   getQuizById,
   listEmployees,
@@ -206,12 +209,15 @@ export function ProcedureEditor({
   const [importedId, setImportedId] = React.useState<string | null>(null);
   const [importedSlug, setImportedSlug] = React.useState<string | null>(null);
   const [importFile, setImportFile] = React.useState<File | null>(null);
+  const [importBannerFile, setImportBannerFile] = React.useState<string | null>(null);
+  const [importStep, setImportStep] = React.useState<0 | 1 | 2 | 3>(0);
   const [importing, setImporting] = React.useState(false);
   const [importError, setImportError] = React.useState<string | null>(null);
   const [importDragOver, setImportDragOver] = React.useState(false);
   const [importLoadingId, setImportLoadingId] = React.useState<string | null>(null);
   const importAbortRef = React.useRef<AbortController | null>(null);
-  const importInputRef = React.useRef<HTMLInputElement | null>(null);  const [titleError, setTitleError] = React.useState<string | null>(null);
+  const importInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [titleError, setTitleError] = React.useState<string | null>(null);
   const [purposeError, setPurposeError] = React.useState<string | null>(null);
   const [blockErrors, setBlockErrors] = React.useState<Record<string, string>>({});
   const [stationsError, setStationsError] = React.useState<boolean>(false);
@@ -509,6 +515,8 @@ export function ProcedureEditor({
   async function runImport(): Promise<void> {
     if (!importFile || importing) return;
     setImportError(null);
+    setImportStep(0);
+    const capturedName = importFile.name;
     setImporting(true);
     const ctrl = new AbortController();
     importAbortRef.current = ctrl;
@@ -516,9 +524,16 @@ export function ProcedureEditor({
       const { importProcedure } = await import('@/services/library/api');
       const p = await importProcedure(importFile, { signal: ctrl.signal });
       applyImportedProcedure(p);
+      setImportBannerFile(capturedName);
       setImportFile(null);
-      toast.success(t('importSuccess'));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setImportStep(0);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      }, 100);
     } catch (err) {
       if (err instanceof Error && err.name === 'CanceledError') return;
       if (ctrl.signal.aborted) return;
@@ -528,6 +543,47 @@ export function ProcedureEditor({
       importAbortRef.current = null;
       setImporting(false);
     }
+  }
+
+  // Advance the import progress stepper cosmetically while uploading.
+  // The backend is a single request; this timer makes the wait feel purposeful.
+  React.useEffect(() => {
+    if (!importing) { setImportStep(0); return; }
+    const DELAYS: number[] = [1200, 4000, 9500]; // ms to next step
+    let step = 0;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    function scheduleNext(idx: number): void {
+      if (idx >= DELAYS.length) return;
+      const id = setTimeout(() => {
+        step = idx + 1;
+        setImportStep(step as 0 | 1 | 2 | 3);
+        scheduleNext(idx + 1);
+      }, DELAYS[idx]);
+      timers.push(id);
+    }
+    scheduleNext(0);
+    return () => { timers.forEach(clearTimeout); };
+  }, [importing]);
+
+  function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function resetToChoiceScreen(): void {
+    setCreationMode(null);
+    setImportFile(null);
+    setImportError(null);
+    setImportBannerFile(null);
+    setImportedId(null);
+    setImportedSlug(null);
+    setTitle({ en: '', es: '' });
+    setPurpose({ en: '', es: '' });
+    setBlocks([]);
+    setIngredients([emptyIngredient()]);
+    setYieldItems(emptyYieldItems());
+    setDirty(false);
   }
 
   // The entry cards only exist on a pristine new form — the first keystroke
@@ -1002,25 +1058,41 @@ export function ProcedureEditor({
         await waitForTranslations();
 
         // The quiz lives in its own table: keep its row, make one, or drop it.
+        // Edit semantics are PUT: question ids the backend issued (UUIDs)
+        // edit in place, new rows omit `id` (backend generates), and omitted
+        // existing rows are deleted — the mapping lives in lib/api.
         let quizId: string | null = null;
+        const prevQuizId = initial?.quizId ?? null;
         if (quiz && hasQuizContent && quiz.questions.length > 0) {
-          if (initial?.quizId) {
-            await updateQuiz(initial.quizId, {
+          const quizNameEn = `${title.en.trim() || 'Procedure'} Quiz`;
+          const quizNameEs = `${title.es.trim() || 'Procedimiento'} Quiz`;
+          if (prevQuizId) {
+            const { isUuid } = await import('@/services/library/api');
+            const ownerId = initial && isUuid(initial.id) ? initial.id : importedId;
+            await updateQuiz(prevQuizId, {
+              nameEn: quizNameEn,
+              nameEs: quizNameEs,
               questions: quiz.questions,
               attached: quiz.attached,
+              ...(ownerId && isUuid(ownerId) ? { procedureId: ownerId } : {}),
             });
-            quizId = initial.quizId;
+            quizId = prevQuizId;
           } else {
             quizId = (
               await createQuiz({
-                nameEn: `${title.en.trim() || 'Procedure'} Quiz`,
-                nameEs: `${title.es.trim() || 'Procedimiento'} Quiz`,
+                nameEn: quizNameEn,
+                nameEs: quizNameEs,
                 quizType: 'procedure',
                 questions: quiz.questions,
                 attached: quiz.attached,
               })
             ).quiz.id;
           }
+        } else if (prevQuizId) {
+          // Emptied while editing — delete the backend row instead of
+          // orphaning it (the API nulls quizId on referencing procedures).
+          await deleteQuiz(prevQuizId);
+          quizId = null;
         }
         const effectiveSubcategoryId =
           subcategoryId ||
@@ -1166,181 +1238,450 @@ export function ProcedureEditor({
   return (
     <div>
       <div className="mx-auto max-w-page">
-        <PageHeader
-          eyebrow={t("back")}
-          eyebrowHref={`/${locale}/admin/library`}
-          title={isEdit ? t("titleEdit") : t("titleNew")}
-        />
-      </div>
-
-      <div className="sticky top-[56px] z-10 -mx-4 border-b border-[var(--color-line-2)]/60 bg-[var(--color-bg-admin)]/95 px-4 py-2.5 backdrop-blur-md transition-shadow sm:-mx-6 sm:px-6 lg:top-[75px] lg:-mx-10 lg:px-10">
-        <div className="mx-auto max-w-page">
-          <WizardStepper
-            className="my-0"
-            ariaLabel={tStep("ariaLabel")}
-            current={step}
-            steps={STEPS.map((s) => ({
-              id: s.id,
-              label: s.label,
-              progress: stepProgress[s.id],
-            }))}
-            onSelect={(id) => handleSelectStep(id as WizardStepId)}
+        {showEntryCards ? (
+          /* On choose screen: eyebrow back to library + section title/subtitle at top-left */
+          <div className="pb-4">
+            <p className="mb-1 text-sm font-semibold text-[var(--color-ink-2)]">
+              <Link href={`/${locale}/admin/library`} className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-[var(--color-ink)] hover:underline">
+                <span aria-hidden="true">&larr;</span>
+                <span>{t("back")}</span>
+              </Link>
+            </p>
+            <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold leading-display tracking-tight text-[var(--color-ink)]">
+              {t('importChooseTitle')}
+            </h1>
+            <p className="mt-1 text-sm text-[var(--color-ink-2)]">
+              {t('importChooseSubtitle')}
+            </p>
+          </div>
+        ) : (
+          <PageHeader
+            eyebrow={(creationMode === 'manual' || creationMode === 'upload') && !initial && !importedId ? t("importBack") : t("back")}
+            eyebrowHref={(creationMode === 'manual' || creationMode === 'upload') && !initial && !importedId ? undefined : `/${locale}/admin/library`}
+            onEyebrowClick={(creationMode === 'manual' || creationMode === 'upload') && !initial && !importedId ? () => resetToChoiceScreen() : undefined}
+            title={isEdit ? t("titleEdit") : t("titleNew")}
           />
+        )}
+      </div>
+
+      {!showEntryCards ? (
+        <div className="sticky top-[56px] z-10 -mx-4 bg-[var(--color-bg-admin)]/95 px-4 py-2.5 backdrop-blur-md transition-all sm:-mx-6 sm:px-6 lg:top-[75px] lg:-mx-10 lg:px-10">
+          <div className="mx-auto max-w-page">
+            <WizardStepper
+              className="my-0"
+              ariaLabel={tStep("ariaLabel")}
+              current={step}
+              steps={STEPS.map((s) => ({
+                id: s.id,
+                label: s.label,
+                progress: stepProgress[s.id],
+              }))}
+              onSelect={(id) => handleSelectStep(id as WizardStepId)}
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
 
-      <div className="pointer-events-none fixed bottom-[90px] right-5 z-30 lg:right-6">
-        <Button
-          type="button"
-          variant="surface"
-          icon={LuEye}
-          onClick={() => setPreviewOpen(true)}
-          className="pointer-events-auto shadow-e2"
-        >
-          {t("preview")}
-        </Button>
-      </div>
+      {!showEntryCards && !importing && !importLoadingId && creationMode !== 'upload' ? (
+        <div className="pointer-events-none fixed bottom-[90px] right-5 z-30 lg:right-6">
+          <Button
+            type="button"
+            variant="surface"
+            icon={LuEye}
+            onClick={() => setPreviewOpen(true)}
+            className="pointer-events-auto shadow-e2"
+          >
+            {t("preview")}
+          </Button>
+        </div>
+      ) : null}
 
       <div className="mx-auto max-w-page mt-4 space-y-4 pb-20">
-        {/* ── Entry choice: manual vs doc import (pristine new form only) ── */}
+        {/* ── State 1: Entry choice — clean cards with full-card click, no bottom CTA line ── */}
         {showEntryCards ? (
-          <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label={t('detailsTitle')}>
-            <button
-              type="button"
-              onClick={() => setCreationMode('manual')}
-              className="flex items-start gap-3 rounded-[var(--radius-lg)] border-2 border-transparent bg-[var(--color-surface)] p-5 text-left shadow-e1 transition-all hover:border-[var(--color-brand-600)] hover:shadow-e2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
-            >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]">
-                <LuFileText aria-hidden="true" className="size-5" />
-              </span>
-              <span>
-                <span className="block text-base font-semibold text-[var(--color-ink)]">{t('importManualTitle')}</span>
-                <span className="mt-0.5 block text-sm text-[var(--color-ink-2)]">{t('importManualBody')}</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreationMode('upload')}
-              className="flex items-start gap-3 rounded-[var(--radius-lg)] border-2 border-transparent bg-[var(--color-surface)] p-5 text-left shadow-e1 transition-all hover:border-[var(--color-brand-600)] hover:shadow-e2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
-            >
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]">
-                <LuUpload aria-hidden="true" className="size-5" />
-              </span>
-              <span>
-                <span className="block text-base font-semibold text-[var(--color-ink)]">{t('importUploadTitle')}</span>
-                <span className="mt-0.5 block text-sm text-[var(--color-ink-2)]">{t('importUploadBody')}</span>
-              </span>
-            </button>
-          </div>
-        ) : null}
-
-        {/* ── Upload panel (file only: doc / pdf / txt) ─────────────────── */}
-        {step === 'details' && creationMode === 'upload' && !initial ? (
-          <section
-            aria-label={t('importDropTitle')}
-            className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-6"
+          <div
+            className="py-4"
+            style={{ animation: 'proc-fadein 200ms ease both' }}
           >
-            <div className="flex items-center gap-2">
-              <IconTile size="xs" icon={LuUpload} />
-              <h3 className="text-sm font-semibold text-[var(--color-ink)]">{t('importDropTitle')}</h3>
-            </div>
-            <p className="mt-1 text-sm text-[var(--color-ink-2)]">{t('importDropBody')}</p>
-
-            <input
-              ref={importInputRef}
-              type="file"
-              accept={IMPORT_ACCEPT}
-              className="sr-only"
-              aria-label={t('importDropCta')}
-              onChange={(e) => pickImportFile(e.target.files?.[0] ?? null)}
-            />
+            {/* Options grid with full card clickability */}
             <div
-              role="button"
-              tabIndex={0}
-              aria-label={t('importDropCta')}
-              onClick={() => importInputRef.current?.click()}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  importInputRef.current?.click();
-                }
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setImportDragOver(true);
-              }}
-              onDragLeave={() => setImportDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setImportDragOver(false);
-                pickImportFile(e.dataTransfer.files?.[0] ?? null);
-              }}
-              className={cn(
-                'mt-4 flex flex-col items-center justify-center gap-2 rounded-[var(--radius-md)] border-2 border-dashed px-6 py-10 text-center transition-colors',
-                importDragOver
-                  ? 'border-[var(--color-brand-600)] bg-[var(--color-brand-tint)]'
-                  : 'border-[var(--color-line-2)] bg-[var(--color-wash)] hover:border-[var(--color-brand-600)]',
-              )}
+              className="grid w-full gap-6 sm:grid-cols-2"
+              role="group"
+              aria-label={t('importChooseTitle')}
             >
-              <LuUpload aria-hidden="true" className="size-6 text-[var(--color-ink-3)]" />
-              <p className="text-sm font-semibold text-[var(--color-ink)]">
-                {importFile ? importFile.name : t('importDropCta')}
-              </p>
-              <p className="text-xs text-[var(--color-ink-3)]">{t('importDropOr')}</p>
-            </div>
+              {/* Option 1: Create Manually */}
+              <button
+                type="button"
+                id="entry-manual"
+                onClick={() => setCreationMode('manual')}
+                className="group flex flex-col items-center justify-start cursor-pointer rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-8 sm:p-9 text-center shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-[var(--color-brand-600)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+              >
+                <span className="mb-4 flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[#E8F5E9] text-[#2E7D32] transition-transform duration-200 group-hover:scale-105">
+                  <LuPencilLine aria-hidden="true" className="size-6" />
+                </span>
+                <span className="mb-4 block text-lg font-semibold tracking-tight text-[var(--color-ink)] sm:text-xl">{t('importManualTitle')}</span>
 
-            {importError ? (
-              <p role="alert" className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-bad-tint)] px-3 py-2 text-xs font-semibold text-[var(--color-bad)]">
-                {importError}
-              </p>
-            ) : null}
+                {/* Features list */}
+                <ul className="mt-7 w-full max-w-[260px] space-y-4 text-left text-xs sm:text-[13px] text-[var(--color-ink-2)]">
+                  <li className="flex items-center gap-3">
+                    <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#1B5E20] text-white shadow-2xs">
+                      <LuCheck className="size-2.5 stroke-[3]" />
+                    </span>
+                    <span className="leading-snug">{t('importManualFeature1')}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#1B5E20] text-white shadow-2xs">
+                      <LuCheck className="size-2.5 stroke-[3]" />
+                    </span>
+                    <span className="leading-snug">{t('importManualFeature2')}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#1B5E20] text-white shadow-2xs">
+                      <LuCheck className="size-2.5 stroke-[3]" />
+                    </span>
+                    <span className="leading-snug">{t('importManualFeature3')}</span>
+                  </li>
+                </ul>
+              </button>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Button type="button" variant="neutral" size="sm" onClick={() => { setCreationMode(null); setImportFile(null); setImportError(null); }}>
-                {t('importBack')}
-              </Button>
-              <span className="flex-1" />
-              <Button type="button" variant="primary" size="sm" icon={LuUpload} disabled={!importFile || importing} onClick={() => void runImport()}>
-                {t('importUploadCta')}
-              </Button>
-            </div>
-          </section>
-        ) : null}
+              {/* Option 2: Upload Document */}
+              <button
+                type="button"
+                id="entry-upload"
+                onClick={() => setCreationMode('upload')}
+                className="group flex flex-col items-center justify-start cursor-pointer rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-8 sm:p-9 text-center shadow-xs transition-all duration-200 hover:-translate-y-1 hover:border-[var(--color-brand-600)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+              >
+                <span className="mb-4 flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[#FFF3E0] text-[#E65100] transition-transform duration-200 group-hover:scale-105">
+                  <LuUpload aria-hidden="true" className="size-6" />
+                </span>
+                <span className="mb-4 block text-lg font-semibold tracking-tight text-[var(--color-ink)] sm:text-xl">{t('importUploadTitle')}</span>
 
-        {/* ── Fullscreen generating state (slow AI call) ────────────────── */}
-        {importing || importLoadingId ? (
-          <div role="alertdialog" aria-modal="true" aria-label={t('importLoadingTitle')} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-8 text-center shadow-e2">
-              <span aria-hidden="true" className="mx-auto flex size-12 items-center justify-center">
-                <span className="size-10 animate-spin rounded-full border-4 border-[var(--color-line-2)] border-t-[var(--color-brand-600)]" />
-              </span>
-              <h3 className="mt-4 text-lg font-bold text-[var(--color-ink)]">{t('importLoadingTitle')}</h3>
-              <p className="mt-2 text-sm leading-body text-[var(--color-ink-2)]">
-                {importing
-                  ? t('importLoadingBody', { file: importFile?.name ?? '' })
-                  : t('importLoaded')}
-              </p>
-              {importing ? (
-                <Button
-                  type="button"
-                  variant="neutral"
-                  size="sm"
-                  className="mt-6"
-                  onClick={() => {
-                    importAbortRef.current?.abort();
-                    setImporting(false);
-                  }}
-                >
-                  {t('importLoadingCancel')}
-                </Button>
-              ) : null}
+                {/* Features list */}
+                <ul className="mt-7 w-full max-w-[260px] space-y-4 text-left text-xs sm:text-[13px] text-[var(--color-ink-2)]">
+                  <li className="flex items-center gap-3">
+                    <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#E65100] text-white shadow-2xs">
+                      <LuCheck className="size-2.5 stroke-[3]" />
+                    </span>
+                    <span className="leading-snug">{t('importUploadFeature1')}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#E65100] text-white shadow-2xs">
+                      <LuCheck className="size-2.5 stroke-[3]" />
+                    </span>
+                    <span className="leading-snug">{t('importUploadFeature2')}</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-[#E65100] text-white shadow-2xs">
+                      <LuCheck className="size-2.5 stroke-[3]" />
+                    </span>
+                    <span className="leading-snug">{t('importUploadFeature3')}</span>
+                  </li>
+                </ul>
+              </button>
             </div>
           </div>
         ) : null}
 
-        {/* ── Step 1 — what it is and what it says ────────────────────── */}
-        {step === "details" ? (
+        {/* ── State 2b: Upload panel & In-content loading (shown while creationMode === 'upload') ── */}
+        {step === 'details' && creationMode === 'upload' && !initial ? (
+          <div className="space-y-4" style={{ animation: 'proc-fadein 180ms ease both' }}>
+            {/* When importing, render the progress card directly in-situ replacing the dropzone */}
+            {(importing || importLoadingId) ? (
+              <div
+                role="status"
+                aria-live="polite"
+                aria-label={t('importLoadingTitle')}
+                className="w-full max-w-lg mx-auto rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-6 sm:p-7 shadow-sm"
+                style={{ animation: 'proc-fadein 200ms ease both' }}
+              >
+                {/* File info line: simple text without pill container */}
+                {importBannerFile || importFile ? (
+                  <div className="mb-4 flex max-w-full items-center gap-2 text-xs text-[var(--color-ink-2)] select-none">
+                    <LuFileText aria-hidden="true" className="size-4 shrink-0 text-[var(--color-ink-3)]" />
+                    <span className="truncate font-medium text-[var(--color-ink)]">
+                      {importBannerFile ?? importFile?.name}
+                    </span>
+                    {importFile?.size ? (
+                      <>
+                        <span className="h-3 w-px bg-[var(--color-line-3)] shrink-0" aria-hidden="true" />
+                        <span className="shrink-0 text-[11px] text-[var(--color-ink-3)]">
+                          {formatFileSize(importFile.size)}
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {/* Title & subtitle (refined scale) */}
+                <div>
+                  <h3 className="text-base font-bold text-[var(--color-ink)] sm:text-lg">
+                    {t('importLoadingTitle')}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-[var(--color-ink-3)] sm:text-sm">
+                    {t('importLoadingSubtitle')}
+                  </p>
+                </div>
+
+                {/* Progress bar with solid brand fill */}
+                <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-[var(--color-wash)] border border-[var(--color-line-2)]/60">
+                  <div
+                    className="h-full rounded-full bg-[var(--color-brand-600)] transition-all duration-500"
+                    style={{ width: `${Math.max(20, Math.min(100, ((importStep + 1) / 4) * 100))}%` }}
+                  />
+                </div>
+
+                {/* Steps checklist with polished checkmarks */}
+                <ol className="mt-6 space-y-4" aria-live="polite">
+                  {[
+                    t('importProgressStep1'),
+                    t('importProgressStep2'),
+                    t('importProgressStep3'),
+                    t('importProgressStep4'),
+                  ].map((label, idx) => {
+                    const done = idx < importStep;
+                    const active = idx === importStep;
+                    return (
+                      <li key={idx} className="flex items-center gap-3">
+                        <span
+                          className={cn(
+                            'flex size-5 shrink-0 items-center justify-center rounded-full transition-all duration-300',
+                            done
+                              ? 'bg-[var(--color-brand-600)] text-white shadow-xs'
+                              : active
+                                ? 'border-2 border-[var(--color-brand-600)] bg-transparent'
+                                : 'border border-[var(--color-line-3)] bg-transparent',
+                          )}
+                          aria-hidden="true"
+                        >
+                          {done ? (
+                            <LuCheck className="size-3 stroke-[3]" />
+                          ) : active ? (
+                            <span
+                              className="size-2 rounded-full bg-[var(--color-brand-600)]"
+                              style={{ animation: 'proc-pulse 1s ease-in-out infinite' }}
+                            />
+                          ) : (
+                            <span className="size-1 rounded-full bg-[var(--color-ink-4,#9ca3af)]" />
+                          )}
+                        </span>
+                        <span
+                          className={cn(
+                            'text-sm transition-colors duration-200',
+                            done
+                              ? 'font-medium text-[var(--color-ink-2)] line-through/none'
+                              : active
+                                ? 'font-semibold text-[var(--color-ink)]'
+                                : 'text-[var(--color-ink-3)]',
+                          )}
+                        >
+                          {label}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+
+                {/* Reassurance line with Lucide Sparkles icon & Cancel button */}
+                <div className="mt-6 border-t border-[var(--color-line-2)] pt-4 space-y-3">
+                  <p className="flex items-start gap-2 text-xs leading-relaxed text-[var(--color-ink-2)]">
+                    <LuSparkles aria-hidden="true" className="size-4 shrink-0 text-[var(--color-brand-600)] mt-0.5" />
+                    <span>{t('importProgressHint')}</span>
+                  </p>
+
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      type="button"
+                      variant="neutral"
+                      size="sm"
+                      onClick={() => {
+                        importAbortRef.current?.abort();
+                        setImporting(false);
+                        setImportLoadingId(null);
+                        setImportStep(0);
+                        setImportError(null);
+                      }}
+                    >
+                      {t('importLoadingCancel')}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Dropzone panel when not loading */
+              <section
+                aria-label={t('importDropTitle')}
+                className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-6"
+              >
+                <div className="flex items-center gap-2">
+                  <IconTile size="xs" icon={LuUpload} />
+                  <h3 className="text-sm font-semibold text-[var(--color-ink)]">{t('importDropTitle')}</h3>
+                </div>
+                <p className="mt-1 text-sm text-[var(--color-ink-2)]">{t('importDropBody')}</p>
+
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept={IMPORT_ACCEPT}
+                  className="sr-only"
+                  aria-label={t('importDropCta')}
+                  onChange={(e) => pickImportFile(e.target.files?.[0] ?? null)}
+                />
+
+                {/* File chip (shown after selection) or dropzone */}
+                {importFile ? (
+                  <div
+                    className="mt-4 flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-wash)] px-4 py-3"
+                    style={{ animation: 'proc-fadein 150ms ease both' }}
+                  >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] select-none">
+                      <LuFileText aria-hidden="true" className="size-4" />
+                    </span>
+                    <div className="min-w-0 flex-1 select-none pointer-events-none">
+                      <p className="truncate text-sm font-semibold text-[var(--color-ink)] select-none">{importFile.name}</p>
+                      <p className="text-xs text-[var(--color-ink-3)] select-none">{formatFileSize(importFile.size)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setImportFile(null); setImportError(null); }}
+                      aria-label={t('importFileRemove')}
+                      className="ml-auto flex size-7 items-center justify-center rounded-lg text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-line-2)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                    >
+                      <LuX aria-hidden="true" className="size-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label={t('importDropCta')}
+                    onClick={() => importInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        importInputRef.current?.click();
+                      }
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setImportDragOver(true);
+                    }}
+                    onDragLeave={() => setImportDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setImportDragOver(false);
+                      pickImportFile(e.dataTransfer.files?.[0] ?? null);
+                    }}
+                    className={cn(
+                      'mt-4 flex flex-col items-center justify-center gap-2 rounded-[var(--radius-md)] border-2 border-dashed px-6 py-12 text-center transition-colors duration-150 cursor-pointer',
+                      importDragOver
+                        ? 'border-[var(--color-brand-600)] bg-[var(--color-brand-tint)]'
+                        : 'border-[var(--color-line-2)] bg-[var(--color-wash)] hover:border-[var(--color-brand-600)] hover:bg-[var(--color-brand-tint)]/40',
+                    )}
+                  >
+                    <LuUpload
+                      aria-hidden="true"
+                      className={cn(
+                        'size-6 transition-colors duration-150',
+                        importDragOver ? 'text-[var(--color-brand-700)]' : 'text-[var(--color-ink-3)]',
+                      )}
+                    />
+                    <p className="text-sm font-semibold text-[var(--color-ink)]">{t('importDropCta')}</p>
+                    <p className="text-xs text-[var(--color-ink-3)]">{t('importDropOr')}</p>
+                  </div>
+                )}
+
+                {importError ? (
+                  <div role="alert" className="mt-4 rounded-xl border border-[var(--color-bad)]/30 bg-[var(--color-bad-tint)] p-4">
+                    <p className="text-sm font-semibold text-[var(--color-bad)]">
+                      {importError}
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        disabled={!importFile}
+                        onClick={() => void runImport()}
+                      >
+                        {t('importErrorRetry')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="neutral"
+                        size="sm"
+                        onClick={() => {
+                          setCreationMode('manual');
+                          setImportFile(null);
+                          setImportError(null);
+                        }}
+                      >
+                        {t('importErrorManual')}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="mt-5 flex items-center justify-end">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    icon={LuUpload}
+                    disabled={!importFile || importing}
+                    onClick={() => void runImport()}
+                  >
+                    {t('importUploadCta')}
+                  </Button>
+                </div>
+              </section>
+            )}
+          </div>
+        ) : null}
+
+
+
+        {/* ── State 4: Persistent review banner after doc import ──────── */}
+        {importBannerFile && step === 'details' ? (
+          <div
+            role="status"
+            className="flex flex-wrap items-start justify-between gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-4"
+            style={{ animation: 'proc-fadein 220ms ease both' }}
+          >
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]">
+                <LuCheck aria-hidden="true" className="size-3" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-[var(--color-ink)]">
+                  {t('importBannerText', { file: importBannerFile })}
+                </p>
+                <p className="mt-0.5 text-xs text-[var(--color-ink-3)]">Fields marked below were filled in automatically.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="neutral"
+                size="sm"
+                onClick={() => resetToChoiceScreen()}
+              >
+                {t('importBannerCta')}
+              </Button>
+              <button
+                type="button"
+                aria-label="Dismiss"
+                onClick={() => setImportBannerFile(null)}
+                className="flex size-7 items-center justify-center rounded-lg text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-line-2)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+              >
+                <LuX aria-hidden="true" className="size-3.5" />
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {/* ── Step 1 form — only rendered once a method is chosen ─────── */}
+        {step === "details" && (creationMode === 'manual' || initial) ? (
           <>
             <FormSection
               id="proc-details"
@@ -1898,75 +2239,77 @@ export function ProcedureEditor({
         ) : null}
       </div>
 
-      {/* ── Sticky wizard footer ───────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-sticky flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3 shadow-e2 sm:px-6">
-        <p className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)]">
-          <StatusPill tone={published ? "ok" : "neutral"} withDot>
-            {published ? t("statusPublished") : t("statusDraft")}
-          </StatusPill>
-          {dirty ? (
-            <span className="text-[var(--color-warn-ink)]">{t("unsaved")}</span>
-          ) : null}
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {!isFirstStep ? (
-            <Button
-              type="button"
-              variant="neutral"
-              icon={LuArrowLeft}
-              onClick={() => setStep(STEPS[stepIdx - 1].id)}
-            >
-              {t("wizardBack")}
-            </Button>
-          ) : (
-            <Link href={`/${locale}/admin/library`}>
-              <Button type="button" variant="ghost">
-                {t("cancel")}
+      {/* ── Sticky wizard footer (hidden on choose screen) ─────────── */}
+      {!showEntryCards ? (
+        <div className="fixed bottom-0 left-0 right-0 z-sticky flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3 shadow-e2 sm:px-6">
+          <p className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)]">
+            <StatusPill tone={published ? "ok" : "neutral"} withDot>
+              {published ? t("statusPublished") : t("statusDraft")}
+            </StatusPill>
+            {dirty ? (
+              <span className="text-[var(--color-warn-ink)]">{t("unsaved")}</span>
+            ) : null}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {!isFirstStep ? (
+              <Button
+                type="button"
+                variant="neutral"
+                icon={LuArrowLeft}
+                onClick={() => setStep(STEPS[stepIdx - 1].id)}
+              >
+                {t("wizardBack")}
               </Button>
-            </Link>
-          )}
+            ) : (
+              <Link href={`/${locale}/admin/library`}>
+                <Button type="button" variant="ghost">
+                  {t("cancel")}
+                </Button>
+              </Link>
+            )}
 
-          {/* When in edit mode for a published procedure, allow "Save changes" from intermediate steps */}
-          {isEdit && published && !isLastStep ? (
-            <Button
-              type="button"
-              variant="surface"
-              disabled={pending || translating}
-              onClick={() => save("published")}
-            >
-              {t("saveChanges")}
-            </Button>
-          ) : !published ? (
-            <Button
-              type="button"
-              variant="surface"
-              disabled={pending || translating}
-              onClick={() => save("draft")}
-            >
-              {t("saveDraft")}
-            </Button>
-          ) : null}
+            {/* When in edit mode for a published procedure, allow "Save changes" from intermediate steps */}
+            {isEdit && published && !isLastStep ? (
+              <Button
+                type="button"
+                variant="surface"
+                disabled={pending || translating}
+                onClick={() => save("published")}
+              >
+                {t("saveChanges")}
+              </Button>
+            ) : !published ? (
+              <Button
+                type="button"
+                variant="surface"
+                disabled={pending || translating}
+                onClick={() => save("draft")}
+              >
+                {t("saveDraft")}
+              </Button>
+            ) : null}
 
-          {isLastStep ? (
-            <Button
-              type="button"
-              disabled={pending || translating}
-              onClick={() => save("published")}
-            >
-              {published ? t("saveChanges") : t("publishNow")}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleNext}
-            >
-              {step === "quiz" && !hasQuizContent
-                ? t("wizardSkip")
-                : t("wizardNext")}
-            </Button>
-          )}
+            {isLastStep ? (
+              <Button
+                type="button"
+                disabled={pending || translating}
+                onClick={() => save("published")}
+              >
+                {published ? t("saveChanges") : t("publishNow")}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleNext}
+              >
+                {step === "quiz" && !hasQuizContent
+                  ? t("wizardSkip")
+                  : t("wizardNext")}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* ── What a cook will see ─────────────────────────────────────── */}
       <Drawer

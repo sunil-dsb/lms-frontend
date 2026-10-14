@@ -2354,6 +2354,43 @@ export function getQuizById(id: string | null): Quiz | null {
   return getQuizzesStore().find((q) => q.id === id) ?? null;
 }
 
+/** Backend question ids are UUIDs; the editor stamps new rows with `q-…` /
+ *  `id-…` handles. Only UUIDs travel as `id` — anything else omits it so
+ *  the backend generates one (PUT semantics: id present = edit in place,
+ *  absent = add new, missing existing = delete). */
+function isUuidLike(v: string | undefined): boolean {
+  return Boolean(
+    v &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v),
+  );
+}
+
+/** A question the manager actually wrote — prompt or any choice has text.
+ *  Blank seeded rows never travel to the backend. */
+export function isQuizQuestionAuthored(q: Quiz['questions'][number]): boolean {
+  return Boolean(
+    q.prompt?.en?.trim() ||
+      q.prompt?.es?.trim() ||
+      (q as { question?: { en?: string; es?: string } }).question?.en?.trim() ||
+      (q as { question?: { en?: string; es?: string } }).question?.es?.trim() ||
+      q.choices?.some((c) => c.label?.en?.trim() || c.label?.es?.trim()),
+  );
+}
+
+/** Editor questions → backend payload. New rows drop their client `id`;
+ *  existing UUID rows keep it; blank rows are dropped. */
+function mapQuestionsForBackend(questions: Quiz['questions']): Record<string, any>[] {
+  return questions.filter(isQuizQuestionAuthored).map((q) => ({
+    ...(isUuidLike(q.id) ? { id: q.id } : {}),
+    question: q.question ?? q.prompt,
+    choices: (q.choices ?? []).map((c) => ({
+      ...(c.id ? { id: c.id } : {}),
+      label: c.label ?? { en: '', es: '' },
+    })),
+    correctChoiceId: q.correctChoiceId,
+  }));
+}
+
 /** Create a quiz via POST /api/v1/quizzes.
  *  Payload matches: { nameEn, nameEs, quizType, questions: [...] } */
 export async function createQuiz(input: {
@@ -2367,12 +2404,7 @@ export async function createQuiz(input: {
     nameEn: input.nameEn || 'Procedure Quiz',
     nameEs: input.nameEs || 'Cuestionario de Procedimiento',
     quizType: input.quizType || 'procedure',
-    questions: input.questions.map((q) => ({
-      id: q.id,
-      question: q.question ?? q.prompt,
-      choices: q.choices,
-      correctChoiceId: q.correctChoiceId,
-    })),
+    questions: mapQuestionsForBackend(input.questions),
   };
 
   try {
@@ -2405,25 +2437,30 @@ export async function createQuiz(input: {
   return { quiz: fallbackQuiz };
 }
 
-/** Patch/update a quiz. Calls PATCH /api/v1/quizzes/:id if available,
- *  and updates local store. */
+/** Update a quiz via PUT /api/v1/quizzes/:id (single-payload edit).
+ *  Question `id` present (UUID) = edit in place; absent = add new (backend
+ *  generates a UUID); an existing question omitted from the array = delete.
+ *  Falls back to the local store when the API is unreachable. */
 export async function updateQuiz(
   id: string,
-  patch: Partial<Pick<Quiz, 'attached' | 'questions' | 'nameEn' | 'nameEs'>>,
+  patch: Partial<Pick<Quiz, 'attached' | 'questions' | 'nameEn' | 'nameEs'>> & {
+    quizType?: string;
+    procedureId?: string;
+  },
 ): Promise<{ quiz: Quiz }> {
   try {
-    const patchPayload: Record<string, any> = {};
-    if (patch.nameEn) patchPayload.nameEn = patch.nameEn;
-    if (patch.nameEs) patchPayload.nameEs = patch.nameEs;
-    if (patch.questions) {
-      patchPayload.questions = patch.questions.map((q) => ({
-        id: q.id,
-        question: q.question ?? q.prompt,
-        choices: q.choices,
-        correctChoiceId: q.correctChoiceId,
-      }));
+    const putPayload: Record<string, any> = {
+      quizType: patch.quizType || 'procedure',
+    };
+    if (patch.nameEn) putPayload.nameEn = patch.nameEn;
+    if (patch.nameEs) putPayload.nameEs = patch.nameEs;
+    if (patch.procedureId && isUuidLike(patch.procedureId)) {
+      putPayload.procedureId = patch.procedureId;
     }
-    const res = await http.patch<any>(`/api/v1/quizzes/${id}`, patchPayload);
+    if (patch.questions) {
+      putPayload.questions = mapQuestionsForBackend(patch.questions);
+    }
+    const res = await http.put<any>(`/api/v1/quizzes/${id}`, putPayload);
     const raw = res.data?.data?.quiz ?? res.data?.data ?? res.data;
     if (raw && (raw.id || raw.questions)) {
       const updated = normalizeQuiz({ ...raw, attached: patch.attached ?? true });
@@ -2453,6 +2490,24 @@ export async function updateQuiz(
   mockQuizzes = next;
   setStored('quizzes', mockQuizzes);
   return { quiz: updated };
+}
+
+/** Delete a quiz via DELETE /api/v1/quizzes/:id and evict it locally.
+ *  The backend nulls `quizId` on procedures referencing it. A 404 (already
+ *  gone) still counts as success; demo/local ids skip the network call. */
+export async function deleteQuiz(id: string): Promise<{ ok: true }> {
+  if (isUuidLike(id)) {
+    try {
+      await http.delete(`/api/v1/quizzes/${id}`);
+    } catch (err) {
+      // Already deleted server-side — local eviction below still applies.
+      if (!(err instanceof ApiException) || err.status !== 404) throw err;
+    }
+  }
+  const store = getQuizzesStore().filter((q) => q.id !== id);
+  mockQuizzes = store;
+  setStored('quizzes', store);
+  return { ok: true };
 }
 
 export async function getProcedureBySlug(
