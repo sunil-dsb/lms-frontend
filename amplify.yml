@@ -1,14 +1,13 @@
-
 version: 1
 frontend:
   phases:
     preBuild:
       commands:
-        - node --version
-        - npm install -g pnpm@10
-        - pnpm install --frozen-lockfile
+        - pnpm install
     build:
       commands:
+        - test -n "$OPENROUTER_API_KEY" || (echo "OPENROUTER_API_KEY is EMPTY in build env" && exit 1)
+        - echo "OPENROUTER_API_KEY=$OPENROUTER_API_KEY" >> .env.production
         - pnpm run build
   artifacts:
     baseDirectory: .next
@@ -16,4 +15,5 @@ frontend:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/*
+      - .next/cache/**/*
+      - node_modules/**/* 
