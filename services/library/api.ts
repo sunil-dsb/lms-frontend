@@ -497,6 +497,30 @@ export function normalizeBackendProcedure(raw: any): Procedure {
   };
 }
 
+/** POST /api/v1/procedures/import — upload a doc/pdf/txt file and get back
+ *  a generated draft procedure. Multipart `file` field; the server creates
+ *  the draft (status: draft) and returns it. AI generation is slow, so
+ *  callers should pass a long timeout + AbortSignal. */
+export async function importProcedure(
+  file: File,
+  opts?: { signal?: AbortSignal; timeoutMs?: number },
+): Promise<Procedure> {
+  const form = new FormData();
+  form.append('file', file, file.name);
+  const { data } = await http.post<{
+    success: boolean;
+    message: string;
+    data: { procedure: Procedure };
+  }>(LIBRARY_ENDPOINTS.IMPORT, form, {
+    signal: opts?.signal,
+    timeout: opts?.timeoutMs ?? 120_000,
+  });
+  if (!data.data?.procedure) {
+    throw new Error('Backend did not return imported procedure');
+  }
+  return normalizeBackendProcedure(data.data.procedure);
+}
+
 /** Default page size for full-list reads (counts, client filters). The backend
  *  defaults to `limit=10` when omitted — restaurant scale (50–100 docs) fits
  *  comfortably in one page, so one bounded request replaces paging logic. */

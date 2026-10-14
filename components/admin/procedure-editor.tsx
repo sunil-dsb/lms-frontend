@@ -196,7 +196,22 @@ export function ProcedureEditor({
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [dirty, setDirty] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [titleError, setTitleError] = React.useState<string | null>(null);
+  /* ------------------------------- doc import (new wizard only) -------- */
+  // Entry choice on step 1: null = show the two cards (pristine form only),
+  // 'manual' = blank form, 'upload' = file panel. Any typing auto-dismisses
+  // the cards because they only render while the form is pristine.
+  const [creationMode, setCreationMode] = React.useState<'manual' | 'upload' | null>(null);
+  // Server-created draft id from POST /procedures/import — save() UPDATEs
+  // this row instead of POSTing a new one.
+  const [importedId, setImportedId] = React.useState<string | null>(null);
+  const [importedSlug, setImportedSlug] = React.useState<string | null>(null);
+  const [importFile, setImportFile] = React.useState<File | null>(null);
+  const [importing, setImporting] = React.useState(false);
+  const [importError, setImportError] = React.useState<string | null>(null);
+  const [importDragOver, setImportDragOver] = React.useState(false);
+  const [importLoadingId, setImportLoadingId] = React.useState<string | null>(null);
+  const importAbortRef = React.useRef<AbortController | null>(null);
+  const importInputRef = React.useRef<HTMLInputElement | null>(null);  const [titleError, setTitleError] = React.useState<string | null>(null);
   const [purposeError, setPurposeError] = React.useState<string | null>(null);
   const [blockErrors, setBlockErrors] = React.useState<Record<string, string>>({});
   const [stationsError, setStationsError] = React.useState<boolean>(false);
@@ -420,6 +435,112 @@ export function ProcedureEditor({
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+
+  /* ------------------------- import: prefill + upload ------------------ */
+
+  // Fold a server-returned procedure into the wizard's editable state.
+  const applyImportedProcedure = React.useCallback((p: Procedure) => {
+    const content = toEditorContent(p);
+    setTitle({ en: p.titleEn ?? '', es: p.titleEs ?? '' });
+    setPurpose({ en: p.purposeEn ?? '', es: p.purposeEs ?? '' });
+    setBlocks(content.blocks);
+    setIngredients(content.ingredients);
+    setYieldItems(content.yieldItems);
+    if (p.iconImageUrl) setIconImageUrl(p.iconImageUrl);
+    setImportedId(p.id);
+    setImportedSlug(p.slug ?? null);
+    setCreationMode('manual');
+    setDirty(true);
+  }, []);
+
+  // Different-page auto-fill: /admin/library/new?importId=<id|slug> loads the
+  // server-created draft and prefills this same wizard for review + edit.
+  React.useEffect(() => {
+    if (initial || importedId) return;
+    const q = new URLSearchParams(window.location.search);
+    const importId = q.get('importId');
+    if (!importId) return;
+    let alive = true;
+    setImportLoadingId(importId);
+    void (async () => {
+      try {
+        const { fetchProcedureById } = await import('@/services/library/api');
+        const p = await fetchProcedureById(importId, true);
+        if (!alive) return;
+        applyImportedProcedure(p);
+        toast.success(t('importLoaded'));
+      } catch {
+        if (!alive) return;
+        setImportError(t('importErrorTitle'));
+      } finally {
+        if (alive) setImportLoadingId(null);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const IMPORT_ACCEPT = '.doc,.docx,.pdf,.txt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain';
+  const IMPORT_MAX_BYTES = 10 * 1024 * 1024;
+
+  function pickImportFile(file: File | null): void {
+    setImportError(null);
+    if (!file) {
+      setImportFile(null);
+      return;
+    }
+    const name = file.name.toLowerCase();
+    const okType =
+      /\.(doc|docx|pdf|txt)$/.test(name) ||
+      ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/pdf', 'text/plain'].includes(file.type);
+    if (!okType) {
+      setImportError(t('importFileTypeError'));
+      return;
+    }
+    if (file.size > IMPORT_MAX_BYTES) {
+      setImportError(t('importFileSizeError'));
+      return;
+    }
+    setImportFile(file);
+  }
+
+  async function runImport(): Promise<void> {
+    if (!importFile || importing) return;
+    setImportError(null);
+    setImporting(true);
+    const ctrl = new AbortController();
+    importAbortRef.current = ctrl;
+    try {
+      const { importProcedure } = await import('@/services/library/api');
+      const p = await importProcedure(importFile, { signal: ctrl.signal });
+      applyImportedProcedure(p);
+      setImportFile(null);
+      toast.success(t('importSuccess'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      if (err instanceof Error && err.name === 'CanceledError') return;
+      if (ctrl.signal.aborted) return;
+      const msg = err instanceof Error ? err.message : t('importErrorTitle');
+      setImportError(msg || t('importErrorTitle'));
+    } finally {
+      importAbortRef.current = null;
+      setImporting(false);
+    }
+  }
+
+  // The entry cards only exist on a pristine new form — the first keystroke
+  // (or a loaded import) removes them with no extra handler.
+  const isPristineNew =
+    !initial &&
+    !importedId &&
+    title.en.trim() === '' &&
+    title.es.trim() === '' &&
+    purpose.en.trim() === '' &&
+    purpose.es.trim() === '' &&
+    blocks.length === 0;
+  const showEntryCards = step === 'details' && creationMode === null && isPristineNew;
 
   // Revoke any blob URL we created so the browser frees the memory.
   React.useEffect(() => {
@@ -993,6 +1114,19 @@ export function ProcedureEditor({
             await publishProcedure(initial.id);
             publishedNow = true;
           }
+        } else if (importedId) {
+          // Doc-import flow: the server already created the draft on import,
+          // so edits UPDATE that row instead of POSTing a second one.
+          const { isUuid, publishProcedure } = await import('@/services/library/api');
+          const flipViaPublish = status === 'published' && isUuid(importedId);
+          await updateProcedure(importedId, {
+            ...input,
+            status: flipViaPublish ? 'draft' : input.status,
+          });
+          if (flipViaPublish) {
+            await publishProcedure(importedId);
+            publishedNow = true;
+          }
         } else {
           await createProcedure(input);
         }
@@ -1002,7 +1136,7 @@ export function ProcedureEditor({
         toast.success(
           publishedNow
             ? "Procedure published successfully"
-            : isEdit
+            : isEdit || importedId
               ? "Procedure updated successfully"
               : "Procedure created successfully",
         );
@@ -1069,6 +1203,142 @@ export function ProcedureEditor({
       </div>
 
       <div className="mx-auto max-w-page mt-4 space-y-4 pb-20">
+        {/* ── Entry choice: manual vs doc import (pristine new form only) ── */}
+        {showEntryCards ? (
+          <div className="grid gap-3 sm:grid-cols-2" role="group" aria-label={t('detailsTitle')}>
+            <button
+              type="button"
+              onClick={() => setCreationMode('manual')}
+              className="flex items-start gap-3 rounded-[var(--radius-lg)] border-2 border-transparent bg-[var(--color-surface)] p-5 text-left shadow-e1 transition-all hover:border-[var(--color-brand-600)] hover:shadow-e2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+            >
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]">
+                <LuFileText aria-hidden="true" className="size-5" />
+              </span>
+              <span>
+                <span className="block text-base font-semibold text-[var(--color-ink)]">{t('importManualTitle')}</span>
+                <span className="mt-0.5 block text-sm text-[var(--color-ink-2)]">{t('importManualBody')}</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreationMode('upload')}
+              className="flex items-start gap-3 rounded-[var(--radius-lg)] border-2 border-transparent bg-[var(--color-surface)] p-5 text-left shadow-e1 transition-all hover:border-[var(--color-brand-600)] hover:shadow-e2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+            >
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]">
+                <LuUpload aria-hidden="true" className="size-5" />
+              </span>
+              <span>
+                <span className="block text-base font-semibold text-[var(--color-ink)]">{t('importUploadTitle')}</span>
+                <span className="mt-0.5 block text-sm text-[var(--color-ink-2)]">{t('importUploadBody')}</span>
+              </span>
+            </button>
+          </div>
+        ) : null}
+
+        {/* ── Upload panel (file only: doc / pdf / txt) ─────────────────── */}
+        {step === 'details' && creationMode === 'upload' && !initial ? (
+          <section
+            aria-label={t('importDropTitle')}
+            className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-6"
+          >
+            <div className="flex items-center gap-2">
+              <IconTile size="xs" icon={LuUpload} />
+              <h3 className="text-sm font-semibold text-[var(--color-ink)]">{t('importDropTitle')}</h3>
+            </div>
+            <p className="mt-1 text-sm text-[var(--color-ink-2)]">{t('importDropBody')}</p>
+
+            <input
+              ref={importInputRef}
+              type="file"
+              accept={IMPORT_ACCEPT}
+              className="sr-only"
+              aria-label={t('importDropCta')}
+              onChange={(e) => pickImportFile(e.target.files?.[0] ?? null)}
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label={t('importDropCta')}
+              onClick={() => importInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  importInputRef.current?.click();
+                }
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setImportDragOver(true);
+              }}
+              onDragLeave={() => setImportDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setImportDragOver(false);
+                pickImportFile(e.dataTransfer.files?.[0] ?? null);
+              }}
+              className={cn(
+                'mt-4 flex flex-col items-center justify-center gap-2 rounded-[var(--radius-md)] border-2 border-dashed px-6 py-10 text-center transition-colors',
+                importDragOver
+                  ? 'border-[var(--color-brand-600)] bg-[var(--color-brand-tint)]'
+                  : 'border-[var(--color-line-2)] bg-[var(--color-wash)] hover:border-[var(--color-brand-600)]',
+              )}
+            >
+              <LuUpload aria-hidden="true" className="size-6 text-[var(--color-ink-3)]" />
+              <p className="text-sm font-semibold text-[var(--color-ink)]">
+                {importFile ? importFile.name : t('importDropCta')}
+              </p>
+              <p className="text-xs text-[var(--color-ink-3)]">{t('importDropOr')}</p>
+            </div>
+
+            {importError ? (
+              <p role="alert" className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-bad-tint)] px-3 py-2 text-xs font-semibold text-[var(--color-bad)]">
+                {importError}
+              </p>
+            ) : null}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button type="button" variant="neutral" size="sm" onClick={() => { setCreationMode(null); setImportFile(null); setImportError(null); }}>
+                {t('importBack')}
+              </Button>
+              <span className="flex-1" />
+              <Button type="button" variant="primary" size="sm" icon={LuUpload} disabled={!importFile || importing} onClick={() => void runImport()}>
+                {t('importUploadCta')}
+              </Button>
+            </div>
+          </section>
+        ) : null}
+
+        {/* ── Fullscreen generating state (slow AI call) ────────────────── */}
+        {importing || importLoadingId ? (
+          <div role="alertdialog" aria-modal="true" aria-label={t('importLoadingTitle')} className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-[var(--radius-lg)] bg-[var(--color-surface)] p-8 text-center shadow-e2">
+              <span aria-hidden="true" className="mx-auto flex size-12 items-center justify-center">
+                <span className="size-10 animate-spin rounded-full border-4 border-[var(--color-line-2)] border-t-[var(--color-brand-600)]" />
+              </span>
+              <h3 className="mt-4 text-lg font-bold text-[var(--color-ink)]">{t('importLoadingTitle')}</h3>
+              <p className="mt-2 text-sm leading-body text-[var(--color-ink-2)]">
+                {importing
+                  ? t('importLoadingBody', { file: importFile?.name ?? '' })
+                  : t('importLoaded')}
+              </p>
+              {importing ? (
+                <Button
+                  type="button"
+                  variant="neutral"
+                  size="sm"
+                  className="mt-6"
+                  onClick={() => {
+                    importAbortRef.current?.abort();
+                    setImporting(false);
+                  }}
+                >
+                  {t('importLoadingCancel')}
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
         {/* ── Step 1 — what it is and what it says ────────────────────── */}
         {step === "details" ? (
           <>
