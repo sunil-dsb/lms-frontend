@@ -121,13 +121,13 @@ export function CategoryDetailClient({
       subcategoriesQuery.data === undefined
     ));
 
-  // Real procedures — published only, via the super_admin filter API.
+  // Real procedures — published + drafts for the admin, via the super_admin filter API.
   // Rows are matched to panels below by subcategory (exact id, slug, or
   // English name): backend rows never carry these mock ids, so joining on
   // ids alone would leave every panel empty.
   const proceduresQuery = useQuery({
     queryKey: [...PROCEDURES_QUERY_KEY, 'category-detail', { categoryId }],
-    queryFn: () => fetchProcedures({ status: 'published' }, true).then((r) => r.procedures),
+    queryFn: () => fetchProcedures({}, true).then((r) => r.procedures),
     enabled: category !== null,
     staleTime: 5000,
   });
@@ -195,6 +195,7 @@ export function CategoryDetailClient({
         slug: p.slug,
         titleEn: p.titleEn,
         titleEs: p.titleEs,
+        status: p.status,
         stationIds: rowStations.map((s) => s.id),
         stations: rowStations,
         updatedAt: p.updatedAt,
@@ -203,16 +204,15 @@ export function CategoryDetailClient({
     [stationOverrides, stationsById],
   );
 
-  // Published, non-archived procedures grouped per subcategory panel.
+  // Non-archived procedures (published and drafts) grouped per subcategory panel.
   // A row belongs to a panel when its subcategory matches by exact id,
-  // slug, or English name. Drafts and archived rows never reach this
-  // surface.
+  // slug, or English name.
   const normName = (s: string): string => s.trim().toLowerCase();
   const rowsBySubSlug = React.useMemo(() => {
     const map: Record<string, Procedure[]> = {};
     for (const sub of subcategories) {
       const rows = (proceduresQuery.data ?? []).filter((p) => {
-        if (p.isArchived || p.status !== 'published') return false;
+        if (p.isArchived) return false;
         const ps = (
           p as unknown as {
             subcategory?: { id: string; nameEn: string } | null;
