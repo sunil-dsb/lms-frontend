@@ -12,9 +12,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function CategoryDetailSkeleton({
   className,
   'aria-label': ariaLabel,
+  hideHeader = false,
 }: {
   className?: string;
   'aria-label'?: string;
+  hideHeader?: boolean;
 }): React.ReactElement {
   return (
     <div
@@ -23,13 +25,15 @@ export function CategoryDetailSkeleton({
       className={cn('mx-auto max-w-page space-y-6', className)}
     >
       {/* PageHeader skeleton */}
-      <div className="flex flex-wrap items-start justify-between gap-4 pb-2">
-        <div className="min-w-0 space-y-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-8 w-56" />
+      {!hideHeader ? (
+        <div className="flex flex-wrap items-start justify-between gap-4 pb-2">
+          <div className="min-w-0 space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-8 w-56" />
+          </div>
+          <Skeleton className="h-10 w-36 rounded-[var(--radius-md)]" />
         </div>
-        <Skeleton className="h-10 w-36 rounded-[var(--radius-md)]" />
-      </div>
+      ) : null}
 
       <div aria-hidden="true" className="space-y-3">
         {/* First accordion open, with procedure rows */}

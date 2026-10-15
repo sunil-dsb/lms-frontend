@@ -38,8 +38,7 @@ import { fetchEmployeeById } from '@/services/employees/api';
 import { useRoles } from '@/services/jobs/hooks';
 import { useStations } from '@/services/stations/hooks';
 import { useLocations } from '@/services/locations/hooks';
-import { EMPLOYEES_UPDATED_EVENT } from '@/lib/mock-employees';
-import type { UpdateEmployeeInput } from '@/lib/mock-employees';
+import { EMPLOYEES_UPDATED_EVENT, type UpdateEmployeeInput } from '@/services/employees/types';
 import { getTrainingRowsForEmployee } from '@/lib/mock-training';
 import type {
   AdminEmployee,

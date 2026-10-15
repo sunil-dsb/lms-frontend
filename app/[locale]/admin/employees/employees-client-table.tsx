@@ -21,7 +21,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { useRoles } from '@/services/jobs/hooks';
 import { useStations } from '@/services/stations/hooks';
 import { useLocations } from '@/services/locations/hooks';
-import type { UpdateEmployeeInput } from '@/lib/mock-employees';
+import type { UpdateEmployeeInput } from '@/services/employees/types';
 import { fold } from '@/lib/utils';
 
 interface EmployeesClientTableProps {

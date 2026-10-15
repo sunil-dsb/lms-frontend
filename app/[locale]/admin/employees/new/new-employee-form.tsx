@@ -26,6 +26,7 @@ import type {
   Station,
 } from '@/lib/types';
 import { InviteResultCard } from './invite-result';
+import { EmployeeAccessSection, EmployeeAdditionalSection, EmployeeDetailsSection } from './employee-form-sections';
 
 interface NewEmployeeFormProps {
   locale: string;
@@ -33,7 +34,7 @@ interface NewEmployeeFormProps {
   roles: Role[];
 }
 
-interface FormState {
+export interface FormState {
   name: string;
   email: string;
   locationId: string;
@@ -43,8 +44,6 @@ interface FormState {
   employeeCode: string;
   languagePref: LanguagePref;
 }
-
-const ACCESS_LEVELS: AccessLevel[] = ['employee', 'manager'];
 
 const initialState = (defaultLocationId: string): FormState => ({
   name: '',
@@ -57,7 +56,7 @@ const initialState = (defaultLocationId: string): FormState => ({
   languagePref: 'en',
 });
 
-interface FieldErrors {
+export interface FieldErrors {
   name?: string;
   email?: string;
   locationId?: string;
@@ -530,267 +529,29 @@ export function NewEmployeeForm({
       />
 
       <form onSubmit={onSubmit} noValidate className="space-y-6">
-        {/* ===== Employee details ===== */}
-        <FormSection
-          title={t('sectionEmployeeDetails')}
-          hint={t('sectionEmployeeDetailsHint')}
-        >
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 items-start">
-            <div className={field}>
-              <div className="flex items-center justify-between min-h-5">
-                <Label htmlFor="name">{t('nameLabel')}</Label>
-                <span className="text-[11px] font-medium text-[var(--color-ink-3)]">
-                  {form.name.length}/{MAX_NAME_LENGTH}
-                </span>
-              </div>
-              <Input
-                id="name"
-                required
-                maxLength={MAX_NAME_LENGTH}
-                value={form.name}
-                onChange={(e) => update('name', e.target.value.slice(0, MAX_NAME_LENGTH))}
-                disabled={isPending}
-                aria-invalid={Boolean(fieldErrors.name)}
-                aria-describedby={fieldErrors.name ? 'name-error' : undefined}
-                className={fieldErrors.name ? 'border-[var(--color-bad)] focus-visible:ring-[var(--color-bad)]' : ''}
-              />
-              {fieldErrors.name ? (
-                <p id="name-error" role="alert" className="text-xs font-medium text-[var(--color-bad)]">
-                  {fieldErrors.name}
-                </p>
-              ) : null}
-            </div>
-
-            <div className={field}>
-              <div className="flex items-center justify-between min-h-5">
-                <Label htmlFor="email">{t('emailLabel')}</Label>
-              </div>
-              <Input
-                id="email"
-                type="email"
-                maxLength={200}
-                placeholder={t('emailPlaceholder')}
-                value={form.email}
-                onChange={(e) => update('email', e.target.value)}
-                disabled={isPending}
-                aria-invalid={Boolean(fieldErrors.email)}
-                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-                className={fieldErrors.email ? 'border-[var(--color-bad)] focus-visible:ring-[var(--color-bad)]' : ''}
-              />
-              {fieldErrors.email ? (
-                <p id="email-error" role="alert" className="text-xs font-medium text-[var(--color-bad)]">
-                  {fieldErrors.email}
-                </p>
-              ) : null}
-            </div>
-
-            <div className={field}>
-              <div className="flex items-center justify-between min-h-5">
-                <Label id="locationId-label" htmlFor="locationId">
-                  {t('locationLabel')}
-                </Label>
-              </div>
-              <CustomSelect
-                id="locationId"
-                ariaLabelledBy="locationId-label"
-                value={form.locationId}
-                onChange={onLocationChange}
-                disabled={isPending || isLoadingLocations || locations.length <= 1}
-                isLoading={isLoadingLocations}
-                options={locations.map((l) => ({ value: l.id, label: l.name }))}
-              />
-              {fieldErrors.locationId ? (
-                <p id="locationId-error" role="alert" className="text-xs font-medium text-[var(--color-bad)]">
-                  {fieldErrors.locationId}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </FormSection>
-
-        {/* ===== Access & job assignment ===== */}
-        <FormSection
-          title={t('sectionAccess')}
-          hint={t('sectionAccessHint')}
-        >
-          <div className="space-y-5">
-            <fieldset className={field}>
-              <legend
-                id="accessLevel-label"
-                className="text-sm font-semibold text-[var(--color-ink)]"
-              >
-                {t('accessLevelLabel')}
-              </legend>
-              <p className="text-sm text-[var(--color-ink-2)]">
-                {t('accessLevelHint')}
-              </p>
-              <div
-                role="radiogroup"
-                aria-labelledby="accessLevel-label"
-                className="flex flex-wrap gap-2"
-              >
-                {ACCESS_LEVELS.map((level) => {
-                  const selected = form.accessLevel === level;
-                  const isLevelLoading = selected && (isLoadingRoles || (level === 'manager' && isLoadingStations));
-                  return (
-                    <label
-                      key={level}
-                      className={[
-                        'inline-flex min-h-tap-admin cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors',
-                        selected
-                          ? 'border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]'
-                          : 'border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:bg-[var(--color-panel)]',
-                        isPending || isLoadingRoles || isLoadingStations ? 'cursor-not-allowed opacity-80' : '',
-                      ].join(' ')}
-                    >
-                      <input
-                        type="radio"
-                        name="accessLevel"
-                        value={level}
-                        checked={selected}
-                        disabled={isPending || isLoadingRoles || isLoadingStations}
-                        onChange={() => void setAccessLevel(level)}
-                        className="sr-only"
-                      />
-                      {isLevelLoading ? (
-                        <LuLoader className="size-3 animate-spin text-[var(--color-brand-600)]" aria-hidden="true" />
-                      ) : (
-                        <span
-                          aria-hidden="true"
-                          className={[
-                            'inline-block size-2 rounded-full',
-                            selected
-                              ? 'bg-[var(--color-brand-600)]'
-                              : 'bg-[var(--color-line-2)]',
-                          ].join(' ')}
-                        />
-                      )}
-                      {level === 'manager'
-                        ? t('accessLevelManager')
-                        : t('accessLevelEmployee')}
-                    </label>
-                  );
-                })}
-              </div>
-              {fieldErrors.accessLevel ? (
-                <p role="alert" className="text-xs font-medium text-[var(--color-bad)]">
-                  {fieldErrors.accessLevel}
-                </p>
-              ) : null}
-            </fieldset>
-
-            <div className="grid gap-5 sm:grid-cols-2 items-start">
-              <div>
-                <MultiSelectChips
-                  id="jobRoles"
-                  label={t('jobRolesLabel')}
-                  hint={t('jobRolesHint')}
-                  value={form.roleIds}
-                  onChange={(ids) => void handleRoleIdsChange(ids)}
-                  options={roles.map((r) => ({ value: r.id, label: r.name }))}
-                  disabled={isPending || !form.accessLevel || isLoadingRoles}
-                  isLoading={isLoadingRoles}
-                  loadingText="Loading job roles..."
-                  addLabel={t('jobRolesAdd')}
-                  emptyText={t('jobRolesPrompt')}
-                />
-                {fieldErrors.roleIds ? (
-                  <p role="alert" className="mt-1.5 text-xs font-medium text-[var(--color-bad)]">
-                    {fieldErrors.roleIds}
-                  </p>
-                ) : null}
-              </div>
-
-              <MultiSelectChips
-                id="stations"
-                label={t('stationsLabel')}
-                hint={t('stationsHint')}
-                value={form.stationIds}
-                onChange={handleStationIdsChange}
-                options={availableStations.map((s) => ({
-                  value: s.id,
-                  label: s.name || t('selectPlaceholder'),
-                }))}
-                disabled={isPending || (availableStations.length === 0 && !isLoadingStations)}
-                isLoading={isLoadingStations}
-                loadingText="Loading stations..."
-                blockedReason={stationsBlockedReason}
-                addLabel={t('stationsAdd')}
-                emptyText={t('stationsPrompt')}
-              />
-            </div>
-          </div>
-        </FormSection>
-
-        {/* ===== Additional details ===== */}
-        <FormSection
-          title={t('sectionAdditional')}
-          hint={t('sectionAdditionalHint')}
-        >
-          <div className="grid gap-5 sm:grid-cols-2 items-start">
-            <div className={field}>
-              <div className="flex items-center justify-between min-h-5">
-                <Label htmlFor="employeeCode">{t('employeeCodeLabel')}</Label>
-              </div>
-              <Input
-                id="employeeCode"
-                maxLength={6}
-                placeholder={t('employeeCodePlaceholder')}
-                value={form.employeeCode}
-                onChange={(e) => update('employeeCode', e.target.value)}
-                disabled={isPending}
-                aria-invalid={
-                  Boolean(fieldErrors.employeeCode) ||
-                  (form.employeeCode.trim().length > 0 && form.employeeCode.trim().length !== 6)
-                }
-                aria-describedby={fieldErrors.employeeCode ? 'employeeCode-error' : 'employeeCode-hint'}
-                className={fieldErrors.employeeCode ? 'border-[var(--color-bad)] focus-visible:ring-[var(--color-bad)]' : ''}
-              />
-              {fieldErrors.employeeCode ? (
-                <p
-                  id="employeeCode-error"
-                  role="alert"
-                  className="text-xs font-medium text-[var(--color-bad)]"
-                >
-                  {fieldErrors.employeeCode}
-                </p>
-              ) : (
-                <p
-                  id="employeeCode-hint"
-                  className={
-                    form.employeeCode.trim().length > 0 && form.employeeCode.trim().length !== 6
-                      ? 'text-xs font-semibold text-[var(--color-bad)]'
-                      : 'text-xs text-[var(--color-ink-2)]'
-                  }
-                >
-                  {form.employeeCode.trim().length > 0 && form.employeeCode.trim().length !== 6
-                    ? t('errorNeedCode')
-                    : t('employeeCodeHint')}
-                </p>
-              )}
-            </div>
-
-            <div className={field}>
-              <div className="flex items-center justify-between min-h-5">
-                <Label id="languagePref-label" htmlFor="languagePref">
-                  {t('languageLabel')}
-                </Label>
-              </div>
-              <CustomSelect
-                id="languagePref"
-                ariaLabelledBy="languagePref-label"
-                value={form.languagePref}
-                onChange={(val) => update('languagePref', val as LanguagePref)}
-                disabled={isPending}
-                options={[
-                  { value: 'en', label: 'English (EN)' },
-                  { value: 'es', label: 'EspaÃ±ol (ES)' },
-                ]}
-              />
-            </div>
-          </div>
-        </FormSection>
-
+        <EmployeeDetailsSection
+          form={form}
+          fieldErrors={fieldErrors}
+          locations={locations}
+          isPending={isPending}
+          isLoadingLocations={isLoadingLocations}
+          onUpdate={update}
+          onLocationChange={onLocationChange}
+        />
+        <EmployeeAccessSection
+          form={form}
+          fieldErrors={fieldErrors}
+          roles={roles}
+          stations={availableStations}
+          isPending={isPending}
+          isLoadingRoles={isLoadingRoles}
+          isLoadingStations={isLoadingStations}
+          stationsBlockedReason={stationsBlockedReason}
+          onAccessChange={(level) => void setAccessLevel(level)}
+          onRolesChange={(ids) => void handleRoleIdsChange(ids)}
+          onStationsChange={handleStationIdsChange}
+        />
+        <EmployeeAdditionalSection form={form} fieldErrors={fieldErrors} isPending={isPending} onUpdate={update} />
         {error ? (
           <p role="alert" className="text-sm font-medium text-[var(--color-bad)]">
             {error}
@@ -811,24 +572,3 @@ export function NewEmployeeForm({
   );
 }
 
-function FormSection({
-  title,
-  hint,
-  children,
-}: {
-  title: string;
-  hint?: string;
-  children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <section className="rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-6 py-6 shadow-e1 sm:px-8 sm:py-7">
-      <header className="mb-5">
-        <h2 className="text-base font-semibold text-[var(--color-ink)]">{title}</h2>
-        {hint ? (
-          <p className="mt-1 text-sm text-[var(--color-ink-2)]">{hint}</p>
-        ) : null}
-      </header>
-      {children}
-    </section>
-  );
-}
