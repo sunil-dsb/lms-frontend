@@ -11,7 +11,22 @@
    heading across the app. The Button component's text-white! was a workaround
    for exactly this. In this layer the order is preflight, then this file, then
    utilities, which is the order everything was written to expect. */
-@import "./lms.css" layer(components);
+@import "./lms/foundation.css" layer(components);
+@import "./lms/controls.css" layer(components);
+@import "./lms/procedure-steps.css" layer(components);
+@import "./lms/training.css" layer(components);
+@import "./lms/admin-surfaces.css" layer(components);
+@import "./lms/navigation.css" layer(components);
+@import "./lms/document-layout.css" layer(components);
+@import "./lms/recipe-and-tables.css" layer(components);
+@import "./lms/proximity-rail.css" layer(components);
+@import "./lms/document-media.css" layer(components);
+@import "./lms/dashboards.css" layer(components);
+@import "./lms/wizard-controls.css" layer(components);
+@import "./lms/bilingual-inputs.css" layer(components);
+@import "./lms/cook-mode.css" layer(components);
+@import "./lms/cook-mode-detail.css" layer(components);
+@import "./lms/cook-mode-navigation.css" layer(components);
 
 /* ============================================================
    Alimentaria LMS — design tokens
@@ -270,3 +285,35 @@
 .i-sm { font-size: 1em; }
 .i-lg { font-size: 1.5em; }
 }
+
+/* ============================================================
+   Procedure creation flow — micro-interaction keyframes
+   Named with proc- prefix to avoid collisions.
+   ============================================================ */
+@keyframes proc-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes proc-slidein {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes proc-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+@keyframes proc-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes proc-fadein  { from { opacity: 1; } }
+  @keyframes proc-slidein { from { opacity: 1; transform: none; } }
+  @keyframes proc-pulse   { 50% { opacity: 1; transform: none; } }
+  @keyframes proc-shimmer { 100% { transform: none; } }
+}
+

@@ -1,0 +1,317 @@
+/* ============================================================
+   PROGRESS, CHAPTERS, QUIZ, RECEIPT, SIGN-OFF, ACK
+   ============================================================ */
+.progress {
+   display: grid;
+   gap: var(--s-2);
+}
+
+.progress-top {
+   display: flex;
+   justify-content: space-between;
+   font-size: var(--t-sm);
+   font-weight: 600;
+}
+
+.track {
+   height: 8px;
+   background: var(--line);
+   border-radius: var(--r-pill);
+   overflow: hidden;
+}
+
+.track>i {
+   display: block;
+   height: 100%;
+   background: var(--ok-fill);
+   border-radius: inherit;
+}
+
+.chapters {
+   display: grid;
+   gap: var(--s-2);
+   max-width: var(--narrow-w);
+}
+
+.chapter {
+   display: flex;
+   align-items: center;
+   gap: var(--s-4);
+   min-height: var(--tap-employee);
+   padding: var(--s-3) var(--s-4);
+   background: var(--surface);
+   border: 1px solid var(--line);
+   border-radius: var(--r-lg);
+}
+
+/* A cook recognises the two red buckets faster than they read "Cleaning and
+   sanitising food contact surfaces". Where a document has a cover, the row shows
+   it; where it does not, the category glyph stands in. The photograph is the
+   restaurant's own — no stock imagery, which is also what the scope asks for. */
+.chapter .thumb {
+   width: 48px;
+   height: 48px;
+   border-radius: var(--r-md);
+   object-fit: cover;
+   flex-shrink: 0;
+   background: var(--panel);
+}
+
+.chapter .idx {
+   width: 32px;
+   height: 32px;
+   border-radius: var(--r-pill);
+   background: var(--panel);
+   color: var(--ink-2);
+   display: grid;
+   place-items: center;
+   font-weight: 700;
+   font-size: var(--t-sm);
+   flex-shrink: 0;
+}
+
+.chapter .idx.done {
+   background: var(--ok-fill);
+   color: var(--on-fill);
+}
+
+.chapter .idx.now {
+   background: var(--brand-600);
+   color: var(--on-fill);
+}
+
+.chapter>div:not(.idx) {
+   flex: 1;
+   min-width: 0;
+}
+
+.chapter .title {
+   font-weight: 600;
+}
+
+.chapter .meta {
+   font-size: var(--t-sm);
+   color: var(--ink-2);
+   display: flex;
+   align-items: center;
+   gap: var(--s-1);
+}
+
+.chapter .tail {
+   margin-left: auto;
+}
+
+a.chapter {
+   text-decoration: none;
+   color: inherit;
+}
+
+.chapter .tail>.i {
+   color: var(--ink-3);
+}
+
+.chapter.is-locked {
+   background: transparent;
+   border-style: dashed;
+}
+
+.chapter.is-locked .title {
+   color: var(--ink-3);
+}
+
+.quiz {
+   max-width: var(--narrow-w);
+}
+
+.quiz-q {
+   font-size: var(--t-lg);
+   font-weight: 600;
+   margin-bottom: var(--s-5);
+}
+
+.opts {
+   display: grid;
+   gap: var(--s-3);
+}
+
+.opt {
+   display: flex;
+   align-items: center;
+   gap: var(--s-4);
+   min-height: var(--tap-employee);
+   padding: var(--s-3) var(--s-4);
+   background: var(--surface);
+   border: 2px solid var(--line-3);
+   border-radius: var(--r-lg);
+   font-size: var(--t-md);
+   font-weight: 500;
+   cursor: pointer;
+   text-align: left;
+   transition: border-color var(--dur) var(--ease);
+}
+
+.opt:hover {
+   border-color: var(--ink-3);
+}
+
+.opt .mark {
+   width: 28px;
+   height: 28px;
+   border-radius: var(--r-pill);
+   border: 2px solid var(--line-3);
+   flex-shrink: 0;
+   display: grid;
+   place-items: center;
+   font-weight: 700;
+   font-size: var(--t-sm);
+}
+
+.opt.correct {
+   border-color: var(--ok);
+   background: var(--ok-tint);
+}
+
+.opt.correct .mark {
+   border-color: var(--ok);
+   background: var(--ok-fill);
+   color: var(--on-fill);
+}
+
+.opt.wrong {
+   border-color: var(--bad);
+   background: var(--bad-tint);
+}
+
+.opt.wrong .mark {
+   border-color: var(--bad);
+   background: var(--bad-fill);
+   color: var(--on-fill);
+}
+
+.receipt {
+   display: flex;
+   align-items: center;
+   gap: var(--s-4);
+   padding: var(--s-5);
+   background: var(--ok-fill);
+   color: var(--on-fill);
+   border-radius: var(--r-lg);
+   max-width: var(--narrow-w);
+}
+
+.receipt .tick {
+   width: 48px;
+   height: 48px;
+   border-radius: var(--r-pill);
+   background: var(--on-dark-3);
+   display: grid;
+   place-items: center;
+   flex-shrink: 0;
+}
+
+.receipt .head {
+   font-weight: 700;
+   font-size: var(--t-md);
+}
+
+.receipt .stamp {
+   font-size: var(--t-sm);
+   opacity: 0.92;
+   margin-top: 2px;
+}
+
+.signoff {
+   max-width: 460px;
+   background: var(--surface);
+   border: 1px solid var(--line-2);
+   border-radius: var(--r-lg);
+   padding: var(--s-5);
+}
+
+.signoff .who {
+   display: flex;
+   align-items: center;
+   gap: var(--s-3);
+   margin-bottom: var(--s-4);
+}
+
+.avatar {
+   width: 44px;
+   height: 44px;
+   border-radius: var(--r-pill);
+   background: var(--panel);
+   color: var(--ink);
+   display: grid;
+   place-items: center;
+   font-weight: 700;
+   flex-shrink: 0;
+}
+
+.signoff .task {
+   font-weight: 600;
+}
+
+.signoff .ctx {
+   font-size: var(--t-sm);
+   color: var(--ink-2);
+}
+
+.seg {
+   display: flex;
+   gap: var(--s-2);
+   margin-bottom: var(--s-4);
+}
+
+.seg button {
+   flex: 1;
+   min-height: var(--tap-employee);
+   border: 1px solid var(--line-3);
+   background: var(--surface);
+   border-radius: var(--r-md);
+   font-weight: 600;
+   font-size: var(--t-sm);
+   cursor: pointer;
+}
+
+.seg button[aria-checked="true"] {
+   background: var(--ink);
+   color: var(--on-fill);
+   border-color: var(--ink);
+}
+
+.ack {
+   max-width: var(--narrow-w);
+   background: var(--surface);
+   border: 1px solid var(--line-2);
+   border-radius: var(--r-lg);
+   padding: var(--s-5);
+}
+
+.ack .ver {
+   display: inline-flex;
+   gap: var(--s-2);
+   align-items: center;
+   font-size: var(--t-sm);
+   font-weight: 600;
+   background: var(--warn-tint);
+   color: var(--warn-ink);
+   padding: 3px var(--s-2);
+   border-radius: var(--r-sm);
+   margin-bottom: var(--s-4);
+}
+
+.check-row {
+   display: flex;
+   gap: var(--s-3);
+   align-items: flex-start;
+   margin-bottom: var(--s-5);
+}
+
+.check-row input {
+   width: 24px;
+   height: 24px;
+   margin: 2px 0 0;
+   accent-color: var(--ink);
+   flex-shrink: 0;
+}
+

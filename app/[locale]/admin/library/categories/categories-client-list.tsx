@@ -83,6 +83,25 @@ export function CategoriesClientList({
 
   return (
     <div className="space-y-6">
+      {/* Combined active categories grid */}
+      {active.length > 0 ? (
+        <section aria-labelledby="categories-heading" className="space-y-3">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {active.map((c) => (
+              <li key={c.id}>
+                <CategoryCard
+                  category={c}
+                  locale={locale}
+                  archivedChipLabel={null}
+                  procedureCount={procedureCounts.get(c.id) ?? 0}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* PREVIOUS SPLIT LAYOUT (General vs Station-specific) - Retained as commented code:
       {generalCategories.length > 0 ? (
         <section aria-labelledby="general-heading" className="space-y-3">
           <h2
@@ -125,6 +144,7 @@ export function CategoriesClientList({
           </ul>
         </section>
       ) : null}
+      */}
 
       {archived.length > 0 ? (
         <section className="space-y-3 pt-3" aria-labelledby="archived-heading">

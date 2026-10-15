@@ -29,7 +29,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) return {};
   const t = await getTranslations({ locale, namespace: 'app' });
-  return { title: t('title') };
+  return {
+    title: t('title'),
+    icons: {
+      icon: '/brand-mark.png',
+      apple: '/brand-mark.png',
+    },
+  };
 }
 
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps): Promise<React.ReactElement> {

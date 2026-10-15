@@ -16,7 +16,7 @@ import {
   updateEmployee,
   type UpdateEmployeeRequest,
 } from '@/services/employees/api';
-import type { UpdateEmployeeInput } from '@/lib/mock-employees';
+import type { UpdateEmployeeInput } from '@/services/employees/types';
 import { ApiException } from '@/lib/errors';
 import { fetchJobStations } from '@/services/jobs/api';
 import type { AdminEmployee, Role, Station } from '@/lib/types';

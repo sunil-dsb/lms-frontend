@@ -3,12 +3,7 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
-
-
 export default function proxy(request: NextRequest): NextResponse {
-  // Normalize malformed legacy invite links where the backend URL and API
-  // path were embedded in the frontend invite route, e.g.
-  // /en/invite/api.example.com/api/v1/auth/invites/en/<code>.
   const legacyInviteMatch = request.nextUrl.pathname.match(
     /^\/([a-z]{2})\/invite\/.+\/api\/v1\/auth\/invites\/[a-z]{2}\/([^/]+)\/?$/i,
   );
@@ -21,12 +16,6 @@ export default function proxy(request: NextRequest): NextResponse {
 
   const asParam = request.nextUrl.searchParams.get('as');
   const viewAs = asParam === 'admin' || asParam === 'employee' ? asParam : null;
-
-  // Augment the request headers with our override BEFORE handing it to
-  // next-intl. next-intl's middleware builds its response by copying
-  // `request.headers` into a new Headers object (see next-intl/dist/.../
-  // middleware/middleware.js), so anything we set here flows downstream to
-  // layouts and pages via the standard `headers()` API.
   let intlRequest: NextRequest = request;
   if (viewAs) {
     const requestHeaders = new Headers(request.headers);

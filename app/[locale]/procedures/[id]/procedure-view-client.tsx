@@ -114,6 +114,9 @@ export function ProcedureViewClient({
     }
 
     void loadProcedure();
+    return () => {
+      isMounted = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slugOrId]);
 

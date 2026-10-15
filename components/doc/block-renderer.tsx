@@ -414,7 +414,7 @@ export function BlockRenderer({
         return;
       }
       case 'method': {
-        const sectionTitle = open?.title ?? t.method;
+        const sectionTitle = (block.title?.[locale]?.trim() || open?.title || t.method);
         const sectionKey = open?.key ?? key;
         const extraNodes = open?.nodes ?? [];
         open = null;

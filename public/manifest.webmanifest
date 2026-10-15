@@ -11,11 +11,6 @@
   "lang": "en",
   "icons": [
     {
-      "src": "/favicon-32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
       "src": "/brand-mark.png",
       "sizes": "256x256",
       "type": "image/png",

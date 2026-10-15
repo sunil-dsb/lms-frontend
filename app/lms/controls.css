@@ -1,0 +1,624 @@
+/* ============================================================
+   BASE
+   ============================================================ */
+*,
+*::before,
+*::after {
+   box-sizing: border-box;
+}
+
+/* hidden has to win. The browser's own [hidden] rule has the lowest priority there
+   is, so any component that sets display (flex, grid) quietly shows what the
+   markup says is hidden. */
+[hidden] {
+   display: none !important;
+}
+
+html {
+   -webkit-text-size-adjust: 100%;
+}
+
+body {
+   margin: 0;
+   font-family: var(--font-ui);
+   font-size: var(--t-base);
+   line-height: var(--lh-body);
+   color: var(--ink);
+   background: var(--bg);
+   -webkit-font-smoothing: antialiased;
+   overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+   margin: 0;
+   line-height: var(--lh-heading);
+   text-wrap: wrap   ;
+}
+
+/* Scrollbars. Thin, in our own line colours, and the track stays invisible so a
+   scrollable area does not gain a grey channel down its side. Firefox takes the
+   two standard properties; Chrome, Edge and Safari take the -webkit- pseudos.
+   The thumb is drawn inside a transparent 3px border via background-clip, which
+   is how it keeps a hairline gap from the content without a second element. */
+* {
+   scrollbar-width: thin;
+   scrollbar-color: var(--line-2) transparent;
+}
+
+::-webkit-scrollbar {
+   width: 10px;
+   height: 10px;
+}
+
+::-webkit-scrollbar-track {
+   background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+   background: var(--line-2);
+   border-radius: var(--r-pill);
+   border: 3px solid transparent;
+   background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+   background: var(--line-3);
+   background-clip: content-box;
+}
+
+/* A row of chips that scrolls sideways on a phone. The scrollbar under it is
+   chrome under chrome; the chip cut off at the edge already says there is more.
+   From sm up the row wraps instead, so nothing is cut off and nothing scrolls. */
+.chip-rail {
+   scrollbar-width: none;
+}
+
+.chip-rail::-webkit-scrollbar {
+   display: none;
+}
+
+::-webkit-scrollbar-corner {
+   background: transparent;
+}
+
+/* A panel that scrolls keeps its gutter reserved, so content does not jump by
+   10px the moment a list grows past its box. */
+.scroll,
+.find-results,
+.menu,
+[data-scroll] {
+   scrollbar-gutter: stable;
+}
+
+p {
+   margin: 0;
+   text-wrap: pretty;
+}
+
+button,
+input,
+select,
+textarea {
+   font: inherit;
+   color: inherit;
+}
+
+/* The browser paints a <button> with its own button face, which under
+   color-scheme: dark is a mid grey. Every control in this system paints its own
+   ground, so the default is cleared rather than overridden one class at a time. */
+button {
+   background: none;
+   border: 0;
+}
+
+/* The tokens alone are not enough: `color` is inherited, so a subtree pinned to
+   the light scale must restate it or keep the ink it inherited from the page. */
+.theme-light {
+   color: var(--ink);
+}
+
+/* The outline follows each element's own radius. Setting border-radius here would
+   reshape a pill into a rectangle the moment it took keyboard focus. */
+:focus-visible {
+   outline: 3px solid var(--ring);
+   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+   /* Duration alone is not enough. An infinite animation at 0.01ms is a strobe,
+     shown to exactly the people who asked for less motion. */
+   *,
+   *::before,
+   *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+   }
+
+   .spinner {
+      animation: none;
+      border-top-color: currentColor;
+      opacity: 0.5;
+   }
+
+   .skel::after {
+      display: none;
+   }
+}
+
+.display {
+   font-family: var(--font-display);
+   font-weight: var(--display-weight);
+   letter-spacing: var(--display-track);
+   line-height: var(--lh-display);
+}
+
+/* Icons: Remix Icon, line style throughout, sized by font-size */
+.i {
+   font-size: 1.25em;
+   line-height: 1;
+   flex-shrink: 0;
+   display: inline-flex;
+}
+
+.i-sm {
+   font-size: 1em;
+}
+
+.i-lg {
+   font-size: 1.5em;
+}
+
+.note {
+   font-size: var(--t-sm);
+   color: var(--ink-2);
+   max-width: 66ch;
+   margin-top: var(--s-3);
+}
+
+.grid {
+   display: grid;
+   gap: var(--s-4);
+}
+
+.row {
+   display: flex;
+   flex-wrap: wrap;
+   gap: var(--s-3);
+   align-items: center;
+}
+
+code {
+   font-family: ui-monospace, Menlo, Consolas, monospace;
+   font-size: 0.85em;
+   background: var(--panel);
+   padding: 2px var(--s-2);
+   border-radius: var(--r-sm);
+}
+
+.scroll {
+   overflow-x: auto;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+   text-decoration: none;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   gap: var(--s-2);
+   font-weight: 600;
+   font-size: var(--t-sm);
+   min-height: var(--tap-admin);
+   padding: 0 var(--s-5);
+   border-radius: var(--r-pill);
+   border: 1px solid transparent;
+   background: transparent;
+   cursor: pointer;
+   transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.btn-lg {
+   min-height: var(--tap-employee);
+   font-size: var(--t-md);
+   padding: 0 var(--s-8);
+}
+
+/* Circular companion for single-glyph actions. Matches the height of the pill beside it. */
+.btn-icon {
+   width: var(--tap-admin);
+   height: var(--tap-admin);
+   padding: 0;
+}
+
+.btn-icon.btn-lg {
+   width: var(--tap-employee);
+   height: var(--tap-employee);
+}
+
+.btn-primary {
+   background: var(--brand-600);
+   color: var(--on-fill);
+}
+
+.btn-primary:hover {
+   background: var(--brand-hover);
+}
+
+.btn-primary:active {
+   transform: translateY(1px);
+}
+
+.btn-secondary {
+   background: var(--brand-tint);
+   color: var(--brand-700);
+}
+
+.btn-secondary:hover {
+   background: var(--brand-tint-2);
+}
+
+/* Neutral variant for dense admin toolbars, where a brand tint would be noise */
+.btn-neutral {
+   background: var(--panel);
+   color: var(--ink);
+}
+
+.btn-neutral:hover {
+   background: var(--panel-2);
+}
+
+.btn-ghost {
+   color: var(--ink-2);
+}
+
+.btn-ghost:hover {
+   background: var(--panel);
+   color: var(--ink);
+}
+
+.btn-ok {
+   background: var(--ok-fill);
+   color: var(--on-fill);
+}
+
+.btn-ok:hover {
+   background: var(--ok-700);
+}
+
+.btn-ok-soft {
+   background: var(--ok-tint);
+   color: var(--ok);
+}
+
+.btn-ok-soft:hover {
+   background: var(--ok-tint-2);
+}
+
+/* Light tone at rest, dark tone on hover. Never an outline, and never a bright
+   block sitting under a wet thumb waiting to be hit. */
+.btn-danger {
+   background: var(--bad-tint);
+   color: var(--bad);
+}
+
+.btn-danger:hover {
+   background: var(--bad-fill);
+   color: var(--on-fill);
+}
+
+.btn:disabled {
+   background: var(--panel);
+   color: var(--ink-3);
+   border-color: transparent;
+   cursor: not-allowed;
+   transform: none;
+}
+
+.btn-loading {
+   pointer-events: none;
+   opacity: 0.8;
+}
+
+.spinner {
+   width: 14px;
+   height: 14px;
+   border-radius: 50%;
+   border: 2px solid currentColor;
+   border-top-color: transparent;
+   animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+   to {
+      transform: rotate(360deg);
+   }
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+.field {
+   display: grid;
+   gap: var(--s-2);
+}
+
+.field label {
+   font-size: var(--t-sm);
+   font-weight: 600;
+}
+
+.field .hint {
+   font-size: var(--t-sm);
+   color: var(--ink-2);
+}
+
+.input {
+   min-height: var(--tap-admin);
+   padding: var(--s-2) var(--s-3);
+   width: 100%;
+   background: var(--field);
+   border: 1px solid var(--line-3);
+   border-radius: var(--r-md);
+   transition: border-color var(--dur) var(--ease);
+}
+
+.input::placeholder {
+   color: var(--ink-3);
+}
+
+.input:hover {
+   border-color: var(--ink-3);
+}
+
+/* The border change (line-2 to brand-600, 4.9:1) is the accessible focus indicator.
+   The halo is 1.3:1 against white and is a glow, not a signal. */
+.input:focus {
+   border-color: var(--brand);
+   outline: none;
+}
+
+.input:disabled {
+   background: var(--panel);
+   color: var(--ink-3);
+   cursor: not-allowed;
+}
+
+.input[aria-invalid="true"] {
+   border-color: var(--bad);
+}
+
+.err {
+   font-size: var(--t-sm);
+   color: var(--bad);
+   font-weight: 500;
+   display: flex;
+   gap: var(--s-1);
+   align-items: center;
+}
+
+.search-hero {
+   display: flex;
+   align-items: center;
+   gap: var(--s-3);
+   background: var(--field);
+   border: 1px solid var(--line-3);
+   border-radius: var(--r-lg);
+   padding: var(--s-3) var(--s-4);
+   min-height: 64px;
+}
+
+.search-hero input {
+   border: 0;
+   background: transparent;
+   width: 100%;
+   font-size: var(--t-md);
+   font-weight: 500;
+   min-width: 0;
+}
+
+.search-hero input:focus {
+   outline: none;
+}
+
+.search-hero:focus-within {
+   border-color: var(--ring);
+}
+
+.mic {
+   flex-shrink: 0;
+   width: 48px;
+   height: 48px;
+   border-radius: var(--r-pill);
+   border: 0;
+   background: var(--panel);
+   color: var(--ink);
+   display: grid;
+   place-items: center;
+   cursor: pointer;
+}
+
+.mic:hover {
+   background: var(--brand-tint);
+   color: var(--brand-700);
+}
+
+.pin-row {
+   display: flex;
+   gap: var(--s-3);
+}
+
+.pin-box {
+   width: 52px;
+   height: 60px;
+   text-align: center;
+   font-size: var(--t-xl);
+   font-weight: 600;
+   border: 2px solid var(--line-3);
+   border-radius: var(--r-lg);
+   background: var(--field);
+}
+
+.pin-box.filled {
+   border-color: var(--ink);
+}
+
+.keypad {
+   display: grid;
+   grid-template-columns: repeat(3, 68px);
+   gap: var(--s-2);
+}
+
+.key {
+   height: 60px;
+   font-size: var(--t-lg);
+   font-weight: 600;
+   background: var(--surface);
+   border: 1px solid var(--line-3);
+   border-radius: var(--r-lg);
+   cursor: pointer;
+}
+
+.key:hover {
+   border-color: var(--ink-3);
+}
+
+.key:active {
+   background: var(--panel);
+}
+
+.key-quiet {
+   background: transparent;
+   border-color: transparent;
+   color: var(--ink-2);
+}
+
+.key-quiet:hover {
+   background: var(--panel);
+   border-color: transparent;
+}
+
+/* Language toggle */
+.lang {
+   display: inline-flex;
+   border: 1px solid var(--line-3);
+   border-radius: var(--r-pill);
+   padding: 3px;
+   background: var(--surface);
+}
+
+.lang button {
+   min-height: 48px;
+   padding: 0 var(--s-4);
+   border-radius: var(--r-pill);
+   border: 0;
+   background: transparent;
+   font-weight: 600;
+   font-size: var(--t-sm);
+   color: var(--ink-2);
+   cursor: pointer;
+}
+
+.lang button[aria-checked="true"] {
+   background: var(--ink);
+   color: var(--surface);
+}
+
+/* Status badges are rectangles. Buttons are pills. The shape is the only reliable
+   signal of what is pressable, so the two never share it. */
+.pill {
+   display: inline-flex;
+   align-items: center;
+   gap: var(--s-2);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   padding: 3px var(--s-2);
+   border-radius: var(--r-sm);
+   white-space: nowrap;
+}
+
+.pill .dot {
+   width: 8px;
+   height: 8px;
+   border-radius: 50%;
+   background: currentColor;
+   flex-shrink: 0;
+}
+
+.pill-complete {
+   background: var(--ok-tint);
+   color: var(--ok);
+}
+
+.pill-verified {
+   background: var(--ok-fill);
+   color: var(--on-fill);
+}
+
+.pill-progress {
+   background: var(--panel);
+   color: var(--ink);
+}
+
+.pill-progress .dot {
+   background: var(--brand-600);
+}
+
+/* 4.3:1 on panel; the word carries the meaning, the dot only reinforces it */
+.pill-due {
+   background: var(--warn-tint);
+   color: var(--warn-ink);
+}
+
+.pill-overdue {
+   background: var(--bad-tint);
+   color: var(--bad);
+}
+
+.pill-notstart {
+   background: var(--panel);
+   color: var(--ink-2);
+}
+
+.pill-locked {
+   background: transparent;
+   color: var(--ink-3);
+   border: 1px dashed var(--line-2);
+}
+
+
+.clearance {
+   display: inline-flex;
+   align-items: center;
+   gap: var(--s-2);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   padding: var(--s-1) var(--s-2) var(--s-1) var(--s-1);
+   border-radius: var(--r-sm);
+   border: 1px solid var(--line-2);
+   background: var(--surface);
+}
+
+.clearance .bars {
+   display: flex;
+   gap: 2px;
+}
+
+.clearance .bar {
+   width: 4px;
+   height: 12px;
+   border-radius: 1px;
+   background: var(--line-2);
+}
+
+.clearance .bar.on {
+   background: var(--ink);
+}
+

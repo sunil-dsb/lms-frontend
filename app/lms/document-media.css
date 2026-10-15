@@ -1,0 +1,168 @@
+/* ============================================================
+   PHOTOGRAPHS IN A PROCEDURE
+   A photo sits with the step it illustrates, never in a gallery
+   at the end. The caption carries the point; text is never burned
+   into the image, because the Spanish version reuses the picture.
+   ============================================================ */
+.shot {
+   margin: var(--s-3) 0 0;
+   position: relative;
+}
+
+.shot img {
+   display: block;
+   width: 100%;
+   height: auto;
+   border-radius: var(--r-md);
+   background: var(--panel);
+}
+
+/* Multi-photo grids and compare pairs enforce a uniform 4:3 aspect ratio
+   with object-fit: cover so images of differing natural dimensions align with
+   identical heights and clean symmetrical borders. */
+.grid .shot img,
+.compare figure img {
+   width: 100%;
+   aspect-ratio: 4 / 3;
+   object-fit: cover;
+}
+
+/* A caption on a procedure photograph is an instruction, so it sits at the body
+   floor rather than at label size. */
+.shot figcaption {
+   margin-top: var(--s-2);
+   font-size: var(--t-base);
+   color: var(--ink-2);
+}
+
+.shot.video {
+   margin: 0 0 var(--s-6);
+}
+
+.shot.video .media {
+   position: relative;
+}
+
+.shot.video img {
+   border-radius: var(--r-lg);
+}
+
+.shot.video .play {
+   position: absolute;
+   left: 50%;
+   top: 50%;
+   transform: translate(-50%, -50%);
+   width: 64px;
+   height: 64px;
+   border: 0;
+   border-radius: var(--r-pill);
+   background: var(--glass);
+   color: var(--ink);
+   display: grid;
+   place-items: center;
+   cursor: pointer;
+   box-shadow: var(--e-3);
+}
+
+.shot.video .play:hover {
+   background: var(--on-fill);
+}
+
+.shot.video .dur {
+   position: absolute;
+   right: var(--s-3);
+   bottom: var(--s-3);
+   padding: 2px var(--s-2);
+   border-radius: var(--r-sm);
+   background: var(--scrim-strong);
+   color: var(--on-fill);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   font-variant-numeric: tabular-nums;
+}
+
+/* The comparison pair carries real photographs, so the frame is the caption
+   and a coloured ring, not a filled box. */
+.compare figure img {
+   display: block;
+   width: 100%;
+   height: auto;
+   border-radius: var(--r-md);
+}
+
+.compare .ok img {
+   box-shadow: 0 0 0 2px var(--ok);
+}
+
+.compare .no img {
+   box-shadow: 0 0 0 2px var(--bad);
+}
+
+/* Unordered triggers: the conditions under which a procedure applies.
+   Order carries no meaning here, so these are bullets, never numbers.
+   Numbers are reserved for the method, where sequence is the point. */
+.triggers {
+   list-style: none;
+   margin: 0;
+   padding: 0;
+   display: grid;
+   gap: var(--s-3);
+}
+
+.triggers li {
+   display: grid;
+   grid-template-columns: 8px 1fr;
+   gap: var(--s-3);
+   font-size: var(--t-base);
+   align-items: start;
+}
+
+.triggers li::before {
+   content: "";
+   width: 6px;
+   height: 6px;
+   margin-top: calc(0.5lh - 3px);
+   border-radius: 50%;
+   background: var(--ink-3);
+}
+
+/* Corrective actions: the failure on the left, the response on the right.
+   Regulators expect a response attached to every limit, so the pairing is
+   structural rather than prose. */
+.fix {
+   display: grid;
+   gap: var(--s-4);
+}
+
+.fix>div {
+   display: grid;
+   gap: var(--s-1);
+   padding-bottom: var(--s-4);
+   border-bottom: 1px solid var(--line);
+}
+
+.fix>div:last-child {
+   border-bottom: 0;
+   padding-bottom: 0;
+}
+
+.fix dt {
+   font-size: var(--t-base);
+   font-weight: 600;
+   display: flex;
+   gap: var(--s-2);
+   align-items: flex-start;
+}
+
+.fix dt .i {
+   color: var(--bad);
+   margin-top: 3px;
+   flex-shrink: 0;
+}
+
+.fix dd {
+   margin: 0 0 0 calc(1.25em + var(--s-2));
+   font-size: var(--t-base);
+   color: var(--ink-2);
+}
+

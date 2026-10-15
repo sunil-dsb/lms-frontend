@@ -1,0 +1,570 @@
+/* ============================================================
+   HOME SCREENS
+   Two shells. The employee's is a phone held in one hand with a
+   fixed bar under the thumb. The manager's is a desk with a
+   sidebar that becomes a drawer when the desk is a phone.
+   ============================================================ */
+
+/* --- employee ------------------------------------------------------------ */
+.app {
+   max-width: var(--doc-w);
+   margin: 0 auto;
+   background: var(--bg);
+   padding-bottom: calc(var(--s-20) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Who is signed in. On a shared station tablet this is the line that stops a
+   cook recording their work against somebody else's name, so it is a control,
+   not a greeting: it opens their own record. */
+.whoami {
+   display: flex;
+   align-items: center;
+   gap: var(--s-3);
+   width: 100%;
+   min-height: var(--tap-employee);
+   padding: var(--s-3) var(--s-5);
+   background: none;
+   border: 0;
+   text-align: left;
+   text-decoration: none;
+   color: inherit;
+   cursor: pointer;
+}
+
+.whoami .avatar {
+   width: 36px;
+   height: 36px;
+   font-size: var(--t-sm);
+}
+
+.whoami .me {
+   flex: 1;
+   min-width: 0;
+}
+
+.whoami .me b {
+   display: block;
+   font-size: var(--t-base);
+   font-weight: 600;
+}
+
+.whoami .me span {
+   font-size: var(--t-sm);
+   color: var(--ink-2);
+}
+
+.whoami .i {
+   color: var(--ink-3);
+}
+
+/* The one thing the screen is for, mid-shift. */
+.ask {
+   padding: var(--s-2) var(--s-5) var(--s-6);
+}
+
+/* The screen's one large element, and the question the flow diagram opens with.
+   Not a greeting: a greeting costs the top of a phone screen and says nothing. */
+.ask h1 {
+   font-size: var(--t-xl);
+   margin-bottom: var(--s-4);
+}
+
+.ask .hint {
+   margin-top: var(--s-3);
+   font-size: var(--t-sm);
+   color: var(--ink-2);
+}
+
+.home-sec {
+   padding: 0 var(--s-5);
+   margin-bottom: var(--s-8);
+}
+
+.home-sec>header {
+   display: flex;
+   align-items: baseline;
+   gap: var(--s-3);
+   margin-bottom: var(--s-3);
+}
+
+.home-sec h2 {
+   font-size: var(--t-md);
+   font-weight: 600;
+}
+
+.home-sec .all {
+   margin-left: auto;
+   font-size: var(--t-sm);
+   font-weight: 600;
+   color: var(--brand-700);
+   text-decoration: none;
+   display: inline-flex;
+   align-items: center;
+   gap: var(--s-1);
+   min-height: var(--tap-employee);
+}
+
+
+/* --- manager -------------------------------------------------------------- */
+.admin {
+   display: grid;
+   grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+   gap: var(--s-8);
+   align-items: start;
+   max-width: 1240px;
+   margin: 0 auto;
+   padding: var(--s-6);
+   background: var(--bg-admin);
+   min-height: 100vh;
+}
+
+.admin>.sidebar {
+   position: sticky;
+   top: var(--s-6);
+}
+
+.admin main {
+   background: var(--surface);
+   border: 1px solid var(--line);
+   border-radius: var(--r-lg);
+   padding: var(--s-8);
+}
+
+.admin-head {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: flex-start;
+   gap: var(--s-4);
+   margin-bottom: var(--s-6);
+}
+
+.admin-head h1 {
+   font-size: var(--t-xl);
+}
+
+.admin-head p {
+   font-size: var(--t-sm);
+   color: var(--ink-2);
+   margin-top: var(--s-1);
+}
+
+.admin-head .acts {
+   margin-left: auto;
+   display: flex;
+   gap: var(--s-2);
+   flex-wrap: wrap;
+}
+
+.admin-bar {
+   display: none;
+}
+
+/* Needs attention. Every row is one thing a person can finish, so it carries a
+   subject, what is wrong with it, how long it has been wrong, and one action.
+   A count with no action attached is a statistic, and statistics live in Reports. */
+.attn {
+   list-style: none;
+   margin: 0;
+   padding: 0;
+   border: 1px solid var(--line);
+   border-radius: var(--r-lg);
+}
+
+.attn>li {
+   display: grid;
+   grid-template-columns: 32px minmax(0, 1fr) auto;
+   gap: var(--s-3) var(--s-4);
+   align-items: center;
+   padding: var(--s-4);
+   border-bottom: 1px solid var(--line);
+}
+
+.attn>li:last-child {
+   border-bottom: 0;
+}
+
+.attn .mark {
+   width: 32px;
+   height: 32px;
+   border-radius: var(--r-pill);
+   display: grid;
+   place-items: center;
+   background: var(--panel);
+   color: var(--ink-2);
+}
+
+.attn .mark.bad {
+   background: var(--bad-tint);
+   color: var(--bad);
+}
+
+.attn .mark.warn {
+   background: var(--warn-tint);
+   color: var(--warn-ink);
+}
+
+.attn .subject {
+   font-weight: 600;
+}
+
+.attn .detail {
+   font-size: var(--t-sm);
+   color: var(--ink-2);
+}
+
+.attn .act {
+   display: flex;
+   gap: var(--s-2);
+   align-items: center;
+}
+
+@media (max-width: 720px) {
+
+   /* The action drops under the row rather than squeezing beside it: a 48px
+     target that has been narrowed to fit is not a 48px target. */
+   .attn>li {
+      grid-template-columns: 32px minmax(0, 1fr);
+   }
+
+   .attn .act {
+      grid-column: 2;
+   }
+}
+
+/* What the team is seeing now. Not a feed; three lines, so a chef knows what
+   changed without opening the library. */
+.changes {
+   list-style: none;
+   margin: 0;
+   padding: 0;
+}
+
+.changes li {
+   display: flex;
+   flex-wrap: wrap;
+   gap: var(--s-2) var(--s-3);
+   align-items: baseline;
+   padding: var(--s-3) 0;
+   border-bottom: 1px solid var(--line);
+   font-size: var(--t-sm);
+}
+
+.changes li:last-child {
+   border-bottom: 0;
+}
+
+.changes b {
+   font-weight: 600;
+}
+
+.changes .when {
+   margin-left: auto;
+   color: var(--ink-3);
+}
+
+@media (max-width: 900px) {
+
+   /* A phone is a phone whoever is holding it: on this width the manager's
+     controls take the employee's target size, because the thumb does not know
+     which role it belongs to. */
+   .admin {
+      display: block;
+      padding: 0 0 var(--s-16);
+      background: var(--bg);
+   }
+
+   .admin>.sidebar {
+      display: none;
+   }
+
+   .admin main {
+      border: 0;
+      border-radius: 0;
+      padding: var(--s-5);
+   }
+
+   .admin .btn {
+      min-height: var(--tap-employee);
+      font-size: var(--t-md);
+   }
+
+   .admin .btn-icon {
+      width: var(--tap-employee);
+      height: var(--tap-employee);
+   }
+
+   .admin-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--s-2);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-sticky);
+      min-height: 64px;
+      padding: var(--s-2) var(--s-3);
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+   }
+
+   .admin-bar .title {
+      flex: 1;
+      min-width: 0;
+      font-weight: 600;
+   }
+
+   .admin.nav-open>.sidebar {
+      display: block;
+      width: auto;
+      margin: 0 var(--s-3) var(--s-3);
+   }
+}
+
+/* A row carrying a status badge wraps it under the text rather than squeezing
+   both onto one line: at 360px the title broke mid-word to make room for it. */
+@media (max-width: 480px) {
+   .chapter {
+      flex-wrap: wrap;
+      row-gap: var(--s-2);
+   }
+
+   /* The text fills the rest of the first line, which pushes the badge onto a
+     second one. Setting the badge itself to a full basis would stretch it, and a
+     status badge that spans the row stops looking like a badge. */
+   /* Only a row that carries a badge needs the break; a chevron belongs on the
+     first line beside the text, and forcing it down left it stranded. */
+   .chapter:has(.tail.pill)>div:not(.idx) {
+      flex-basis: calc(100% - 48px);
+   }
+
+   .chapter:has(.tail.pill) .tail.pill {
+      margin-left: calc(var(--s-8) + var(--s-4));
+   }
+
+   .chapter:has(.tail.pill):has(.thumb)>div:not(.idx) {
+      flex-basis: calc(100% - 64px);
+   }
+
+   .chapter:has(.tail.pill):has(.thumb) .tail.pill {
+      margin-left: calc(var(--s-12) + var(--s-4));
+   }
+}
+
+/* --- the tab bar, as a real bar rather than a specimen -------------------- */
+.tabbar.is-fixed {
+   position: fixed;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   z-index: var(--z-sticky);
+   max-width: none;
+   border-radius: 0;
+   border-left: 0;
+   border-right: 0;
+   border-bottom: 0;
+   background: var(--surface);
+   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 681px) {
+   .tabbar.is-fixed {
+      max-width: var(--doc-w);
+      margin: 0 auto;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+   }
+}
+
+/* --- floating popover (admin composer add-content menu, etc.) -------------- */
+/* Anchored via inline top/left from getBoundingClientRect(). Animation matches
+   the drawer-in timing so the two overlays feel like the same family. */
+.popover {
+   position: fixed;
+   z-index: var(--z-dropdown);
+   min-width: 240px;
+   max-width: min(360px, calc(100vw - 32px));
+   background: var(--surface);
+   border: 1px solid var(--line);
+   border-radius: var(--r-lg);
+   box-shadow: var(--e-3);
+   animation: popover-in var(--dur) var(--ease);
+}
+
+.popover-group {
+   padding: var(--s-2) 0;
+}
+
+.popover-group+.popover-group {
+   border-top: 1px solid var(--line);
+}
+
+.popover-group-label {
+   padding: var(--s-2) var(--s-3) var(--s-1);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   text-transform: uppercase;
+   letter-spacing: var(--caps-track);
+   color: var(--ink-2);
+}
+
+.popover-item {
+   display: flex;
+   align-items: center;
+   gap: var(--s-2);
+   width: 100%;
+   padding: var(--s-2) var(--s-3);
+   font-size: var(--t-sm);
+   color: var(--ink);
+   background: transparent;
+   border: 0;
+   text-align: left;
+   cursor: pointer;
+}
+
+.popover-item:hover,
+.popover-item:focus-visible {
+   background: var(--wash);
+}
+
+.popover-item .i {
+   color: var(--ink-2);
+}
+
+@keyframes popover-in {
+   from {
+      opacity: 0;
+      transform: translateY(-4px);
+   }
+
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
+}
+
+/* --- things that appear -----------------------------------------------------
+   A dropdown that pops into existence reads as a glitch; one that grows a little
+   out of the control that opened it reads as a consequence of the click. Two
+   cases only: a menu, which scales from its trigger, and a dialog, which is
+   anchored to nothing and so scales from its own centre. Nothing starts at
+   scale(0) — nothing in the world appears out of nothing — and both are under
+   200ms, which is where a dropdown stops feeling like a wait. */
+@keyframes pop-in {
+   from {
+      opacity: 0;
+      transform: scale(0.97) translateY(-2px);
+   }
+
+   to {
+      opacity: 1;
+      transform: none;
+   }
+}
+
+.pop-in {
+   animation: pop-in var(--dur) var(--ease);
+   /* the component sets this once it knows whether it sits above or below */
+   transform-origin: var(--pop-origin, top center);
+}
+
+@keyframes dialog-in {
+   from {
+      opacity: 0;
+      transform: scale(0.98);
+   }
+
+   to {
+      opacity: 1;
+      transform: none;
+   }
+}
+
+.dialog-in {
+   animation: dialog-in var(--dur) var(--ease);
+   transform-origin: center;
+}
+
+@keyframes scrim-in {
+   from {
+      opacity: 0;
+   }
+
+   to {
+      opacity: 1;
+   }
+}
+
+.scrim-in {
+   animation: scrim-in var(--dur) var(--ease);
+}
+
+/* The last of the way in. A page that has just arrived does not cut in at full
+   strength; it is already there and legible at 40%, and reaches full in 140ms.
+   Nothing waits on this — unlike a view transition, which holds the old page
+   until the new one is ready and adds its whole duration to the wait. */
+@keyframes content-in {
+   from {
+      opacity: 0.4;
+   }
+
+   to {
+      opacity: 1;
+   }
+}
+
+.content-in {
+   animation: content-in 140ms var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .content-in {
+      animation-duration: 0.01ms;
+   }
+}
+
+
+/* --- the theme, changing ---------------------------------------------------
+   The page crossfades as a whole rather than as several thousand separate
+   colour transitions: one compositor animation, no style recalculation. A
+   browser without view transitions switches instantly, which is the behaviour
+   this replaced, so nothing is lost. 400ms — slower than any control in the
+   system, because the whole screen is moving and it should feel like a room
+   dimming rather than a light switch. */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+   /* One duration across all three, or the group finishes 10ms before the layers
+     it holds. The dissolve keeps the browser's linear timing on purpose: an
+     ease-out crossfade moves its own mid-point and reads as a wipe. */
+   animation-duration: 400ms;
+   /* Both layers sit still and fade; a slide or a scale here would be motion for
+     its own sake on something the reader did not ask to move. */
+   mix-blend-mode: normal;
+}
+
+/* A navigation replaces the words on the page, not its whole colour scheme, so
+   it crossfades in half the time. The root carries data-vt="nav" only while such
+   a transition is running. */
+[data-vt='nav']::view-transition-group(root),
+[data-vt='nav']::view-transition-old(root),
+[data-vt='nav']::view-transition-new(root) {
+   animation-duration: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+   ::view-transition-group(root),
+   ::view-transition-old(root),
+   ::view-transition-new(root) {
+      animation-duration: 0.01ms;
+   }
+}
+
+
+
+/* --- sticky action bar (admin composer save/publish footer) ---------------- */
+.sticky-bar {
+   position: sticky;
+   bottom: 0;
+   z-index: var(--z-sticky);
+}
+

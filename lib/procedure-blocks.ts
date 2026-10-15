@@ -36,7 +36,7 @@ export function newHeadingBlock(): ProcedureBlock {
 }
 
 export function newMethodBlock(): ProcedureBlock {
-  return { id: nextBlockId(), kind: 'method', steps: [newStep()] };
+  return { id: nextBlockId(), kind: 'method', title: empty(), steps: [newStep()] };
 }
 
 const DEFAULT_FACTORS = [1, 2, 4];
@@ -214,7 +214,7 @@ export function duplicateBlock(block: ProcedureBlock): ProcedureBlock {
     case 'heading':
       return { id, kind: 'heading', level: block.level, text: cloneLocalised(block.text) };
     case 'method':
-      return { id, kind: 'method', steps: block.steps.map(cloneStep) };
+      return { id, kind: 'method', title: block.title ? { ...block.title } : undefined, steps: block.steps.map(cloneStep) };
     case 'ingredients':
       return {
         id,

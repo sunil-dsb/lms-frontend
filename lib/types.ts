@@ -312,7 +312,7 @@ export type ProcedureImageHint = 'photo' | 'diagram';
 export type ProcedureBlock =
   | { id: string; kind: 'text'; body: Localised }
   | { id: string; kind: 'heading'; level: 1 | 2 | 3; text: Localised }
-  | { id: string; kind: 'method'; steps: ProcedureMethodStep[] }
+  | { id: string; kind: 'method'; title?: Localised; steps: ProcedureMethodStep[] }
   | {
       id: string;
       kind: 'ingredients';
