@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { LuLoader } from 'react-icons/lu';
+import { backendApiUrl } from '@/lib/http';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -52,31 +53,11 @@ export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.Re
     }
 
     if (actualToken && locale) {
-      const isLocal =
-        typeof window !== 'undefined' &&
-        (window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1');
-
-      const rawBackendUrl = isLocal
-        ? ''
-        : (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE || '').trim();
-      const localBackend = /^(https?:\/\/)?(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(rawBackendUrl);
-      const backendUrl = rawBackendUrl
-        ? (/^https?:\/\//i.test(rawBackendUrl)
-            ? rawBackendUrl
-            : `${localBackend ? 'http' : 'https'}://${rawBackendUrl}`).replace(/\/+$/, '')
-        : '';
-      const secureBackendUrl = !localBackend
-        ? backendUrl.replace(/^http:\/\//i, 'https://')
-        : backendUrl;
-
       // Prevent duplicate use of this single-use magic link during repeated
       // effect execution (for example React Strict Mode in development).
       redirectStarted.current = true;
       const inviteEndpoint = `/api/v1/auth/invites/${locale}/${encodeURIComponent(actualToken)}`;
-      const destination = secureBackendUrl
-        ? `${secureBackendUrl}${inviteEndpoint}`
-        : inviteEndpoint;
+      const destination = backendApiUrl(inviteEndpoint);
       window.location.replace(destination);
     } else {
       redirectStarted.current = true;

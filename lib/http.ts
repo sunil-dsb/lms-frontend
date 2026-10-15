@@ -6,42 +6,27 @@ import axios, {
 } from 'axios';
 import { ApiException } from './errors';
 
-const serverBaseURL = (() => {
-  const raw = (
-    process.env.BACKEND_API_URL ||
-    process.env.NEXT_PUBLIC_API_BASE ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    'http://localhost:8000'
-  ).trim().replace(/\/+$/, '');
-  // Same tolerance as next.config.ts: a bare `host:port` gets a scheme —
-  // axios (like Next rewrites) needs an absolute URL. Local/private hosts
-  // get http://, public hostnames https:// (the backend 301s plain HTTP).
-  if (/^https?:\/\//i.test(raw)) return raw;
-  const isLocal = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(raw);
-  return `${isLocal ? 'http' : 'https'}://${raw}`;
-})();
-
-const publicApiBaseURL = (() => {
-  const raw = (
-    process.env.NEXT_PUBLIC_API_BASE ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    ''
-  ).trim().replace(/\/+$/, '');
+function resolveBaseURL(url?: string, fallback = ''): string {
+  const raw = (url || fallback).trim().replace(/\/+$/, '');
   if (!raw) return '';
   if (/^https?:\/\//i.test(raw)) return raw;
   const isLocal = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(raw);
   return `${isLocal ? 'http' : 'https'}://${raw}`;
-})();
+}
+
+const API_BASE_URL = resolveBaseURL(
+  process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.BACKEND_API_URL,
+  'http://localhost:8000',
+);
 
 export function backendApiUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return publicApiBaseURL ? `${publicApiBaseURL}${normalizedPath}` : normalizedPath;
+  return `${API_BASE_URL}${normalizedPath}`;
 }
 
-const baseURL =
-  typeof window !== 'undefined'
-    ? '' // In browser, use same-origin relative URLs to proxy through Next.js rewrites (zero CORS)
-    : serverBaseURL;
+const baseURL = API_BASE_URL;
 
 export const http: AxiosInstance = axios.create({
   baseURL,

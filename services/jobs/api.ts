@@ -25,13 +25,7 @@ export function clearJobsCache(): void {
 }
 
 export async function fetchJobs(cookieHeader?: string): Promise<{ jobs: Job[] }> {
-  // Module-level caches live per runtime. The browser copy is cleared on
-  // every mutation (clearJobsCache), but the server copy survives across
-  // requests in the same process — after a client-side create followed by
-  // router.refresh(), the re-run Server Component would keep serving the
-  // pre-create list until the 5-minute TTL expired. So caching applies in
-  // the browser only; the server always reads fresh (SSR renders once per
-  // request, so there is nothing useful to memoize there anyway).
+
   if (typeof window === 'undefined') {
     const { data } = await http.get<{ success: boolean; data: { jobs: Job[] } }>(JOBS_ENDPOINTS.LIST, {
       headers: requestHeaders(cookieHeader),
@@ -91,12 +85,13 @@ export async function fetchJobStations(
   const ids = [...new Set(jobIds)].sort();
   // Browser-only cache (see fetchJobs) — the server always reads fresh.
   if (typeof window === 'undefined') {
-    const { data } = await http.post<{
+    const { data } = await http.request<{
       success: boolean;
       data: { stations: Array<{ id: string; name: string }> };
-    }>('/api/backend/jobs/stations', {
-      jobIds: ids,
-    }, {
+    }>({
+      method: 'QUERY',
+      url: JOBS_ENDPOINTS.STATIONS,
+      params: { jobIds: ids.join(',') },
       headers: requestHeaders(cookieHeader),
     });
     return { stations: data.data?.stations ?? [] };
@@ -106,12 +101,13 @@ export async function fetchJobStations(
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   const pending = stationsRequests.get(key);
   if (pending) return pending;
-  const request = http.post<{
+  const request = http.request<{
     success: boolean;
     data: { stations: Array<{ id: string; name: string }> };
-  }>('/api/backend/jobs/stations', {
-    jobIds: ids,
-  }, {
+  }>({
+    method: 'QUERY',
+    url: JOBS_ENDPOINTS.STATIONS,
+    params: { jobIds: ids.join(',') },
     headers: requestHeaders(cookieHeader),
   }).then(({ data }) => {
     const value = { stations: data.data?.stations ?? [] };
