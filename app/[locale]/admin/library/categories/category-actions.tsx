@@ -299,7 +299,7 @@ function CategoryForm({
         await createMutation.mutateAsync({
           nameEn: finalEn,
           nameEs: finalEs,
-          kind,
+          kind: 'general', // Station selection is now handled flexibly per procedure; default to 'general'
           icon,
         });
       } else if (category) {
@@ -379,10 +379,10 @@ function CategoryForm({
           </p>
         </div>
 
-        {/* Category-kind picker — only at create time. A radio group (not a
-            dropdown) so the two options sit side by side and the
-            description of each is visible without a second click. Matches
-            the selected-state styling used by the icon picker below. */}
+        {/* Category-kind picker — previously used to select General vs Station-tied.
+            Station selection is now handled flexibly per procedure for all categories,
+            so category type defaults to 'general' behind the scenes.
+            Retained as commented code:
         {mode === 'create' && (
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-semibold text-[var(--color-ink)]">
@@ -418,6 +418,7 @@ function CategoryForm({
             </div>
           </fieldset>
         )}
+        */}
 
         <div className="space-y-1.5">
           <Label htmlFor="cat-icon-toggle">{isEs ? 'Icono' : 'Icon'}</Label>
