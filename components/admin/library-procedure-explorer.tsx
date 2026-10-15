@@ -50,6 +50,9 @@ import { getProcedureIcon } from '@/lib/category-icons';
 import { backendSlug, categorySlugsMatch } from '@/services/categories/api';
 import { LibraryExplorerSkeleton } from '@/components/admin/library-explorer-skeleton';
 import { Pagination } from '@/components/ui/pagination';
+import { ProcedureExplorerFilters } from './library-procedure-explorer-filters';
+import { ProcedureExplorerResults } from './library-procedure-explorer-results';
+import { getCategoryTheme } from './library-category-theme';
 
 interface LibraryProcedureExplorerProps {
   procedures: Procedure[];
@@ -76,102 +79,6 @@ interface LibraryProcedureExplorerProps {
  * turned the page into a chart of colours that mean nothing to a reader who has
  * not learnt the key.
  */
-export function getCategoryTheme(slug: string): {
-  icon: IconType;
-  badgeBg: string;
-  badgeText: string;
-  badgeBorder: string;
-} {
-  const normalized = (slug || '').toLowerCase();
-  switch (normalized) {
-    case 'recipes':
-    case 'recipe':
-      return {
-        icon: PiBookOpenText,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    case 'station':
-    case 'station-procedures':
-      return {
-        icon: PiSquaresFour,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    case 'cleaning':
-    case 'cleaning-schedules':
-      return {
-        icon: PiSparkle,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    case 'admin':
-    case 'general':
-    case 'general-procedures':
-      return {
-        icon: PiFileText,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    case 'delivery':
-    case 'delivery-receiving':
-      return {
-        icon: PiFolders,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    case 'food-safety':
-    case 'safety':
-      return {
-        icon: PiShieldCheck,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    case 'equipment':
-    case 'equipment-handling':
-      return {
-        icon: PiToolbox,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    case 'kitchen-operations':
-      return {
-        icon: PiCookingPot,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    case 'opening-closing':
-      return {
-        icon: PiDoorOpen,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    case 'onboarding':
-      return {
-        icon: PiBookOpenUser,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-    default:
-      return {
-        icon: PiFileText,
-        badgeBg: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-        badgeText: 'text-[var(--color-ink-2)]',
-        badgeBorder: 'border-[var(--color-line)]',
-      };
-  }
-}
-
 /** Rows per page. Fixed at 10 so long lists page instead of scrolling. */
 const PAGE_SIZE = 10;
 
@@ -754,365 +661,36 @@ export function LibraryProcedureExplorer({
       {/* One row for everything: the All / General pills, the four dropdowns,
           then the search stretching to fill what's left. Wraps on narrow
           screens, single line on desktop. */}
-      <div className="flex flex-wrap items-center gap-3">
-        <FilterChips
-          label={isEs ? 'Categoría' : 'Category'}
-          value={selectedCategorySlug}
-          onChange={(slug) => {
-            setSelectedCategorySlug(slug);
-            setCurrentPage(1);
-          }}
-          chips={[
-            { value: 'all', label: isEs ? 'Todas' : 'All', count: categoryCounts.all || 0 },
-          ]}
-        />
-
-        <div className="w-field-md shrink-0">
-          <CustomSelect
-            value={selectedCategorySlug}
-            onChange={(val) => {
-              setSelectedCategorySlug(val);
-              setCurrentPage(1);
-            }}
-            options={categorySelectOptions}
-            size="sm"
-            className="h-tap-admin text-sm"
-          />
-        </div>
-        <div className="w-field-md shrink-0">
-          <CustomSelect
-            value={selectedSubcategoryId}
-            onChange={(val) => {
-              setSelectedSubcategoryId(val);
-              setCurrentPage(1);
-            }}
-            options={subcategoryOptions}
-            size="sm"
-            className="h-tap-admin text-sm"
-          />
-        </div>
-        {stationOptions.length > 1 ? (
-          <div className="w-field-sm shrink-0">
-            <CustomSelect
-              value={stationFilter}
-              onChange={(val) => {
-                setStationFilter(val);
-                setCurrentPage(1);
-              }}
-              options={stationOptions}
-              size="sm"
-              className="h-tap-admin text-sm"
-            />
-          </div>
-        ) : null}
-        <div className="w-field-sm shrink-0">
-          <CustomSelect
-            value={statusFilter}
-            onChange={(val) => {
-              setStatusFilter(val as ProcedureStatus | 'all' | 'archived');
-              setCurrentPage(1);
-            }}
-            options={statusOptions}
-            size="sm"
-            className="h-tap-admin text-sm"
-          />
-        </div>
-
-        <div className="find min-w-52 flex-1" role="search">
-          <LuSearch aria-hidden="true" className="i" />
-          <label className="sr-only" htmlFor="library-search">
-            {isEs ? 'Buscar en la biblioteca' : 'Search the library'}
-          </label>
-          <input
-            id="library-search"
-            type="search"
-            value={searchQuery}
-            placeholder={isEs ? 'Buscar procedimientos…' : 'Search procedures…'}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-          {searchQuery ? (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              aria-label={isEs ? 'Borrar búsqueda' : 'Clear search'}
-              className="shrink-0 text-[var(--color-ink-3)] hover:text-[var(--color-ink)]"
-            >
-              <LuX aria-hidden="true" />
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Active Filters Notification Bar */}
-      {hasActiveFilters && (
-        <div className="flex items-center justify-between rounded-lg bg-[var(--color-panel)] px-4 py-2 text-sm border border-[var(--color-line)]">
-          <div className="flex items-center gap-2 text-[var(--color-ink-2)]">
-            <LuFilter aria-hidden="true" className="text-[var(--color-ink-2)]" />
-            <span>
-              {isEs ? 'Mostrando' : 'Showing'}{' '}
-              <strong className="text-[var(--color-ink)]">{filteredProcedures.length}</strong> {isEs ? 'de' : 'of'}{' '}
-              <strong className="text-[var(--color-ink)]">{allProcedures.length}</strong>{' '}
-              {isEs ? 'procedimientos' : 'procedures'}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="flex items-center gap-1 font-semibold text-[var(--color-brand-700)] hover:underline"
-          >
-            <LuRefreshCw aria-hidden="true" />
-            <span>{isEs ? 'Limpiar filtros' : 'Reset filters'}</span>
-          </button>
-        </div>
-      )}
-
-      {/* List area. While the procedures query resolves, the filter bar above
-          is already interactive (its catalog is local) and only the rows
-          skeletonize — the page never waits for every query to paint. */}
-      {proceduresLoading || (hasActiveBackendFilters && isFilterLoading && !filterApiResponse) ? (
-        <ul
-          aria-busy="true"
-          aria-label={isEs ? 'Cargando procedimientos' : 'Loading procedures'}
-          className="divide-y divide-[var(--color-line)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)]"
-        >
-          {[0, 1, 2, 3, 4].map((i) => (
-            <li key={i} className="flex items-center gap-4 py-5 pl-4 pr-3">
-              <Skeleton className="size-12 shrink-0 rounded-[var(--radius-md)] bg-[var(--color-panel)]" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-5 w-52" />
-                  <Skeleton className="h-5 w-16 rounded-full bg-[var(--color-panel)]" />
-                </div>
-                <Skeleton className="h-3.5 w-2/3 bg-[var(--color-panel)]" />
-                <Skeleton className="h-3 w-1/2 bg-[var(--color-panel)]" />
-              </div>
-              <Skeleton className="size-8 shrink-0 rounded-full bg-[var(--color-panel)]" />
-            </li>
-          ))}
-        </ul>
-      ) : allProcedures.length === 0 ? (
-        <EmptyState
-          icon={PiFileText}
-          title={isEs ? 'Aún no hay procedimientos' : 'No procedures yet'}
-          body={
-            isEs
-              ? 'Escribe el primero desde la plantilla.'
-              : 'Write your first one from the template.'
-          }
-          action={
-            <Link href={`/${locale}/admin/library/new`}>
-              <Button icon={LuPlus}>{isEs ? 'Nuevo procedimiento' : 'New procedure'}</Button>
-            </Link>
-          }
-        />
-      ) : filteredProcedures.length === 0 ? (
-        <EmptyState
-          icon={LuFileSearch}
-          title={isEs ? 'No se encontraron procedimientos' : 'No procedures found'}
-          body={
-            isEs
-              ? 'Intenta ajustar tus términos de búsqueda o selecciona otra categoría.'
-              : 'Try adjusting your search query or selecting another category filter.'
-          }
-          action={
-            hasActiveFilters ? (
-              <Button type="button" variant="secondary" onClick={resetFilters}>
-                {isEs ? 'Ver todos los procedimientos' : 'View all procedures'}
-              </Button>
-            ) : undefined
-          }
-        />
-      ) : (
-        <ul className="divide-y divide-[var(--color-line)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)]">
-          {visibleProcedures.map((p) => {
-            const procCategory = p.category ?? (p.subcategoryId ? categoryList.find((c) => c.subcategories?.some((s) => s.id === p.subcategoryId)) : null);
-            // No fabricated fallback ("General") when the row carries neither
-            // a resolvable category nor a subcategory — unknown stays blank
-            // instead of lying about where the procedure lives.
-            const catName = procCategory ? (isEs ? procCategory.nameEs : procCategory.nameEn) : null;
-            const title = (isEs ? p.titleEs || p.titleEn : p.titleEn || p.titleEs) || p.slug;
-            const purpose = isEs ? p.purposeEs || p.purposeEn : p.purposeEn || p.purposeEs;
-            // Subcategory resolves from the FK via the map the catalog already
-            // builds; absent subcategories just don't render, no string-sniffing
-            // fallback that used to lie about recipe sections.
-            const sub = p.subcategoryId ? subById.get(p.subcategoryId) ?? null : null;
-            const subName = sub ? (isEs ? sub.nameEs : sub.nameEn) : null;
-            // Station names — the API sends the denormalised `station`
-            // object on list rows, so prefer its name; fall back to the
-            // stations list for legacy/detail rows that only carry an id.
-            // Kitchen-wide procedures (no station) show no station in the
-            // meta line because the whole floor follows them.
-            const scopeStations =
-              p.station?.name
-                ? [p.station.name]
-                : p.stationScope && p.stationScope.mode === 'specific' && p.stationScope.stationIds.length > 0
-                ? p.stationScope.stationIds
-                  .map((id) => liveStations.find((s) => s.id === id)?.name)
-                  .filter((n): n is string => Boolean(n))
-                : p.stationId
-                  ? [liveStations.find((s) => s.id === p.stationId)?.name].filter((n): n is string => Boolean(n))
-                  : [];
-
-            return (
-              <li key={p.id} className="flex items-center gap-2 pr-3 transition-colors duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-wash)]">
-                {/* The row is the link. Six identical "View" buttons down the
-                    list were six copies of one action. What changes the
-                    procedure's state sits in its menu. */}
-                <Link
-                  href={`/${locale}/admin/library/${p.slug || p.id}`}
-                  className="group flex min-w-0 flex-1 items-center justify-between gap-4 py-5 pl-4"
-                >
-                  {/* The icon is a mark, not a framed object: the bordered tile was
-                    the only one of its kind in the product. */}
-                  <div className="flex min-w-0 flex-1 items-start gap-4">
-                    {(() => {
-                      // The card icon follows the same priority as the employee
-                      // procedure list: the body's first image (the recipe photo
-                      // or, here, the buckets) is the most specific so it wins;
-                      // then the manager's iconImageUrl override; then the
-                      // category's default SVG via getProcedureIcon.
-                      const findCover = (blocks: ProcedureBlock[] | undefined): string | null => {
-                        if (!blocks) return null;
-                        const imageBlock = blocks.find(
-                          (b): b is Extract<ProcedureBlock, { kind: 'image' }> => b.kind === 'image',
-                        );
-                        if (imageBlock?.src) return imageBlock.src;
-                        for (const b of blocks) {
-                          if (b.kind === 'recipe' && b.steps) {
-                            for (const s of b.steps) {
-                              if (s.imageSrc) return s.imageSrc;
-                              if (s.images && s.images.length > 0 && s.images[0].src) return s.images[0].src;
-                            }
-                          }
-                          if (b.kind === 'method' && b.steps) {
-                            for (const s of b.steps) {
-                              if (s.imageSrc) return s.imageSrc;
-                              if (s.images && s.images.length > 0 && s.images[0].src) return s.images[0].src;
-                            }
-                          }
-                        }
-                        return null;
-                      };
-                      const bodyCover = findCover(p.bodyEn?.blocks) ?? findCover(p.bodyEs?.blocks);
-                      const iconSrc = bodyCover ?? p.iconImageUrl ?? null;
-                      return iconSrc ? (
-                        <HoverImagePreview src={iconSrc} alt={title}>
-                          <IconTile size="lg" image={{ src: iconSrc, alt: title }} />
-                        </HoverImagePreview>
-                      ) : (
-                        <IconTile
-                          size="lg"
-                          icon={getProcedureIcon(p, p.subcategoryId ? subById.get(p.subcategoryId) ?? null : null)}
-                        />
-                      );
-                    })()}
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <h4 className="min-w-0 text-base font-semibold leading-heading text-[var(--color-ink)] transition-colors">
-                          {title}
-                        </h4>
-                        <StatusPill tone={p.isArchived ? 'neutral' : p.status === 'published' ? 'ok' : 'neutral'} withDot>
-                          {p.isArchived
-                            ? isEs ? 'Archivado' : 'Archived'
-                            : p.status === 'published' ? (isEs ? 'Publicado' : 'Published') : isEs ? 'Borrador' : 'Draft'}
-                        </StatusPill>
-                      </div>
-
-                      {purpose ? (
-                        <p className="mt-1 line-clamp-2 text-sm leading-body text-[var(--color-ink-2)]">{purpose}</p>
-                      ) : null}
-
-                      {/* One meta line: what it is, what slice of the kitchen it lives
-                        in (subcategory + station). The category was also a badge above
-                        and a column to the right; it is said once, here. */}
-                      <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-meta text-[var(--color-ink-3)]">
-                        {catName ? <span>{catName}</span> : null}
-                        {subName ? (
-                          <>
-                            {catName ? <span aria-hidden="true">·</span> : null}
-                            <span>{subName}</span>
-                          </>
-                        ) : null}
-                        {scopeStations.length > 0 ? (
-                          <>
-                            {catName || subName ? <span aria-hidden="true">·</span> : null}
-                            <span>
-                              {scopeStations.length === 1
-                                ? scopeStations[0]
-                                : `${scopeStations[0]} + ${scopeStations.length - 1}`}
-                            </span>
-                          </>
-                        ) : null}
-                        {p.protection === 'confidential' || p.protection === 'master' ? (
-                          <>
-                            {catName || subName || scopeStations.length > 0 ? (
-                              <span aria-hidden="true">·</span>
-                            ) : null}
-                            <span className="inline-flex items-center gap-1 font-semibold text-[var(--color-ink-2)]">
-                              <LuLock aria-hidden="true" />
-                              {p.protection === 'master'
-                                ? isEs ? 'Receta maestra' : 'Master recipe'
-                                : isEs ? 'Confidencial' : 'Confidential'}
-                            </span>
-                          </>
-                        ) : null}
-                      </p>
-                    </div>
-                  </div>
-
-                </Link>
-                <RowActions
-                  triggerLabel={`${isEs ? 'Acciones' : 'Actions'}: ${title}`}
-                  items={
-                    [
-                      p.isArchived
-                        ? null
-                        : { label: isEs ? 'Editar' : 'Edit', icon: LuPencil, onSelect: () => router.push(`/${locale}/admin/library/${p.slug || p.id}/edit`) },
-                      p.isArchived
-                        ? { label: isEs ? 'Restaurar' : 'Restore', icon: LuArchiveRestore, onSelect: () => void act(p.id, { isArchived: false }) }
-                        : p.status === 'draft'
-                          ? {
-                              label: isEs ? 'Publicar' : 'Publish',
-                              icon: LuCircleCheck,
-                              onSelect: () => {
-                                // Placement gate: publishing needs a station
-                                // (or General). Unplaced rows go to the
-                                // editor's Access step with the reason shown.
-                                if (!canPublishProcedure(p)) {
-                                  router.push(`/${locale}/admin/library/${p.slug || p.id}/edit?step=access&publishBlocked=1`);
-                                  return;
-                                }
-                                void act(p.id, { status: 'published' }, p);
-                              },
-                            }
-                          : null,
-                      p.isArchived
-                        ? null
-                        : { label: isEs ? 'Archivar' : 'Archive', icon: LuArchive, onSelect: () => void onArchive(p.id) },
-                      {
-                        label: isEs ? 'Eliminar' : 'Delete',
-                        icon: LuTrash2,
-                        destructive: true,
-                        confirmTitle: isEs ? 'Eliminar procedimiento' : 'Delete procedure',
-                        confirmDescription: isEs
-                          ? `"${title}" se eliminará permanentemente. Esta acción no se puede deshacer.`
-                          : `"${title}" will be permanently deleted. This cannot be undone.`,
-                        confirmLabel: isEs ? 'Sí, eliminar' : 'Yes, delete',
-                        onSelect: () => void handleDelete(p.id),
-                      },
-                    ].filter(Boolean) as RowActionItem[]
-                  }
-                />
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
+      <ProcedureExplorerFilters
+        isEs={isEs}
+        selectedCategorySlug={selectedCategorySlug}
+        onCategoryChange={(value) => { setSelectedCategorySlug(value); setCurrentPage(1); }}
+        categoryCounts={categoryCounts}
+        categorySelectOptions={categorySelectOptions}
+        selectedSubcategoryId={selectedSubcategoryId}
+        onSubcategoryChange={(value) => { setSelectedSubcategoryId(value); setCurrentPage(1); }}
+        subcategoryOptions={subcategoryOptions}
+        stationOptions={stationOptions}
+        stationFilter={stationFilter}
+        onStationChange={(value) => { setStationFilter(value); setCurrentPage(1); }}
+        statusFilter={statusFilter}
+        onStatusChange={(value) => { setStatusFilter(value as ProcedureStatus | 'all' | 'archived'); setCurrentPage(1); }}
+        statusOptions={statusOptions}
+        searchQuery={searchQuery}
+        onSearchChange={(value) => { setSearchQuery(value); setCurrentPage(1); }}
+        hasActiveFilters={hasActiveFilters}
+        filteredCount={filteredProcedures.length}
+        totalCount={allProcedures.length}
+        onReset={resetFilters}
+      />
+      <ProcedureExplorerResults
+        loading={proceduresLoading || (hasActiveBackendFilters && isFilterLoading && !filterApiResponse)}
+        isEs={isEs} locale={locale} allProcedures={allProcedures}
+        filteredProcedures={filteredProcedures} visibleProcedures={visibleProcedures}
+        hasActiveFilters={hasActiveFilters} resetFilters={resetFilters}
+        categoryList={categoryList} subById={subById} liveStations={liveStations}
+        act={act} onArchive={onArchive} onDelete={handleDelete}
+      />
       {/* Pagination footer — 10 rows per page, no long scroll. */}
       {totalItems > 0 && (
         <Pagination

@@ -103,13 +103,10 @@ export const getAccessProgress = (state: {
 }): number => {
   if (!filled(state.subcategoryId)) return 0;
 
-  let total = 2;
+  const total = 3;
   let done = 1; // subcategory is selected
 
-  if (state.categoryKind === 'station-tied') {
-    total += 1;
-    if (state.audience.stationIds.length > 0) done += 1;
-  }
+  if (state.audience.stationIds.length > 0) done += 1;
 
   if (state.audience.mode === 'everyone') {
     done += 1;
