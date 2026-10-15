@@ -173,13 +173,17 @@ export function CategoryDetailClient({
       if (override !== undefined) {
         rowStations = override;
       } else {
-        const rawIds: string[] = Array.isArray(p.stationScope?.stationIds) && p.stationScope.stationIds.length > 0
-          ? p.stationScope.stationIds
-          : p.station?.id
-            ? [p.station.id]
-            : p.stationId
-              ? [p.stationId]
-              : [];
+        const rawIds: string[] =
+          Array.isArray(p.stationScope?.stationIds) && p.stationScope.stationIds.length > 0
+            ? p.stationScope.stationIds
+            : Array.isArray((p as unknown as { stationIds?: string[] }).stationIds) &&
+              ((p as unknown as { stationIds?: string[] }).stationIds?.length ?? 0) > 0
+              ? ((p as unknown as { stationIds: string[] }).stationIds)
+              : p.station?.id
+                ? [p.station.id]
+                : p.stationId
+                  ? [p.stationId]
+                  : [];
         rowStations = rawIds.map((id) => ({
           id,
           name: stationsById.get(id) ?? (p.station?.id === id ? p.station.name : id),

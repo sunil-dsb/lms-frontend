@@ -172,26 +172,31 @@ export function SubcategoryAccordion({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          {isOpen && (isGeneral || linkedStations.length > 0) && (
+          {isOpen && linkedStations.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="hidden text-xs font-medium text-[var(--color-ink-3)] md:inline">
                 {isEs ? 'Estaciones:' : 'Stations:'}
               </span>
-              {isGeneral ? (
-                <span className="inline-flex items-center rounded-md bg-[var(--color-brand-tint)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-700)]">
+              {stations.length > 0 && linkedStations.length === stations.length ? (
+                <span className="inline-flex items-center rounded-md bg-[var(--color-brand-tint)] px-3 py-1.5 text-xs font-semibold leading-normal text-[var(--color-brand-700)]">
                   {isEs ? 'Todas las estaciones' : 'All stations'}
                 </span>
               ) : (
-              <div className="flex flex-wrap items-center gap-2.5">
-                {linkedStations.map((s) => (
-                  <span
-                    key={s.id}
-                    className="inline-flex items-center rounded-md bg-[var(--color-brand-tint)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-700)]"
-                  >
-                    {s.name}
-                  </span>
-                ))}
-              </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {linkedStations.slice(0, 3).map((s) => (
+                    <span
+                      key={s.id}
+                      className="inline-flex items-center rounded-lg bg-[var(--color-brand-tint)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-brand-700)]"
+                    >
+                      {s.name}
+                    </span>
+                  ))}
+                  {linkedStations.length > 3 && (
+                    <span className="inline-flex min-w-[38px] items-center justify-center rounded-lg border border-[var(--color-line-2)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)] shadow-2xs">
+                      +{linkedStations.length - 3}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -269,11 +274,9 @@ export function SubcategoryAccordion({
               <div className="flex items-center justify-between border-t border-[var(--color-line)] px-4 py-3 text-xs font-medium text-[var(--color-ink-3)]">
                 <span>
                   {procedures.length} {isEs ? 'procedimientos' : 'procedures'}
-                  {' · '}
-                  {isGeneral ? (
-                    isEs ? 'Todas las estaciones' : 'All stations'
-                  ) : (
+                  {linkedStations.length > 0 ? (
                     <>
+                      {' · '}
                       {linkedStations.length}{' '}
                       {linkedStations.length === 1
                         ? isEs
@@ -283,7 +286,7 @@ export function SubcategoryAccordion({
                           ? 'estaciones enlazadas'
                           : 'linked stations'}
                     </>
-                  )}
+                  ) : null}
                 </span>
               </div>
             </div>
@@ -303,7 +306,7 @@ export function ProcedureListItem({
   procedure,
   stations,
   isEs,
-  isGeneral,
+  isGeneral: _isGeneral,
   onToggleStation,
   onOpenProcedure,
   onEditProcedure,
@@ -311,7 +314,7 @@ export function ProcedureListItem({
   procedure: ProcedureRow;
   stations: StationOption[];
   isEs: boolean;
-  isGeneral: boolean;
+  isGeneral?: boolean;
   onToggleStation: (next: Array<{ id: string; name: string }>) => void;
   onOpenProcedure: () => void;
   onEditProcedure: () => void;
@@ -331,8 +334,9 @@ export function ProcedureListItem({
     onToggleStation(targetStations);
   };
 
-  const canChangeStation = !isGeneral && stations.length > 0;
+  const canChangeStation = stations.length > 0;
   const assignedStations = procedure.stations;
+  const isAllAssigned = stations.length > 0 && assignedStations.length === stations.length;
 
   const rowActions: RowActionItem[] = [
     {
@@ -377,11 +381,7 @@ export function ProcedureListItem({
         </div>
 
         <div className="flex shrink-0 items-center gap-4 pl-2" onClick={(e) => e.stopPropagation()}>
-          {isGeneral ? (
-            <span className="inline-flex items-center rounded-md bg-[var(--color-panel-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-2)] border border-[var(--color-line-2)]">
-              {isEs ? 'Todas las estaciones' : 'All stations'}
-            </span>
-          ) : !canChangeStation ? (
+          {!canChangeStation ? (
             assignedStations.length > 0 ? (
               <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
                 {assignedStations.map((st) => (
@@ -394,20 +394,37 @@ export function ProcedureListItem({
                 ))}
               </div>
             ) : (
-              <span className="inline-flex items-center rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-3)]">
+              <span className="inline-flex items-center rounded-lg border border-dashed border-[var(--color-line-2)] px-3.5 py-2 text-xs font-semibold text-[var(--color-ink-3)]">
                 {isEs ? 'Sin estación' : 'No station'}
               </span>
             )
+          ) : isAllAssigned ? (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-md bg-[var(--color-brand-tint)] px-3 py-1.5 text-xs font-semibold leading-normal text-[var(--color-brand-700)]">
+                {isEs ? 'Todas las estaciones' : 'All stations'}
+              </span>
+              <button
+                ref={pickerTriggerRef}
+                type="button"
+                onClick={() => openPicker()}
+                aria-haspopup="menu"
+                aria-expanded={pickerOpen}
+                aria-label={isEs ? 'Cambiar estaciones' : 'Change stations'}
+                className="inline-flex items-center gap-1 rounded-lg border border-dashed border-[var(--color-line-2)] px-2.5 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+              >
+                <span>{isEs ? 'Cambiar' : 'Change'}</span>
+              </button>
+            </div>
           ) : (
-            <div className="flex flex-wrap items-center justify-end gap-2.5 sm:gap-3">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {assignedStations.length > 0 ? (
                 <>
-                  {assignedStations.map((st) => (
+                  {assignedStations.slice(0, 2).map((st) => (
                     <span
                       key={st.id}
-                      className="group/chip inline-flex items-center gap-2 rounded-md bg-[var(--color-panel-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)] border border-[var(--color-line-2)]"
+                      className="group/chip inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)]"
                     >
-                      <span>{st.name}</span>
+                      <span className="max-w-[120px] truncate">{st.name}</span>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -422,6 +439,16 @@ export function ProcedureListItem({
                       </button>
                     </span>
                   ))}
+                  {assignedStations.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => openPicker()}
+                      aria-label={isEs ? 'Ver más estaciones' : 'See more stations'}
+                      className="inline-flex min-w-[38px] items-center justify-center rounded-lg border border-[var(--color-line-2)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)] shadow-2xs transition-colors hover:border-[var(--color-line-hover)] hover:bg-[var(--color-panel)]"
+                    >
+                      +{assignedStations.length - 2}
+                    </button>
+                  )}
                   <button
                     ref={pickerTriggerRef}
                     type="button"
@@ -429,7 +456,7 @@ export function ProcedureListItem({
                     aria-haspopup="menu"
                     aria-expanded={pickerOpen}
                     aria-label={isEs ? 'Añadir estaciones' : 'Add stations'}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                   >
                     <LuPlus className="text-xs" />
                     <span>{isEs ? 'Añadir estación' : 'Add station'}</span>
@@ -443,7 +470,7 @@ export function ProcedureListItem({
                   aria-haspopup="menu"
                   aria-expanded={pickerOpen}
                   aria-label={isEs ? 'Añadir estaciones' : 'Add stations'}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                 >
                   <LuPlus className="text-xs" />
                   <span>{isEs ? 'Añadir estaciones' : 'Add stations'}</span>
