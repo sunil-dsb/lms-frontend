@@ -21,7 +21,7 @@ import { CategoryDetailSkeleton } from '@/components/admin/category-detail-skele
 import { fetchProcedures, updateProcedureStation } from '@/services/library/api';
 import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
 import { backendSlug, categorySlugsMatch, createBackendSubcategory, fetchBackendCategories, fetchBackendSubcategories } from '@/services/categories/api';
-import { AVAILABLE_ICONS } from '../category-actions';
+import { StatusPill } from '@/components/ui/status-pill';
 export interface StationOption {
   id: string;
   name: string;
@@ -32,6 +32,7 @@ export interface ProcedureRow {
   slug: string;
   titleEn: string;
   titleEs: string;
+  status?: string;
   stationIds: string[];
   stations: Array<{ id: string; name: string }>;
   updatedAt: string;
@@ -106,19 +107,6 @@ export function SubcategoryAccordion({
   // General categories apply to every station — the header shows one
   // "All stations" pill instead of per-station chips.
   const isGeneral = category.kind === 'general';
-  // Aggregated station list — the unique set of stations the visible
-  // procedures resolve to. Drawn in the header when the panel is open.
-  const linkedStations = React.useMemo(() => {
-    const map = new Map<string, string>();
-    for (const proc of procedures) {
-      for (const st of proc.stations) {
-        if (!map.has(st.id)) {
-          map.set(st.id, st.name);
-        }
-      }
-    }
-    return [...map].map(([id, name]) => ({ id, name }));
-  }, [procedures]);
 
   return (
     <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xs">
@@ -142,7 +130,7 @@ export function SubcategoryAccordion({
           }
         }}
         className={cn(
-          'flex w-full cursor-pointer flex-wrap items-center justify-between gap-3 px-4 py-3 text-left transition-colors',
+          'flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3 text-left transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]',
           isOpen ? 'bg-[var(--color-wash)]' : 'hover:bg-[var(--color-wash)]',
         )}
@@ -154,15 +142,15 @@ export function SubcategoryAccordion({
               <h2 className="truncate text-base font-semibold text-[var(--color-ink)]">
                 {subName}
               </h2>
-              <span className="inline-flex items-center rounded-full bg-[var(--color-panel-2)] px-2 py-0.5 text-xs font-medium text-[var(--color-ink-3)]">
-                {procedures.length}{' '}
+              <span className="text-xs font-normal text-[var(--color-ink-3)]">
+                · {procedures.length}{' '}
                 {procedures.length === 1
                   ? isEs
-                    ? 'proc.'
-                    : 'proc.'
+                    ? 'procedimiento'
+                    : 'procedure'
                   : isEs
-                    ? 'procs.'
-                    : 'procs.'}
+                    ? 'procedimientos'
+                    : 'procedures'}
               </span>
             </div>
             <p className="mt-0.5 truncate text-sm leading-meta text-[var(--color-ink-3)]">
@@ -172,30 +160,6 @@ export function SubcategoryAccordion({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          {isOpen && (isGeneral || linkedStations.length > 0) && (
-            <div className="flex items-center gap-2">
-              <span className="hidden text-xs font-medium text-[var(--color-ink-3)] md:inline">
-                {isEs ? 'Estaciones:' : 'Stations:'}
-              </span>
-              {isGeneral ? (
-                <span className="inline-flex items-center rounded-md bg-[var(--color-brand-tint)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-700)]">
-                  {isEs ? 'Todas las estaciones' : 'All stations'}
-                </span>
-              ) : (
-              <div className="flex flex-wrap items-center gap-2.5">
-                {linkedStations.map((s) => (
-                  <span
-                    key={s.id}
-                    className="inline-flex items-center rounded-md bg-[var(--color-brand-tint)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-700)]"
-                  >
-                    {s.name}
-                  </span>
-                ))}
-              </div>
-              )}
-            </div>
-          )}
-
           <Button
             variant="primary"
             size="sm"
@@ -240,8 +204,8 @@ export function SubcategoryAccordion({
                 compact
                 title={
                   isEs
-                    ? 'Sin procedimientos publicados aún en esta subcategoría.'
-                    : 'No published procedures yet in this subcategory.'
+                    ? 'Sin procedimientos aún en esta subcategoría.'
+                    : 'No procedures yet in this subcategory.'
                 }
               />
             </div>
@@ -265,27 +229,6 @@ export function SubcategoryAccordion({
                   />
                 ))}
               </ul>
-
-              <div className="flex items-center justify-between border-t border-[var(--color-line)] px-4 py-3 text-xs font-medium text-[var(--color-ink-3)]">
-                <span>
-                  {procedures.length} {isEs ? 'procedimientos' : 'procedures'}
-                  {' · '}
-                  {isGeneral ? (
-                    isEs ? 'Todas las estaciones' : 'All stations'
-                  ) : (
-                    <>
-                      {linkedStations.length}{' '}
-                      {linkedStations.length === 1
-                        ? isEs
-                          ? 'estación enlazada'
-                          : 'linked station'
-                        : isEs
-                          ? 'estaciones enlazadas'
-                          : 'linked stations'}
-                    </>
-                  )}
-                </span>
-              </div>
             </div>
           )}
         </div>
@@ -303,7 +246,7 @@ export function ProcedureListItem({
   procedure,
   stations,
   isEs,
-  isGeneral,
+  isGeneral: _isGeneral,
   onToggleStation,
   onOpenProcedure,
   onEditProcedure,
@@ -311,7 +254,7 @@ export function ProcedureListItem({
   procedure: ProcedureRow;
   stations: StationOption[];
   isEs: boolean;
-  isGeneral: boolean;
+  isGeneral?: boolean;
   onToggleStation: (next: Array<{ id: string; name: string }>) => void;
   onOpenProcedure: () => void;
   onEditProcedure: () => void;
@@ -331,8 +274,9 @@ export function ProcedureListItem({
     onToggleStation(targetStations);
   };
 
-  const canChangeStation = !isGeneral && stations.length > 0;
+  const canChangeStation = stations.length > 0;
   const assignedStations = procedure.stations;
+  const isAllAssigned = stations.length > 0 && assignedStations.length === stations.length;
 
   const rowActions: RowActionItem[] = [
     {
@@ -355,73 +299,134 @@ export function ProcedureListItem({
 
   return (
     <li className="transition-colors hover:bg-[var(--color-wash)]">
-      <div className="flex items-center justify-between gap-4 px-4 py-3">
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={onOpenProcedure}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onOpenProcedure();
-            }
-          }}
-          className="min-w-0 flex-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)] rounded-[var(--radius-sm)]"
-        >
-          <h4 className="truncate text-sm font-semibold text-[var(--color-ink)]">
-            {isEs ? procedure.titleEs : procedure.titleEn}
-          </h4>
-          <p className="truncate text-sm text-[var(--color-ink-2)]">
-            {isEs ? procedure.titleEn : procedure.titleEs}
-          </p>
+      <div className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between md:gap-4">
+        {/* Left: Procedure Title + Inline Status Pill + Subtitle */}
+        <div className="flex items-start justify-between gap-3 min-w-0 flex-1">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={onOpenProcedure}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onOpenProcedure();
+              }
+            }}
+            className="min-w-0 flex-1 cursor-pointer rounded-[var(--radius-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="truncate text-sm font-semibold text-[var(--color-ink)]">
+                {isEs ? procedure.titleEs : procedure.titleEn}
+              </h4>
+              {procedure.status && (
+                <StatusPill
+                  tone={procedure.status === 'published' ? 'ok' : 'neutral'}
+                  withDot
+                >
+                  {procedure.status === 'published'
+                    ? isEs ? 'Publicado' : 'Published'
+                    : isEs ? 'Borrador' : 'Draft'}
+                </StatusPill>
+              )}
+            </div>
+            <p className="mt-0.5 truncate text-sm text-[var(--color-ink-2)]">
+              {isEs ? procedure.titleEn : procedure.titleEs}
+            </p>
+          </div>
+
+          <div className="md:hidden shrink-0">
+            <RowActions items={rowActions} triggerLabel={procedure.titleEn} />
+          </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-4 pl-2" onClick={(e) => e.stopPropagation()}>
-          {isGeneral ? (
-            <span className="inline-flex items-center rounded-md bg-[var(--color-panel-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-2)] border border-[var(--color-line-2)]">
-              {isEs ? 'Todas las estaciones' : 'All stations'}
-            </span>
-          ) : !canChangeStation ? (
-            assignedStations.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                {assignedStations.map((st) => (
-                  <span
-                    key={st.id}
-                    className="inline-flex items-center rounded-md bg-[var(--color-panel-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)] border border-[var(--color-line-2)]"
-                  >
-                    {st.name}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <span className="inline-flex items-center rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-3)]">
-                {isEs ? 'Sin estación' : 'No station'}
-              </span>
-            )
-          ) : (
-            <div className="flex flex-wrap items-center justify-end gap-2.5 sm:gap-3">
-              {assignedStations.length > 0 ? (
-                <>
+        {/* Right: Stations and row actions */}
+        <div
+          className="flex min-w-0 flex-wrap items-center justify-between gap-3 md:justify-end"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {!canChangeStation ? (
+              assignedStations.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
                   {assignedStations.map((st) => (
                     <span
                       key={st.id}
-                      className="group/chip inline-flex items-center gap-2 rounded-md bg-[var(--color-panel-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)] border border-[var(--color-line-2)]"
+                      className="inline-flex items-center rounded-lg bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)] border border-[var(--color-line-2)]"
                     >
-                      <span>{st.name}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const next = assignedStations.filter((item) => item.id !== st.id);
-                          onToggleStation(next);
-                        }}
-                        aria-label={isEs ? `Eliminar ${st.name}` : `Remove ${st.name}`}
-                        className="rounded-sm p-0.5 text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus-visible:outline-none"
-                      >
-                        <LuX className="text-[12px]" />
-                      </button>
+                      {st.name}
                     </span>
                   ))}
+                </div>
+              ) : (
+                <span className="inline-flex items-center rounded-lg border border-dashed border-[var(--color-line-2)] px-3.5 py-2 text-xs font-semibold text-[var(--color-ink-3)]">
+                  {isEs ? 'Sin estación' : 'No station'}
+                </span>
+              )
+            ) : isAllAssigned ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-lg border border-[var(--color-line-2)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)]">
+                  {isEs ? 'Todas las estaciones' : 'All stations'}
+                </span>
+                <button
+                  ref={pickerTriggerRef}
+                  type="button"
+                  onClick={() => openPicker()}
+                  aria-haspopup="menu"
+                  aria-expanded={pickerOpen}
+                  aria-label={isEs ? 'Cambiar estaciones' : 'Change stations'}
+                  className="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                >
+                  <span>{isEs ? 'Cambiar' : 'Change'}</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                {assignedStations.length > 0 ? (
+                  <>
+                    {assignedStations.slice(0, 2).map((st) => (
+                      <span
+                        key={st.id}
+                        className="group/chip inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)]"
+                      >
+                        <span className="max-w-[120px] truncate">{st.name}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const next = assignedStations.filter((item) => item.id !== st.id);
+                            onToggleStation(next);
+                          }}
+                          aria-label={isEs ? `Eliminar ${st.name}` : `Remove ${st.name}`}
+                          className="rounded-sm p-0.5 text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus-visible:outline-none"
+                        >
+                          <LuX className="text-[12px]" />
+                        </button>
+                      </span>
+                    ))}
+                    {assignedStations.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => openPicker()}
+                        aria-label={isEs ? 'Ver más estaciones' : 'See more stations'}
+                        className="inline-flex min-w-[38px] items-center justify-center rounded-lg border border-[var(--color-line-2)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)] shadow-2xs transition-colors hover:border-[var(--color-line-hover)] hover:bg-[var(--color-panel)]"
+                      >
+                        +{assignedStations.length - 2}
+                      </button>
+                    )}
+                    <button
+                      ref={pickerTriggerRef}
+                      type="button"
+                      onClick={() => openPicker()}
+                      aria-haspopup="menu"
+                      aria-expanded={pickerOpen}
+                      aria-label={isEs ? 'Añadir estaciones' : 'Add stations'}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                    >
+                      <LuPlus className="text-xs" />
+                      <span>{isEs ? 'Añadir estación' : 'Add station'}</span>
+                    </button>
+                  </>
+                ) : (
                   <button
                     ref={pickerTriggerRef}
                     type="button"
@@ -429,37 +434,28 @@ export function ProcedureListItem({
                     aria-haspopup="menu"
                     aria-expanded={pickerOpen}
                     aria-label={isEs ? 'Añadir estaciones' : 'Add stations'}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                   >
                     <LuPlus className="text-xs" />
                     <span>{isEs ? 'Añadir estación' : 'Add station'}</span>
                   </button>
-                </>
-              ) : (
-                <button
-                  ref={pickerTriggerRef}
-                  type="button"
-                  onClick={() => openPicker()}
-                  aria-haspopup="menu"
-                  aria-expanded={pickerOpen}
-                  aria-label={isEs ? 'Añadir estaciones' : 'Add stations'}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line-2)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
-                >
-                  <LuPlus className="text-xs" />
-                  <span>{isEs ? 'Añadir estaciones' : 'Add stations'}</span>
-                </button>
-              )}
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="hidden text-xs leading-meta text-[var(--color-ink-3)] xl:inline">
+              {updatedAgoLabel(procedure.updatedAt, isEs)}
+            </span>
+
+            <div className="hidden md:block shrink-0">
+              <RowActions
+                items={rowActions}
+                triggerLabel={procedure.titleEn}
+              />
             </div>
-          )}
-
-          <span className="hidden text-sm leading-meta text-[var(--color-ink-3)] sm:inline">
-            {updatedAgoLabel(procedure.updatedAt, isEs)}
-          </span>
-
-          <RowActions
-            items={rowActions}
-            triggerLabel={procedure.titleEn}
-          />
+          </div>
         </div>
       </div>
 
