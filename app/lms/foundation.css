@@ -1,0 +1,500 @@
+/* ============================================================
+   Alimentaria LMS — shared stylesheet
+   Tokens and product components. Every screen links this file,
+   so a token change propagates instead of drifting.
+   Spec-page chrome stays inline in design-system.html.
+   ============================================================ */
+/* ============================================================
+   TOKENS
+   Three layers, kept apart on purpose.
+   Neutrals carry the interface. One brand colour carries action.
+   Semantic colours are the industry standard, so nobody has to
+   learn what green or red means. Every text pairing clears AA.
+   ============================================================ */
+/* .theme-light holds a subtree in the light scale whatever the page is set to:
+   a specimen that documents white, a contrast table whose ratios were measured
+   on white. Custom properties inherit, so the nearer declaration wins. */
+:root,
+.theme-light {
+   /* Neutrals. White ground, warm-grey chrome. */
+   --ink: #222222;
+   /* body text. 15.9:1 on white */
+   --ink-2: #515252;
+   /* secondary. 7.8:1 */
+   --ink-3: #666666;
+   /* the faintest ink that still carries a sentence. One step darker than it was: on the new ground #676767 measured 4.49:1, just under the floor, and the ground is where this colour is most often used. 4.56:1 now. */
+   /* placeholder, tertiary. 5.7:1 on white, 5.0:1 on panel */
+   --bg: #ffffff;
+   /* the reading plane: a document sheet, a form, a card */
+   /* The ground: the plane every card sits on, admin and employee alike. Warm
+     bone, a clear step below white, so a card reads as a card without needing a
+     border. A document page keeps --bg, because there the sheet is the content. */
+   --ground: #f0efeb;
+   /* the page under the cards. Tried lighter (#f5f4ef, #f9f9f6) and darker (#e8e5dd); this is the one that reads right — pale warm bone, with the card's edge doing the separating and the lift kept to a breath. */
+   --bg-admin: var(--ground);
+   /* the old name, kept so existing markup resolves */
+   --surface: #ffffff;
+   --field: #ffffff;
+   /* what a text control is filled with. The same as a card here; on a dark ground a control has to sit below the card rather than level with it */
+   --panel: #f2f1ec;
+   /* sidebar and toolbars only. The brand bone as chrome, never as ground */
+   --panel-2: #e6e3db;
+   /* the same bone one step down: hover and pressed on a panel */
+   --wash: #f7f6f3;
+   /* the bone at its faintest: marks a region without boxing it */
+   --line: #e9e8e5;
+   /* dividers inside a surface. 1.35:1 on white. It started at #e5e4e0 (1.27:1, invisible) and went to 1.60 (a rule, not a divider); this is the step between. */
+   --line-2: #dcdbd6;
+   /* card edges, table borders. 1.62:1 on white, 1.47:1 on the ground. This is the card's whole separation now that the page is pale and the lift is faint — it is at its floor, and lighter than this the card has no outline at all. */
+   --line-3: #dcdbd6;
+   /* control boundaries: input, option, key, pin, segment seat.
+                            The same line as a card edge, on purpose: one border colour on the screen.
+                            It used to be 3.79:1 — a control read as a different design language from
+                            everything around it. A control is now identified by its white fill on the
+                            pale ground, its icon and its placeholder, and it announces itself properly
+                            the moment it matters: focus keeps the full brand border and tint ring. */
+   --line-hover: #a9a69c;
+   /* the edge of a card under the pointer. A card is content on the ground,
+                            so its hover lifts away from the ground rather than sinking into it:
+                            filling it with wash made it the ground's own colour (1.08:1). This is
+                            2.44:1 on the card, 1.76x its resting edge. line-3 cannot do this job in
+                            light, where it equals line-2. */
+
+   /* Brand. One colour, for action and selection. */
+   --brand: #eb5940;
+   /* the site's own terracotta. Progress fill on dark surfaces, hover rules. Not for text on white: 3.5:1 */
+   --brand-600: #c94327;
+   /* primary button, current tab, focus ring, selection dot. White on it 4.9:1 */
+   --brand-700: #a8371f;
+   /* the word: text on brand-tint, 5.6:1 */
+   --nav-current: var(--brand-tint);
+   /* the seat under the current sidebar item. A token of its own because on a dark sidebar a tinted seat is the only coloured field in a column of neutral ones */
+   --ring: #c94327;
+   /* focus rings and the outline of a chosen seat. The same colour as the fill here; on a dark ground it cannot be, because the fill has to be dark enough to carry white and the ring light enough to be seen */
+   --brand-hover: #a8371f;
+   /* the fill under the pointer. One name per job: in dark the word goes pale and the fill stays dark, and a single token cannot do both */
+   --brand-tint: #fce8d4;
+   /* secondary button. Peach, not pink: dE 10.6 from bad-tint, so a secondary and a destructive-at-rest never match */
+   --brand-tint-2: #f8dcc0;
+   /* secondary hover. brand-700 on it 5.1:1 */
+
+   /* Semantic. Industry standard values. */
+   --ok: #166534;
+   /* green. White on it 7.1:1 */
+   --ok-700: #14532d;
+   /* confirm button hover */
+   --ok-tint: #dcfce7;
+   /* ok on it 6.5:1 */
+   --ok-tint-2: #bbf7d0;
+   /* The ink a word takes when it sits on a tint. In this theme it is the same
+     colour as the fill; in the dark one it cannot be, because a fill that
+     carries white and a word that sits on a dark tint are different jobs. */
+   /* The same green under two names, because the dark theme needs them apart:
+     --ok is the word (it must read on a tint), --ok-fill is the block a white
+     label sits on. Red works the same way. */
+   --ok-fill: var(--ok);
+   --warn: #d97706;
+   /* amber, for dots and icons. Ink on it 5.0:1 */
+   --warn-ink: #92400e;
+   /* amber text. 6.4:1 on warn-tint */
+   --warn-tint: #fef3c7;
+   --warn-tint-2: #fde68a;
+   /* the amber tint one step down: hover, and the banner's own action. warn-ink on it 5.7:1 */
+   --bad: #b91c1c;
+   /* red, kept dark enough that it separates from the terracotta by brightness, not only by hue. White on it 6.5:1 */
+   --bad-hover: #991b1b;
+   /* the destructive fill under the pointer: one step darker, so the state is visible without changing hue. White on it 8.6:1 */
+   --bad-tint: #fee2e2;
+   /* bad on it 5.3:1 */
+   --bad-fill: var(--bad);
+
+   /* On a fill. White here is not a surface: it is the text and icon colour on
+     brand-600, ok, bad and ink. The translucent steps exist only on the dark
+     video player and over photos; nothing else is see-through. */
+   --on-fill: #ffffff;
+   --on-dark-1: rgb(255 255 255 / 0.04);
+   /* player stage */
+   --on-dark-2: rgb(255 255 255 / 0.12);
+   /* control at rest on ink, toast hover */
+   --on-dark-3: rgb(255 255 255 / 0.18);
+   /* receipt tick on ok */
+   --on-dark-4: rgb(255 255 255 / 0.25);
+   /* scrub track */
+   --sheen: rgb(255 255 255 / 0.55);
+   /* skeleton sweep */
+   --glass: rgb(255 255 255 / 0.94);
+   /* play button over a photo */
+   --scrim: rgb(34 34 34 / 0.45);
+   /* modal backdrop */
+   --scrim-strong: rgb(34 34 34 / 0.82);
+   /* caption and label over a photo */
+
+   /* Space, 4px base */
+   --s-1: 4px;
+   --s-2: 8px;
+   --s-3: 12px;
+   --s-4: 16px;
+   --s-5: 20px;
+   --s-6: 24px;
+   --s-8: 32px;
+   --s-10: 40px;
+   --s-12: 48px;
+   --s-16: 64px;
+   --s-20: 80px;
+
+   /* Line height by role, not one number for the page. Body sits at 1.55, which
+     clears WCAG 1.4.12's 1.5 floor; headings tighten because a two-line heading
+     set at body leading reads as two separate sentences. */
+   /* Leading falls as the size rises: a 48px line needs almost none of it, and a
+     16px paragraph needs half again its height to stay readable across a column.
+     Set as a unitless ratio so it scales with whatever size it lands on. */
+   --lh-display: 1.05;
+   /* 40 and 48: the line is already tall */
+   --lh-heading: 1.2;
+   /* 24 and 32 */
+   --lh-body: 1.45;
+   /* 16 and 20: paragraphs, steps, anything read in a row */
+   --lh-meta: 1.4;
+   /* 14: labels and metadata, usually one line anyway */
+
+   /* Type: fixed rem, hand-tuned. Steps tighten at body sizes and open up at display sizes. */
+   /* The scale is a formula, not a list: base 16px, ratio 1.25, every step landing
+     on a whole rem or a half — which is also the 4px grid, so type and space line
+     up without either being nudged.
+
+       14  meta     16 ÷ 1.125   the one step below the base: labels, table meta
+       16  base     1rem         body. Everything a cook or a manager reads
+       20  md       × 1.25       a lead paragraph, a card title
+       24  lg       × 1.25²      a section heading
+       32  xl       × 1.25³      a page heading
+       40  2xl      × 1.25⁴      display
+       48  3xl      × 1.25⁵      display, the largest thing on any screen
+
+     The old scale was eight numbers whose ratios drifted from 1.125 to 1.33, so
+     16 and 18 sat a twelfth apart and read as the same size in the same weight.
+     12px is gone: it was below the floor on every surface this product has. */
+   --t-sm: 0.875rem;
+   --t-base: 1rem;
+   --t-md: 1.25rem;
+   --t-lg: 1.5rem;
+   --t-xl: 2rem;
+   --t-2xl: 2.5rem;
+   --t-3xl: 3rem;
+
+   /* Two faces on a real contrast axis: DM Sans is geometric, Inter is grotesque.
+     DM Sans is display only, 28px and up. Below that the difference disappears
+     and it reads as a loading failure rather than a decision. */
+   --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+   --font-display: 'DM Sans', 'Inter', system-ui, sans-serif;
+   --display-weight: 700;
+   --display-track: -0.02em;
+   --heading-track: -0.01em;
+   /* 18px and up in Inter, set semibold */
+   --caps-track: 0.04em;
+   /* the signal words only: Critical step, Critical limit */
+
+   --r-sm: 6px;
+   --r-md: 8px;
+   --r-lg: 12px;
+   --r-pill: 999px;
+
+   --e-1: 0 1px 2px rgb(34 34 34 / 0.03);
+   /* a breath under a card, not a shadow. The edge separates it; this only stops it looking printed on. */
+   --e-2: 0 2px 6px rgb(34 34 34 / 0.05);
+   --e-3: 0 6px 14px rgb(34 34 34 / 0.10);
+
+   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+   --dur: 180ms;
+   /* something entering, leaving, or moving across the screen */
+   --dur-press: 120ms;
+   /* a press, and a hover colour. Seen dozens of times an hour, so it is nearly instant: at 180ms a hover reads as lag */
+   --press: 0.97;
+   /* how far a control gives under the finger. Subtle on purpose: enough to feel heard, not enough to see */
+
+   --tap-employee: 48px;
+   --tap-admin: 36px;
+
+   /* Layout sizes. Dimensions of a region, not space between things, so they sit
+     outside the 4px spacing scale. A width in a component comes from here or from
+     the grid; never a pixel value typed into the markup. */
+   --topbar-h: 56px;
+   /* admin top bar on mobile. The document's own bar is --bar-h, set on .doc */
+   --sidebar-w: 280px;
+   /* admin sidebar */
+   --sheet-w: 20rem;
+   /* mobile nav sheet */
+   --sheet-max-w: 90vw;
+   /* a sheet always leaves a strip of page to tap out on */
+   --drawer-sm: 24rem;
+   --drawer-md: 32rem;
+   --drawer-lg: 40rem;
+   --field-xs: 7rem;
+   /* a number column: amount, quantity */
+   --field-sm: 10rem;
+   /* a short filter select */
+   --field-md: 12rem;
+   /* a filter select, a menu */
+   --field-lg: 16rem;
+   /* a search field */
+   --field-xl: 24rem;
+   /* a search field that holds a whole question: "Find a person or procedure" */
+   --tile-min-h: 7rem;
+   /* a choice card or category tile, so a row of them lines up */
+   --media-max-h: 24rem;
+   /* an image or video inside a document or its editor */
+   --list-max-h: 24rem;
+   /* a scrolling option list */
+   --rail-w: 20rem;
+   /* a side column beside the main one on a wide screen */
+   --page-w: 72rem;
+   /* the admin work surface: every admin page is this wide and no
+                             other. It was three Tailwind defaults (7xl, 6xl, 5xl) picked
+                             per page, which is why moving between them felt like moving
+                             between products. */
+   --page-wide-w: 84rem;
+   /* the wider work surface for data tables and explorers — 1344px.
+                            Same vertical rhythm as --page-w; only the column
+                            widens so multi-column rows have room to breathe. */
+   --doc-w: 680px;
+   /* the reading column: document, employee app, tab bar */
+   --narrow-w: 560px;
+   /* a quiz, a sign-off, a chapter list */
+   --card-w: 24rem;
+   /* a card standing on its own: sign in, activate, a short modal */
+   --note-w: 32rem;
+   /* an empty state's sentence, a message under a heading */
+   --player-w: 640px;
+
+   /* The restaurant's own ornament, from alimentariamexicana.com: a stepped
+     zigzag, drawn in pixels rather than a smooth triangle. It is a mask, so the
+     shape carries no colour of its own and can be laid over any token; the tile
+     is 16x8 with 2px steps: small enough to read as a line, big enough that the
+     steps are steps rather than a serration. */
+   --pix-w: 24px;
+   --pix-h: 12px;
+   --pix-zigzag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8' viewBox='0 0 16 8' preserveAspectRatio='none'%3E%3Cpath d='M0 8V6h2V4h2V2h2V0h4v2h2v2h2v2h2v2z' fill='%23000'/%3E%3C/svg%3E");
+
+   /* dropdown and tooltip are reserved; sticky, backdrop, modal and toast are in use */
+   --z-dropdown: 10;
+   --z-sticky: 20;
+   --z-backdrop: 30;
+   --z-modal: 40;
+   --z-toast: 50;
+   --z-tooltip: 60;
+}
+
+/* ============================================================
+   DARK
+   The same token names with a different scale under them, so no component
+   knows this exists. Authored, not inverted: every value was picked against
+   the dark ground and measured, because the pairs that pass on white do not
+   pass here.
+   Set data-theme="dark" (or "light") on <html> to force one; with neither, the
+   system preference decides. The two blocks below are the same declarations.
+   ============================================================ */
+:root[data-theme="dark"] {
+   color-scheme: dark;
+   /* 1-2 · the two page backgrounds. Warm, never neutral grey, and never #000:
+     bright content on pure black is what causes the halation Material warns
+     about, and a lighter surface cannot be seen against it. */
+   --ground: #171614;
+   /* the plane every card sits on */
+   --bg-admin: var(--ground);
+   --wash: #1c1b18;
+   /* marks a region without boxing it */
+
+   /* 3-5 · surfaces, lighter than the ground rather than darker. This is the
+     whole of elevation here: a shadow on a dark ground is invisible, so a card
+     advances by being a step up, the way Apple's elevated set does. */
+   --bg: #282622;
+   /* the reading plane: document, form, card */
+   --surface: #282622;
+   /* a card, one step further off the page than the first pass: 1.20 against the ground, where the light theme's card separates by 1.15 */
+   --field: #1a1917;
+   /* a text control, recessed under the card it sits in. The card rises, the field sinks; a field level with its card is a hairline on a flat block */
+   --panel: #322f28;
+   /* sidebar and toolbars, and the tile a mark sits in. 1.13 off a card, which is the separation the light theme gives the same tile */
+   --panel-2: #3b382f;
+   /* hover and pressed on a panel */
+
+   /* 6-8 · borders. The first two are decorative and sit near their light-theme
+     separations (1.22 and 1.44 against a card); the third is a real boundary
+     and clears 3:1 on every surface it can land on. */
+   --line: #36342d;
+   --line-2: #403e35;
+   --line-3: #89847a;
+   --line-hover: #66625a;
+   /* 2.49:1 on the card, 1.77x its resting edge: the same step as light */
+
+   /* 11-12 · text. Not #fff — a pure white on a dark ground smears on OLED and
+     is the second thing Material tells you not to do. */
+   --ink: #e3dfd7;
+   /* 87% white, which is where Material puts high-emphasis text and why: at 91% a page of it glares. 12.0:1 on a card */
+   --ink-2: #bdb9af;
+   /* secondary. 7.7:1 on a card */
+   --ink-3: #a8a397;
+   /* the faintest ink. 4.7:1 on the lightest surface it lands on, which is a hovered panel */
+
+   /* Brand. The fill keeps the restaurant's terracotta, because white still
+     clears 4.9:1 on it. What changes is terracotta as *text*: #a8371f on a
+     dark tint is unreadable, so the text step is a light tint of the same hue
+     — Radix's step 9 and step 11 are different colours for a reason. */
+   --brand: #d0614e;
+   /* the accent, well down in chroma from the light theme's: a saturated colour vibrates on a dark ground. 4.7:1 on it */
+   --brand-600: #b03e26;
+   /* every solid fill: the primary button, the sidebar block, a current step. As deep as it goes while a filled control still separates from the page it sits on — 3.07:1 there, and white on it 5.9:1 */
+   --brand-700: #e2a48d;
+   /* the word: terracotta text on a tint or a card. 7.0:1 on the tint */
+   --nav-current: #34322b;
+   /* neutral, a step up from the sidebar rather than a rust slab. The terracotta word on it still carries 6.1:1 */
+   --ring: #d0614e;
+   /* the ring, and it has to be seen against the page rather than carry white: 4.7:1 on the ground, 4.2:1 on a card */
+   --brand-hover: #8f2f1c;
+   /* the fill under the pointer, a step below it. White on it 8.1:1 */
+   --brand-tint: #33241d;
+   /* secondary button, and the current nav item. Same lightness as the first pass at 28% saturation rather than 40%: the item still reads as current without the sidebar looking rusty */
+   --brand-tint-2: #4a2a20;
+   /* its hover */
+
+   /* Semantic. Same split: a fill that carries white, and an ink that carries
+     the word on a dark tint. --warn already worked this way in the light
+     theme; --ok and --bad now do too. */
+   --ok: #7bd3a0;
+   --ok-fill: #1f7a44;
+   --ok-tint: #14301f;
+   --ok-tint-2: #1b4029;
+   --ok-700: #196237;
+   /* the fill's hover */
+   --warn: #e5a54b;
+   --warn-ink: #edbb6e;
+   --warn-tint: #33260f;
+   --warn-tint-2: #43310f;
+   --bad: #f08a7e;
+   --bad-fill: #c2382e;
+   --bad-tint: #3a1a17;
+   --bad-hover: #a72f27;
+
+   /* Elevation, continued: a shadow still separates an overlay from what it
+     covers, but it is black and it is doing far less work than the surface
+     step above. */
+   --e-1: 0 1px 2px rgb(0 0 0 / 0.30);
+   --e-2: 0 2px 6px rgb(0 0 0 / 0.38);
+   --e-3: 0 8px 20px rgb(0 0 0 / 0.50);
+
+   /* Overlays. --on-fill and --on-dark-1..4 are not restated: white on a
+     coloured fill is still white, and the four white-over-dark washes were
+     already built for a dark surface. */
+   --glass: rgb(24 23 20 / 0.82);
+   /* the disc over a photograph: dark glass now, or a near-white disc would carry a near-white icon */
+   --sheen: rgb(255 255 255 / 0.10);
+   /* the skeleton sweep. 55% white across a dark card is a flash, not a shimmer */
+   --scrim: rgb(0 0 0 / 0.62);
+   /* modal backdrop: deeper, because the page beneath it is already dark */
+   --scrim-strong: rgb(0 0 0 / 0.86);
+   /* caption over a photograph */
+}
+
+@media (prefers-color-scheme: dark) {
+   :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      /* 1-2 · the two page backgrounds. Warm, never neutral grey, and never #000:
+       bright content on pure black is what causes the halation Material warns
+       about, and a lighter surface cannot be seen against it. */
+      --ground: #171614;
+      /* the plane every card sits on */
+      --bg-admin: var(--ground);
+      --wash: #1c1b18;
+      /* marks a region without boxing it */
+
+      /* 3-5 · surfaces, lighter than the ground rather than darker. This is the
+       whole of elevation here: a shadow on a dark ground is invisible, so a card
+       advances by being a step up, the way Apple's elevated set does. */
+      --bg: #282622;
+      /* the reading plane: document, form, card */
+      --surface: #282622;
+      /* a card, one step further off the page than the first pass: 1.20 against the ground, where the light theme's card separates by 1.15 */
+      --field: #1a1917;
+      /* a text control, recessed under the card it sits in. The card rises, the field sinks; a field level with its card is a hairline on a flat block */
+      --panel: #322f28;
+      /* sidebar and toolbars, and the tile a mark sits in. 1.13 off a card, which is the separation the light theme gives the same tile */
+      --panel-2: #3b382f;
+      /* hover and pressed on a panel */
+
+      /* 6-8 · borders. The first two are decorative and sit near their light-theme
+       separations (1.22 and 1.44 against a card); the third is a real boundary
+       and clears 3:1 on every surface it can land on. */
+      --line: #36342d;
+      --line-2: #403e35;
+      --line-3: #89847a;
+      --line-hover: #66625a;
+      /* 2.49:1 on the card, 1.77x its resting edge: the same step as light */
+
+      /* 11-12 · text. Not #fff — a pure white on a dark ground smears on OLED and
+       is the second thing Material tells you not to do. */
+      --ink: #e3dfd7;
+      /* 87% white, which is where Material puts high-emphasis text and why: at 91% a page of it glares. 12.0:1 on a card */
+      --ink-2: #bdb9af;
+      /* secondary. 7.7:1 on a card */
+      --ink-3: #a8a397;
+      /* the faintest ink. 4.7:1 on the lightest surface it lands on, which is a hovered panel */
+
+      /* Brand. The fill keeps the restaurant's terracotta, because white still
+       clears 4.9:1 on it. What changes is terracotta as *text*: #a8371f on a
+       dark tint is unreadable, so the text step is a light tint of the same hue
+       — Radix's step 9 and step 11 are different colours for a reason. */
+      --brand: #d0614e;
+      /* the accent, well down in chroma from the light theme's: a saturated colour vibrates on a dark ground. 4.7:1 on it */
+      --brand-600: #b03e26;
+      /* every solid fill: the primary button, the sidebar block, a current step. As deep as it goes while a filled control still separates from the page it sits on — 3.07:1 there, and white on it 5.9:1 */
+      --brand-700: #e2a48d;
+      /* the word: terracotta text on a tint or a card. 7.0:1 on the tint */
+      --nav-current: #34322b;
+      /* neutral, a step up from the sidebar rather than a rust slab. The terracotta word on it still carries 6.1:1 */
+      --ring: #d0614e;
+      /* the ring, and it has to be seen against the page rather than carry white: 4.7:1 on the ground, 4.2:1 on a card */
+      --brand-hover: #8f2f1c;
+      /* the fill under the pointer, a step below it. White on it 8.1:1 */
+      --brand-tint: #33241d;
+      /* secondary button, and the current nav item. Same lightness as the first pass at 28% saturation rather than 40%: the item still reads as current without the sidebar looking rusty */
+      --brand-tint-2: #4a2a20;
+      /* its hover */
+
+      /* Semantic. Same split: a fill that carries white, and an ink that carries
+       the word on a dark tint. --warn already worked this way in the light
+       theme; --ok and --bad now do too. */
+      --ok: #7bd3a0;
+      --ok-fill: #1f7a44;
+      --ok-tint: #14301f;
+      --ok-tint-2: #1b4029;
+      --ok-700: #196237;
+      /* the fill's hover */
+      --warn: #e5a54b;
+      --warn-ink: #edbb6e;
+      --warn-tint: #33260f;
+      --warn-tint-2: #43310f;
+      --bad: #f08a7e;
+      --bad-fill: #c2382e;
+      --bad-tint: #3a1a17;
+      --bad-hover: #a72f27;
+
+      /* Elevation, continued: a shadow still separates an overlay from what it
+       covers, but it is black and it is doing far less work than the surface
+       step above. */
+      --e-1: 0 1px 2px rgb(0 0 0 / 0.30);
+      --e-2: 0 2px 6px rgb(0 0 0 / 0.38);
+      --e-3: 0 8px 20px rgb(0 0 0 / 0.50);
+
+      /* Overlays. --on-fill and --on-dark-1..4 are not restated: white on a
+     coloured fill is still white, and the four white-over-dark washes were
+     already built for a dark surface. */
+      --glass: rgb(24 23 20 / 0.82);
+      /* the disc over a photograph: dark glass now, or a near-white disc would carry a near-white icon */
+      --sheen: rgb(255 255 255 / 0.10);
+      /* the skeleton sweep. 55% white across a dark card is a flash, not a shimmer */
+      --scrim: rgb(0 0 0 / 0.62);
+      /* modal backdrop: deeper, because the page beneath it is already dark */
+      --scrim-strong: rgb(0 0 0 / 0.86);
+      /* caption over a photograph */
+   }
+}
+

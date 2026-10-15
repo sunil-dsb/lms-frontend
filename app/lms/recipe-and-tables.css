@@ -1,0 +1,577 @@
+/* Sections are separated by space and by the weight of their heading. A rule
+   between every one of eleven sections reads as a settings screen, not a document. */
+.doc-sec {
+   padding: 0 var(--s-5);
+   margin-top: var(--s-10);
+}
+
+.doc-sec>h2 {
+   font-size: var(--t-lg);
+   font-weight: 600;
+   margin-bottom: var(--s-4);
+   letter-spacing: var(--heading-track);
+}
+
+.doc-sec>h2 .count {
+   color: var(--ink-3);
+   font-weight: 500;
+}
+
+/* The scaler follows you down the ingredient list. A cook doubling a batch
+   should never have to scroll back up to change it. */
+.scaler {
+   position: sticky;
+   top: var(--bar-h);
+   z-index: 5;
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: var(--s-3);
+   padding: var(--s-3) 0 var(--s-4);
+   background: var(--surface);
+}
+
+.scaler .lbl {
+   font-size: var(--t-sm);
+   font-weight: 600;
+   color: var(--ink-2);
+}
+
+/* Renamed from .opts, which is also the quiz answer list in this same stylesheet.
+   Specificity kept them apart; sharing the name was a break waiting to happen.
+   The gap is 4px rather than 2px: three 48px targets two pixels apart undo the
+   reason the targets are 48px, because a gloved thumb misses by more than that. */
+.scaler .choices {
+   display: inline-flex;
+   gap: var(--s-1);
+   padding: var(--s-1);
+   border-radius: var(--r-pill);
+   background: var(--panel);
+}
+
+/* An unselected option had no fill and no border, on a tray at 1.13:1 against the
+   page, so under glare the only visible control was the selected one. The ring is
+   the lightest line in the palette: enough to say "these three are one control with
+   three seats", not so much that a tray of three ringed pills reads as three boxes.
+   It is not load-bearing for 1.4.11 either way — what identifies these controls is
+   their label, at 6.9:1. */
+.scaler button {
+   box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.scaler button[aria-checked="true"] {
+   box-shadow: none;
+}
+
+.scaler button {
+   min-height: var(--tap-employee);
+   min-width: 58px;
+   padding: 0 var(--s-4);
+   border: 0;
+   border-radius: var(--r-pill);
+   background: transparent;
+   color: var(--ink-2);
+   cursor: pointer;
+   font-size: var(--t-base);
+   font-weight: 600;
+   font-variant-numeric: tabular-nums;
+   transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.scaler button:hover {
+   color: var(--ink);
+}
+
+.scaler button[aria-checked="true"] {
+   background: var(--ink);
+   color: var(--surface);
+}
+
+/* Ingredients. Base quantity stays visible beside the scaled one, because the
+   paper convention is a second column, not a re-typeset recipe. */
+.ing {
+   width: 100%;
+   border-collapse: separate;
+   border-spacing: 0;
+   border: 1px solid var(--line);
+   border-radius: var(--r-lg);
+   overflow: hidden;
+}
+
+.ing th {
+   text-align: left;
+   padding: var(--s-3);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   color: var(--ink-2);
+   background: var(--panel);
+   border-bottom: 1px solid var(--line);
+}
+
+.ing td {
+   padding: var(--s-3);
+   font-size: var(--t-base);
+   border-bottom: 1px solid var(--line);
+   vertical-align: top;
+}
+
+.ing tr:last-child td {
+   border-bottom: 0;
+}
+
+.ing .num {
+   text-align: right;
+   white-space: nowrap;
+   font-variant-numeric: tabular-nums;
+   width: 1%;
+}
+
+.ing td.num {
+   font-weight: 600;
+}
+
+/* The selected column is data, not an action, so it does not take the brand
+   colour. It uses the same neutral selection language as the scaler button
+   that chose it: a panel wash and heavier ink. */
+.ing th.adj,
+.ing td.adj {
+   background: var(--panel);
+}
+
+.ing td.adj {
+   font-weight: 700;
+   color: var(--ink);
+}
+
+.ing td:not(.adj).num {
+   color: var(--ink-2);
+}
+
+/* At 1x the scaled column would repeat the base column word for word. */
+.ing.is-base .adj {
+   display: none;
+}
+
+/* "Small dice, 5 mm" and "Ripe: gives slightly at the neck" are specification a
+   cook acts on, not a caption, so they sit at the body floor. */
+.ing .form {
+   display: block;
+   margin-top: 2px;
+   font-size: var(--t-base);
+   color: var(--ink-2);
+}
+
+.ing .flag {
+   display: inline-flex;
+   align-items: center;
+   gap: var(--s-1);
+   margin-left: var(--s-2);
+   font-size: var(--t-base);
+   font-weight: 700;
+   color: var(--warn-ink);
+}
+
+/* A critical limit is structured, not a bold number in a sentence. The same
+   value has to appear here, in the step, on the printed log and in the
+   corrective-action rule, so it is stored as data and rendered in each place. */
+.crit {
+   border: 1px solid var(--line-3);
+   border-radius: var(--r-lg);
+   overflow: hidden;
+   margin: var(--s-4) 0;
+   background: var(--surface);
+}
+
+.crit-h {
+   display: flex;
+   align-items: center;
+   gap: var(--s-2);
+   margin: 0;
+   padding: var(--s-3) var(--s-4);
+   background: var(--panel);
+   color: var(--ink-2);
+   border-bottom: 1px solid var(--line);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   letter-spacing: var(--caps-track);
+   text-transform: uppercase;
+}
+
+.crit-b {
+   padding: var(--s-4);
+}
+
+.crit-num {
+   font-size: var(--t-xl);
+   font-weight: 700;
+   line-height: var(--lh-heading);
+   letter-spacing: var(--heading-track);
+   font-variant-numeric: tabular-nums;
+}
+
+/* 16px, not 14: this is the sentence that says the number above it may not apply
+   to the bottle in the cook's hand. It is not a caption. */
+.crit-sub {
+   margin: 2px 0 0;
+   font-size: var(--t-base);
+   color: var(--ink-2);
+}
+
+/* The limit, the check and the corrective action are a heading and two labelled
+   pairs, not three visually distinct divs. A regulator expects a response attached
+   to every limit, so the pairing is structural: the same dl/dt/dd the "If something
+   goes wrong" block already uses. */
+.crit-parts {
+   margin: 0;
+}
+
+.crit-part {
+   margin-top: var(--s-4);
+   padding-top: var(--s-4);
+   border-top: 1px solid var(--line);
+}
+
+.crit-part dd {
+   margin: 0;
+   font-size: var(--t-base);
+}
+
+.crit-lbl {
+   font-size: var(--t-base);
+   font-weight: 600;
+   color: var(--ink-2);
+   margin-bottom: var(--s-1);
+}
+
+.crit-part.breach {
+   margin-left: calc(var(--s-4) * -1);
+   margin-right: calc(var(--s-4) * -1);
+   margin-bottom: calc(var(--s-4) * -1);
+   padding: var(--s-4);
+   background: var(--bad-tint);
+   border-top: 0;
+}
+
+.crit-part.breach .crit-lbl {
+   color: var(--bad);
+   font-weight: 600;
+   display: flex;
+   gap: var(--s-2);
+   align-items: center;
+}
+
+/* A step the regulator would call a critical control point. BCCDC flags these
+   in the margin of an otherwise ordinary numbered method. */
+/* Hazard outranks position: on a control point the number stays red even while the
+   step is the one being read. This rule follows `.is-now` in the file, so it wins.
+   A control point is where a hazard is held in check, so it is marked in the hazard
+   colour: red means "this is where it goes wrong, or could". The specification inside
+   the block stays ink, because 4 degrees is a number, not an error. An earlier pass
+   set the whole marker in ink on the theory that weight beats colour. On a page that
+   is already black on white, more black is not a signal at all, and the step nobody
+   may skip was the step nobody noticed. */
+.step.is-crit {
+   background: var(--wash);
+   border-radius: var(--r-xl);
+   padding: var(--s-4);
+   margin-top: var(--s-3);
+   margin-bottom: var(--s-3);
+}
+
+.step.is-crit .step-num {
+   background: var(--bad-fill);
+   border-color: var(--bad);
+   color: var(--on-fill);
+}
+
+.step-flag {
+   display: inline-flex;
+   align-items: center;
+   gap: var(--s-2);
+   margin-bottom: var(--s-2);
+   padding: var(--s-1) var(--s-3);
+   border-radius: var(--r-sm);
+   background: var(--bad-tint);
+   color: var(--bad);
+   font-size: var(--t-sm);
+   font-weight: 700;
+   letter-spacing: var(--caps-track);
+   text-transform: uppercase;
+}
+
+/* Correct beside incorrect. Some things cannot be written, only shown. */
+/* Two 111px photographs cannot show the difference between "pieces still visible"
+   and "a smooth puree", which is the only reason the pair exists. It stacks until
+   there is room for both to be legible. */
+.compare {
+   display: grid;
+   grid-template-columns: 1fr;
+   gap: var(--s-3);
+   margin-top: var(--s-3);
+}
+
+@media (min-width: 560px) {
+   .compare {
+      grid-template-columns: 1fr 1fr;
+   }
+}
+
+.compare figure {
+   margin: 0;
+}
+
+.compare figcaption {
+   display: flex;
+   align-items: center;
+   gap: var(--s-1);
+   margin-top: var(--s-2);
+   font-size: var(--t-base);
+   font-weight: 700;
+}
+
+.compare .ok figcaption {
+   color: var(--ok);
+}
+
+.compare .no figcaption {
+   color: var(--bad);
+}
+
+.doc-acts {
+   display: grid;
+   gap: var(--s-3);
+   padding: var(--s-6) var(--s-5);
+   margin-top: var(--s-10);
+   border-top: 1px solid var(--line);
+}
+
+/* Everything an auditor needs and a cook does not. Collapsed by default. */
+.doc-ctl {
+   border-top: 1px solid var(--line);
+}
+
+.doc-ctl summary {
+   display: flex;
+   align-items: center;
+   gap: var(--s-2);
+   min-height: 48px;
+   padding: 0 var(--s-4);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   color: var(--ink-2);
+   cursor: pointer;
+   list-style: none;
+}
+
+.doc-ctl summary::-webkit-details-marker {
+   display: none;
+}
+
+.doc-ctl summary .i {
+   margin-left: auto;
+   transition: transform var(--dur) var(--ease);
+}
+
+.doc-ctl[open] summary .i {
+   transform: rotate(180deg);
+}
+
+.doc-ctl dl {
+   display: grid;
+   grid-template-columns: max-content 1fr;
+   gap: var(--s-2) var(--s-5);
+   margin: 0;
+   padding: 0 var(--s-4) var(--s-5);
+   font-size: var(--t-sm);
+}
+
+.doc-ctl dt {
+   color: var(--ink-2);
+}
+
+.doc-ctl dd {
+   margin: 0;
+}
+
+@media (min-width: 600px) {
+
+   .doc-head,
+   .doc-purpose,
+   .doc-sec,
+   .doc-acts {
+      padding-left: var(--s-8);
+      padding-right: var(--s-8);
+   }
+
+   .allergen,
+   .facts {
+      margin-left: var(--s-8);
+      margin-right: var(--s-8);
+   }
+
+   .doc-ctl summary,
+   .doc-ctl dl {
+      padding-left: var(--s-8);
+      padding-right: var(--s-8);
+   }
+}
+
+/* Nothing may be scrolled to underneath the sticky bar: not a fragment target,
+   and not an element receiving keyboard focus just below the fold. */
+.doc :is([id], a, button, input, summary, label) {
+   scroll-margin-top: calc(var(--bar-h) + var(--s-3));
+}
+
+/* Present to assistive technology, absent on screen. For a label a sighted reader
+   does not need because the layout already says it. */
+.vh {
+   position: absolute;
+   width: 1px;
+   height: 1px;
+   margin: -1px;
+   padding: 0;
+   overflow: hidden;
+   clip-path: inset(50%);
+   white-space: nowrap;
+}
+
+.step-note {
+   margin-top: var(--s-2);
+   font-size: var(--t-base);
+   color: var(--ink-2);
+   max-width: 62ch;
+}
+
+/* The ingredient name is the row's header, but it is read as body text, not as a
+   heading band: the visual weight belongs on the quantity. */
+.ing th[scope="row"] {
+   text-align: left;
+   padding: var(--s-3);
+   font-size: var(--t-base);
+   font-weight: 400;
+   color: var(--ink);
+   background: none;
+   border-bottom: 1px solid var(--line);
+   vertical-align: top;
+}
+
+.ing tr:last-child th[scope="row"] {
+   border-bottom: 0;
+}
+
+/* A table the author wrote, as opposed to the recipe's ingredient table above:
+   the same frame, but every cell is prose — no grey row header, nothing
+   right-aligned — because "Empty the bucket and test again" is a sentence. */
+.dtable {
+   width: 100%;
+   border-collapse: separate;
+   border-spacing: 0;
+   border: 1px solid var(--line);
+   border-radius: var(--r-lg);
+   overflow: hidden;
+}
+
+.dtable th {
+   text-align: left;
+   padding: var(--s-3);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   color: var(--ink-2);
+   background: var(--panel);
+   border-bottom: 1px solid var(--line);
+}
+
+.dtable td {
+   padding: var(--s-3);
+   font-size: var(--t-base);
+   border-bottom: 1px solid var(--line);
+   vertical-align: top;
+   white-space: pre-wrap;
+   word-break: break-word;
+   overflow-wrap: break-word;
+   line-height: 1.5;
+}
+
+.dtable tr:last-child td {
+   border-bottom: 0;
+}
+
+/* An admin list table: employees, locations, roles, stations. The head is a
+   rule and a quieter ink over the faintest bone -- one step off white -- rather
+   than the toolbar bone, which at table width becomes a grey slab that outweighs
+   the names under it. The card around the table draws the outer edge, so the
+   table itself has none. */
+.atable {
+   width: 100%;
+   border-collapse: separate;
+   border-spacing: 0;
+}
+
+.atable th {
+   text-align: left;
+   padding: var(--s-3) var(--s-4);
+   background: var(--wash);
+   border-bottom: 1px solid var(--line-2);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   color: var(--ink-3);
+}
+
+.atable td {
+   padding: var(--s-3) var(--s-4);
+   font-size: var(--t-sm);
+   color: var(--ink);
+   border-bottom: 1px solid var(--line);
+   vertical-align: middle;
+}
+
+.atable tr:last-child td {
+   border-bottom: 0;
+}
+
+/* The head is the first thing in its card: its end cells take the card's radius,
+   less the 1px border the card draws around them. */
+.atable thead tr:first-child th:first-child {
+   border-top-left-radius: calc(var(--r-lg) - 1px);
+}
+
+.atable thead tr:first-child th:last-child {
+   border-top-right-radius: calc(var(--r-lg) - 1px);
+}
+
+/* The actions column: as wide as its button, hard right. */
+.atable th:last-child,
+.atable td:last-child {
+   width: 1%;
+   text-align: right;
+   white-space: nowrap;
+}
+
+/* The templates put one thing under each heading; a document assembled from
+   blocks can put several, so consecutive blocks inside a section need the
+   rhythm the templates get for free. The h2 is excluded: it already carries its
+   own margin, and adding to it would double the gap under every heading. */
+.doc-sec>*:not(h2)+p,
+.doc-sec>*:not(h2)+.triggers,
+.doc-sec>*:not(h2)+.note-block,
+.doc-sec>*:not(h2)+.dtable,
+.doc-sec>*:not(h2)+.checklist-block,
+.doc-sec>*:not(h2)+.shot,
+.doc-sec>*:not(h2)+.fix,
+.doc-sec>*:not(h2)+.chapters,
+.doc-sec>*:not(h2)+h3,
+.doc-sec>*:not(h2)+* {
+   margin-top: var(--s-5);
+}
+
+.doc-sec>*:not(h2)+.dtable,
+.doc-sec>*:not(h2)+.checklist-block {
+   margin-top: var(--s-6);
+}
+
+.doc-sec>h3 {
+   font-size: var(--t-md);
+   font-weight: 600;
+   margin-bottom: var(--s-2);
+}
+

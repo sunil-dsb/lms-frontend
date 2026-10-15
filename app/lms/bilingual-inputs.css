@@ -1,0 +1,403 @@
+/* ============================================================
+   BILINGUAL INPUT (EN / ES)
+   Adaptive dual-input component with synchronized translation.
+   Tokens mapped directly from Alimentaria design system.
+   ============================================================ */
+.bli {
+   --bli-text: var(--ink);
+   --bli-muted: var(--ink-2);
+   --bli-placeholder: var(--ink-3);
+   --bli-border: var(--line-2);
+   --bli-border-idle: var(--line-2);
+   --bli-focus: var(--ink);
+   --bli-bg: var(--field);
+   --bli-bg-inactive: var(--panel);
+   --bli-bg-inactive-hover: var(--panel-2);
+   --bli-border-inactive-hover: var(--line-hover);
+   --bli-required: var(--bad);
+   --bli-radius: var(--r-md);
+   --bli-font: var(--font-ui);
+
+   /* Heights: single-line / multiline */
+   --bli-h-active: 44px;
+   --bli-h-inactive: 26px;
+   --bli-h-active-multi: 104px;
+   --bli-h-inactive-multi: 30px;
+
+   /* Width of the inactive field (active is always 100%) */
+   --bli-w-inactive: 92%;
+
+   display: flex;
+   flex-direction: column;
+   gap: var(--s-1-5);
+   font-family: var(--bli-font);
+}
+
+.bli__fields {
+   display: flex;
+   flex-direction: column;
+   width: 100%;
+   gap: 0;
+}
+
+.bli__label {
+   font-family: var(--bli-font);
+   font-size: var(--t-sm);
+   font-weight: 600;
+   line-height: var(--lh-meta);
+   color: var(--bli-text);
+}
+
+.bli__required {
+   color: var(--bli-required);
+}
+
+/* ---------- Field wrapper (this is what grows / shrinks) ---------- */
+
+.bli__field {
+   position: relative;
+   width: var(--bli-w-inactive);
+   max-width: 100%;
+   height: var(--bli-h-inactive);
+   border: 1px solid var(--bli-border-idle);
+   border-radius: var(--bli-radius);
+   background: var(--bli-bg-inactive);
+   cursor: pointer;
+   overflow: hidden;
+   margin-inline: auto;
+   transition:
+      width 0.22s ease,
+      height 0.22s ease,
+      background-color 0.22s ease,
+      border-color 0.22s ease,
+      box-shadow 0.22s ease;
+}
+
+.bli__field.is-active {
+   width: 100%;
+   height: var(--bli-h-active);
+   background: var(--bli-bg);
+   border-color: var(--bli-border);
+   box-shadow: var(--e-1);
+   cursor: text;
+   z-index: 2;
+}
+
+.bli__field.is-inactive:last-child {
+   border-top: none;
+   border-top-left-radius: 0;
+   border-top-right-radius: 0;
+   border-bottom-left-radius: var(--bli-radius);
+   border-bottom-right-radius: var(--bli-radius);
+   z-index: 1;
+}
+
+.bli__field.is-inactive:first-child {
+   border-bottom: none;
+   border-top-left-radius: var(--bli-radius);
+   border-top-right-radius: var(--bli-radius);
+   border-bottom-left-radius: 0;
+   border-bottom-right-radius: 0;
+   z-index: 1;
+}
+
+.bli__field.is-multiline {
+   height: var(--bli-h-inactive-multi);
+}
+
+.bli__field.is-multiline.is-active {
+   height: var(--bli-h-active-multi);
+}
+
+.bli__field:hover.is-inactive {
+   background: var(--bli-bg-inactive-hover);
+   border-color: var(--bli-border-inactive-hover);
+}
+
+.bli__field:focus-within {
+   border-color: var(--bli-focus);
+   box-shadow: 0 0 0 3px rgb(34 34 34 / 0.08);
+}
+
+/* ---------- Input / textarea ---------- */
+
+.bli__control {
+   width: 100%;
+   height: 100%;
+   border: 0 !important;
+   outline: none !important;
+   box-shadow: none !important;
+   background: transparent;
+   font: inherit;
+   font-family: var(--bli-font) !important;
+   font-size: var(--t-sm);
+   line-height: var(--lh-body);
+   color: var(--bli-text);
+   padding: 0 116px 0 var(--s-3);
+   /* room for counter + tag */
+   resize: none;
+   cursor: inherit;
+   transition:
+      color 0.22s ease,
+      font-size 0.22s ease;
+}
+
+textarea.bli__control {
+   padding: 7px 52px 7px var(--s-3);
+   overflow: hidden;
+}
+
+.bli__field.is-multiline.is-active .bli__control {
+   padding: var(--s-3) 52px var(--s-6) var(--s-3);
+   overflow: auto;
+}
+
+.bli__field.is-inactive .bli__control {
+   color: var(--bli-muted);
+   font-size: var(--t-sm);
+}
+
+.bli__control::placeholder {
+   color: var(--bli-placeholder);
+   font-family: var(--bli-font);
+}
+
+/* ---------- Language tag (EN / ES) ---------- */
+
+.bli__tag {
+   position: absolute;
+   right: var(--s-3);
+   top: 50%;
+   transform: translateY(-50%);
+   display: inline-block;
+   padding: 0 !important;
+   margin: 0;
+   border: none !important;
+   border-radius: 0 !important;
+   box-shadow: none !important;
+   background: transparent !important;
+   font-family: var(--bli-font);
+   font-size: 11px;
+   font-weight: 700;
+   line-height: 1;
+   letter-spacing: 0.06em;
+   color: var(--ink-3);
+   pointer-events: none;
+   user-select: none;
+   transition: color 0.22s ease;
+}
+
+/* ---------- Auto-translation status ----------
+   Rendered after .bli__fields so the :first-child / :last-child rules that
+   shape the stacked field borders keep matching the fields themselves. */
+
+.bli__status {
+   display: flex;
+   align-items: center;
+   gap: var(--s-1-5);
+   align-self: flex-start;
+   font-family: var(--bli-font);
+   font-size: 11px;
+   font-weight: 600;
+   line-height: var(--lh-meta);
+   color: var(--bli-muted);
+   white-space: nowrap;
+   margin-top: 4px;
+}
+
+.bli__status::before {
+   content: '';
+   inline-size: 6px;
+   block-size: 6px;
+   flex: none;
+   border-radius: 999px;
+   background: currentColor;
+   animation: bli-status-pulse 1s ease-in-out infinite;
+}
+
+.bli__status.is-error {
+   color: var(--bli-required);
+}
+
+.bli__status.is-error::before {
+   display: none;
+}
+
+@keyframes bli-status-pulse {
+
+   0%,
+   100% {
+      opacity: 0.3;
+   }
+
+   50% {
+      opacity: 1;
+   }
+}
+
+.bli__field:hover .bli__tag,
+.bli__field.is-active .bli__tag {
+   background: transparent !important;
+   border: none !important;
+   box-shadow: none !important;
+   color: var(--ink-2);
+}
+
+.bli__field.is-multiline .bli__tag {
+   top: 12px;
+   transform: none;
+}
+
+/* ---------- Character counter ---------- */
+
+.bli__count {
+   position: absolute;
+   right: 42px;
+   top: 50%;
+   transform: translateY(-50%);
+   font-family: var(--bli-font);
+   font-size: 11px;
+   color: var(--bli-muted);
+   pointer-events: none;
+   white-space: nowrap;
+   transition: opacity 0.22s ease;
+}
+
+.bli__field.is-multiline .bli__count {
+   right: var(--s-3);
+   top: auto;
+   bottom: 6px;
+   transform: none;
+}
+
+/* Multiline inactive is too short to fit the counter */
+.bli__field.is-multiline.is-inactive .bli__count {
+   opacity: 0;
+}
+
+/* ---------- Variants (Compact & Heading) ---------- */
+
+.bli--compact {
+   --bli-h-active: 36px;
+   --bli-h-inactive: 28px;
+   --bli-h-active-multi: 72px;
+   --bli-h-inactive-multi: 30px;
+}
+
+.bli--compact .bli__control {
+   font-size: var(--t-sm);
+   padding: 0 108px 0 var(--s-2);
+}
+
+.bli--compact textarea.bli__control {
+   padding: 4px 108px 4px var(--s-2);
+}
+
+.bli--compact .bli__field.is-multiline.is-active .bli__control {
+   padding: var(--s-2) 108px var(--s-2) var(--s-2);
+}
+
+.bli--compact .bli__count {
+   font-size: 10px;
+   right: 32px;
+}
+
+.bli--compact .bli__tag {
+   font-size: 10px;
+   padding: 0;
+   background: transparent !important;
+}
+
+.bli--heading {
+   --bli-h-active: 46px;
+   --bli-h-inactive: 32px;
+}
+
+.bli--heading .bli__control {
+   font-size: inherit;
+   font-weight: inherit;
+   font-family: inherit !important;
+}
+
+/* ---------- Bilingual Card (for Quiz questions & Table blocks) ---------- */
+
+.bli-card-group {
+   display: flex;
+   flex-direction: column;
+   width: 100%;
+   gap: 0;
+   position: relative;
+}
+
+.bli-card {
+   position: relative;
+   width: 92%;
+   margin-inline: auto;
+   border: 1px solid var(--line-2);
+   background: var(--panel);
+   overflow: hidden;
+   transition:
+      width 0.22s ease,
+      background-color 0.22s ease,
+      border-color 0.22s ease,
+      box-shadow 0.22s ease;
+}
+
+.bli-card.is-active {
+   width: 100%;
+   background: var(--surface);
+   border-color: var(--line-2);
+   border-radius: var(--r-lg);
+   box-shadow: var(--e-1);
+   cursor: default;
+   z-index: 2;
+}
+
+.bli-card.is-inactive {
+   height: 34px;
+   display: flex;
+   align-items: center;
+   cursor: pointer;
+}
+
+.bli-card.is-inactive:hover {
+   background: var(--panel-2);
+   border-color: var(--line-hover);
+}
+
+.bli-card.is-inactive:last-child {
+   border-top: none;
+   border-top-left-radius: 0;
+   border-top-right-radius: 0;
+   border-bottom-left-radius: var(--r-lg);
+   border-bottom-right-radius: var(--r-lg);
+   z-index: 1;
+}
+
+.bli-card.is-inactive:first-child {
+   border-bottom: none;
+   border-top-left-radius: var(--r-lg);
+   border-top-right-radius: var(--r-lg);
+   border-bottom-left-radius: 0;
+   border-bottom-right-radius: 0;
+   z-index: 1;
+}
+
+/* ---------- Motion & Responsive ---------- */
+
+@media (max-width: 480px) {
+   .bli {
+      --bli-w-inactive: 90%;
+   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+   .bli__field,
+   .bli__control,
+   .bli__tag,
+   .bli__count {
+      transition: none !important;
+   }
+}
+
