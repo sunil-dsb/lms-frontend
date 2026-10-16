@@ -78,6 +78,15 @@ export default async function ProceduresLayout({
             toDark: tCommon("themeToDark"),
             toLight: tCommon("themeToLight"),
             back: t("back"),
+            langLabel: tCommon("langLabel"),
+            darkMode: t("darkMode"),
+            roleLabel:
+              employee.role === "admin" || employee.role === "super_admin"
+                ? tCommon("admin")
+                : employee.role === "manager"
+                  ? "Manager"
+                  : t("roleEmployee"),
+            restaurantName: tCommon("title"),
           }}
         />
         <div className="flex-1">{children}</div>

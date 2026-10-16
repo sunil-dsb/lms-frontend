@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmployeeTopBar } from "./employee-top-bar";
@@ -22,8 +22,9 @@ export function EmployeeTopBarClient({
   locale: string;
   signOutAction: () => Promise<void>;
   loginHref: string;
-}): React.ReactElement {
+}): React.ReactElement | null {
   const router = useRouter();
+  const pathname = usePathname();
   const t = useTranslations("employee");
   const tCommon = useTranslations("app");
   const { employee, isLoading, error } = useMe();
@@ -37,21 +38,45 @@ export function EmployeeTopBarClient({
       <header
         aria-busy="true"
         aria-label="Loading account"
-        className="flex items-center justify-between gap-2 border-b border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2.5 sm:px-6 sm:py-3"
+        className="flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-surface)] px-4 sm:px-6 shrink-0"
+        style={{ height: "56px", minHeight: "56px" }}
       >
-        <Skeleton className="h-4 w-40" />
-        <div className="flex shrink-0 items-center gap-3">
-          <Skeleton className="size-8 rounded-full bg-[var(--color-panel)]" />
-          <Skeleton className="h-8 w-20 rounded-full bg-[var(--color-panel)]" />
+        <div className="flex items-center gap-2.5">
+          <Skeleton
+            className="rounded-full bg-[var(--color-panel-2)]"
+            style={{ width: "30px", height: "30px" }}
+          />
+          <Skeleton
+            className="h-4 rounded bg-[var(--color-panel-2)]"
+            style={{ width: "140px" }}
+          />
+        </div>
+        <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
+          <Skeleton
+            className="rounded-full bg-[var(--color-panel)]"
+            style={{ width: "64px", height: "34px" }}
+          />
+          <Skeleton
+            className="rounded-full bg-[var(--color-panel)]"
+            style={{ width: "34px", height: "34px" }}
+          />
         </div>
       </header>
     );
   }
 
+  const roleLabel =
+    employee.role === "admin" || employee.role === "super_admin"
+      ? tCommon("admin")
+      : employee.role === "manager"
+        ? "Manager"
+        : t("roleEmployee");
+
   return (
     <EmployeeTopBar
       locale={locale}
       name={employee.name}
+      role={employee.role}
       canEnterAdmin={
         employee.role === "admin" ||
         employee.role === "super_admin" ||
@@ -65,6 +90,10 @@ export function EmployeeTopBarClient({
         toDark: tCommon("themeToDark"),
         toLight: tCommon("themeToLight"),
         back: t("back"),
+        langLabel: tCommon("langLabel"),
+        darkMode: t("darkMode"),
+        roleLabel,
+        restaurantName: tCommon("title"),
       }}
     />
   );
