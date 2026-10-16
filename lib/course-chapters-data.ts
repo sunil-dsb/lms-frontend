@@ -1,4 +1,4 @@
-import type { Procedure, TrainingAssignment } from "./types";
+import type { Procedure, ProcedureBlock, TrainingAssignment } from "./types";
 
 export interface CourseChapter {
   id: string;
@@ -24,14 +24,277 @@ export interface CourseChaptersViewData {
   allComplete: boolean;
 }
 
-export interface ChapterProcedureData {
-  titleEn: string;
-  titleEs: string;
-  metrics?: { label: string; value: string }[];
-  ingredients?: { name: string; qty: string; isAllergen?: boolean }[];
-  steps?: { en: string; es: string }[];
-  slug?: string;
-}
+// Block builders mapping 1:1 to ProcedureBlock from the procedure system
+const blockText = (id: string, en: string, es: string): ProcedureBlock => ({
+  id,
+  kind: "text",
+  body: { en, es },
+});
+
+const blockHeading = (
+  id: string,
+  level: 1 | 2 | 3,
+  en: string,
+  es: string,
+): ProcedureBlock => ({
+  id,
+  kind: "heading",
+  level,
+  text: { en, es },
+});
+
+const blockWarning = (
+  id: string,
+  severity: "warn" | "tip" | "alt" | "equip" | "allergen",
+  en: string,
+  es: string,
+): ProcedureBlock => ({
+  id,
+  kind: "warning",
+  severity,
+  body: { en, es },
+});
+
+const blockTable = (
+  id: string,
+  headers: { en: string; es: string }[],
+  rows: { en: string; es: string }[][],
+): ProcedureBlock => ({
+  id,
+  kind: "table",
+  headers,
+  rows,
+});
+
+const blockImage = (
+  id: string,
+  src: string,
+  alt: { en: string; es: string },
+  caption?: { en: string; es: string },
+): ProcedureBlock => ({
+  id,
+  kind: "image",
+  src,
+  alt,
+  caption,
+  hint: "photo",
+});
+
+const blockVideo = (
+  id: string,
+  src: string,
+  caption?: { en: string; es: string },
+): ProcedureBlock => ({
+  id,
+  kind: "video",
+  src,
+  caption,
+});
+
+const blockIngredients = (
+  id: string,
+  ingredients: {
+    name: string;
+    amounts: string[];
+    unit?: string;
+    allergen?: boolean;
+  }[],
+  allergenSummary?: { en: string; es: string },
+): ProcedureBlock => ({
+  id,
+  kind: "ingredients",
+  factors: [1],
+  ingredients: ingredients.map((i) => ({
+    name: i.name,
+    amounts: i.amounts,
+    unit: i.unit,
+    allergen: i.allergen,
+  })),
+  allergen: allergenSummary
+    ? {
+        summary: allergenSummary.en,
+        detail: allergenSummary.en,
+        selectedAllergens: ["Crustaceans / Shellfish"],
+      }
+    : undefined,
+});
+
+const blockMethod = (
+  id: string,
+  steps: { en: string; es: string; critical?: boolean }[],
+): ProcedureBlock => ({
+  id,
+  kind: "method",
+  steps: steps.map((s, idx) => ({
+    id: `step-${idx + 1}`,
+    body: { en: s.en, es: s.es },
+    critical: s.critical,
+  })),
+});
+
+/**
+ * Full procedure blocks for "Shrimp Ceviche Verde / Roja"
+ * Directly mirrors the procedure at /admin/library/shrimp-ceviche-verde-roja-2
+ */
+export const shrimpCevicheBlocks: ProcedureBlock[] = [
+  blockHeading(
+    "shrimp-head-1",
+    1,
+    "Shrimp Ceviche Verde / Roja",
+    "Ceviche Verde / Roja de Camarones",
+  ),
+  blockText(
+    "shrimp-info-1",
+    "Recipe Information\nCategory: Recipes · Type: Ceviche · Yield: 1 order · Serving: 1 plate (chilled curved plate)\n\nFollow the recipe for Shrimp Ceviche Verde / Roja carefully.",
+    "Información de la Receta\nCategoría: Recetas · Tipo: Ceviche · Rendimiento: 1 orden · Porción: 1 plato (plato curvado frío)\n\nSiga la receta de Ceviche Verde / Roja de Camarones con cuidado.",
+  ),
+  blockWarning(
+    "shrimp-allergen-1",
+    "allergen",
+    "Allergen Notice: Contains Crustaceans / Shellfish (Prepared Shrimp). Never cross-contaminate prep bowls, cutting boards, or utensils with non-shellfish tickets.",
+    "Aviso de alérgenos: Contiene crustáceos / mariscos (camarón preparado). Nunca contamine tazones, tablas o utensilios de preparación con comandas sin mariscos.",
+  ),
+  blockIngredients(
+    "shrimp-ing-1",
+    [
+      {
+        name: "Prepared shrimp",
+        amounts: ["1"],
+        unit: "container",
+        allergen: true,
+      },
+      { name: "Sliced cucumber", amounts: ["1"], unit: "handful" },
+      { name: "Diced white onion", amounts: ["2½"], unit: "spoonfuls" },
+      { name: "Cut tomatillo", amounts: ["3–4"], unit: "pieces" },
+      { name: "Lime juice", amounts: ["4–5"], unit: "tablespoons" },
+      { name: "Ceviche Verde sauce", amounts: ["As needed"] },
+      { name: "Salt", amounts: ["½"], unit: "tablespoon" },
+      { name: "Avocado", amounts: ["¼"], unit: "avocado" },
+      { name: "Virgin olive oil", amounts: ["As needed"] },
+      { name: "Red onion", amounts: ["A few"], unit: "slices" },
+      { name: "Cilantro", amounts: ["A few"], unit: "pieces" },
+    ],
+    {
+      en: "Shellfish / Shrimp allergen alert",
+      es: "Alerta de alérgenos: mariscos / camarón",
+    },
+  ),
+  blockWarning(
+    "shrimp-tip-1",
+    "tip",
+    "Always taste the ceviche before plating. If salt or lime is too strong, add a small amount of Ceviche Verde sauce to rebalance the mixture.",
+    "Siempre pruebe el ceviche antes de emplatar. Si la sal o la lima están muy fuertes, agregue una pequeña cantidad de salsa Ceviche Verde para reequilibrar la mezcla.",
+  ),
+  blockMethod("shrimp-method-1", [
+    {
+      en: "Use a large mixing bowl to prepare the ceviche.",
+      es: "Use un tazón grande para preparar el ceviche.",
+    },
+    {
+      en: "Transfer 1 prepared container of shrimp from Prep into the mixing bowl.",
+      es: "Transfiera 1 contenedor preparado de camarones de la preparación al tazón.",
+    },
+    {
+      en: "Add 1 handful of sliced cucumber.",
+      es: "Agregue 1 puñado de pepino en rodajas.",
+    },
+    {
+      en: "Add 2½ spoonfuls of diced white onion.",
+      es: "Agregue 2½ cucharadas de cebolla blanca picada.",
+    },
+    {
+      en: "Add 3–4 pieces of cut tomatillo.",
+      es: "Agregue 3–4 piezas de tomatillo cortado.",
+    },
+    {
+      en: "Add approximately 4–5 tablespoons of lime juice.",
+      es: "Agregue aproximadamente 4–5 cucharadas de jugo de lima.",
+    },
+    {
+      en: "Add enough Ceviche Verde sauce to evenly coat all ingredients.",
+      es: "Agregue suficiente salsa Ceviche Verde para cubrir uniformemente todos los ingredientes.",
+    },
+    {
+      en: "Add approximately ½ tablespoon of salt.",
+      es: "Agregue aproximadamente ½ cucharada de sal.",
+    },
+    {
+      en: "Using a spoon, gently mix all ingredients until the shrimp and vegetables are evenly coated with the sauce, lime juice, and seasoning.",
+      es: "Usando una cuchara, mezcle suavemente todos los ingredientes hasta que los camarones y las verduras estén cubiertos uniformemente con la salsa, el jugo de lima y el condimento.",
+    },
+    {
+      en: "Taste the mixture and check the balance of salt, lime, and Ceviche Verde sauce.",
+      es: "Pruebe la mezcla y verifique el equilibrio de sal, lima y salsa Ceviche Verde.",
+      critical: true,
+    },
+    {
+      en: "If the salt or lime is too strong, add a small amount of Ceviche Verde sauce to rebalance the mixture.",
+      es: "Si la sal o la lima son demasiado fuertes, agregue una pequeña cantidad de salsa Ceviche Verde para reequilibrar la mezcla.",
+    },
+    {
+      en: "If the salt level is too low, add a small amount of salt.",
+      es: "Si el nivel de sal es demasiado bajo, agregue una pequeña cantidad de sal.",
+    },
+    {
+      en: "If additional acidity is needed, add a small amount of lime juice.",
+      es: "Si se necesita más acidez, agregue una pequeña cantidad de jugo de lima.",
+    },
+    {
+      en: "Mix thoroughly and taste again after making any adjustment.",
+      es: "Mezcle bien y pruebe nuevamente después de hacer cualquier ajuste.",
+    },
+    {
+      en: "The measurements above provide a starting standard. With experience, develop a feel for the correct amount of each ingredient needed to achieve the proper balance.",
+      es: "Las medidas anteriores proporcionan un estándar inicial. Con la experiencia, desarrolle una sensación de la cantidad correcta para lograr el equilibrio adecuado.",
+    },
+    {
+      en: "Always taste the ceviche before plating.",
+      es: "Siempre pruebe el ceviche antes de emplatar.",
+      critical: true,
+    },
+    {
+      en: "Use one of the curved plates stored in the cooler underneath the main GM station.",
+      es: "Use uno de los platos curvados almacenados en el refrigerador debajo de la estación principal de GM.",
+    },
+    {
+      en: "Cut an avocado in half. Take one half and cut it in half again. Cut once more to create two small avocado slices.",
+      es: "Corte un aguacate por la mitad. Tome una mitad y córtela por la mitad nuevamente. Corte una vez más para crear dos pequeñas rodajas de aguacate.",
+    },
+    {
+      en: "Place the two avocado slices together at the corner of the curved plate.",
+      es: "Coloque las dos rodajas de aguacate juntas en la esquina del plato curvado.",
+    },
+    {
+      en: "Using a gloved hand or spoon, transfer the ceviche from the mixing bowl onto the plate.",
+      es: "Usando una mano con guante o una cuchara, transfiera el ceviche del tazón al plato.",
+    },
+    {
+      en: "Build the ceviche upward rather than spreading it flat, creating a compact, mountain-like shape.",
+      es: "Construya el ceviche hacia arriba en lugar de extenderlo plano, creando una forma compacta, similar a una montaña.",
+    },
+    {
+      en: "Lightly drizzle virgin olive oil over the plated ceviche.",
+      es: "Rocíe ligeramente aceite de oliva virgen sobre el ceviche emplatado.",
+    },
+    {
+      en: "Finish with a few slices of red onion and cilantro.",
+      es: "Termine con unas rodajas de cebolla roja y cilantro.",
+    },
+    {
+      en: "Arrange the garnish toward the top of the ceviche to create a clean, tower-like presentation.",
+      es: "Coloque la guarnición hacia la parte superior del ceviche para crear una presentación limpia y similar a una torre.",
+    },
+    {
+      en: "Before sending the dish to Expo, confirm height, shape, even coating, clean plate edge, and no pooling sauce.",
+      es: "Antes de enviar a Expo, confirme altura, forma, cobertura uniforme, borde limpio y sin charcos de salsa.",
+      critical: true,
+    },
+    {
+      en: "Hand the completed dish to the Expo Chef for the final quality check and service.",
+      es: "Entregue el plato terminado al Chef de Expo para la verificación final de calidad y servicio.",
+    },
+  ]),
+];
 
 interface ChapterDefinition {
   id: string;
@@ -42,7 +305,8 @@ interface ChapterDefinition {
   contentEs: string;
   quizPassedTextEn?: string;
   quizPassedTextEs?: string;
-  procedureData?: ChapterProcedureData;
+  blocks?: ProcedureBlock[];
+  procedureSlug?: string;
 }
 
 const COURSE_CHAPTER_REGISTRY: Record<
@@ -68,6 +332,53 @@ const COURSE_CHAPTER_REGISTRY: Record<
         contentEs: "Guía y resumen de cultura",
         quizPassedTextEn: "Quiz passed · 3 of 3 correct",
         quizPassedTextEs: "Cuestionario aprobado · 3 de 3 correctas",
+        blocks: [
+          blockText(
+            "b-wlc-1",
+            "Welcome to the Alimentaria family! Our kitchen is grounded in deep respect for Mexican culinary heritage, relentless cleanliness, and proud craftsmanship in every dish served.",
+            "¡Bienvenido a la familia Alimentaria! Nuestra cocina se basa en un profundo respeto por la herencia culinaria mexicana, la limpieza implacable y el orgullo por cada platillo servido.",
+          ),
+          blockWarning(
+            "b-wlc-w1",
+            "tip",
+            "Your uniform is your professional armor. Always arrive in a clean pressed coat, certified slip-resistant shoes, and full hair restraint before stepping onto the line.",
+            "Tu uniforme es tu armadura profesional. Llega siempre con filipina limpia, calzado antideslizante certificado y cabello recogido antes de entrar a la línea.",
+          ),
+          blockTable(
+            "b-wlc-t1",
+            [
+              { en: "Phase", es: "Fase" },
+              { en: "Standard Time", es: "Horario estándar" },
+              { en: "Core Duty", es: "Deber principal" },
+            ],
+            [
+              [
+                { en: "Pre-Shift Arrival", es: "Llegada previa" },
+                { en: "10 min before shift", es: "10 min antes del turno" },
+                {
+                  en: "Locker room check & wash hands",
+                  es: "Casillero y lavado de manos",
+                },
+              ],
+              [
+                { en: "Line Briefing", es: "Junta de línea" },
+                { en: "At shift start", es: "Al inicio del turno" },
+                {
+                  en: "Review 86 list, daily specials & stations",
+                  es: "Revisar lista de agotados y especiales",
+                },
+              ],
+              [
+                { en: "Handover", es: "Entrega de turno" },
+                { en: "At shift end", es: "Al final del turno" },
+                {
+                  en: "Restock station & sign off with Sous Chef",
+                  es: "Resurtir estación y firmar con Sous Chef",
+                },
+              ],
+            ],
+          ),
+        ],
       },
       {
         id: "ch-kitchen-safety",
@@ -76,44 +387,45 @@ const COURSE_CHAPTER_REGISTRY: Record<
         titleEs: "Seguridad e higiene en cocina",
         contentEn: "Video, guide and quiz",
         contentEs: "Video, guía y cuestionario",
-        procedureData: {
-          titleEn: "Food Safety & Hand Hygiene SOP",
-          titleEs: "POE Inocuidad e higiene de manos",
-          metrics: [
-            { label: "Target temp", value: "≥ 100°F (38°C)" },
-            { label: "Scrub duration", value: "20 seconds" },
-            { label: "Verification", value: "Station entry" },
-            { label: "Standard", value: "HACCP compliant" },
-          ],
-          ingredients: [
-            { name: "Antibacterial hand soap", qty: "2 pumps" },
-            { name: "Single-use paper towels", qty: "2 sheets" },
-            {
-              name: "Disposable nitrile gloves",
-              qty: "1 pair",
-              isAllergen: false,
-            },
-          ],
-          steps: [
-            {
-              en: "Wet hands with warm running water (≥ 100°F / 38°C).",
-              es: "Mójate las manos con agua tibia corriente (≥ 38°C).",
-            },
-            {
-              en: "Apply soap and scrub vigorously for at least 20 seconds, including between fingers and forearms.",
-              es: "Aplica jabón y frota vigorosamente durante al menos 20 segundos, incluidos dedos y antebrazos.",
-            },
-            {
-              en: "Rinse thoroughly under clean running water, letting water drain towards fingertips.",
-              es: "Enjuaga bien con agua corriente limpia, dejando que el agua corra hacia la punta de los dedos.",
-            },
-            {
-              en: "Dry completely with a clean single-use paper towel and discard.",
-              es: "Sécate completamente con papel toalla desechable limpio y descártalo.",
-            },
-          ],
-          slug: "handwashing-glove-protocol",
-        },
+        blocks: [
+          blockText(
+            "b-safe-1",
+            "Food safety is the foundation of customer trust. Maintaining strict temperature control, washing hands frequently, and eliminating cross-contact are mandatory on every station.",
+            "La inocuidad alimentaria es la base de la confianza del cliente. Mantener un estricto control de temperaturas, lavarse las manos frecuentemente y eliminar el contacto cruzado son obligatorios.",
+          ),
+          blockWarning(
+            "b-safe-w1",
+            "warn",
+            "Gloves do not replace handwashing. You must ALWAYS wash hands vigorously with warm water and soap for 20 seconds before putting on a fresh pair of gloves.",
+            "Los guantes no reemplazan el lavado de manos. SIEMPRE debes lavarte las manos con agua tibia y jabón durante 20 segundos antes de colocarte guantes limpios.",
+          ),
+          blockTable(
+            "b-safe-t1",
+            [
+              { en: "Area", es: "Área" },
+              { en: "Critical Limit", es: "Límite crítico" },
+              { en: "Action on Breach", es: "Acción correctiva" },
+            ],
+            [
+              [
+                { en: "Cold Station Line", es: "Línea fría" },
+                { en: "≤ 41°F (5°C)", es: "≤ 5°C (41°F)" },
+                {
+                  en: "Move to walk-in cooler immediately",
+                  es: "Mover a cámara frigorífica de inmediato",
+                },
+              ],
+              [
+                { en: "Hot Holding Table", es: "Mesa caliente" },
+                { en: "≥ 135°F (57°C)", es: "≥ 57°C (135°F)" },
+                {
+                  en: "Reheat to 165°F or discard",
+                  es: "Recalentar a 74°C o desechar",
+                },
+              ],
+            ],
+          ),
+        ],
       },
       {
         id: "ch-first-week",
@@ -122,6 +434,19 @@ const COURSE_CHAPTER_REGISTRY: Record<
         titleEs: "Tu primera semana",
         contentEn: "Expectations, uniform and conduct",
         contentEs: "Expectativas, uniforme y conducta",
+        blocks: [
+          blockText(
+            "b-fw-1",
+            "During your first week, you will shadow senior line cooks across tortillas, prep, and line service. Take notes on recipe proportions, station setup, and ticket timing.",
+            "Durante tu primera semana, acompañarás a cocineros experimentados en tortillas, producción y línea. Toma notas sobre proporciones de recetas y tiempos de comandas.",
+          ),
+          blockWarning(
+            "b-fw-w1",
+            "tip",
+            "Never guess when in doubt about a ticket modification or allergy alert. Always stop and confirm with your Sous Chef or Line Lead.",
+            "Nunca adivines ante una modificación de comanda o alerta de alergia. Deténte siempre y confirma con tu Sous Chef o Líder de Línea.",
+          ),
+        ],
       },
     ],
     linkedProcedure: {
@@ -138,44 +463,84 @@ const COURSE_CHAPTER_REGISTRY: Record<
         number: 1,
         titleEn: "Knife handling and pinch grip",
         titleEs: "Manejo del cuchillo y agarre de pinza",
-        contentEn: "Video, technique and linked procedure",
-        contentEs: "Video, técnica y procedimiento vinculado",
+        contentEn: "Video, technique, safety standard and linked procedure",
+        contentEs:
+          "Video, técnica, norma de seguridad y procedimiento vinculado",
         quizPassedTextEn: "Checklist completed",
         quizPassedTextEs: "Lista de verificación completada",
-        procedureData: {
-          titleEn: "Pinch Grip & Cutting Technique Standard",
-          titleEs: "Norma de agarre de pinza y técnica de corte",
-          metrics: [
-            { label: "Grip style", value: "Thumb & index pinch" },
-            { label: "Off-hand", value: "Curled claw" },
-            { label: "Board base", value: "Damp towel" },
-            { label: "Motion", value: "Rocking cut" },
-          ],
-          ingredients: [
-            { name: "Chef knife 8-inch (20cm)", qty: "1 unit" },
-            { name: "High-density cutting board", qty: "1 board" },
-            { name: "Non-slip mat / damp towel", qty: "1 underlay" },
-          ],
-          steps: [
+        blocks: [
+          blockText(
+            "b-grip-1",
+            "Mastering the pinch grip gives you absolute directional control over the blade, prevents wrist strain during long prep shifts, and dramatically reduces accidental blade slipping on wet ingredients.",
+            "Dominar el agarre de pinza te brinda un control direccional absoluto sobre la hoja, previene la fatiga de la muñeca en turnos largos y reduce drásticamente el deslizamiento accidental sobre ingredientes húmedos.",
+          ),
+          blockVideo(
+            "b-grip-v1",
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             {
-              en: "Pinch the blade at the bolster firmly between thumb and index finger.",
-              es: "Sujeta la hoja en la virola firmemente entre el pulgar y el dedo índice.",
+              en: "Demonstration: Bolster Pinch & Guiding Claw (1:45 min)",
+              es: "Demostración: Agarre de pinza y garra protectora (1:45 min)",
             },
-            {
-              en: "Wrap remaining three fingers around the handle for balance and directional control.",
-              es: "Envuelve los tres dedos restantes alrededor del mango para balance y control.",
-            },
-            {
-              en: "Form a protective 'claw' with guiding hand, tucking fingertips safely inward.",
-              es: "Forma una 'garra' protectora con la mano guía, metiendo las puntas de los dedos.",
-            },
-            {
-              en: "Cut in a smooth rolling motion, never sawing or lifting knife above hand height.",
-              es: "Corta con un movimiento rodante suave, nunca serruchando ni levantando el cuchillo por encima de la mano.",
-            },
-          ],
-          slug: "knife-safety-fundamentals",
-        },
+          ),
+          blockWarning(
+            "b-grip-w1",
+            "tip",
+            "Always place a damp towel or non-slip silicone mat directly under your cutting board. If your board shifts even 1 millimeter during prep, stop immediately and secure it.",
+            "Coloca siempre un paño húmedo o tapete de silicona antideslizante directamente debajo de la tabla de corte. Si la tabla se mueve aunque sea 1 milímetro, deténte y asegúrala.",
+          ),
+          blockTable(
+            "b-grip-t1",
+            [
+              { en: "Hand", es: "Mano" },
+              { en: "Standard Position", es: "Posición estándar" },
+              { en: "Safety Function", es: "Función de seguridad" },
+            ],
+            [
+              [
+                {
+                  en: "Cutting Hand",
+                  es: "Mano de corte",
+                },
+                {
+                  en: "Thumb & index finger pinch bolster firmly",
+                  es: "Pulgar e índice sujetan firmemente la virola",
+                },
+                {
+                  en: "Provides blade balance & prevents twisting",
+                  es: "Proporciona equilibrio y evita torceduras",
+                },
+              ],
+              [
+                {
+                  en: "Guiding Hand",
+                  es: "Mano guía",
+                },
+                {
+                  en: "Fingers curled inward like a bear claw",
+                  es: "Dedos doblados hacia adentro como garra",
+                },
+                {
+                  en: "Knuckles rest against blade face; nails safe",
+                  es: "Los nudillos tocan la hoja; uñas protegidas",
+                },
+              ],
+              [
+                {
+                  en: "Cutting Stroke",
+                  es: "Movimiento",
+                },
+                {
+                  en: "Smooth rolling rock (locomotive motion)",
+                  es: "Rodante suave hacia adelante y atrás",
+                },
+                {
+                  en: "Maintains contact with board at all times",
+                  es: "Mantiene contacto con la tabla siempre",
+                },
+              ],
+            ],
+          ),
+        ],
       },
       {
         id: "ch-knife-rules",
@@ -186,81 +551,68 @@ const COURSE_CHAPTER_REGISTRY: Record<
         contentEs: "Guía, reglas de seguridad y procedimiento vinculado",
         quizPassedTextEn: "Quiz passed · 2 of 2 correct",
         quizPassedTextEs: "Cuestionario aprobado · 2 de 2 correctas",
-        procedureData: {
-          titleEn: "Knife Carry & Station Transfer Standard",
-          titleEs: "Norma de transporte y transferencia de cuchillos",
-          metrics: [
-            { label: "Carry position", value: "Tip down at side" },
-            { label: "Transfer rule", value: "Board-to-board" },
-            { label: "Verbal call", value: "'Knife behind'" },
-            { label: "Speed limit", value: "Walk only" },
-          ],
-          ingredients: [
-            { name: "Station chef knife", qty: "1 unit" },
-            { name: "Clean station prep board", qty: "1 unit" },
-          ],
-          steps: [
-            {
-              en: "Hold the knife firmly by the handle with the blade against your outer leg and tip pointing directly at the floor.",
-              es: "Sostén el cuchillo firmemente por el mango con la hoja junto a tu pierna exterior y la punta apuntando al piso.",
-            },
-            {
-              en: "Call out loud and clear whenever navigating near peers: 'Sharp knife behind' or 'Knife moving'.",
-              es: "Avisa fuerte y claro cuando te desplaces cerca de compañeros: 'Cuchillo detrás' o 'Cuchillo pasando'.",
-            },
-            {
-              en: "Never pass a knife directly hand-to-hand. Place it flat on a sanitized board with the handle facing the receiver.",
-              es: "Nunca entregues un cuchillo de mano en mano. Colócalo plano sobre una tabla sanitizada con el mango hacia la persona.",
-            },
-            {
-              en: "Wait for the receiving cook to verbally acknowledge ('Got it') before removing your attention.",
-              es: "Espera a que el cocinero confirme verbalmente ('Recibido') antes de retirar tu atención.",
-            },
-          ],
-          slug: "knife-safety-fundamentals",
-        },
+        blocks: [
+          blockText(
+            "b-rules-1",
+            "Commercial kitchens are compact, high-speed environments. A carried knife is an invisible hazard unless strict transport and communication rules are followed without exception.",
+            "Las cocinas comerciales son entornos compactos y de ritmo rápido. Un cuchillo en movimiento es un peligro invisible a menos que se sigan estrictas reglas de transporte y comunicación sin excepción.",
+          ),
+          blockWarning(
+            "b-rules-w1",
+            "warn",
+            "A falling knife has no handle. NEVER attempt to catch a knife slipping from a counter or prep board. Step backward immediately with hands up.",
+            "Un cuchillo que cae no tiene mango. NUNCA intentes atrapar un cuchillo que se resbale de una mesa o tabla. Da un paso atrás de inmediato con las manos en alto.",
+          ),
+          blockTable(
+            "b-rules-t1",
+            [
+              { en: "Situation", es: "Situación" },
+              { en: "Mandatory Callout", es: "Aviso obligatorio" },
+              { en: "Physical Action", es: "Acción física" },
+            ],
+            [
+              [
+                { en: "Navigating on line", es: "Caminar en la línea" },
+                {
+                  en: "'Knife behind' or 'Sharp moving'",
+                  es: "'Cuchillo detrás' o 'Cuchillo pasando'",
+                },
+                {
+                  en: "Blade down against outer leg",
+                  es: "Hoja hacia abajo junto a pierna",
+                },
+              ],
+              [
+                { en: "Handoff to cook", es: "Entrega a compañero" },
+                {
+                  en: "Confirm eye contact ('Knife on board')",
+                  es: "Confirmar contacto visual",
+                },
+                {
+                  en: "Place flat on board handle forward",
+                  es: "Colocar plano con mango al frente",
+                },
+              ],
+              [
+                { en: "Rounding corners", es: "Doblar esquinas" },
+                { en: "'Sharp corner'", es: "'Esquina con filo'" },
+                { en: "Slow to steady walking pace", es: "Disminuir el paso" },
+              ],
+            ],
+          ),
+        ],
       },
       {
-        id: "ch-knife-storage",
+        id: "ch-shrimp-ceviche-procedure",
         number: 3,
-        titleEn: "Blade sanitizing and storage",
-        titleEs: "Desinfección de hojas y guardado",
-        contentEn: "Sanitation guide and linked procedure",
-        contentEs: "Guía de desinfección y procedimiento vinculado",
-        procedureData: {
-          titleEn: "Knife Sharpening & Honing SOP",
-          titleEs: "POE Afilado y mantenimiento de cuchillo",
-          metrics: [
-            { label: "Rod angle", value: "20°" },
-            { label: "Frequency", value: "Every shift" },
-            { label: "Whetstone grit", value: "1000 / 6000" },
-            { label: "Storage", value: "Magnetic bar" },
-          ],
-          ingredients: [
-            { name: "Diamond / ceramic steel rod", qty: "1 unit" },
-            { name: "Mineral food-safe oil", qty: "1 drop" },
-            { name: "Sanitizing wipe", qty: "1 sheet" },
-          ],
-          steps: [
-            {
-              en: "Hold the steel rod point-down firmly against a secure cutting board.",
-              es: "Sostén la varilla de afilar hacia abajo firmemente sobre una tabla segura.",
-            },
-            {
-              en: "Maintain a steady 20-degree angle from the heel to the tip across the steel.",
-              es: "Mantén un ángulo constante de 20 grados desde el talón hasta la punta sobre el acero.",
-            },
-            {
-              en: "Swipe gently downward 4-5 times per side, matching pressure on both faces.",
-              es: "Desliza suavemente hacia abajo 4 a 5 veces por lado, igualando la presión en ambas caras.",
-            },
-            {
-              en: "Sanitize blade and mount immediately to station magnetic strip.",
-              es: "Sanitiza la hoja y móntala de inmediato en la barra magnética de la estación.",
-            },
-          ],
-          slug: "knife-sharpening-honing",
-        },
+        titleEn: "Procedure: Shrimp Ceviche Verde / Roja",
+        titleEs: "Procedimiento: Ceviche Verde / Roja de Camarones",
+        contentEn:
+          "Preparation and plating procedure for Shrimp Ceviche Verde / Roja",
+        contentEs:
+          "Procedimiento de preparación y emplatado del Ceviche de Camarón",
+        blocks: shrimpCevicheBlocks,
+        procedureSlug: "shrimp-ceviche-verde-roja-2",
       },
       {
         id: "ch-knife-maintenance",
@@ -269,46 +621,51 @@ const COURSE_CHAPTER_REGISTRY: Record<
         titleEs: "Mantenimiento semanal en piedra y firma",
         contentEn: "Blade angle, whetstone technique and sign-off",
         contentEs: "Ángulo de hoja, técnica en piedra y firma",
-        procedureData: {
-          titleEn: "Whetstone Sharpening & Maintenance SOP",
-          titleEs: "POE Afilado y mantenimiento en piedra",
-          metrics: [
-            { label: "Soak duration", value: "15 minutes" },
-            { label: "Bevel angle", value: "15° – 20°" },
-            { label: "Initial grit", value: "1000 (rough)" },
-            { label: "Finish grit", value: "6000 (polish)" },
-          ],
-          ingredients: [
-            { name: "Dual grit combination whetstone", qty: "1 unit" },
-            { name: "Whetstone sink bridge / rubber base", qty: "1 stand" },
-            { name: "Clean water bath", qty: "1 basin" },
-          ],
-          steps: [
-            {
-              en: "Submerge whetstone in clean water until bubbles cease completely (approx 15 mins).",
-              es: "Sumerge la piedra en agua limpia hasta que cesen las burbujas por completo (aprox 15 mins).",
-            },
-            {
-              en: "Secure stone in rubber holder on a damp towel to prevent slippage during work.",
-              es: "Asegura la piedra en el soporte de goma sobre un paño húmedo para evitar deslizamientos.",
-            },
-            {
-              en: "Begin on 1000 grit side: glide blade at 15-20° from heel to tip with smooth, consistent strokes.",
-              es: "Comienza por el grano 1000: desliza la hoja a 15-20° de talón a punta con pasadas suaves y constantes.",
-            },
-            {
-              en: "Finish on 6000 grit side to deburr and hone edge until it cleanly slices paper.",
-              es: "Termina en el grano 6000 para quitar rebabas y asentar el filo hasta cortar papel limpiamente.",
-            },
-          ],
-          slug: "knife-sharpening-honing",
-        },
+        blocks: [
+          blockText(
+            "b-stone-1",
+            "Every Sunday shift, all station knives are restored on two-stage Japanese waterstones to maintain the optimal 15-20 degree factory bevel angle.",
+            "Cada turno dominical, todos los cuchillos de estación se restauran en piedras de agua japonesas de dos etapas para mantener el ángulo óptimo de 15 a 20 grados.",
+          ),
+          blockWarning(
+            "b-stone-w1",
+            "tip",
+            "Never rinse away the gray slurry that develops on the stone surface during sharpening. That slurry contains microscopic particles that accelerate fine edge honing.",
+            "Nunca enjuagues el lodo gris que se acumula en la superficie de la piedra durante el afilado. Ese lodo contiene partículas microscópicas que aceleran el asentado fino.",
+          ),
+          blockTable(
+            "b-stone-t1",
+            [
+              { en: "Stone Stage", es: "Etapa de la piedra" },
+              { en: "Grit Rating", es: "Grano" },
+              { en: "Purpose", es: "Propósito" },
+            ],
+            [
+              [
+                { en: "Rough Resurfacing", es: "Desbaste inicial" },
+                { en: "1000 Grit", es: "Grano 1000" },
+                {
+                  en: "Corrects micro-nicks and sets primary apex bevel",
+                  es: "Corrige mellas y fija el bisel del ápice",
+                },
+              ],
+              [
+                { en: "Fine Polishing", es: "Pulido fino" },
+                { en: "6000 Grit", es: "Grano 6000" },
+                {
+                  en: "Removes wire burr for effortless paper slicing",
+                  es: "Elimina rebabas para cortar papel sin esfuerzo",
+                },
+              ],
+            ],
+          ),
+        ],
       },
     ],
     linkedProcedure: {
-      titleEn: "Knife sharpening & honing",
-      titleEs: "Afilado y mantenimiento de cuchillo",
-      hrefSlug: "knife-sharpening-honing",
+      titleEn: "Shrimp Ceviche Verde / Roja",
+      titleEs: "Ceviche Verde / Roja de Camarones",
+      hrefSlug: "shrimp-ceviche-verde-roja-2",
     },
   },
   // Allergen awareness FOH (course-003)
@@ -562,16 +919,13 @@ export function getChapterDetail(
 ): {
   title: string;
   subtitle: string;
-  procedureData?: {
-    title: string;
-    metrics?: { label: string; value: string }[];
-    ingredients?: { name: string; qty: string; isAllergen?: boolean }[];
-    steps?: string[];
-    slug?: string;
-  };
+  totalChapters: number;
+  blocks: ProcedureBlock[];
+  procedureSlug?: string;
 } {
   const isEs = locale === "es";
   const reg = COURSE_CHAPTER_REGISTRY[courseId];
+  const totalChapters = reg?.chapters.length ?? 3;
   const def =
     reg?.chapters.find((c) => c.number === chapterNumber) ?? reg?.chapters[0];
 
@@ -582,16 +936,48 @@ export function getChapterDetail(
     : `Chapter ${chapterNumber}`;
   const subtitle = def ? (isEs ? def.contentEs : def.contentEn) : "";
 
-  let procedureData = undefined;
-  if (def?.procedureData) {
-    procedureData = {
-      title: isEs ? def.procedureData.titleEs : def.procedureData.titleEn,
-      metrics: def.procedureData.metrics,
-      ingredients: def.procedureData.ingredients,
-      steps: def.procedureData.steps?.map((s) => (isEs ? s.es : s.en)),
-      slug: def.procedureData.slug,
-    };
-  }
+  // Return defined blocks or fallback standard procedure blocks
+  const blocks: ProcedureBlock[] = def?.blocks ?? [
+    blockText(
+      `${courseId}-ch${chapterNumber}-b1`,
+      def
+        ? def.contentEn
+        : "Review this chapter's key standards and operational practices.",
+      def
+        ? def.contentEs
+        : "Revisa las normas y prácticas operativas clave de este capítulo.",
+    ),
+    blockWarning(
+      `${courseId}-ch${chapterNumber}-b2`,
+      "tip",
+      "Consistency and active attention to detail ensure kitchen safety and station excellence.",
+      "La constancia y atención activa al detalle aseguran la seguridad y excelencia en tu estación.",
+    ),
+    blockTable(
+      `${courseId}-ch${chapterNumber}-b3`,
+      [
+        { en: "Operational Standard", es: "Norma operativa" },
+        { en: "Shift Requirement", es: "Requisito de turno" },
+        { en: "Verification", es: "Verificación" },
+      ],
+      [
+        [
+          { en: "Kitchen Protocol", es: "Protocolo de cocina" },
+          {
+            en: "Adhere to station standard",
+            es: "Seguir la norma de estación",
+          },
+          { en: "Station lead sign-off", es: "Firma del líder de estación" },
+        ],
+        [
+          { en: "Safe Execution", es: "Ejecución segura" },
+          { en: "Follow safety guidelines", es: "Seguir reglas de seguridad" },
+          { en: "Zero shortcuts", es: "Cero atajos" },
+        ],
+      ],
+    ),
+  ];
 
-  return { title, subtitle, procedureData };
+  const procedureSlug = def?.procedureSlug;
+  return { title, subtitle, totalChapters, blocks, procedureSlug };
 }

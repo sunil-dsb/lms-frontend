@@ -3,18 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { LuChevronLeft, LuBookOpen } from "react-icons/lu";
-
-interface ChapterMetric {
-  label: string;
-  value: string;
-}
-
-interface ChapterIngredient {
-  name: string;
-  qty: string;
-  isAllergen?: boolean;
-}
+import { LuChevronLeft, LuPlay } from "react-icons/lu";
+import { BlockRenderer } from "@/components/doc/block-renderer";
+import { ProcedureArticleBody } from "@/components/doc/procedure-article-body";
+import { CookModeLauncher } from "@/components/doc/cook-mode-launcher";
+import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
 
 interface ChapterLearnViewProps {
   courseId: string;
@@ -24,23 +17,22 @@ interface ChapterLearnViewProps {
   chapterTitle: string;
   chapterSubtitle: string;
   locale: string;
-  procedureData?: {
-    title: string;
-    metrics?: ChapterMetric[];
-    ingredients?: ChapterIngredient[];
-    steps?: string[];
-    slug?: string;
-  };
+  blocks?: ProcedureBlock[];
+  procedure?: Procedure | null;
+  employee?: Employee;
 }
 
 /**
- * Chapter Learn View matching reference Image 2:
- * - Top back link: "< Course Title · Chapter X of Y"
+ * Chapter Learn View:
+ * - Top back link: "< Course Title · Chapter X of Y" + "Start cooking" button if procedure/method steps exist
  * - 2-step segmented progress bar (Learn active, Quiz pending)
  * - Eyebrow: "LEARN"
  * - Chapter title & description
- * - Embedded Procedure card with metrics grid, ingredients, and method steps
- * - Link: "Need the full page? Open full procedure"
+ * - Guided Cook Mode interactive card
+ * - If a real procedure is linked: renders full detailed procedure via ProcedureArticleBody
+ *   including "Start cooking" CTA, method steps, and interactive CookMode modal!
+ * - Chapter content blocks rendered via existing BlockRenderer (Notion-like procedure blocks)
+ * - Interactive full-screen Cook Mode modal
  * - Bottom CTA: "Continue to quiz"
  */
 export function ChapterLearnView({
@@ -51,35 +43,60 @@ export function ChapterLearnView({
   chapterTitle,
   chapterSubtitle,
   locale,
-  procedureData,
+  blocks,
+  procedure,
+  employee,
 }: ChapterLearnViewProps): React.ReactElement {
   const t = useTranslations("employee.training");
-  const [showAllSteps, setShowAllSteps] = React.useState(false);
 
-  // Fallback procedure data if course does not provide explicit metrics
-  const proc = procedureData ?? {
-    title: chapterTitle,
-    metrics: [
-      { label: "Station", value: "Line Prep" },
-      { label: "Target temp", value: "≥ 100°F (38°C)" },
-      { label: "Verification", value: "Daily check" },
-      { label: "Standard", value: "HACCP safe" },
-    ],
-    ingredients: [
-      { name: "Antibacterial soap, foam", qty: "2 pumps" },
-      { name: "Single-use paper towels", qty: "2 sheets" },
-      { name: "Disposable nitrile gloves", qty: "1 pair", isAllergen: false },
-    ],
-    steps: [
-      "Wet hands with warm water (≥ 100°F / 38°C).",
-      "Apply soap and scrub vigorously for at least 20 seconds.",
-      "Rinse thoroughly under running water.",
-      "Dry with a clean single-use paper towel and discard.",
-    ],
-    slug: "handwashing-glove-protocol",
-  };
+  // Determine whether this chapter has cooking method steps / recipe
+  const targetBlocks = procedure
+    ? ((locale === "es" && procedure.bodyEs?.blocks?.length
+        ? procedure.bodyEs.blocks
+        : procedure.bodyEn?.blocks) ?? [])
+    : (blocks ?? []);
 
-  const visibleSteps = showAllSteps ? proc.steps : proc.steps?.slice(0, 2);
+  const recipeBlocks = targetBlocks.filter(
+    (b): b is Extract<ProcedureBlock, { kind: "recipe" }> =>
+      b.kind === "recipe",
+  );
+  const methodBlocks = targetBlocks.filter(
+    (b): b is Extract<ProcedureBlock, { kind: "method" }> =>
+      b.kind === "method",
+  );
+  const ingBlock = targetBlocks.find(
+    (b): b is Extract<ProcedureBlock, { kind: "ingredients" }> =>
+      b.kind === "ingredients",
+  );
+
+  const hasCookMode = recipeBlocks.length > 0 || methodBlocks.length > 0;
+
+  const handleOpenCookMode = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("cook-mode:open", {
+          detail: { at: 1 },
+        }),
+      );
+    }
+  }, []);
+
+  const cookModeBlock = React.useMemo(() => {
+    if (recipeBlocks.length > 0) {
+      return recipeBlocks[0];
+    }
+    if (methodBlocks.length > 0) {
+      return {
+        id: `steps-${courseId}-${chapterNumber}`,
+        factors: ingBlock?.factors ?? [1],
+        yieldItems: ingBlock?.yieldItems ?? [],
+        ingredients: ingBlock?.ingredients ?? [],
+        steps: methodBlocks.flatMap((b) => b.steps),
+        allergen: ingBlock?.allergen,
+      };
+    }
+    return null;
+  }, [recipeBlocks, methodBlocks, ingBlock, courseId, chapterNumber]);
 
   return (
     <div className="relative min-h-screen bg-[var(--color-bg)]">
@@ -87,8 +104,8 @@ export function ChapterLearnView({
         className="mx-auto w-full max-w-doc space-y-5 px-4 pt-5 sm:px-6 sm:pt-6"
         style={{ paddingBottom: "120px" }}
       >
-        {/* Top Back Header */}
-        <div>
+        {/* Top Back Header & Cook Mode Action */}
+        <div className="flex items-center justify-between gap-3">
           <Link
             href={`/${locale}/employee/training/${courseId}`}
             className="inline-flex min-h-tap items-center gap-1.5 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
@@ -102,6 +119,17 @@ export function ChapterLearnView({
               })}
             </span>
           </Link>
+
+          {hasCookMode && (
+            <button
+              type="button"
+              onClick={handleOpenCookMode}
+              className="inline-flex min-h-[38px] items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all"
+            >
+              <LuPlay className="fill-current text-xs" />
+              <span>{locale === "es" ? "Modo cocina" : "Start cooking"}</span>
+            </button>
+          )}
         </div>
 
         {/* 2-Segment Progress Bar (Step 1: Learn, Step 2: Quiz) */}
@@ -132,110 +160,54 @@ export function ChapterLearnView({
           ) : null}
         </div>
 
-        {/* Embedded Procedure Card */}
-        <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-panel)]/30 p-4 space-y-4">
-          {/* Procedure Card Header */}
-          <div className="flex items-center gap-2 text-[var(--color-ink-2)]">
-            <LuBookOpen className="text-base" aria-hidden="true" />
-            <span className="text-xs font-bold uppercase tracking-wider">
-              {t("procedureTag")}
-            </span>
-          </div>
-
-          <h2 className="font-[family-name:var(--font-ui)] text-base font-medium text-[var(--color-ink)]">
-            {proc.title}
-          </h2>
-
-          {/* Metrics 2x2 Grid */}
-          {proc.metrics && proc.metrics.length > 0 ? (
-            <div className="grid grid-cols-2 rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] overflow-hidden divide-x divide-y divide-[var(--color-line-2)]">
-              {proc.metrics.map((m, idx) => (
-                <div key={idx} className="p-3">
-                  <p className="text-xs text-[var(--color-ink-3)] font-medium">
-                    {m.label}
-                  </p>
-                  <p className="text-sm font-bold text-[var(--color-ink)] mt-0.5">
-                    {m.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : null}
-
-          {/* Ingredients / Materials Table */}
-          {proc.ingredients && proc.ingredients.length > 0 ? (
-            <div className="rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-2 bg-[var(--color-panel)]/40 border-b border-[var(--color-line-2)] text-xs font-semibold text-[var(--color-ink-2)]">
-                <span>Ingredient</span>
-                <span>{proc.ingredients.length}+</span>
-              </div>
-              <div className="divide-y divide-[var(--color-line-2)]">
-                {proc.ingredients.map((ing, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between px-3 py-2.5 text-xs sm:text-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-[var(--color-ink)]">
-                        {ing.name}
+        {/* If a real procedure is linked, render it in full detailed view with CookMode */}
+        {procedure && employee ? (
+          <div className="pt-2">
+            <ProcedureArticleBody
+              proc={procedure}
+              employee={employee}
+              effectiveRole="employee"
+              locale={locale}
+              docBar={
+                hasCookMode ? (
+                  <div className="flex items-center justify-end pb-3">
+                    <button
+                      type="button"
+                      onClick={handleOpenCookMode}
+                      className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all"
+                    >
+                      <LuPlay className="fill-current text-xs" />
+                      <span>
+                        {locale === "es"
+                          ? "Empezar a cocinar"
+                          : "Start cooking"}
                       </span>
-                      {ing.isAllergen ? (
-                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
-                          Allergen
-                        </span>
-                      ) : null}
-                    </div>
-                    <span className="font-semibold text-[var(--color-ink)] shrink-0 ml-2">
-                      {ing.qty}
-                    </span>
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {/* Method Steps Section */}
-          {proc.steps && proc.steps.length > 0 ? (
-            <div className="space-y-2 pt-1">
-              <p className="text-sm font-bold text-[var(--color-ink)]">
-                {t("methodStepsHeading", { count: proc.steps.length })}
-              </p>
-              <ol className="space-y-1.5 text-xs sm:text-sm text-[var(--color-ink-2)] leading-relaxed">
-                {visibleSteps?.map((stepText, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="font-semibold text-[var(--color-ink)]">
-                      {idx + 1}.
-                    </span>
-                    <span>{stepText}</span>
-                  </li>
-                ))}
-              </ol>
-
-              {proc.steps.length > 2 ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAllSteps(!showAllSteps)}
-                  className="mt-1 text-xs font-bold text-[var(--color-brand-600)] hover:text-[var(--color-brand-700)] underline cursor-pointer"
-                >
-                  {showAllSteps ? t("showLessSteps") : t("showAllSteps")}
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-
-        {/* Link below card */}
-        {proc.slug ? (
-          <p className="text-xs text-[var(--color-ink-2)] pt-1">
-            {t("needFullPage")}{" "}
-            <Link
-              href={`/${locale}/procedures/${proc.slug}`}
-              className="font-semibold text-[var(--color-brand-700)] hover:underline"
-            >
-              {t("openFullProcedure")}
-            </Link>
-          </p>
+                ) : null
+              }
+            />
+          </div>
+        ) : blocks && blocks.length > 0 ? (
+          <div className="doc py-1 space-y-4">
+            <BlockRenderer
+              blocks={blocks}
+              locale={locale === "es" ? "es" : "en"}
+            />
+          </div>
         ) : null}
+
+        {/* Cook Mode Modal Launcher (when procedure wasn't already rendering via ProcedureArticleBody) */}
+        {!procedure && cookModeBlock && (
+          <CookModeLauncher
+            key={`cook-mode-${courseId}-${chapterNumber}`}
+            block={cookModeBlock}
+            procedureId={courseId}
+            procedureTitle={chapterTitle}
+            locale={locale === "es" ? "es" : "en"}
+            modalOnly
+          />
+        )}
       </main>
 
       {/* Sticky Bottom CTA Button: Continue to quiz */}

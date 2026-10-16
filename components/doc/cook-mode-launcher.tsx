@@ -391,12 +391,10 @@ export function CookModeLauncher({
         }>
       ).detail;
       if (!detail) return;
-      if (
-        detail.procedureId !== procedureId ||
-        detail.recipeBlockId !== recipeBlockId
-      )
+      if (detail.procedureId && detail.procedureId !== procedureId) return;
+      if (detail.recipeBlockId && detail.recipeBlockId !== recipeBlockId)
         return;
-      setStart(detail.at);
+      setStart(detail.at ?? 1);
       setOpen(true);
     };
     window.addEventListener("cook-mode:open", onOpenEvent);

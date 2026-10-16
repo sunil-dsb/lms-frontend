@@ -2,7 +2,12 @@ import * as React from "react";
 import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { ApiException, fetchMe, getQuizById } from "@/lib/api";
+import {
+  ApiException,
+  fetchMe,
+  getQuizById,
+  getProcedureBySlug,
+} from "@/lib/api";
 import {
   getCourseById,
   listTrainingAssignments,
@@ -78,8 +83,9 @@ export default async function EmployeeTrainingCoursePage({
 
   const chapterNumber = chapter ? parseInt(chapter, 10) : null;
 
-  // 1. Chapter Quiz View: matches reference Image 1
+  // 1. Chapter Quiz View: matches reference Image 2
   if (chapterNumber && !isNaN(chapterNumber) && mode === "quiz") {
+    const chapterDetail = getChapterDetail(id, chapterNumber, locale);
     // Lookup quiz by course quizId or fallback to handwashing quiz bank
     const quiz =
       (course.quizId ? getQuizById(course.quizId) : null) ??
@@ -94,7 +100,7 @@ export default async function EmployeeTrainingCoursePage({
         courseId={id}
         courseTitle={courseTitle}
         chapterNumber={chapterNumber}
-        totalChapters={3}
+        totalChapters={chapterDetail.totalChapters}
         assignmentId={assignment?.id}
         locale={locale}
         questions={questions}
@@ -102,20 +108,35 @@ export default async function EmployeeTrainingCoursePage({
     );
   }
 
-  // 2. Chapter Learn View: matches reference Image 2
+  // 2. Chapter Learn View: matches reference Image 1
   if (chapterNumber && !isNaN(chapterNumber)) {
     const chapterDetail = getChapterDetail(id, chapterNumber, locale);
+    let linkedProcedure = null;
+
+    if (chapterDetail.procedureSlug) {
+      try {
+        const res = await getProcedureBySlug(
+          chapterDetail.procedureSlug,
+          cookieHeader,
+        );
+        linkedProcedure = res.procedure;
+      } catch (err) {
+        console.warn("Could not load live procedure from API:", err);
+      }
+    }
 
     return (
       <ChapterLearnView
         courseId={id}
         courseTitle={courseTitle}
         chapterNumber={chapterNumber}
-        totalChapters={3}
+        totalChapters={chapterDetail.totalChapters}
         chapterTitle={chapterDetail.title}
         chapterSubtitle={chapterDetail.subtitle}
         locale={locale}
-        procedureData={chapterDetail.procedureData}
+        blocks={chapterDetail.blocks}
+        procedure={linkedProcedure}
+        employee={employee}
       />
     );
   }

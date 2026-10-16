@@ -101,6 +101,10 @@ async function loginAttempt(
     document.cookie = `lms_emp_id=${emp.id}; path=/; max-age=864000; SameSite=Lax`;
   }
 
+  // Drop any cached session from a previous user on this browser — otherwise
+  // fetchMe() can serve the wrong employee for up to 60s after account switch.
+  clearAuthMeCache();
+
   return { employee: emp, token };
 }
 
@@ -312,6 +316,7 @@ export async function logout(): Promise<{ ok: true }> {
     // Continue cleanup even if server sign-out fails
   }
 
+  clearAuthMeCache();
   if (typeof window !== "undefined") {
     try {
       localStorage.removeItem("token");
