@@ -1,9 +1,12 @@
-import * as React from 'react';
-import { LuBookOpen } from 'react-icons/lu';
-import { ProcedureRow, type FlagLabels } from '@/components/employee/procedure-row';
-import { SectionHead } from './SectionHead';
-import { HomeRowsSkeleton } from './home-rows-skeleton';
-import type { HomeRow } from './EmployeeHome';
+import * as React from "react";
+import { LuBookOpen } from "react-icons/lu";
+import {
+  ProcedureRow,
+  type FlagLabels,
+} from "@/components/employee/procedure-row";
+import { SectionHead } from "./SectionHead";
+import { HomeRowsSkeleton } from "./home-rows-skeleton";
+import type { HomeRow } from "./EmployeeHome";
 
 /**
  * The station's own procedures (and kitchen-wide procedures the cook may read).
@@ -33,11 +36,11 @@ export function StationSection({
 }): React.ReactElement | null {
   if (rows.length === 0 && !empty && !loading) return null;
   return (
-    <section aria-labelledby={id} style={{ marginTop: '16px' }}>
+    <section aria-labelledby={id} style={{ marginTop: "16px" }}>
       {/* Bordered card wrapping heading + rows */}
       <div
         className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)]"
-        style={{ padding: '14px 14px' }}
+        style={{ padding: "14px 14px" }}
       >
         <SectionHead id={id} title={heading} all={loading ? undefined : all} />
         {loading ? (
@@ -47,10 +50,19 @@ export function StationSection({
             <div className="flex size-9 items-center justify-center rounded-xl bg-[var(--color-surface)] border border-[var(--color-line)] text-[var(--color-ink-2)]">
               <LuBookOpen className="size-4" />
             </div>
-            <p className="mt-2 text-xs sm:text-sm font-medium text-[var(--color-ink-2)] max-w-sm">{empty}</p>
+            <p className="mt-2 text-xs sm:text-sm font-medium text-[var(--color-ink-2)] max-w-sm">
+              {empty}
+            </p>
           </div>
         ) : (
-          <ul style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <ul
+            style={{
+              marginTop: "10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+            }}
+          >
             {rows.map((r) => (
               <li key={r.key}>
                 <ProcedureRow

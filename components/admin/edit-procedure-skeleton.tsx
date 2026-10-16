@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import * as React from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Skeleton matching the procedure editor wizard frame (PageHeader + WizardStepper + FormSections + Floating Preview + Wizard Footer).
@@ -24,21 +24,23 @@ export function EditProcedureSkeleton(): React.ReactElement {
           <div className="py-2">
             <div className="flex w-full items-center justify-between">
               {[
-                { num: 1, labelW: 'w-16', active: true },
-                { num: 2, labelW: 'w-12', active: false },
-                { num: 3, labelW: 'w-14', active: false },
-                { num: 4, labelW: 'w-14', active: false },
+                { num: 1, labelW: "w-16", active: true },
+                { num: 2, labelW: "w-12", active: false },
+                { num: 3, labelW: "w-14", active: false },
+                { num: 4, labelW: "w-14", active: false },
               ].map((step, idx) => (
                 <React.Fragment key={step.num}>
                   <div className="flex shrink-0 items-center gap-3">
                     <Skeleton
                       className={`size-8 rounded-full ${
                         step.active
-                          ? 'bg-[var(--color-brand-600)] ring-4 ring-[var(--color-brand-tint)]'
-                          : 'bg-[var(--color-surface)] ring-1 ring-[var(--color-line-3)]'
+                          ? "bg-[var(--color-brand-600)] ring-4 ring-[var(--color-brand-tint)]"
+                          : "bg-[var(--color-surface)] ring-1 ring-[var(--color-line-3)]"
                       }`}
                     />
-                    <Skeleton className={`h-4 ${step.labelW} rounded-[var(--radius-sm)] hidden sm:inline-block`} />
+                    <Skeleton
+                      className={`h-4 ${step.labelW} rounded-[var(--radius-sm)] hidden sm:inline-block`}
+                    />
                   </div>
                   {idx < 3 && (
                     <div className="mx-2 h-0.5 min-w-5 flex-1 rounded-full bg-[var(--color-line-2)] sm:mx-3 sm:min-w-8">

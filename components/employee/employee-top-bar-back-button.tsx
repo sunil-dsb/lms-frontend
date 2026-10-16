@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { LuArrowLeft } from 'react-icons/lu';
+import * as React from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { LuArrowLeft } from "react-icons/lu";
 
 /**
  * Back button that lives in the employee top bar. It only appears on the
@@ -15,14 +15,18 @@ import { LuArrowLeft } from 'react-icons/lu';
  * position on the source page. Deep links (shared URL, new tab) have no
  * referrer — fall back to the procedures list.
  */
-export function EmployeeTopBarBackButton({ label }: { label: string }): React.ReactElement | null {
-  const pathname = usePathname() ?? '';
+export function EmployeeTopBarBackButton({
+  label,
+}: {
+  label: string;
+}): React.ReactElement | null {
+  const pathname = usePathname() ?? "";
   const router = useRouter();
   const isDetail = /^\/(?:en|es)\/procedures\/[^/]+$/.test(pathname);
 
   const [hasReferrer, setHasReferrer] = React.useState(false);
   React.useEffect(() => {
-    if (typeof document === 'undefined') return;
+    if (typeof document === "undefined") return;
     const ref = document.referrer;
     if (!ref) return;
     try {
@@ -41,7 +45,7 @@ export function EmployeeTopBarBackButton({ label }: { label: string }): React.Re
     } else {
       // Hard fallback: jump to the procedures list. The locale prefix is
       // already on the current URL, so a relative path stays inside it.
-      router.push('/procedures');
+      router.push("/procedures");
     }
   };
 

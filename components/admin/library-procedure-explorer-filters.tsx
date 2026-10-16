@@ -1,14 +1,30 @@
-'use client';
+"use client";
 
-import { LuFilter, LuRefreshCw, LuSearch, LuX } from 'react-icons/lu';
-import { FilterChips } from '@/components/ui/filter-chips';
-import { CustomSelect } from '@/components/ui/custom-select';
+import { LuFilter, LuRefreshCw, LuSearch, LuX } from "react-icons/lu";
+import { FilterChips } from "@/components/ui/filter-chips";
+import { CustomSelect } from "@/components/ui/custom-select";
 
 export function ProcedureExplorerFilters({
-  isEs, selectedCategorySlug, onCategoryChange, categoryCounts, categorySelectOptions,
-  selectedSubcategoryId, onSubcategoryChange, subcategoryOptions, stationOptions, stationFilter,
-  onStationChange, statusFilter, onStatusChange, statusOptions, searchQuery, onSearchChange,
-  hasActiveFilters, filteredCount, totalCount, onReset,
+  isEs,
+  selectedCategorySlug,
+  onCategoryChange,
+  categoryCounts,
+  categorySelectOptions,
+  selectedSubcategoryId,
+  onSubcategoryChange,
+  subcategoryOptions,
+  stationOptions,
+  stationFilter,
+  onStationChange,
+  statusFilter,
+  onStatusChange,
+  statusOptions,
+  searchQuery,
+  onSearchChange,
+  hasActiveFilters,
+  filteredCount,
+  totalCount,
+  onReset,
 }: {
   isEs: boolean;
   selectedCategorySlug: string;
@@ -35,11 +51,15 @@ export function ProcedureExplorerFilters({
     <>
       <div className="flex flex-wrap items-center gap-3">
         <FilterChips
-          label={isEs ? 'Categoría' : 'Category'}
+          label={isEs ? "Categoría" : "Category"}
           value={selectedCategorySlug}
           onChange={onCategoryChange}
           chips={[
-            { value: 'all', label: isEs ? 'Todas' : 'All', count: categoryCounts.all || 0 },
+            {
+              value: "all",
+              label: isEs ? "Todas" : "All",
+              count: categoryCounts.all || 0,
+            },
           ]}
         />
 
@@ -85,20 +105,20 @@ export function ProcedureExplorerFilters({
         <div className="find min-w-52 flex-1" role="search">
           <LuSearch aria-hidden="true" className="i" />
           <label className="sr-only" htmlFor="library-search">
-            {isEs ? 'Buscar en la biblioteca' : 'Search the library'}
+            {isEs ? "Buscar en la biblioteca" : "Search the library"}
           </label>
           <input
             id="library-search"
             type="search"
             value={searchQuery}
-            placeholder={isEs ? 'Buscar procedimientos…' : 'Search procedures…'}
+            placeholder={isEs ? "Buscar procedimientos…" : "Search procedures…"}
             onChange={(e) => onSearchChange(e.target.value)}
           />
           {searchQuery ? (
             <button
               type="button"
-              onClick={() => onSearchChange('')}
-              aria-label={isEs ? 'Borrar búsqueda' : 'Clear search'}
+              onClick={() => onSearchChange("")}
+              aria-label={isEs ? "Borrar búsqueda" : "Clear search"}
               className="shrink-0 text-[var(--color-ink-3)] hover:text-[var(--color-ink)]"
             >
               <LuX aria-hidden="true" />
@@ -111,12 +131,18 @@ export function ProcedureExplorerFilters({
       {hasActiveFilters && (
         <div className="flex items-center justify-between rounded-lg bg-[var(--color-panel)] px-4 py-2 text-sm border border-[var(--color-line)]">
           <div className="flex items-center gap-2 text-[var(--color-ink-2)]">
-            <LuFilter aria-hidden="true" className="text-[var(--color-ink-2)]" />
+            <LuFilter
+              aria-hidden="true"
+              className="text-[var(--color-ink-2)]"
+            />
             <span>
-              {isEs ? 'Mostrando' : 'Showing'}{' '}
-              <strong className="text-[var(--color-ink)]">{filteredCount}</strong> {isEs ? 'de' : 'of'}{' '}
-              <strong className="text-[var(--color-ink)]">{totalCount}</strong>{' '}
-              {isEs ? 'procedimientos' : 'procedures'}
+              {isEs ? "Mostrando" : "Showing"}{" "}
+              <strong className="text-[var(--color-ink)]">
+                {filteredCount}
+              </strong>{" "}
+              {isEs ? "de" : "of"}{" "}
+              <strong className="text-[var(--color-ink)]">{totalCount}</strong>{" "}
+              {isEs ? "procedimientos" : "procedures"}
             </span>
           </div>
           <button
@@ -125,7 +151,7 @@ export function ProcedureExplorerFilters({
             className="flex items-center gap-1 font-semibold text-[var(--color-brand-700)] hover:underline"
           >
             <LuRefreshCw aria-hidden="true" />
-            <span>{isEs ? 'Limpiar filtros' : 'Reset filters'}</span>
+            <span>{isEs ? "Limpiar filtros" : "Reset filters"}</span>
           </button>
         </div>
       )}

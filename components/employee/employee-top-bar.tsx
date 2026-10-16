@@ -1,9 +1,8 @@
-import * as React from 'react';
-import Link from 'next/link';
-import { LuArrowUpRight, LuLogOut } from 'react-icons/lu';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { EmployeeTopBarBackButton } from './employee-top-bar-back-button';
-
+import * as React from "react";
+import Link from "next/link";
+import { LuArrowUpRight, LuLogOut } from "react-icons/lu";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { EmployeeTopBarBackButton } from "./employee-top-bar-back-button";
 
 export function EmployeeTopBar({
   locale,
@@ -18,7 +17,14 @@ export function EmployeeTopBar({
    *  Manager access tier (Head Chef, etc.). Plain employees don't get it. */
   canEnterAdmin: boolean;
   signOutAction: () => Promise<void>;
-  labels: { signedInAs: string; signOut: string; admin: string; toDark: string; toLight: string; back: string };
+  labels: {
+    signedInAs: string;
+    signOut: string;
+    admin: string;
+    toDark: string;
+    toLight: string;
+    back: string;
+  };
 }): React.ReactElement {
   return (
     // At 390px the name wrapped onto two lines and pushed "Sign out" into two
@@ -29,12 +35,17 @@ export function EmployeeTopBar({
             rest of the employee surfaces navigate via the bottom TabBar, so a
             back control next to the user info would be redundant. */}
         <EmployeeTopBarBackButton label={labels.back} />
-        <p className="min-w-0 truncate text-xs sm:text-sm text-[var(--color-ink-2)]" title={labels.signedInAs}>
+        <p
+          className="min-w-0 truncate text-xs sm:text-sm text-[var(--color-ink-2)]"
+          title={labels.signedInAs}
+        >
           {labels.signedInAs}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
-        <ThemeToggle labels={{ toDark: labels.toDark, toLight: labels.toLight }} />
+        <ThemeToggle
+          labels={{ toDark: labels.toDark, toLight: labels.toLight }}
+        />
         {canEnterAdmin ? (
           <Link
             href={`/${locale}/admin`}

@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmployeeTopBar } from './employee-top-bar';
-import { useMe } from '@/services/auth/hooks';
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmployeeTopBar } from "./employee-top-bar";
+import { useMe } from "@/services/auth/hooks";
 
 /**
  * Client half of the employee shell. The layout paints this instantly;
@@ -24,8 +24,8 @@ export function EmployeeTopBarClient({
   loginHref: string;
 }): React.ReactElement {
   const router = useRouter();
-  const t = useTranslations('employee');
-  const tCommon = useTranslations('app');
+  const t = useTranslations("employee");
+  const tCommon = useTranslations("app");
   const { employee, isLoading, error } = useMe();
 
   React.useEffect(() => {
@@ -52,15 +52,19 @@ export function EmployeeTopBarClient({
     <EmployeeTopBar
       locale={locale}
       name={employee.name}
-      canEnterAdmin={employee.role === 'admin' || employee.role === 'super_admin' || employee.accessLevel === 'manager'}
+      canEnterAdmin={
+        employee.role === "admin" ||
+        employee.role === "super_admin" ||
+        employee.accessLevel === "manager"
+      }
       signOutAction={signOutAction}
       labels={{
-        signedInAs: t('signedInAs', { name: employee.name }),
-        signOut: t('signOut'),
-        admin: tCommon('admin'),
-        toDark: tCommon('themeToDark'),
-        toLight: tCommon('themeToLight'),
-        back: t('back'),
+        signedInAs: t("signedInAs", { name: employee.name }),
+        signOut: t("signOut"),
+        admin: tCommon("admin"),
+        toDark: tCommon("themeToDark"),
+        toLight: tCommon("themeToLight"),
+        back: t("back"),
       }}
     />
   );

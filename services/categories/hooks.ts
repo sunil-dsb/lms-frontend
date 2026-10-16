@@ -1,8 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchBackendCategories, fetchAllSubcategories, createCategory, updateCategory, archiveCategory, unarchiveBackendCategory, type AllSubcategoriesOptions, type LiveSubcategory } from './api';
-import type { CreateCategoryInput, UpdateCategoryInput } from './types';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  fetchBackendCategories,
+  fetchAllSubcategories,
+  createCategory,
+  updateCategory,
+  archiveCategory,
+  unarchiveBackendCategory,
+  type AllSubcategoriesOptions,
+  type LiveSubcategory,
+} from "./api";
+import type { CreateCategoryInput, UpdateCategoryInput } from "./types";
 
-export const CATEGORIES_QUERY_KEY = ['categories'] as const;
+export const CATEGORIES_QUERY_KEY = ["categories"] as const;
 
 /**
  * Live categories from the backend (GET /api/v1/categories, limit 100).
@@ -10,7 +19,7 @@ export const CATEGORIES_QUERY_KEY = ['categories'] as const;
  */
 export function useBackendCategories() {
   return useQuery({
-    queryKey: [...CATEGORIES_QUERY_KEY, 'backend'],
+    queryKey: [...CATEGORIES_QUERY_KEY, "backend"],
     queryFn: () => fetchBackendCategories(),
     staleTime: 1000 * 60 * 60, // 1 hour stale time
     gcTime: 1000 * 60 * 60 * 24, // 24 hours in cache
@@ -72,7 +81,11 @@ export function useUnarchiveCategory() {
 export function useAllSubcategories(options: AllSubcategoriesOptions = {}) {
   const { categoryId, search, page, limit } = options;
   return useQuery({
-    queryKey: [...CATEGORIES_QUERY_KEY, 'all-subcategories', { categoryId, search, page, limit }],
+    queryKey: [
+      ...CATEGORIES_QUERY_KEY,
+      "all-subcategories",
+      { categoryId, search, page, limit },
+    ],
     queryFn: () => fetchAllSubcategories(options),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,

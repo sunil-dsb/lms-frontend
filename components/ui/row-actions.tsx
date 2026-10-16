@@ -1,13 +1,17 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { createPortal } from 'react-dom';
-import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { LuCircleAlert, LuEllipsisVertical, LuTriangleAlert } from 'react-icons/lu';
-import { Icon } from '@/components/ui/icon';
-import type { IconType } from 'react-icons';
+import * as React from "react";
+import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import {
+  LuCircleAlert,
+  LuEllipsisVertical,
+  LuTriangleAlert,
+} from "react-icons/lu";
+import { Icon } from "@/components/ui/icon";
+import type { IconType } from "react-icons";
 
 /**
  * RowActions — ⋯ kebab menu for table rows.
@@ -56,14 +60,22 @@ interface RowActionsProps {
   className?: string;
 }
 
-export function RowActions({ items, triggerLabel, className }: RowActionsProps): React.ReactElement {
-  const t = useTranslations('admin');
+export function RowActions({
+  items,
+  triggerLabel,
+  className,
+}: RowActionsProps): React.ReactElement {
+  const t = useTranslations("admin");
   const [open, setOpen] = React.useState(false);
   const [confirmIndex, setConfirmIndex] = React.useState<number | null>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const menuRef = React.useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = React.useState(false);
-  const [pos, setPos] = React.useState<{ top: number; right: number; origin: string } | null>(null);
+  const [pos, setPos] = React.useState<{
+    top: number;
+    right: number;
+    origin: string;
+  } | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
@@ -88,18 +100,18 @@ export function RowActions({ items, triggerLabel, className }: RowActionsProps):
     setPos({
       top: Math.max(12, Math.min(window.innerHeight - height - 12, top)),
       right: Math.max(12, right),
-      origin: flipped ? 'bottom right' : 'top right',
+      origin: flipped ? "bottom right" : "top right",
     });
   }, [confirmIndex]);
 
   React.useLayoutEffect(() => {
     if (!open) return;
     anchor();
-    window.addEventListener('scroll', anchor, true);
-    window.addEventListener('resize', anchor);
+    window.addEventListener("scroll", anchor, true);
+    window.addEventListener("resize", anchor);
     return () => {
-      window.removeEventListener('scroll', anchor, true);
-      window.removeEventListener('resize', anchor);
+      window.removeEventListener("scroll", anchor, true);
+      window.removeEventListener("resize", anchor);
     };
   }, [open, confirmIndex, anchor]);
 
@@ -118,16 +130,16 @@ export function RowActions({ items, triggerLabel, className }: RowActionsProps):
       }
     };
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setOpen(false);
         setConfirmIndex(null);
       }
     };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
     };
   }, [open]);
 
@@ -157,7 +169,7 @@ export function RowActions({ items, triggerLabel, className }: RowActionsProps):
   }
 
   return (
-    <div className={cn('relative inline-flex', className)}>
+    <div className={cn("relative inline-flex", className)}>
       <Button
         ref={triggerRef}
         type="button"
@@ -165,7 +177,7 @@ export function RowActions({ items, triggerLabel, className }: RowActionsProps):
         variant="ghost"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={triggerLabel ?? t('rowActionsLabel')}
+        aria-label={triggerLabel ?? t("rowActionsLabel")}
         onClick={() => {
           setOpen((v) => !v);
           setConfirmIndex(null);
@@ -176,87 +188,97 @@ export function RowActions({ items, triggerLabel, className }: RowActionsProps):
 
       {open && mounted
         ? createPortal(
-          <div
-            ref={menuRef}
-            role="menu"
-            aria-label={triggerLabel ?? t('rowActionsLabel')}
-            style={{ top: pos?.top ?? -9999, right: pos?.right ?? 0, ['--pop-origin' as string]: pos?.origin ?? 'top right' }}
-            className={cn(
-              'pop-in fixed z-dropdown',
-              confirmIndex !== null
-                ? 'w-[340px] max-w-[calc(100vw-32px)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 shadow-[var(--e-3)] text-left'
-                : 'min-w-field-md rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-[var(--e-3)]',
-            )}
-          >
-            {confirmIndex !== null ? (
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bad-tint)] text-[var(--color-bad)]">
-                    <LuTriangleAlert aria-hidden="true" className="size-4.5" />
+            <div
+              ref={menuRef}
+              role="menu"
+              aria-label={triggerLabel ?? t("rowActionsLabel")}
+              style={{
+                top: pos?.top ?? -9999,
+                right: pos?.right ?? 0,
+                ["--pop-origin" as string]: pos?.origin ?? "top right",
+              }}
+              className={cn(
+                "pop-in fixed z-dropdown",
+                confirmIndex !== null
+                  ? "w-[340px] max-w-[calc(100vw-32px)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 shadow-[var(--e-3)] text-left"
+                  : "min-w-field-md rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-[var(--e-3)]",
+              )}
+            >
+              {confirmIndex !== null ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bad-tint)] text-[var(--color-bad)]">
+                      <LuTriangleAlert
+                        aria-hidden="true"
+                        className="size-4.5"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <h3 className="text-base font-semibold text-[var(--color-ink)] tracking-tight">
+                        {items[confirmIndex]?.confirmTitle ??
+                          t("rowActionsConfirmTitle")}
+                      </h3>
+                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--color-ink-2)]">
+                        {items[confirmIndex]?.confirmDescription ??
+                          (items[confirmIndex]?.label
+                            ? `"${items[confirmIndex]?.label}" and its contents will be permanently removed. This can't be undone.`
+                            : "This item and its contents will be permanently removed. This can't be undone.")}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <h3 className="text-base font-semibold text-[var(--color-ink)] tracking-tight">
-                      {items[confirmIndex]?.confirmTitle ?? t('rowActionsConfirmTitle')}
-                    </h3>
-                    <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--color-ink-2)]">
-                      {items[confirmIndex]?.confirmDescription ??
-                        (items[confirmIndex]?.label
-                          ? `"${items[confirmIndex]?.label}" and its contents will be permanently removed. This can't be undone.`
-                          : "This item and its contents will be permanently removed. This can't be undone.")}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-end gap-2.5 pt-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="neutral"
-                    onClick={closeAll}
-                  >
-                    {t('confirmNo')}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={handleConfirm}
-                    className="bg-[var(--color-bad)] hover:bg-[var(--color-bad-hover)] text-white! shadow-xs"
-                  >
-                    {items[confirmIndex]?.confirmLabel ??
-                      (items[confirmIndex]?.destructive === true ? t('confirmDelete') : t('confirmYes'))}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <ul className="py-1">
-                {items.map((item, idx) => (
-                  <li key={idx} role="none">
-                    <button
+                  <div className="flex items-center justify-end gap-2.5 pt-1">
+                    <Button
                       type="button"
-                      role="menuitem"
-                      onClick={() => handleSelect(idx)}
-                      className={cn(
-                        'flex w-full items-center gap-2 px-3 py-2 text-left',
-                        'text-sm font-medium',
-                        'transition-colors duration-[var(--dur)] ease-[var(--ease)]',
-                        'focus-visible:outline-none focus-visible:bg-[var(--color-panel)]',
-                        item.destructive
-                          ? 'text-[var(--color-bad)] hover:bg-[var(--color-bad-tint)]'
-                          : 'text-[var(--color-ink)] hover:bg-[var(--color-panel)]',
-                      )}
+                      size="sm"
+                      variant="neutral"
+                      onClick={closeAll}
                     >
-                      {item.icon ? (
-                        <Icon icon={item.icon} className="text-md" />
-                      ) : null}
-                      <span className="flex-1">{item.label}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>,
-          document.body,
-        )
+                      {t("confirmNo")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={handleConfirm}
+                      className="bg-[var(--color-bad)] hover:bg-[var(--color-bad-hover)] text-white! shadow-xs"
+                    >
+                      {items[confirmIndex]?.confirmLabel ??
+                        (items[confirmIndex]?.destructive === true
+                          ? t("confirmDelete")
+                          : t("confirmYes"))}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <ul className="py-1">
+                  {items.map((item, idx) => (
+                    <li key={idx} role="none">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => handleSelect(idx)}
+                        className={cn(
+                          "flex w-full items-center gap-2 px-3 py-2 text-left",
+                          "text-sm font-medium",
+                          "transition-colors duration-[var(--dur)] ease-[var(--ease)]",
+                          "focus-visible:outline-none focus-visible:bg-[var(--color-panel)]",
+                          item.destructive
+                            ? "text-[var(--color-bad)] hover:bg-[var(--color-bad-tint)]"
+                            : "text-[var(--color-ink)] hover:bg-[var(--color-panel)]",
+                        )}
+                      >
+                        {item.icon ? (
+                          <Icon icon={item.icon} className="text-md" />
+                        ) : null}
+                        <span className="flex-1">{item.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>,
+            document.body,
+          )
         : null}
     </div>
   );

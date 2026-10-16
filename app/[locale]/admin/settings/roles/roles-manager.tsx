@@ -1,24 +1,22 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
+import * as React from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  createRole,
-  deleteRole,
-  updateRole,
-  ApiException,
-} from '@/lib/api';
-import type { Role } from '@/lib/types';
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui/modal";
+import { createRole, deleteRole, updateRole, ApiException } from "@/lib/api";
+import type { Role } from "@/lib/types";
 
 export type RolesManagerState =
-  | { mode: 'closed' }
-  | { mode: 'create' }
-  | { mode: 'edit'; entity: Role };
+  { mode: "closed" } | { mode: "create" } | { mode: "edit"; entity: Role };
 
 export interface RolesManagerLabels {
   roleCreateHeading: string;
@@ -69,9 +67,12 @@ export function RolesManager({
   const [isPending, startTransition] = useTransition();
   const [createError, setCreateError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
+  const [editName, setEditName] = useState("");
   const [editStationIds, setEditStationIds] = useState<string[]>([]);
-  const [createForm, setCreateForm] = useState<CreateForm>({ name: '', stationIds: [] });
+  const [createForm, setCreateForm] = useState<CreateForm>({
+    name: "",
+    stationIds: [],
+  });
 
   function refresh(): void {
     router.refresh();
@@ -80,9 +81,9 @@ export function RolesManager({
   function closeDrawer(): void {
     setCreateError(null);
     setEditError(null);
-    setEditName('');
+    setEditName("");
     setEditStationIds([]);
-    onStateChange({ mode: 'closed' });
+    onStateChange({ mode: "closed" });
   }
 
   function toggleCreateStation(stationId: string): void {
@@ -112,7 +113,7 @@ export function RolesManager({
           name: createForm.name.trim(),
           stationIds: createForm.stationIds,
         });
-        setCreateForm({ name: '', stationIds: [] });
+        setCreateForm({ name: "", stationIds: [] });
         closeDrawer();
         refresh();
       } catch (err) {
@@ -138,7 +139,7 @@ export function RolesManager({
         refresh();
       } catch (err) {
         if (err instanceof ApiException) {
-          if (err.code === 'ROLE_NOT_FOUND') setEditError(labels.errorNotFound);
+          if (err.code === "ROLE_NOT_FOUND") setEditError(labels.errorNotFound);
           else setEditError(err.message);
         } else {
           setEditError(labels.errorGeneric);
@@ -156,7 +157,7 @@ export function RolesManager({
         refresh();
       } catch (err) {
         if (err instanceof ApiException) {
-          if (err.code === 'ROLE_IN_USE') setEditError(labels.roleErrorInUse);
+          if (err.code === "ROLE_IN_USE") setEditError(labels.roleErrorInUse);
           else setEditError(err.message);
         } else {
           setEditError(labels.errorGeneric);
@@ -166,15 +167,15 @@ export function RolesManager({
   }
 
   React.useEffect(() => {
-    if (state.mode === 'edit') {
+    if (state.mode === "edit") {
       setEditName(state.entity.name);
       setEditStationIds(state.entity.stationIds ?? []);
       setEditError(null);
     }
   }, [state]);
 
-  const editingRole = state.mode === 'edit' ? state.entity : null;
-  const isCreateOpen = state.mode === 'create';
+  const editingRole = state.mode === "edit" ? state.entity : null;
+  const isCreateOpen = state.mode === "create";
   const isEditOpen = editingRole !== null;
 
   function stationPicker(
@@ -183,7 +184,11 @@ export function RolesManager({
     idPrefix: string,
   ): React.ReactElement {
     if (stations.length === 0) {
-      return <p className="text-sm text-[var(--color-ink-3)]">{labels.roleStationsEmpty}</p>;
+      return (
+        <p className="text-sm text-[var(--color-ink-3)]">
+          {labels.roleStationsEmpty}
+        </p>
+      );
     }
     return (
       <div className="grid gap-1 rounded-[var(--radius-md)] border border-[var(--color-line-2)] p-2 max-h-48 overflow-y-auto">
@@ -229,15 +234,23 @@ export function RolesManager({
                 required
                 maxLength={120}
                 value={createForm.name}
-                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, name: e.target.value })
+                }
                 disabled={isPending}
                 autoFocus
               />
             </div>
             <div className="grid gap-2">
               <Label>{labels.roleStations}</Label>
-              <p className="text-xs text-[var(--color-ink-3)]">{labels.roleStationsHint}</p>
-              {stationPicker(createForm.stationIds, toggleCreateStation, 'newRoleStation')}
+              <p className="text-xs text-[var(--color-ink-3)]">
+                {labels.roleStationsHint}
+              </p>
+              {stationPicker(
+                createForm.stationIds,
+                toggleCreateStation,
+                "newRoleStation",
+              )}
             </div>
             {createError ? (
               <p role="alert" className="text-sm text-[var(--color-bad)]">
@@ -292,8 +305,14 @@ export function RolesManager({
               </div>
               <div className="grid gap-2">
                 <Label>{labels.roleStations}</Label>
-                <p className="text-xs text-[var(--color-ink-3)]">{labels.roleStationsHint}</p>
-                {stationPicker(editStationIds, toggleEditStation, 'editRoleStation')}
+                <p className="text-xs text-[var(--color-ink-3)]">
+                  {labels.roleStationsHint}
+                </p>
+                {stationPicker(
+                  editStationIds,
+                  toggleEditStation,
+                  "editRoleStation",
+                )}
               </div>
               {editError ? (
                 <p role="alert" className="text-sm text-[var(--color-bad)]">
@@ -321,10 +340,7 @@ export function RolesManager({
               >
                 {labels.roleCancel}
               </Button>
-              <Button
-                type="submit"
-                disabled={isPending || !editName.trim()}
-              >
+              <Button type="submit" disabled={isPending || !editName.trim()}>
                 {labels.roleSave}
               </Button>
             </ModalFooter>

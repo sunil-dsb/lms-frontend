@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 /**
  * Fold a string for searching: strip accents, lowercase. "Limpieza" and
@@ -7,7 +7,7 @@ import { twMerge } from 'tailwind-merge';
  * kitchen that works in two languages types both ways.
  */
 export function fold(s: string): string {
-  return s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+  return s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }
 
 export function cn(...inputs: ClassValue[]): string {

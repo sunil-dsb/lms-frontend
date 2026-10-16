@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { RiCloseLine, RiTimerLine } from 'react-icons/ri';
+import * as React from "react";
+import { RiCloseLine, RiTimerLine } from "react-icons/ri";
 
 /**
  * Timers that keep running while the cook moves on: the hand wash counts its 20
@@ -31,27 +31,39 @@ const EMPTY: CookProgress = { done: [], at: 0, timers: [], factor: 1 };
 
 /** Read the persisted slot for one recipe block. Returns `null` when absent
  *  or unreadable (Safari private mode, quota, etc.) so callers can fall back. */
-export function readCookProgress(procedureId: string, recipeBlockId: string): CookProgress | null {
-  if (typeof window === 'undefined') return null;
+export function readCookProgress(
+  procedureId: string,
+  recipeBlockId: string,
+): CookProgress | null {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(`lms-cook-${procedureId}-${recipeBlockId}`);
+    const raw = window.localStorage.getItem(
+      `lms-cook-${procedureId}-${recipeBlockId}`,
+    );
     if (!raw) return null;
     const v = JSON.parse(raw) as Partial<CookProgress>;
     return {
       done: Array.isArray(v.done) ? v.done : [],
-      at: typeof v.at === 'number' ? v.at : 0,
+      at: typeof v.at === "number" ? v.at : 0,
       timers: Array.isArray(v.timers) ? v.timers : [],
-      factor: typeof v.factor === 'number' ? v.factor : 1,
+      factor: typeof v.factor === "number" ? v.factor : 1,
     };
   } catch {
     return null;
   }
 }
 
-export function writeCookProgress(procedureId: string, recipeBlockId: string, value: CookProgress): void {
-  if (typeof window === 'undefined') return;
+export function writeCookProgress(
+  procedureId: string,
+  recipeBlockId: string,
+  value: CookProgress,
+): void {
+  if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(`lms-cook-${procedureId}-${recipeBlockId}`, JSON.stringify(value));
+    window.localStorage.setItem(
+      `lms-cook-${procedureId}-${recipeBlockId}`,
+      JSON.stringify(value),
+    );
   } catch {
     /* ignore quota / private mode */
   }
@@ -60,7 +72,10 @@ export function writeCookProgress(procedureId: string, recipeBlockId: string, va
 /** Live progress for one recipe block, hydrated on mount and re-rendered on
  *  storage events. The same hook powers the document-view trigger (so the CTA
  *  can say "Continue at step 3") and the cook-mode modal itself. */
-export function useCookProgress(procedureId: string, recipeBlockId: string): CookProgress {
+export function useCookProgress(
+  procedureId: string,
+  recipeBlockId: string,
+): CookProgress {
   const [state, setState] = React.useState<CookProgress>(EMPTY);
   React.useEffect(() => {
     setState(readCookProgress(procedureId, recipeBlockId) ?? EMPTY);
@@ -68,8 +83,8 @@ export function useCookProgress(procedureId: string, recipeBlockId: string): Coo
       if (e.key !== `lms-cook-${procedureId}-${recipeBlockId}`) return;
       setState(readCookProgress(procedureId, recipeBlockId) ?? EMPTY);
     };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, [procedureId, recipeBlockId]);
   return state;
 }
@@ -77,7 +92,10 @@ export function useCookProgress(procedureId: string, recipeBlockId: string): Coo
 /** Just the timers slice — the dock chip watches them, the modal watches them,
  *  the trigger's `Continue at step N` ignores them. Keeping a focused hook here
  *  means a pure-timer reader doesn't have to subscribe to the whole shape. */
-export function useCookTimers(procedureId: string, recipeBlockId: string): Timer[] {
+export function useCookTimers(
+  procedureId: string,
+  recipeBlockId: string,
+): Timer[] {
   return useCookProgress(procedureId, recipeBlockId).timers;
 }
 
@@ -99,9 +117,9 @@ export function fmtLeft(ms: number): string {
   const m = Math.floor((s % 3600) / 60);
   const remS = s % 60;
   if (h > 0) {
-    return `${h}:${String(m).padStart(2, '0')}:${String(remS).padStart(2, '0')}`;
+    return `${h}:${String(m).padStart(2, "0")}:${String(remS).padStart(2, "0")}`;
   }
-  return `${m}:${String(remS).padStart(2, '0')}`;
+  return `${m}:${String(remS).padStart(2, "0")}`;
 }
 
 export function fmtLength(seconds: number): string {
@@ -132,17 +150,25 @@ export function TimerChip({
   if (!timers.length) return null;
   const t = [...timers].sort((a, b) => a.endsAt - b.endsAt)[0]!;
   const over = t.endsAt <= now;
-  const more = timers.length > 1 ? ` +${timers.length - 1}` : '';
+  const more = timers.length > 1 ? ` +${timers.length - 1}` : "";
   return (
     <button
       type="button"
       className="timer-chip"
       data-over={over || undefined}
-      aria-label={over ? `${t.label}: time is up. Tap to clear.` : `${t.label}: ${fmtLeft(t.endsAt - now)} left. Tap to go to step ${t.step}.`}
+      aria-label={
+        over
+          ? `${t.label}: time is up. Tap to clear.`
+          : `${t.label}: ${fmtLeft(t.endsAt - now)} left. Tap to go to step ${t.step}.`
+      }
       onClick={() => (over ? onClear(t.step) : onOpen?.(t.step))}
     >
-      {over ? <RiCloseLine className="i i-sm" aria-hidden="true" /> : <RiTimerLine className="i i-sm" aria-hidden="true" />}
-      <b>{over ? 'Time is up' : fmtLeft(t.endsAt - now)}</b>
+      {over ? (
+        <RiCloseLine className="i i-sm" aria-hidden="true" />
+      ) : (
+        <RiTimerLine className="i i-sm" aria-hidden="true" />
+      )}
+      <b>{over ? "Time is up" : fmtLeft(t.endsAt - now)}</b>
       <span>
         {t.label}
         {more}

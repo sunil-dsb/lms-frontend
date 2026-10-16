@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import * as React from "react";
+import { useRouter } from "next/navigation";
 
 /**
  * The shell a locked `ProcedureRow` sits inside while onboarding isn't done.
@@ -24,7 +24,7 @@ export function LockedRowShell({
       type="button"
       onClick={() => router.push(href)}
       className="flex w-full items-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)] text-left transition-colors hover:bg-[var(--color-wash)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-ring)]"
-      style={{ paddingRight: '12px' }}
+      style={{ paddingRight: "12px" }}
     >
       {children}
     </button>

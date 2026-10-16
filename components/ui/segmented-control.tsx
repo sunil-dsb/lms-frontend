@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import type { IconType } from 'react-icons';
-import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
+import * as React from "react";
+import type { IconType } from "react-icons";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/icon";
 
 export interface Segment {
   value: string;
@@ -33,8 +33,8 @@ export function SegmentedControl({
     if (!tray) return;
     const seat = tray.querySelector<HTMLElement>('[aria-current="true"]');
     if (!seat) return;
-    tray.style.setProperty('--seg-w', `${seat.offsetWidth}px`);
-    tray.style.setProperty('--seg-x', `${seat.offsetLeft}px`);
+    tray.style.setProperty("--seg-w", `${seat.offsetWidth}px`);
+    tray.style.setProperty("--seg-x", `${seat.offsetLeft}px`);
     setReady(true);
   }, []);
 
@@ -46,7 +46,7 @@ export function SegmentedControl({
     // The seats are sized by their words, so the pill has to be re-measured
     // whenever they are: a language change, a font arriving, a resize.
     const tray = trayRef.current;
-    if (!tray || typeof ResizeObserver === 'undefined') return;
+    if (!tray || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(place);
     ro.observe(tray);
     return () => ro.disconnect();
@@ -55,17 +55,17 @@ export function SegmentedControl({
   return (
     <div
       ref={trayRef}
-      className={cn('segbar', className)}
+      className={cn("segbar", className)}
       role="group"
       aria-label={label}
       data-sliding=""
-      data-ready={ready ? '' : undefined}
+      data-ready={ready ? "" : undefined}
     >
       {segments.map((seg) => (
         <button
           key={seg.value}
           type="button"
-          aria-current={seg.value === value ? 'true' : undefined}
+          aria-current={seg.value === value ? "true" : undefined}
           onClick={() => onChange(seg.value)}
           translate="no"
           className="notranslate"

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // Role-aware chrome: when the viewer is an admin the surrounding AdminShell
 // (see /procedures/layout.tsx) already provides the sidebar + sticky top bar,
@@ -10,21 +10,38 @@
 // `?as=` query-param override on top of the real session role, so both
 // chomes can be demoed without changing the seed session. See lib/view-as.
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { canRead, deleteProcedure, fetchQuizById, getCachedProcedure, getProcedureBySlug, getQuizById, logRestrictedView, logout, updateQuiz } from '@/lib/api';
-import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
-import type { Employee, Procedure, ProcedureBlock } from '@/lib/types';
-import { withAs, type ViewAs } from '@/lib/view-as';
-import { ProcedureArticleBody } from '@/components/doc/procedure-article-body';
-import { TabBar } from '@/components/employee/tab-bar';
-import { CookBarAction } from '@/components/doc/cook-bar-action';
-import { DocBar } from '@/components/doc';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { recordRecentView } from '@/lib/recent-views';
-import { LuArrowLeft, LuArrowUpRight, LuCheck, LuCopy, LuEllipsisVertical, LuLogOut } from 'react-icons/lu';
+import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  canRead,
+  deleteProcedure,
+  fetchQuizById,
+  getCachedProcedure,
+  getProcedureBySlug,
+  getQuizById,
+  logRestrictedView,
+  logout,
+  updateQuiz,
+} from "@/lib/api";
+import { PROCEDURES_QUERY_KEY } from "@/services/library/hooks";
+import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
+import { withAs, type ViewAs } from "@/lib/view-as";
+import { ProcedureArticleBody } from "@/components/doc/procedure-article-body";
+import { TabBar } from "@/components/employee/tab-bar";
+import { CookBarAction } from "@/components/doc/cook-bar-action";
+import { DocBar } from "@/components/doc";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { recordRecentView } from "@/lib/recent-views";
+import {
+  LuArrowLeft,
+  LuArrowUpRight,
+  LuCheck,
+  LuCopy,
+  LuEllipsisVertical,
+  LuLogOut,
+} from "react-icons/lu";
 
 interface ProcedureViewClientProps {
   slugOrId: string;
@@ -32,7 +49,7 @@ interface ProcedureViewClientProps {
   employee: Employee;
   /** The role the page is rendering as — `?as=` override applied on top of
    *  the session role. Drives chrome (DocBar vs inline back) and back link. */
-  effectiveRole: 'admin' | 'employee';
+  effectiveRole: "admin" | "employee";
   /** The active view-as override, kept so the back link can carry it forward. */
   viewAs: ViewAs | null;
   locale: string;
@@ -65,15 +82,20 @@ export function ProcedureViewClient({
   const cached = React.useMemo(
     () => {
       if (initialProcedure) return initialProcedure;
-      const browse = queryClient.getQueryData<Procedure[]>([...PROCEDURES_QUERY_KEY, 'browse']);
+      const browse = queryClient.getQueryData<Procedure[]>([
+        ...PROCEDURES_QUERY_KEY,
+        "browse",
+      ]);
       const hit = browse?.find((p) => p.id === slugOrId || p.slug === slugOrId);
       if (hit) return hit;
 
       const queries = queryClient.getQueriesData<{ procedures?: Procedure[] }>({
-        queryKey: ['procedures', 'assigned'],
+        queryKey: ["procedures", "assigned"],
       });
       for (const [, qData] of queries) {
-        const found = qData?.procedures?.find((p) => p.id === slugOrId || p.slug === slugOrId);
+        const found = qData?.procedures?.find(
+          (p) => p.id === slugOrId || p.slug === slugOrId,
+        );
         if (found) return found;
       }
 
@@ -83,8 +105,8 @@ export function ProcedureViewClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [initialProcedure, slugOrId, queryClient],
   );
-  const [proc, setProc] = React.useState<Procedure | null>(
-    () => (cached && canRead(cached, employee) ? cached : null),
+  const [proc, setProc] = React.useState<Procedure | null>(() =>
+    cached && canRead(cached, employee) ? cached : null,
   );
   const [isLoading, setIsLoading] = React.useState(!proc);
   const [notFoundState, setNotFoundState] = React.useState(false);
@@ -135,16 +157,21 @@ export function ProcedureViewClient({
   // Remembered on this device, so the home can offer the way back to it.
   React.useEffect(() => {
     if (!proc) return;
-    const blocks = (proc?.bodyEn?.blocks?.length ?? 0) > 0 ? proc.bodyEn!.blocks : (proc?.bodyEs?.blocks ?? []);
-    const img = blocks.find((b) => b.kind === 'image' && b.src);
+    const blocks =
+      (proc?.bodyEn?.blocks?.length ?? 0) > 0
+        ? proc.bodyEn!.blocks
+        : (proc?.bodyEs?.blocks ?? []);
+    const img = blocks.find((b) => b.kind === "image" && b.src);
     const sub = proc.subcategoryId
-      ? proc.category?.subcategories?.find((s) => s.id === proc.subcategoryId) ?? undefined
+      ? (proc.category?.subcategories?.find(
+          (s) => s.id === proc.subcategoryId,
+        ) ?? undefined)
       : undefined;
     recordRecentView({
       slug: proc.slug,
       titleEn: proc.titleEn,
       titleEs: proc.titleEs,
-      cover: img && img.kind === 'image' ? img.src : undefined,
+      cover: img && img.kind === "image" ? img.src : undefined,
       subcategoryId: proc.subcategoryId ?? undefined,
       subcategory: sub ? { id: sub.id, slug: sub.slug } : undefined,
     });
@@ -153,7 +180,10 @@ export function ProcedureViewClient({
   }, [proc?.id]);
 
   // A confidential or master recipe records who opened it, once per visit.
-  const protectedId = proc && (proc.protection === 'confidential' || proc.protection === 'master') ? proc.id : null;
+  const protectedId =
+    proc && (proc.protection === "confidential" || proc.protection === "master")
+      ? proc.id
+      : null;
   React.useEffect(() => {
     if (protectedId && proc) logRestrictedView(proc, employee);
     // Once per procedure opened, not on every re-render of it.
@@ -168,8 +198,8 @@ export function ProcedureViewClient({
     try {
       await updateQuiz(proc.quizId, { attached: true });
       setProc({ ...proc, updatedAt: new Date().toISOString() });
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('lms_procedures_updated'));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("lms_procedures_updated"));
       }
     } finally {
       setIsAttaching(false);
@@ -184,12 +214,14 @@ export function ProcedureViewClient({
   // the role-specific landing.
   const router = useRouter();
   const fallbackHref = withAs(
-    effectiveRole === 'admin' ? `/${locale}/admin/library` : `/${locale}/procedures`,
+    effectiveRole === "admin"
+      ? `/${locale}/admin/library`
+      : `/${locale}/procedures`,
     viewAs,
   );
   const [hasReferrer, setHasReferrer] = React.useState(false);
   React.useEffect(() => {
-    if (typeof document === 'undefined') return;
+    if (typeof document === "undefined") return;
     const ref = document.referrer;
     if (!ref) return;
     try {
@@ -215,8 +247,8 @@ export function ProcedureViewClient({
     setIsDeleting(true);
     try {
       await deleteProcedure(proc.id);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('lms_procedures_updated'));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("lms_procedures_updated"));
       }
       // Navigate away — the procedure no longer exists.
       router.push(`/${locale}/admin/library`);
@@ -238,7 +270,7 @@ export function ProcedureViewClient({
   // <article className="doc"> has something to lift off of. The employee
   // branch keeps --bg because the phone shell already runs edge-to-edge
   // white and the doc fills the viewport.
-  const isAdmin = effectiveRole === 'admin';
+  const isAdmin = effectiveRole === "admin";
 
   // The cook-mode CTA in the doc-bar belongs to the page's first recipe block.
   // The body is rendered by `<CookModeLauncher>` further down, but the
@@ -248,10 +280,16 @@ export function ProcedureViewClient({
   // the doc-bar CTA; the rest show as side-thumbs only.
   const cookBlockId = React.useMemo<string | null>(() => {
     if (!proc) return null;
-    const blocks = (proc?.bodyEn?.blocks?.length ?? 0) > 0 ? proc.bodyEn!.blocks : (proc?.bodyEs?.blocks ?? []);
-    const recipe = blocks.find((b): b is Extract<ProcedureBlock, { kind: 'recipe' }> => b.kind === 'recipe');
+    const blocks =
+      (proc?.bodyEn?.blocks?.length ?? 0) > 0
+        ? proc.bodyEn!.blocks
+        : (proc?.bodyEs?.blocks ?? []);
+    const recipe = blocks.find(
+      (b): b is Extract<ProcedureBlock, { kind: "recipe" }> =>
+        b.kind === "recipe",
+    );
     if (recipe) return recipe.id ?? `recipe-${recipe.factors?.length ?? 0}`;
-    const hasMethod = blocks.some((b) => b.kind === 'method');
+    const hasMethod = blocks.some((b) => b.kind === "method");
     if (hasMethod) return `steps-${proc.id}`;
     return null;
   }, [proc]);
@@ -272,23 +310,25 @@ export function ProcedureViewClient({
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuOpen(false);
+      if (e.key === "Escape") setMenuOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [menuOpen]);
 
   const wrapperClass = isAdmin
-    ? 'min-h-screen bg-[var(--color-bg)]'
-    : 'min-h-screen bg-[var(--color-bg)] pb-20';
+    ? "min-h-screen bg-[var(--color-bg)]"
+    : "min-h-screen bg-[var(--color-bg)] pb-20";
   // Loading / 404 use the same canvas as the loaded page so they don't flash
   // white while the procedure resolves.
-  const stageClass = 'flex min-h-screen items-center justify-center bg-[var(--color-bg)]';
-  const notFoundClass = 'flex min-h-screen flex-col items-center justify-center bg-[var(--color-bg)] p-6 text-center';
+  const stageClass =
+    "flex min-h-screen items-center justify-center bg-[var(--color-bg)]";
+  const notFoundClass =
+    "flex min-h-screen flex-col items-center justify-center bg-[var(--color-bg)] p-6 text-center";
 
   if (isLoading) {
     return (
@@ -351,12 +391,14 @@ export function ProcedureViewClient({
               read: a restricted document must not be known to exist. In the
               reader's language, and without the URL's slug. */}
           <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold text-[var(--color-ink)]">
-            {locale === 'es' ? 'Este procedimiento no está disponible' : 'This procedure isn’t available'}
+            {locale === "es"
+              ? "Este procedimiento no está disponible"
+              : "This procedure isn’t available"}
           </h1>
           <p className="text-base text-[var(--color-ink-2)]">
-            {locale === 'es'
-              ? 'Puede que se haya quitado o movido. Pregunta a tu gerente si lo necesitas.'
-              : 'It may have been removed or moved. Ask your manager if you need it.'}
+            {locale === "es"
+              ? "Puede que se haya quitado o movido. Pregunta a tu gerente si lo necesitas."
+              : "It may have been removed or moved. Ask your manager if you need it."}
           </p>
           <div className="pt-4">
             <Link
@@ -373,7 +415,7 @@ export function ProcedureViewClient({
   }
 
   const handleCopyLink = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -402,21 +444,21 @@ export function ProcedureViewClient({
               backHref={backHref}
               backLabel={labels.back}
               onBack={onBack}
-              title={proc.titleEn || proc.titleEs || ''}
-              category={proc.category?.nameEn || proc.category?.nameEs || ''}
+              title={proc.titleEn || proc.titleEs || ""}
+              category={proc.category?.nameEn || proc.category?.nameEs || ""}
               rightSlot={
                 <div className="flex items-center gap-2">
                   {cookBlockId ? (
                     <CookBarAction
                       procedureId={proc.id}
                       recipeBlockId={cookBlockId}
-                      locale={locale === 'es' ? 'es' : 'en'}
+                      locale={locale === "es" ? "es" : "en"}
                     />
                   ) : null}
                   <ThemeToggle
                     labels={{
-                      toDark: locale === 'es' ? 'Modo oscuro' : 'Dark mode',
-                      toLight: locale === 'es' ? 'Modo claro' : 'Light mode',
+                      toDark: locale === "es" ? "Modo oscuro" : "Dark mode",
+                      toLight: locale === "es" ? "Modo claro" : "Light mode",
                     }}
                   />
                   <div className="relative" ref={menuRef}>
@@ -437,7 +479,9 @@ export function ProcedureViewClient({
                       >
                         <div className="px-3 py-2 border-b border-[var(--color-line)] mb-1">
                           <p className="text-xs text-[var(--color-ink-3)] font-medium">
-                            {locale === 'es' ? 'Sesión iniciada como' : 'Signed in as'}
+                            {locale === "es"
+                              ? "Sesión iniciada como"
+                              : "Signed in as"}
                           </p>
                           <p className="text-sm font-semibold text-[var(--color-ink)] truncate">
                             {employee.name}
@@ -452,25 +496,47 @@ export function ProcedureViewClient({
                         >
                           {copied ? (
                             <>
-                              <LuCheck aria-hidden="true" className="text-base text-[var(--color-good)]" />
-                              <span>{locale === 'es' ? '¡Enlace copiado!' : 'Link copied!'}</span>
+                              <LuCheck
+                                aria-hidden="true"
+                                className="text-base text-[var(--color-good)]"
+                              />
+                              <span>
+                                {locale === "es"
+                                  ? "¡Enlace copiado!"
+                                  : "Link copied!"}
+                              </span>
                             </>
                           ) : (
                             <>
-                              <LuCopy aria-hidden="true" className="text-base" />
-                              <span>{locale === 'es' ? 'Copiar enlace' : 'Copy link'}</span>
+                              <LuCopy
+                                aria-hidden="true"
+                                className="text-base"
+                              />
+                              <span>
+                                {locale === "es"
+                                  ? "Copiar enlace"
+                                  : "Copy link"}
+                              </span>
                             </>
                           )}
                         </button>
 
-                        {employee.role === 'admin' || employee.accessLevel === 'manager' ? (
+                        {employee.role === "admin" ||
+                        employee.accessLevel === "manager" ? (
                           <Link
                             href={`/${locale}/admin`}
                             role="menuitem"
                             className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors"
                           >
-                            <LuArrowUpRight aria-hidden="true" className="text-base" />
-                            <span>{locale === 'es' ? 'Administración' : 'Admin library'}</span>
+                            <LuArrowUpRight
+                              aria-hidden="true"
+                              className="text-base"
+                            />
+                            <span>
+                              {locale === "es"
+                                ? "Administración"
+                                : "Admin library"}
+                            </span>
                           </Link>
                         ) : null}
 
@@ -481,7 +547,9 @@ export function ProcedureViewClient({
                           className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[var(--color-bad)] hover:bg-[var(--color-bad-tint)] transition-colors mt-1 border-t border-[var(--color-line)] pt-2"
                         >
                           <LuLogOut aria-hidden="true" className="text-base" />
-                          <span>{locale === 'es' ? 'Cerrar sesión' : 'Sign out'}</span>
+                          <span>
+                            {locale === "es" ? "Cerrar sesión" : "Sign out"}
+                          </span>
                         </button>
                       </div>
                     )}

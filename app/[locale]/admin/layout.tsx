@@ -1,11 +1,11 @@
-import type { ReactNode } from 'react';
-import * as React from 'react';
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { setRequestLocale } from 'next-intl/server';
-import { fetchMe, listLocations, logout } from '@/lib/api';
-import type { Employee } from '@/lib/types';
-import { AdminShell } from './admin-shell';
+import type { ReactNode } from "react";
+import * as React from "react";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { setRequestLocale } from "next-intl/server";
+import { fetchMe, listLocations, logout } from "@/lib/api";
+import type { Employee } from "@/lib/types";
+import { AdminShell } from "./admin-shell";
 
 /**
  * Admin layout — server-side auth + locale, then hands the rendered
@@ -27,7 +27,10 @@ interface AdminLayoutProps {
   params: Promise<{ locale: string }>;
 }
 
-export default async function AdminLayout({ children, params }: AdminLayoutProps): Promise<React.ReactElement> {
+export default async function AdminLayout({
+  children,
+  params,
+}: AdminLayoutProps): Promise<React.ReactElement> {
   const { locale } = await params;
   setRequestLocale(locale);
 
@@ -35,10 +38,10 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
   const cookieHeader = cookieStore
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+    .join("; ");
 
   let employee: Employee;
-  let workspace = '';
+  let workspace = "";
   try {
     // Auth + workspace resolve together: the locations list does not depend
     // on the /auth/me result (the location match happens locally below),
@@ -48,11 +51,13 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
       fetchMe(cookieHeader),
       listLocations(cookieHeader),
     ]);
-    if (meRes.status === 'rejected') throw meRes.reason;
+    if (meRes.status === "rejected") throw meRes.reason;
     employee = meRes.value.employee;
-    if (locRes.status === 'fulfilled') {
+    if (locRes.status === "fulfilled") {
       const { locations } = locRes.value;
-      workspace = (locations.find((l) => l.id === employee.locationId) ?? locations[0])?.name ?? '';
+      workspace =
+        (locations.find((l) => l.id === employee.locationId) ?? locations[0])
+          ?.name ?? "";
     }
   } catch {
     // Any failure — expired session, network blip, 5xx — lands on the
@@ -62,7 +67,7 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
   }
 
   async function signOut(): Promise<void> {
-    'use server';
+    "use server";
     await logout();
     redirect(`/${locale}/login`);
   }

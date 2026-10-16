@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
+import * as React from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import {
   deactivateEmployee,
   reactivateEmployee,
-} from '@/services/employees/api';
-import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
-import type { AdminEmployee } from '@/lib/types';
-import { LuBan, LuPencil, LuRotateCw, LuSend } from 'react-icons/lu';
-import { ResendInviteModal } from './resend-invite-modal';
-import { EMPLOYEES_QUERY_KEY } from '@/services/employees/hooks';
+} from "@/services/employees/api";
+import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
+import type { AdminEmployee } from "@/lib/types";
+import { LuBan, LuPencil, LuRotateCw, LuSend } from "react-icons/lu";
+import { ResendInviteModal } from "./resend-invite-modal";
+import { EMPLOYEES_QUERY_KEY } from "@/services/employees/hooks";
 
 interface EmployeeRowActionsProps {
   locale: string;
@@ -26,8 +26,12 @@ interface EmployeeRowActionsProps {
   onEdit?: () => void;
 }
 
-export function EmployeeRowActions({ locale, employee, onEdit }: EmployeeRowActionsProps): React.ReactElement {
-  const t = useTranslations('admin');
+export function EmployeeRowActions({
+  locale,
+  employee,
+  onEdit,
+}: EmployeeRowActionsProps): React.ReactElement {
+  const t = useTranslations("admin");
   const router = useRouter();
   const queryClient = useQueryClient();
   const [_pending, startTransition] = useTransition();
@@ -80,46 +84,48 @@ export function EmployeeRowActions({ locale, employee, onEdit }: EmployeeRowActi
     // Edit is always the first item — non-destructive, navigation. The
     // pending/active/deactivated paths keep their existing kebab items.
     const editItem: RowActionItem = {
-      label: t('actionsEdit'),
+      label: t("actionsEdit"),
       icon: LuPencil,
       onSelect: handleEdit,
     };
 
-    if (employee.status === 'pending') {
+    if (employee.status === "pending") {
       return [
         editItem,
         {
-          label: t('actionsResend'),
+          label: t("actionsResend"),
           icon: LuSend,
           onSelect: onResend,
         },
         {
-          label: t('actionsDeactivate'),
+          label: t("actionsDeactivate"),
           icon: LuBan,
           destructive: true,
-          confirmTitle: locale === 'es' ? '¿Desactivar empleado?' : 'Deactivate employee?',
+          confirmTitle:
+            locale === "es" ? "¿Desactivar empleado?" : "Deactivate employee?",
           confirmDescription:
-            locale === 'es'
-              ? 'El empleado quedará inactivo y podrás reactivarlo más adelante. Se conservarán sus datos.'
-              : 'This employee will be deactivated. You can reactivate them later, and their records will be kept.',
-          confirmLabel: locale === 'es' ? 'Desactivar' : 'Deactivate',
+            locale === "es"
+              ? "El empleado quedará inactivo y podrás reactivarlo más adelante. Se conservarán sus datos."
+              : "This employee will be deactivated. You can reactivate them later, and their records will be kept.",
+          confirmLabel: locale === "es" ? "Desactivar" : "Deactivate",
           onSelect: onDeactivate,
         },
       ];
     }
-    if (employee.status === 'active') {
+    if (employee.status === "active") {
       return [
         editItem,
         {
-          label: t('actionsDeactivate'),
+          label: t("actionsDeactivate"),
           icon: LuBan,
           destructive: true,
-          confirmTitle: locale === 'es' ? '¿Desactivar empleado?' : 'Deactivate employee?',
+          confirmTitle:
+            locale === "es" ? "¿Desactivar empleado?" : "Deactivate employee?",
           confirmDescription:
-            locale === 'es'
-              ? 'El empleado quedará inactivo y podrás reactivarlo más adelante. Se conservarán sus datos.'
-              : 'This employee will be deactivated. You can reactivate them later, and their records will be kept.',
-          confirmLabel: locale === 'es' ? 'Desactivar' : 'Deactivate',
+            locale === "es"
+              ? "El empleado quedará inactivo y podrás reactivarlo más adelante. Se conservarán sus datos."
+              : "This employee will be deactivated. You can reactivate them later, and their records will be kept.",
+          confirmLabel: locale === "es" ? "Desactivar" : "Deactivate",
           onSelect: onDeactivate,
         },
       ];
@@ -128,7 +134,7 @@ export function EmployeeRowActions({ locale, employee, onEdit }: EmployeeRowActi
     return [
       editItem,
       {
-        label: t('actionsReactivate'),
+        label: t("actionsReactivate"),
         icon: LuRotateCw,
         onSelect: onReactivate,
       },
@@ -139,9 +145,9 @@ export function EmployeeRowActions({ locale, employee, onEdit }: EmployeeRowActi
     <>
       <RowActions
         items={buildItems()}
-        triggerLabel={`${t('rowActionsLabel')}: ${employee.name}`}
+        triggerLabel={`${t("rowActionsLabel")}: ${employee.name}`}
       />
-      {employee.status === 'pending' ? (
+      {employee.status === "pending" ? (
         <ResendInviteModal
           open={isResendOpen}
           onClose={() => setIsResendOpen(false)}

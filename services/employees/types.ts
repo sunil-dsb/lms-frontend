@@ -6,7 +6,7 @@ import type {
   AccessLevel,
   CreateEmployeeInput,
   InviteResult,
-} from '@/lib/types';
+} from "@/lib/types";
 
 export type {
   AdminEmployee,
@@ -19,11 +19,11 @@ export type {
 };
 
 export interface EmployeeFilterOptions {
-  status?: EmployeeStatus | 'all';
+  status?: EmployeeStatus | "all";
   q?: string;
 }
 
-export const EMPLOYEES_UPDATED_EVENT = 'lms_employees_updated';
+export const EMPLOYEES_UPDATED_EVENT = "lms_employees_updated";
 
 export interface UpdateEmployeeInput {
   name: string;

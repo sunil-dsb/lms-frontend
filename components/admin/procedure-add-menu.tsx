@@ -1,19 +1,33 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverGroup, PopoverItem } from '@/components/ui/popover';
-import type { ProcedureBlockKind } from '@/lib/types';
-import { cn } from '@/lib/utils';
-import { LuChevronDown, LuHeading1, LuImage, LuListOrdered, LuListChecks, LuPaperclip, LuPlus, LuSearch, LuTable, LuTriangleAlert, LuType, LuUtensils, LuVideo } from 'react-icons/lu';
-import { Icon } from '@/components/ui/icon';
-import type { IconType } from 'react-icons';
+import * as React from "react";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverGroup, PopoverItem } from "@/components/ui/popover";
+import type { ProcedureBlockKind } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import {
+  LuChevronDown,
+  LuHeading1,
+  LuImage,
+  LuListOrdered,
+  LuListChecks,
+  LuPaperclip,
+  LuPlus,
+  LuSearch,
+  LuTable,
+  LuTriangleAlert,
+  LuType,
+  LuUtensils,
+  LuVideo,
+} from "react-icons/lu";
+import { Icon } from "@/components/ui/icon";
+import type { IconType } from "react-icons";
 
 interface ProcedureAddMenuProps {
   onAdd: (kind: ProcedureBlockKind) => void;
   /** When true, render a compact right-aligned button for use below the list. */
-  variant?: 'standalone' | 'inline';
+  variant?: "standalone" | "inline";
 }
 
 interface BlockMenuItem {
@@ -21,21 +35,21 @@ interface BlockMenuItem {
   label: string;
   description: string;
   icon: IconType;
-  group: 'basic' | 'media' | 'structured' | 'safety';
+  group: "basic" | "media" | "structured" | "safety";
 }
 
 export function ProcedureAddMenu({
   onAdd,
-  variant = 'standalone',
+  variant = "standalone",
 }: ProcedureAddMenuProps): React.ReactElement {
-  const t = useTranslations('admin.library.new.form.composer');
+  const t = useTranslations("admin.library.new.form.composer");
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = React.useState("");
 
   const close = React.useCallback(() => {
     setOpen(false);
-    setSearch('');
+    setSearch("");
   }, []);
 
   const add = React.useCallback(
@@ -49,74 +63,74 @@ export function ProcedureAddMenu({
   const menuItems: BlockMenuItem[] = React.useMemo(
     () => [
       {
-        kind: 'text',
-        label: 'Text',
-        description: 'Add rich text with formatting options',
+        kind: "text",
+        label: "Text",
+        description: "Add rich text with formatting options",
         icon: LuType,
-        group: 'basic',
+        group: "basic",
       },
       {
-        kind: 'heading',
-        label: 'Heading',
-        description: 'Add a section heading',
+        kind: "heading",
+        label: "Heading",
+        description: "Add a section heading",
         icon: LuHeading1,
-        group: 'basic',
+        group: "basic",
       },
       {
-        kind: 'method',
-        label: 'Numbered steps',
-        description: 'Add sequential steps',
+        kind: "method",
+        label: "Numbered steps",
+        description: "Add sequential steps",
         icon: LuListOrdered,
-        group: 'basic',
+        group: "basic",
       },
       {
-        kind: 'image',
-        label: 'Photograph',
-        description: 'Add an image with caption',
+        kind: "image",
+        label: "Photograph",
+        description: "Add an image with caption",
         icon: LuImage,
-        group: 'media',
+        group: "media",
       },
       {
-        kind: 'video',
-        label: 'Video',
-        description: 'Add a video with time markers',
+        kind: "video",
+        label: "Video",
+        description: "Add a video with time markers",
         icon: LuVideo,
-        group: 'media',
+        group: "media",
       },
       {
-        kind: 'attachment',
-        label: 'Attachment',
-        description: 'Add a file (PDF, Word, etc.)',
+        kind: "attachment",
+        label: "Attachment",
+        description: "Add a file (PDF, Word, etc.)",
         icon: LuPaperclip,
-        group: 'media',
+        group: "media",
       },
       {
-        kind: 'recipe',
-        label: 'Recipe',
-        description: 'Add recipe details (ingredients, yield, etc.)',
+        kind: "recipe",
+        label: "Recipe",
+        description: "Add recipe details (ingredients, yield, etc.)",
         icon: LuUtensils,
-        group: 'structured',
+        group: "structured",
       },
       {
-        kind: 'table',
-        label: 'Table',
-        description: 'Add a table with custom columns',
+        kind: "table",
+        label: "Table",
+        description: "Add a table with custom columns",
         icon: LuTable,
-        group: 'structured',
+        group: "structured",
       },
       {
-        kind: 'warning',
-        label: 'Warning callout',
-        description: 'Highlight important safety information',
+        kind: "warning",
+        label: "Warning callout",
+        description: "Highlight important safety information",
         icon: LuTriangleAlert,
-        group: 'safety',
+        group: "safety",
       },
       {
-        kind: 'checklist',
-        label: 'Checklist',
-        description: 'Add a list employees can tick off while working',
+        kind: "checklist",
+        label: "Checklist",
+        description: "Add a list employees can tick off while working",
         icon: LuListChecks,
-        group: 'basic',
+        group: "basic",
       },
     ],
     [],
@@ -126,17 +140,24 @@ export function ProcedureAddMenu({
     if (!search.trim()) return menuItems;
     const q = search.toLowerCase();
     return menuItems.filter(
-      (it) => it.label.toLowerCase().includes(q) || it.description.toLowerCase().includes(q),
+      (it) =>
+        it.label.toLowerCase().includes(q) ||
+        it.description.toLowerCase().includes(q),
     );
   }, [menuItems, search]);
 
-  const basicItems = filteredItems.filter((i) => i.group === 'basic');
-  const mediaItems = filteredItems.filter((i) => i.group === 'media');
-  const structuredItems = filteredItems.filter((i) => i.group === 'structured');
-  const safetyItems = filteredItems.filter((i) => i.group === 'safety');
+  const basicItems = filteredItems.filter((i) => i.group === "basic");
+  const mediaItems = filteredItems.filter((i) => i.group === "media");
+  const structuredItems = filteredItems.filter((i) => i.group === "structured");
+  const safetyItems = filteredItems.filter((i) => i.group === "safety");
 
   return (
-    <div className={cn('flex flex-wrap items-center gap-2', variant === 'inline' ? 'justify-between w-full' : 'justify-start')}>
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-2",
+        variant === "inline" ? "justify-between w-full" : "justify-start",
+      )}
+    >
       {/* Visible Block Type Quick Buttons */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-[var(--color-ink-3)] mr-1">
@@ -144,50 +165,68 @@ export function ProcedureAddMenu({
         </span>
         <button
           type="button"
-          onClick={() => onAdd('text')}
+          onClick={() => onAdd("text")}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-wash)] hover:border-[var(--color-line-3)] transition-colors"
         >
-          <LuType aria-hidden="true" className="text-sm text-[var(--color-ink-2)]" />
+          <LuType
+            aria-hidden="true"
+            className="text-sm text-[var(--color-ink-2)]"
+          />
           <span>Text</span>
         </button>
         <button
           type="button"
-          onClick={() => onAdd('table')}
+          onClick={() => onAdd("table")}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-wash)] hover:border-[var(--color-line-3)] transition-colors"
         >
-          <LuTable aria-hidden="true" className="text-sm text-[var(--color-ink-2)]" />
+          <LuTable
+            aria-hidden="true"
+            className="text-sm text-[var(--color-ink-2)]"
+          />
           <span>Table</span>
         </button>
         <button
           type="button"
-          onClick={() => onAdd('method')}
+          onClick={() => onAdd("method")}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-wash)] hover:border-[var(--color-line-3)] transition-colors"
         >
-          <LuListOrdered aria-hidden="true" className="text-sm text-[var(--color-ink-2)]" />
+          <LuListOrdered
+            aria-hidden="true"
+            className="text-sm text-[var(--color-ink-2)]"
+          />
           <span>Steps</span>
         </button>
         <button
           type="button"
-          onClick={() => onAdd('warning')}
+          onClick={() => onAdd("warning")}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-wash)] hover:border-[var(--color-line-3)] transition-colors"
         >
-          <LuTriangleAlert aria-hidden="true" className="text-sm text-[var(--color-ink-2)]" />
+          <LuTriangleAlert
+            aria-hidden="true"
+            className="text-sm text-[var(--color-ink-2)]"
+          />
           <span>Warning</span>
         </button>
         <button
           type="button"
-          onClick={() => onAdd('heading')}
+          onClick={() => onAdd("heading")}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-wash)] hover:border-[var(--color-line-3)] transition-colors"
         >
-          <LuHeading1 aria-hidden="true" className="text-sm text-[var(--color-ink-2)]" />
+          <LuHeading1
+            aria-hidden="true"
+            className="text-sm text-[var(--color-ink-2)]"
+          />
           <span>Heading</span>
         </button>
         <button
           type="button"
-          onClick={() => onAdd('image')}
+          onClick={() => onAdd("image")}
           className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-wash)] hover:border-[var(--color-line-3)] transition-colors"
         >
-          <LuImage aria-hidden="true" className="text-sm text-[var(--color-ink-2)]" />
+          <LuImage
+            aria-hidden="true"
+            className="text-sm text-[var(--color-ink-2)]"
+          />
           <span>Image</span>
         </button>
       </div>
@@ -208,16 +247,28 @@ export function ProcedureAddMenu({
           <span>More blocks</span>
           <LuChevronDown
             aria-hidden="true"
-            className={cn('text-sm transition-transform duration-[var(--dur)]', open && 'rotate-180')}
+            className={cn(
+              "text-sm transition-transform duration-[var(--dur)]",
+              open && "rotate-180",
+            )}
           />
         </Button>
       </div>
 
-      <Popover open={open} onClose={close} triggerRef={triggerRef} align="end" width={360}>
+      <Popover
+        open={open}
+        onClose={close}
+        triggerRef={triggerRef}
+        align="end"
+        width={360}
+      >
         {/* Search input bar */}
         <div className="p-2 border-b border-[var(--color-line)]">
           <div className="relative">
-            <LuSearch aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-[var(--color-ink-3)]" />
+            <LuSearch
+              aria-hidden="true"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-base text-[var(--color-ink-3)]"
+            />
             <input
               type="text"
               value={search}

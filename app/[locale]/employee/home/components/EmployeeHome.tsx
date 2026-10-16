@@ -1,14 +1,17 @@
-import * as React from 'react';
-import type { StatusTone } from '@/components/ui/status-pill';
-import type { FlagLabels, ProcedureFlags } from '@/components/employee/procedure-row';
-import type { Category, Subcategory } from '@/lib/types';
-import type { OnboardingSummary } from '@/lib/mock-training';
-import { Greeting } from './Greeting';
-import { TrainingCard } from './TrainingCard';
-import { PromoSection } from './PromoSection';
-import { StationSection } from './StationSection';
-import { OnboardingState } from './OnboardingState';
-import { LockedProceduresPreview } from './LockedProceduresPreview';
+import * as React from "react";
+import type { StatusTone } from "@/components/ui/status-pill";
+import type {
+  FlagLabels,
+  ProcedureFlags,
+} from "@/components/employee/procedure-row";
+import type { Category, Subcategory } from "@/lib/types";
+import type { OnboardingSummary } from "@/lib/mock-training";
+import { Greeting } from "./Greeting";
+import { TrainingCard } from "./TrainingCard";
+import { PromoSection } from "./PromoSection";
+import { StationSection } from "./StationSection";
+import { OnboardingState } from "./OnboardingState";
+import { LockedProceduresPreview } from "./LockedProceduresPreview";
 
 /**
  * The employee's home: greeting, training, promos, then station procedures.
@@ -36,7 +39,7 @@ export interface HomeRow {
    *  recipe photo (when present) and the per-subcategory Phosphor mark. */
   iconImageUrl?: string | null;
   category: Category | null;
-  subcategory?: Pick<Subcategory, 'id' | 'slug'> | null;
+  subcategory?: Pick<Subcategory, "id" | "slug"> | null;
   title: string;
   purpose?: string | null;
   meta: string;
@@ -79,7 +82,7 @@ export function EmployeeHome({
   station,
   loading = false,
   flagLabels,
-  locale = 'en',
+  locale = "en",
   isOnboarding = false,
   greetingTrailing,
 }: {
@@ -134,7 +137,12 @@ export function EmployeeHome({
         <>
           <PromoSection
             heading={promo.heading}
-            rows={promo.rows.map((r) => ({ ...r, locked: false, lockedHref: undefined, lockedReason: undefined }))}
+            rows={promo.rows.map((r) => ({
+              ...r,
+              locked: false,
+              lockedHref: undefined,
+              lockedReason: undefined,
+            }))}
             flagLabels={flagLabels}
             loading={loading}
           />
@@ -142,7 +150,12 @@ export function EmployeeHome({
             <StationSection
               id="assigned-h"
               heading={assigned.heading}
-              rows={assigned.rows.map((r) => ({ ...r, locked: false, lockedHref: undefined, lockedReason: undefined }))}
+              rows={assigned.rows.map((r) => ({
+                ...r,
+                locked: false,
+                lockedHref: undefined,
+                lockedReason: undefined,
+              }))}
               flagLabels={flagLabels}
               loading={loading}
             />
@@ -150,7 +163,12 @@ export function EmployeeHome({
           <StationSection
             id="station-h"
             heading={station.heading}
-            rows={station.rows.map((r) => ({ ...r, locked: false, lockedHref: undefined, lockedReason: undefined }))}
+            rows={station.rows.map((r) => ({
+              ...r,
+              locked: false,
+              lockedHref: undefined,
+              lockedReason: undefined,
+            }))}
             flagLabels={flagLabels}
             all={station.all}
             empty={station.empty}

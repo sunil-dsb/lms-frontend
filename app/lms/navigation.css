@@ -2,87 +2,86 @@
    OVERLAYS
    ============================================================ */
 .toast {
-   position: relative;
-   z-index: var(--z-toast);
-   display: inline-flex;
-   align-items: center;
-   gap: var(--s-3);
-   background: var(--ink);
-   color: var(--on-fill);
-   border-radius: var(--r-lg);
-   padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
-   box-shadow: var(--e-3);
-   max-width: 420px;
+  position: relative;
+  z-index: var(--z-toast);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  background: var(--ink);
+  color: var(--on-fill);
+  border-radius: var(--r-lg);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  box-shadow: var(--e-3);
+  max-width: 420px;
 }
 
 .toast .ico {
-   width: 28px;
-   height: 28px;
-   border-radius: var(--r-pill);
-   background: var(--ok-fill);
-   display: grid;
-   place-items: center;
-   flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-pill);
+  background: var(--ok-fill);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
 }
 
 .toast .ico.warn {
-   background: var(--warn);
-   color: var(--ink);
+  background: var(--warn);
+  color: var(--ink);
 }
 
 .toast .msg {
-   font-size: var(--t-sm);
-   font-weight: 500;
-   flex: 1;
+  font-size: var(--t-sm);
+  font-weight: 500;
+  flex: 1;
 }
 
 /* Full target height without a taller toast: the button overlaps the padding */
 .toast .btn-ghost {
-   color: var(--on-fill);
-   min-height: var(--tap-employee);
-   margin: calc(var(--s-3) * -1) 0;
+  color: var(--on-fill);
+  min-height: var(--tap-employee);
+  margin: calc(var(--s-3) * -1) 0;
 }
 
 .toast .btn-ghost:hover {
-   background: var(--on-dark-2);
-   color: var(--on-fill);
+  background: var(--on-dark-2);
+  color: var(--on-fill);
 }
 
 .backdrop {
-   position: absolute;
-   inset: 0;
-   z-index: var(--z-backdrop);
-   background: var(--scrim);
-   display: grid;
-   place-items: center;
-   padding: var(--s-6);
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-backdrop);
+  background: var(--scrim);
+  display: grid;
+  place-items: center;
+  padding: var(--s-6);
 }
 
 .dialog {
-   position: relative;
-   z-index: var(--z-modal);
-   background: var(--surface);
-   border-radius: var(--r-lg);
-   box-shadow: var(--e-3);
-   padding: var(--s-6);
-   max-width: 440px;
-   width: 100%;
+  position: relative;
+  z-index: var(--z-modal);
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--e-3);
+  padding: var(--s-6);
+  max-width: 440px;
+  width: 100%;
 }
 
 .dialog h4 {
-   font-size: var(--t-lg);
-   font-weight: 600;
-   margin-bottom: var(--s-2);
+  font-size: var(--t-lg);
+  font-weight: 600;
+  margin-bottom: var(--s-2);
 }
 
 .dialog p {
-   color: var(--ink-2);
-   margin-bottom: var(--s-5);
+  color: var(--ink-2);
+  margin-bottom: var(--s-5);
 }
 
 .dialog .acts {
-   display: flex;
-   justify-content: flex-end;
-   gap: var(--s-2);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
 }
-

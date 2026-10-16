@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import * as React from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Instant paint for /employee/home while the server composes the greeting,
@@ -10,11 +10,17 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export default function EmployeeHomeLoading(): React.ReactElement {
   return (
-    <main className="mx-auto w-full max-w-doc px-3 pt-4 sm:px-6 sm:pt-8" style={{ paddingBottom: '100px' }}>
+    <main
+      className="mx-auto w-full max-w-doc px-3 pt-4 sm:px-6 sm:pt-8"
+      style={{ paddingBottom: "100px" }}
+    >
       <div aria-busy="true" aria-label="Loading home" className="space-y-3">
         {/* Profile card: avatar + name + role line */}
-        <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] shadow-xs" style={{ padding: '14px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div
+          className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] shadow-xs"
+          style={{ padding: "14px 16px" }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <Skeleton className="size-[42px] shrink-0 rounded-full" />
             <div className="min-w-0 flex-1 space-y-2">
               <Skeleton className="h-5 w-36" />
@@ -24,8 +30,11 @@ export default function EmployeeHomeLoading(): React.ReactElement {
         </div>
 
         {/* Training card */}
-        <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] shadow-xs" style={{ padding: '14px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div
+          className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] shadow-xs"
+          style={{ padding: "14px 16px" }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <Skeleton className="size-16 shrink-0 rounded-lg bg-[var(--color-panel)]" />
             <div className="min-w-0 flex-1 space-y-2">
               <Skeleton className="h-4 w-40" />
@@ -41,9 +50,9 @@ export default function EmployeeHomeLoading(): React.ReactElement {
           <div
             key={i}
             className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)]"
-            style={{ padding: '14px' }}
+            style={{ padding: "14px" }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <Skeleton className="size-12 shrink-0 rounded-lg bg-[var(--color-panel)]" />
               <div className="min-w-0 flex-1 space-y-2">
                 <Skeleton className="h-4 w-52" />

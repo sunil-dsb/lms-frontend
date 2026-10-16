@@ -4,7 +4,7 @@
 // `<video src=…>` to play a YouTube watch URL, because that endpoint returns
 // the watch-page HTML, not an MP4 byte stream.
 
-export type VideoProvider = 'youtube' | 'vimeo' | 'file';
+export type VideoProvider = "youtube" | "vimeo" | "file";
 
 export interface VideoClassification {
   provider: VideoProvider;
@@ -18,12 +18,12 @@ const YOUTUBE_RE =
 const VIMEO_RE = /^https?:\/\/(?:www\.)?vimeo\.com\/(\d+)/;
 
 export function classifyVideoUrl(src: string): VideoClassification {
-  if (!src) return { provider: 'file' };
+  if (!src) return { provider: "file" };
 
   const youtubeId = src.match(YOUTUBE_RE)?.[1];
   if (youtubeId) {
     return {
-      provider: 'youtube',
+      provider: "youtube",
       embedUrl: `https://www.youtube.com/embed/${youtubeId}`,
     };
   }
@@ -31,10 +31,10 @@ export function classifyVideoUrl(src: string): VideoClassification {
   const vimeoId = src.match(VIMEO_RE)?.[1];
   if (vimeoId) {
     return {
-      provider: 'vimeo',
+      provider: "vimeo",
       embedUrl: `https://player.vimeo.com/video/${vimeoId}`,
     };
   }
 
-  return { provider: 'file' };
+  return { provider: "file" };
 }

@@ -1,12 +1,12 @@
-import * as React from 'react';
+import * as React from "react";
 import type {
   Localised,
   LocalisedOptional,
   ProcedureBlock,
   ProcedureMethodStep,
   ProcedureNoteKind,
-} from '@/lib/types';
-import { classifyVideoUrl } from '@/lib/procedure-media';
+} from "@/lib/types";
+import { classifyVideoUrl } from "@/lib/procedure-media";
 import {
   Allergen,
   CriticalLimitFull,
@@ -21,11 +21,11 @@ import {
   type Ingredient,
   type MethodStep,
   type ChapterRow,
-} from './index';
-import { LuCheck, LuCircle, LuDownload, LuFileText } from 'react-icons/lu';
-import { Icon } from '@/components/ui/icon';
-import { RecipeBody } from './recipe-body';
-import { cn } from '@/lib/utils';
+} from "./index";
+import { LuCheck, LuCircle, LuDownload, LuFileText } from "react-icons/lu";
+import { Icon } from "@/components/ui/icon";
+import { RecipeBody } from "./recipe-body";
+import { cn } from "@/lib/utils";
 
 /**
  * The block stream, laid out as the templates in /sop-template.html and
@@ -43,35 +43,70 @@ import { cn } from '@/lib/utils';
  * land on this page too, and it cannot if the page has restyled it.
  */
 
-const NOTE_KINDS: ProcedureNoteKind[] = ['warn', 'tip', 'alt', 'equip', 'allergen'];
+const NOTE_KINDS: ProcedureNoteKind[] = [
+  "warn",
+  "tip",
+  "alt",
+  "equip",
+  "allergen",
+];
 
 const LABELS = {
   en: {
-    yieldTitle: 'Yield', method: 'Method', steps: (n: number) => `${n} steps`, batch: 'Batch', attachments: 'Attachments',
-    notes: { warn: 'Warning', tip: 'Tip', alt: 'Alternative', equip: 'Equipment', allergen: 'Allergen' },
+    yieldTitle: "Yield",
+    method: "Method",
+    steps: (n: number) => `${n} steps`,
+    batch: "Batch",
+    attachments: "Attachments",
+    notes: {
+      warn: "Warning",
+      tip: "Tip",
+      alt: "Alternative",
+      equip: "Equipment",
+      allergen: "Allergen",
+    },
   },
   es: {
-    yieldTitle: 'Rendimiento', method: 'Método', steps: (n: number) => `${n} pasos`, batch: 'Lote', attachments: 'Archivos adjuntos',
+    yieldTitle: "Rendimiento",
+    method: "Método",
+    steps: (n: number) => `${n} pasos`,
+    batch: "Lote",
+    attachments: "Archivos adjuntos",
     // The note label was always English, so a Spanish page said "Warning".
-    notes: { warn: 'Atención', tip: 'Consejo', alt: 'Alternativa', equip: 'Equipo', allergen: 'Alérgeno' },
+    notes: {
+      warn: "Atención",
+      tip: "Consejo",
+      alt: "Alternativa",
+      equip: "Equipo",
+      allergen: "Alérgeno",
+    },
   },
 } as const;
 
-function pickText(value: Localised, locale: 'en' | 'es'): string {
+function pickText(value: Localised, locale: "en" | "es"): string {
   return value[locale];
 }
-function pickOpt(value: LocalisedOptional | undefined, locale: 'en' | 'es'): string | undefined {
+function pickOpt(
+  value: LocalisedOptional | undefined,
+  locale: "en" | "es",
+): string | undefined {
   if (!value) return undefined;
   const v = value[locale];
   return v && v.length > 0 ? v : undefined;
 }
 
-function toMethodStep(step: ProcedureMethodStep, locale: 'en' | 'es', noteLabels: Record<ProcedureNoteKind, string>): MethodStep {
+function toMethodStep(
+  step: ProcedureMethodStep,
+  locale: "en" | "es",
+  noteLabels: Record<ProcedureNoteKind, string>,
+): MethodStep {
   const noteNode = step.note
     ? (() => {
-        const kind: ProcedureNoteKind = NOTE_KINDS.includes(step.note.severity as ProcedureNoteKind)
+        const kind: ProcedureNoteKind = NOTE_KINDS.includes(
+          step.note.severity as ProcedureNoteKind,
+        )
           ? (step.note.severity as ProcedureNoteKind)
-          : 'warn';
+          : "warn";
         return (
           <NoteBlock key="note" kind={kind} label={noteLabels[kind]}>
             {pickText(step.note.body, locale)}
@@ -85,7 +120,10 @@ function toMethodStep(step: ProcedureMethodStep, locale: 'en' | 'es', noteLabels
     extras.push(
       <span key="timer" className="step-time" data-kind="timer">
         <Icon icon="ri-time-line" className="i i-sm" aria-hidden="true" />
-        {step.timer.label} · {step.timer.seconds < 60 ? `${step.timer.seconds} s` : `${Math.round(step.timer.seconds / 60)} min`}
+        {step.timer.label} ·{" "}
+        {step.timer.seconds < 60
+          ? `${step.timer.seconds} s`
+          : `${Math.round(step.timer.seconds / 60)} min`}
       </span>,
     );
   }
@@ -93,12 +131,22 @@ function toMethodStep(step: ProcedureMethodStep, locale: 'en' | 'es', noteLabels
     const hours = step.discardAtHours ?? 48;
     extras.push(
       <span key="discard" className="step-time" data-kind="discard">
-        <Icon icon="ri-price-tag-3-line" className="i i-sm" aria-hidden="true" />
-        {locale === 'es' ? `Desechar a las ${hours} h` : `Discard after ${hours} h`}
+        <Icon
+          icon="ri-price-tag-3-line"
+          className="i i-sm"
+          aria-hidden="true"
+        />
+        {locale === "es"
+          ? `Desechar a las ${hours} h`
+          : `Discard after ${hours} h`}
       </span>,
     );
   }
-  const extrasNode = extras.length ? <div key="extras" className="step-extras">{extras}</div> : null;
+  const extrasNode = extras.length ? (
+    <div key="extras" className="step-extras">
+      {extras}
+    </div>
+  ) : null;
 
   const extraNodes: React.ReactNode[] = [];
   if (noteNode) extraNodes.push(noteNode);
@@ -118,13 +166,22 @@ function toMethodStep(step: ProcedureMethodStep, locale: 'en' | 'es', noteLabels
     out.clip = step.videoSegment;
   }
 
-  const shots: Array<{ src: string; alt: string; caption?: string; compare?: 'ok' | 'no' }> = [];
+  const shots: Array<{
+    src: string;
+    alt: string;
+    caption?: string;
+    compare?: "ok" | "no";
+  }> = [];
   if (step.images) {
     for (const [idx, img] of step.images.entries()) {
       if (!img.src) continue;
       const compare =
-        step.compareImages && step.images.length >= 2 && idx < 2 ? (idx === 0 ? 'ok' : 'no') : undefined;
-      const altText = pickText(img.alt ?? { en: '', es: '' }, locale) || '';
+        step.compareImages && step.images.length >= 2 && idx < 2
+          ? idx === 0
+            ? "ok"
+            : "no"
+          : undefined;
+      const altText = pickText(img.alt ?? { en: "", es: "" }, locale) || "";
       shots.push({
         src: img.src,
         alt: altText,
@@ -134,7 +191,7 @@ function toMethodStep(step: ProcedureMethodStep, locale: 'en' | 'es', noteLabels
     }
   }
   if (step.imageSrc) {
-    const altText = pickText(step.imageAlt ?? { en: '', es: '' }, locale) || '';
+    const altText = pickText(step.imageAlt ?? { en: "", es: "" }, locale) || "";
     shots.push({
       src: step.imageSrc,
       alt: altText,
@@ -145,51 +202,58 @@ function toMethodStep(step: ProcedureMethodStep, locale: 'en' | 'es', noteLabels
     out.shots = shots;
   }
   if (step.videoSegment?.src || step.videoSrc) {
-    out.video = { src: step.videoSegment?.src ?? step.videoSrc!, caption: step.videoCaption };
+    out.video = {
+      src: step.videoSegment?.src ?? step.videoSrc!,
+      caption: step.videoCaption,
+    };
   }
 
   // Populate mediaThumb with badge if video clip or images exist
   if (step.compareImages && step.images && step.images.length >= 2) {
     out.mediaThumb = {
       src: step.images[0].src,
-      alt: pickText(step.images[0].alt ?? { en: '', es: '' }, locale) || '',
-      compare: 'ok',
+      alt: pickText(step.images[0].alt ?? { en: "", es: "" }, locale) || "",
+      compare: "ok",
       pairSrc: step.images[1].src,
       images: step.images.slice(0, 4).map((img) => ({
         src: img.src,
-        alt: pickText(img.alt ?? { en: '', es: '' }, locale) || '',
+        alt: pickText(img.alt ?? { en: "", es: "" }, locale) || "",
       })),
     };
   } else if (step.videoSegment) {
-    const dur = Math.max(0, step.videoSegment.endSec - step.videoSegment.startSec);
+    const dur = Math.max(
+      0,
+      step.videoSegment.endSec - step.videoSegment.startSec,
+    );
     const s = Math.max(0, Math.floor(dur));
     const m = Math.floor(s / 60);
     const r = s % 60;
-    const badge = dur > 0 ? `${m}:${String(r).padStart(2, '0')}` : undefined;
-    const thumbSrc = step.images?.[0]?.src || step.imageSrc || step.videoSegment.src;
+    const badge = dur > 0 ? `${m}:${String(r).padStart(2, "0")}` : undefined;
+    const thumbSrc =
+      step.images?.[0]?.src || step.imageSrc || step.videoSegment.src;
     out.mediaThumb = {
       src: thumbSrc,
-      alt: pickText(step.images?.[0]?.alt ?? { en: '', es: '' }, locale) || '',
+      alt: pickText(step.images?.[0]?.alt ?? { en: "", es: "" }, locale) || "",
       badge,
     };
   } else if (step.images && step.images.length > 1) {
     out.mediaThumb = {
       src: step.images[0].src,
-      alt: pickText(step.images[0].alt ?? { en: '', es: '' }, locale) || '',
+      alt: pickText(step.images[0].alt ?? { en: "", es: "" }, locale) || "",
       images: step.images.slice(0, 4).map((img) => ({
         src: img.src,
-        alt: pickText(img.alt ?? { en: '', es: '' }, locale) || '',
+        alt: pickText(img.alt ?? { en: "", es: "" }, locale) || "",
       })),
     };
   } else if (step.images?.[0]?.src) {
     out.mediaThumb = {
       src: step.images[0].src,
-      alt: pickText(step.images[0].alt ?? { en: '', es: '' }, locale) || '',
+      alt: pickText(step.images[0].alt ?? { en: "", es: "" }, locale) || "",
     };
   } else if (step.imageSrc) {
     out.mediaThumb = {
       src: step.imageSrc,
-      alt: pickText(step.imageAlt ?? { en: '', es: '' }, locale) || '',
+      alt: pickText(step.imageAlt ?? { en: "", es: "" }, locale) || "",
     };
   }
 
@@ -206,11 +270,17 @@ function toMethodStep(step: ProcedureMethodStep, locale: 'en' | 'es', noteLabels
  *  it so only that block's banner is skipped below. A document with a sauce and
  *  its base has two recipe blocks and two sets of allergens, and the second one
  *  is not less dangerous for being second. */
-export function findAllergen(
-  blocks: ProcedureBlock[],
-): { id: string; allergen: { summary: string; detail: string; selectedAllergens?: readonly string[] } } | null {
+export function findAllergen(blocks: ProcedureBlock[]): {
+  id: string;
+  allergen: {
+    summary: string;
+    detail: string;
+    selectedAllergens?: readonly string[];
+  };
+} | null {
   for (const [i, b] of blocks.entries()) {
-    if ((b.kind === 'recipe' || b.kind === 'ingredients') && b.allergen) return { id: b.id ?? String(i), allergen: b.allergen };
+    if ((b.kind === "recipe" || b.kind === "ingredients") && b.allergen)
+      return { id: b.id ?? String(i), allergen: b.allergen };
   }
   return null;
 }
@@ -223,7 +293,12 @@ function IngredientsSection({
   yieldTitle,
 }: {
   factors: number[];
-  yieldItems: { label: string; value: string; unit?: string; scales?: boolean }[];
+  yieldItems: {
+    label: string;
+    value: string;
+    unit?: string;
+    scales?: boolean;
+  }[];
   ingredients: Ingredient[];
   batchLabel: string;
   yieldTitle: string;
@@ -234,10 +309,10 @@ function IngredientsSection({
   const scaled = React.useMemo(
     () =>
       yieldItems
-        .filter((y) => (y.value ?? '').trim() !== '')
+        .filter((y) => (y.value ?? "").trim() !== "")
         .map((y) => {
           if (!y.scales) return y;
-          const n = parseFloat(y.value.replace(',', '.'));
+          const n = parseFloat(y.value.replace(",", "."));
           if (!Number.isFinite(n)) return y;
           const value = String(Math.round(((n * factor) / base) * 100) / 100);
           return { ...y, value };
@@ -253,13 +328,27 @@ function IngredientsSection({
   return (
     <Section title={yieldTitle}>
       {factors.length > 1 ? (
-        <Scaler factors={factors} selected={factor} onSelect={setFactor} label={batchLabel} />
+        <Scaler
+          factors={factors}
+          selected={factor}
+          onSelect={setFactor}
+          label={batchLabel}
+        />
       ) : null}
       {scaled.length > 0 ? (
-        <Yield items={scaled.map((y) => ({ label: y.label, value: y.unit ? `${y.value} ${y.unit}` : y.value }))} />
+        <Yield
+          items={scaled.map((y) => ({
+            label: y.label,
+            value: y.unit ? `${y.value} ${y.unit}` : y.value,
+          }))}
+        />
       ) : null}
       {showTable ? (
-        <IngredientsTable ingredients={ingredients} factors={factors} selectedFactor={factor} />
+        <IngredientsTable
+          ingredients={ingredients}
+          factors={factors}
+          selectedFactor={factor}
+        />
       ) : null}
     </Section>
   );
@@ -272,7 +361,7 @@ export function BlockRenderer({
   consumedRecipeIds,
 }: {
   blocks: ProcedureBlock[];
-  locale: 'en' | 'es';
+  locale: "en" | "es";
   /** The block whose allergen banner the page has already rendered at the head. */
   hoistedAllergenId?: string;
   /** Recipe block ids already rendered by a `<CookModeLauncher>` on the page.
@@ -286,13 +375,14 @@ export function BlockRenderer({
   const [doneMap, setDoneMap] = React.useState<Record<number, boolean>>({});
 
   // Pre-count total method blocks so we can render "Part X of Y" when there are multiple parts
-  const methodBlockCount = blocks.filter((b) => b.kind === 'method').length;
+  const methodBlockCount = blocks.filter((b) => b.kind === "method").length;
   let currentMethodIndex = 0;
   let runningStepOffset = 0;
 
   // The section being filled. A heading opens one; a method or a recipe closes it,
   // because those bring their own heading with them.
-  let open: { key: string; title?: string; nodes: React.ReactNode[] } | null = null;
+  let open: { key: string; title?: string; nodes: React.ReactNode[] } | null =
+    null;
 
   const flush = (): void => {
     if (!open) return;
@@ -313,7 +403,7 @@ export function BlockRenderer({
   blocks.forEach((block, i) => {
     const key = block.id ?? String(i);
     switch (block.kind) {
-      case 'heading': {
+      case "heading": {
         const text = pickText(block.text, locale);
         // h1 and h2 are the document's sections; anything deeper is a subheading
         // inside the section that is already open. Deeper-but-first opens a
@@ -327,39 +417,56 @@ export function BlockRenderer({
         open = { key: `sec-${key}`, title: text, nodes: [] };
         return;
       }
-      case 'text': {
+      case "text": {
         // A body written as one line per item is a list — the template's
         // .triggers, a row of dot-marked lines, not a paragraph of sentences.
         const body = pickText(block.body, locale);
-        const lines = body.split('\n').map((l) => l.trim()).filter(Boolean);
+        const lines = body
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
         add(key, lines.length > 1 ? <Triggers items={lines} /> : <p>{body}</p>);
         return;
       }
-      case 'warning': {
+      case "warning": {
         // A severity this build does not know about still has something to say,
         // so it is shown as a warning rather than thrown at the reader as a 500.
-        const kind: ProcedureNoteKind = NOTE_KINDS.includes(block.severity as ProcedureNoteKind)
+        const kind: ProcedureNoteKind = NOTE_KINDS.includes(
+          block.severity as ProcedureNoteKind,
+        )
           ? (block.severity as ProcedureNoteKind)
-          : 'warn';
-        add(key, <NoteBlock kind={kind} label={t.notes[kind as keyof typeof t.notes]}>{pickText(block.body, locale)}</NoteBlock>);
+          : "warn";
+        add(
+          key,
+          <NoteBlock kind={kind} label={t.notes[kind as keyof typeof t.notes]}>
+            {pickText(block.body, locale)}
+          </NoteBlock>,
+        );
         return;
       }
-      case 'image': {
-        add(key, <Shot src={block.src} alt={pickText(block.alt, locale)} caption={pickOpt(block.caption, locale)} />);
+      case "image": {
+        add(
+          key,
+          <Shot
+            src={block.src}
+            alt={pickText(block.alt, locale)}
+            caption={pickOpt(block.caption, locale)}
+          />,
+        );
         return;
       }
-      case 'video': {
+      case "video": {
         const caption = pickOpt(block.caption, locale);
         const videoClass = classifyVideoUrl(block.src);
         add(
           key,
           <figure className="shot">
-            {videoClass.provider === 'file' ? (
+            {videoClass.provider === "file" ? (
               <video controls src={block.src} />
             ) : videoClass.embedUrl ? (
               <iframe
                 src={videoClass.embedUrl}
-                title={caption ?? 'video'}
+                title={caption ?? "video"}
                 className="aspect-video w-full rounded-[var(--radius-md)]"
                 allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -371,7 +478,7 @@ export function BlockRenderer({
         );
         return;
       }
-      case 'table': {
+      case "table": {
         // The recipe's ingredient table frame, with prose cells: same document,
         // same table, but these cells are sentences rather than quantities.
         add(
@@ -403,18 +510,19 @@ export function BlockRenderer({
         );
         return;
       }
-      case 'attachment': {
+      case "attachment": {
         attachmentRows.push({
           icon: LuFileText,
           title: pickText(block.title, locale),
           meta: block.meta,
           href: block.href,
-          kind: 'attachment',
+          kind: "attachment",
         });
         return;
       }
-      case 'method': {
-        const sectionTitle = (block.title?.[locale]?.trim() || open?.title || t.method);
+      case "method": {
+        const sectionTitle =
+          block.title?.[locale]?.trim() || open?.title || t.method;
         const sectionKey = open?.key ?? key;
         const extraNodes = open?.nodes ?? [];
         open = null;
@@ -423,7 +531,7 @@ export function BlockRenderer({
         runningStepOffset += block.steps.length;
         const partLabel =
           methodBlockCount > 1
-            ? locale === 'es'
+            ? locale === "es"
               ? `Parte ${currentMethodIndex} de ${methodBlockCount}`
               : `Part ${currentMethodIndex} of ${methodBlockCount}`
             : undefined;
@@ -435,13 +543,13 @@ export function BlockRenderer({
             ...ms,
             thumbLabel:
               ms.thumbLabel ??
-              (locale === 'es'
+              (locale === "es"
                 ? `Paso ${stepNum}: abrir en modo cocina`
                 : `Step ${stepNum}: open in cook mode`),
             onThumbOpen: () => {
-              if (typeof window !== 'undefined') {
+              if (typeof window !== "undefined") {
                 window.dispatchEvent(
-                  new CustomEvent('cook-mode:open', {
+                  new CustomEvent("cook-mode:open", {
                     detail: { at: stepNum },
                   }),
                 );
@@ -450,17 +558,29 @@ export function BlockRenderer({
           };
         });
 
-        const doneForBlock = block.steps.map((_, si) => Boolean(doneMap[startIndex + si]));
+        const doneForBlock = block.steps.map((_, si) =>
+          Boolean(doneMap[startIndex + si]),
+        );
         const doneInPart = doneForBlock.filter(Boolean).length;
-        const allDoneInPart = doneInPart === block.steps.length && block.steps.length > 0;
+        const allDoneInPart =
+          doneInPart === block.steps.length && block.steps.length > 0;
         const partCount = allDoneInPart
-          ? (locale === 'es' ? 'todos listos' : 'all done')
+          ? locale === "es"
+            ? "todos listos"
+            : "all done"
           : doneInPart > 0
-            ? (locale === 'es' ? `${doneInPart} de ${block.steps.length} listos` : `${doneInPart} of ${block.steps.length} done`)
+            ? locale === "es"
+              ? `${doneInPart} de ${block.steps.length} listos`
+              : `${doneInPart} of ${block.steps.length} done`
             : t.steps(steps.length);
 
         out.push(
-          <Section key={sectionKey} title={sectionTitle} part={partLabel} count={partCount}>
+          <Section
+            key={sectionKey}
+            title={sectionTitle}
+            part={partLabel}
+            count={partCount}
+          >
             {extraNodes}
             <MethodSteps
               steps={steps}
@@ -475,9 +595,10 @@ export function BlockRenderer({
         );
         return;
       }
-      case 'ingredients': {
+      case "ingredients": {
         flush();
-        const factorList = block.factors && block.factors.length > 0 ? block.factors : [1];
+        const factorList =
+          block.factors && block.factors.length > 0 ? block.factors : [1];
         out.push(
           <React.Fragment key={key}>
             {block.allergen && key !== hoistedAllergenId ? (
@@ -504,7 +625,7 @@ export function BlockRenderer({
         );
         return;
       }
-      case 'recipe': {
+      case "recipe": {
         flush();
         // A `<CookModeLauncher>` mounted by the page owns this block's cook-mode
         // flow (Yield-section CTA, side thumbs, modal). When the launcher has
@@ -544,11 +665,16 @@ export function BlockRenderer({
         );
         return;
       }
-      case 'checklist': {
+      case "checklist": {
         const heading = pickOpt(block.title, locale);
         add(
           key,
-          <ChecklistBlock blockId={block.id} title={heading} items={block.items} locale={locale} />,
+          <ChecklistBlock
+            blockId={block.id}
+            title={heading}
+            items={block.items}
+            locale={locale}
+          />,
         );
         return;
       }
@@ -602,7 +728,7 @@ function ChecklistBlock({
   blockId: string;
   title: string | undefined;
   items: { id: string; text: Localised }[];
-  locale: 'en' | 'es';
+  locale: "en" | "es";
 }): React.ReactElement {
   const [picked, setPicked] = React.useState<Record<string, boolean>>({});
 
@@ -611,12 +737,15 @@ function ChecklistBlock({
   };
 
   const done = items.reduce((n, it) => (picked[it.id] ? n + 1 : n), 0);
-  const displayTitle = title?.trim() || (locale === 'es' ? 'Lista de verificación' : 'Checklist');
+  const displayTitle =
+    title?.trim() || (locale === "es" ? "Lista de verificación" : "Checklist");
 
   return (
     <div className="checklist-block space-y-3 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 shadow-e1">
       <div className="flex items-center justify-between">
-        <h3 className="checklist-title text-base font-bold text-[var(--color-ink)]">{displayTitle}</h3>
+        <h3 className="checklist-title text-base font-bold text-[var(--color-ink)]">
+          {displayTitle}
+        </h3>
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--color-wash)] text-[var(--color-ink-2)]">
           {done}/{items.length}
         </span>
@@ -633,30 +762,39 @@ function ChecklistBlock({
                 aria-checked={checked}
                 onClick={() => toggle(it.id)}
                 className={cn(
-                  'checklist-row group flex w-full items-center gap-3 text-left transition-colors',
-                  checked ? 'checklist-row--done bg-[var(--color-ok-tint)]' : 'hover:bg-[var(--color-wash)]',
+                  "checklist-row group flex w-full items-center gap-3 text-left transition-colors",
+                  checked
+                    ? "checklist-row--done bg-[var(--color-ok-tint)]"
+                    : "hover:bg-[var(--color-wash)]",
                 )}
                 style={{
-                  padding: '12px 16px',
+                  padding: "12px 16px",
                   borderRadius: 0,
                 }}
               >
                 <span
                   className={cn(
-                    'checklist-box flex size-5 shrink-0 items-center justify-center rounded border transition-colors',
+                    "checklist-box flex size-5 shrink-0 items-center justify-center rounded border transition-colors",
                     checked
-                      ? 'checklist-box--on border-[var(--color-ok-fill)] bg-[var(--color-ok-fill)] text-white'
-                      : 'checklist-box--off border-[var(--color-line-2)] bg-[var(--color-surface)] text-transparent group-hover:border-[var(--color-ink-3)]',
+                      ? "checklist-box--on border-[var(--color-ok-fill)] bg-[var(--color-ok-fill)] text-white"
+                      : "checklist-box--off border-[var(--color-line-2)] bg-[var(--color-surface)] text-transparent group-hover:border-[var(--color-ink-3)]",
                   )}
                   aria-hidden="true"
                 >
                   <LuCheck className="size-3.5 stroke-[3]" />
                 </span>
-                <span className="checklist-num text-xs font-mono text-[var(--color-ink-3)]" aria-hidden="true">{i + 1}</span>
+                <span
+                  className="checklist-num text-xs font-mono text-[var(--color-ink-3)]"
+                  aria-hidden="true"
+                >
+                  {i + 1}
+                </span>
                 <span
                   className={cn(
-                    'checklist-text flex-1 text-sm font-medium transition-colors',
-                    checked ? 'text-[var(--color-ink-3)] line-through' : 'text-[var(--color-ink)]',
+                    "checklist-text flex-1 text-sm font-medium transition-colors",
+                    checked
+                      ? "text-[var(--color-ink-3)] line-through"
+                      : "text-[var(--color-ink)]",
                   )}
                 >
                   {label}
@@ -667,7 +805,9 @@ function ChecklistBlock({
         })}
       </ul>
       <p className="checklist-progress text-xs text-[var(--color-ink-3)] font-medium pt-1">
-        {locale === 'es' ? 'Marca cada elemento al completarlo.' : 'Check each item as you complete it.'}
+        {locale === "es"
+          ? "Marca cada elemento al completarlo."
+          : "Check each item as you complete it."}
       </p>
     </div>
   );

@@ -1,38 +1,33 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import {
-  LuEye,
-  LuEyeOff,
-  LuCircleAlert,
-  LuLoader,
-} from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import * as React from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { LuEye, LuEyeOff, LuCircleAlert, LuLoader } from "react-icons/lu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { login, ApiException } from '@/lib/api';
+} from "@/components/ui/card";
+import { login, ApiException } from "@/lib/api";
 
 interface LoginFormProps {
   locale: string;
 }
 
 export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
-  const t = useTranslations('login');
+  const t = useTranslations("login");
   const router = useRouter();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,14 +39,17 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setError(t('errorInvalid'));
+      setError(t("errorInvalid"));
       return;
     }
 
     startTransition(async () => {
       try {
         const res = await login({ email: trimmedEmail, password });
-        if (res.employee?.role === 'admin' || res.employee?.role === 'super_admin') {
+        if (
+          res.employee?.role === "admin" ||
+          res.employee?.role === "super_admin"
+        ) {
           router.replace(`/${locale}/admin`);
         } else {
           router.replace(`/${locale}/employee/home`);
@@ -59,11 +57,12 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
         router.refresh();
       } catch (err) {
         if (err instanceof ApiException) {
-          if (err.code === 'ACCOUNT_LOCKED') setError(t('errorLocked'));
-          else if (err.code === 'INVALID_CREDENTIALS') setError(t('errorInvalid'));
+          if (err.code === "ACCOUNT_LOCKED") setError(t("errorLocked"));
+          else if (err.code === "INVALID_CREDENTIALS")
+            setError(t("errorInvalid"));
           else setError(err.message);
         } else {
-          setError(t('errorGeneric'));
+          setError(t("errorGeneric"));
         }
       }
     });
@@ -73,8 +72,8 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
     <Card
       className="flex-1 w-full bg-[var(--color-surface)] shadow-2xl flex flex-col border-t border-x sm:border border-[var(--color-line-2)] rounded-b-none sm:rounded-b-[32px] overflow-hidden pb-1 mb-0 sm:mb-20"
       style={{
-        borderTopLeftRadius: '32px',
-        borderTopRightRadius: '32px',
+        borderTopLeftRadius: "32px",
+        borderTopRightRadius: "32px",
       }}
     >
       {/* Decorative top accent line */}
@@ -87,7 +86,12 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
             <div className="flex sm:hidden items-center justify-center gap-2 mb-3.5">
               <div
                 className="flex items-center justify-center rounded-full bg-white shadow-sm border border-[var(--color-line-2)] p-1 shrink-0"
-                style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px' }}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  minWidth: "32px",
+                  minHeight: "32px",
+                }}
               >
                 <img
                   src="/brand-mark.png"
@@ -104,7 +108,7 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
               className="font-[family-name:var(--font-display)] text-xl sm:text-[26px] tracking-tight text-[var(--color-ink)] leading-tight"
               style={{ fontWeight: 500 }}
             >
-              {t('heading')}
+              {t("heading")}
             </CardTitle>
           </CardHeader>
 
@@ -121,35 +125,41 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
 
             {/* Email field */}
             <div className="grid gap-1.5">
-              <Label htmlFor="email" className="text-sm font-medium text-[var(--color-ink)]">
-                {t('emailLabel')}
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-[var(--color-ink)]"
+              >
+                {t("emailLabel")}
               </Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
-                placeholder={t('emailPlaceholder')}
+                placeholder={t("emailPlaceholder")}
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isPending}
                 className="h-12 w-full rounded-xl sm:rounded-2xl border-[var(--color-line-2)] bg-[var(--color-field)] text-sm sm:text-base focus:border-[var(--color-brand-600)] transition-all"
-                style={{ paddingLeft: '16px', paddingRight: '16px' }}
+                style={{ paddingLeft: "16px", paddingRight: "16px" }}
               />
             </div>
 
             {/* Password field */}
             <div className="grid gap-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-[var(--color-ink)]">
-                  {t('passwordLabel')}
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-medium text-[var(--color-ink)]"
+                >
+                  {t("passwordLabel")}
                 </Label>
                 <Link
                   href={`/${locale}/forgot-password`}
                   className="text-sm font-semibold text-[var(--color-brand-600)] hover:text-[var(--color-brand-700)] hover:underline focus-visible:outline-none transition-colors"
                 >
-                  {t('forgotPassword')}
+                  {t("forgotPassword")}
                 </Link>
               </div>
 
@@ -157,38 +167,38 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
                 <Input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  placeholder={t('passwordPlaceholder')}
+                  placeholder={t("passwordPlaceholder")}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isPending}
                   className="h-12 w-full rounded-xl sm:rounded-2xl border-[var(--color-line-2)] bg-[var(--color-field)] text-sm sm:text-base focus:border-[var(--color-brand-600)] transition-all"
-                  style={{ paddingLeft: '16px', paddingRight: '48px' }}
+                  style={{ paddingLeft: "16px", paddingRight: "48px" }}
                 />
                 <button
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   className="text-[var(--color-ink-3)] hover:text-[var(--color-ink)] transition-colors focus:outline-none cursor-pointer"
                   style={{
-                    position: 'absolute',
-                    right: '14px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '4px',
+                    position: "absolute",
+                    right: "14px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "4px",
                     zIndex: 10,
                   }}
                 >
                   {showPassword ? (
-                    <LuEyeOff style={{ width: '20px', height: '20px' }} />
+                    <LuEyeOff style={{ width: "20px", height: "20px" }} />
                   ) : (
-                    <LuEye style={{ width: '20px', height: '20px' }} />
+                    <LuEye style={{ width: "20px", height: "20px" }} />
                   )}
                 </button>
               </div>
@@ -219,7 +229,7 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
                 htmlFor="remember"
                 className="text-sm text-[var(--color-ink-2)] select-none cursor-pointer"
               >
-                {t('rememberMe')}
+                {t("rememberMe")}
               </label>
             </div>
 
@@ -233,17 +243,17 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
                 {isPending ? (
                   <>
                     <LuLoader className="animate-spin text-base" />
-                    <span>{t('submitting')}</span>
+                    <span>{t("submitting")}</span>
                   </>
                 ) : (
-                  <span>{t('submit')}</span>
+                  <span>{t("submit")}</span>
                 )}
               </Button>
             </div>
 
             {/* Assistance note */}
             <p className="text-xs text-center text-[var(--color-ink-3)] leading-relaxed max-w-xs mx-auto pt-1">
-              {t('helpNotice')}
+              {t("helpNotice")}
             </p>
           </CardContent>
         </div>
@@ -251,7 +261,8 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
         {/* Footer with copyright at bottom of card */}
         <CardFooter className="mt-auto px-6 sm:px-8 pb-5 pt-3 text-center shrink-0">
           <p className="text-[11px] text-center text-[var(--color-ink-3)]/80 mx-auto">
-            &copy; {new Date().getFullYear()} Alimentaria Mexicana &bull; Culinary Learning &amp; SOPs
+            &copy; {new Date().getFullYear()} Alimentaria Mexicana &bull;
+            Culinary Learning &amp; SOPs
           </p>
         </CardFooter>
       </form>

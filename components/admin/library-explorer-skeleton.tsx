@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LibraryExplorerSkeletonProps {
   className?: string;
@@ -13,9 +13,11 @@ interface LibraryExplorerSkeletonProps {
  * tile, title + status pill, purpose, meta line, kebab) — so the swap to
  * content is a fade, not a reflow.
  */
-export function LibraryExplorerSkeleton({ className }: LibraryExplorerSkeletonProps): React.ReactElement {
+export function LibraryExplorerSkeleton({
+  className,
+}: LibraryExplorerSkeletonProps): React.ReactElement {
   return (
-    <div aria-hidden="true" className={cn('space-y-6', className)}>
+    <div aria-hidden="true" className={cn("space-y-6", className)}>
       {/* Categories label + chip rail */}
       <div className="space-y-2">
         <Skeleton className="h-4 w-20" />
@@ -24,7 +26,10 @@ export function LibraryExplorerSkeleton({ className }: LibraryExplorerSkeletonPr
             {[52, 88, 96, 124, 72, 120, 80, 72].map((w, i) => (
               <Skeleton
                 key={i}
-                className={cn('h-8 shrink-0 rounded-full', i === 0 && 'bg-[var(--color-brand-tint)]')}
+                className={cn(
+                  "h-8 shrink-0 rounded-full",
+                  i === 0 && "bg-[var(--color-brand-tint)]",
+                )}
                 // Widths echo the real chip labels so the rail settles into
                 // place instead of jumping when the names land.
                 style={{ width: `${w}px` }}

@@ -25,7 +25,7 @@ export class ApiException extends Error {
     details: { path: string; message: string }[] = [],
   ) {
     super(message);
-    this.name = 'ApiException';
+    this.name = "ApiException";
     this.status = status;
     this.code = code;
     this.details = details;

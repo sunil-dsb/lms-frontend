@@ -1,6 +1,9 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import type { TrainingAssignmentRow, TrainingAssignmentStatus } from '@/lib/types';
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import type {
+  TrainingAssignmentRow,
+  TrainingAssignmentStatus,
+} from "@/lib/types";
 
 /**
  * Compact training count for a single employee on a table row:
@@ -26,14 +29,14 @@ export function TrainingSummary({
   className?: string;
 }): React.ReactElement {
   const total = rows.length;
-  const complete = rows.filter((r) => r.effectiveStatus === 'complete').length;
-  const overdue = rows.filter((r) => r.effectiveStatus === 'overdue').length;
+  const complete = rows.filter((r) => r.effectiveStatus === "complete").length;
+  const overdue = rows.filter((r) => r.effectiveStatus === "overdue").length;
 
   if (total === 0) {
     return (
       <span
         className={cn(
-          'inline-flex items-center text-sm text-[var(--color-ink-3)]',
+          "inline-flex items-center text-sm text-[var(--color-ink-3)]",
           className,
         )}
         aria-label="No training assigned"
@@ -43,11 +46,12 @@ export function TrainingSummary({
     );
   }
 
-  const labelTone = overdue > 0 ? 'text-[var(--color-bad)]' : 'text-[var(--color-ink-2)]';
+  const labelTone =
+    overdue > 0 ? "text-[var(--color-bad)]" : "text-[var(--color-ink-2)]";
 
   return (
     <span
-      className={cn('tabular-nums text-sm font-medium', labelTone, className)}
+      className={cn("tabular-nums text-sm font-medium", labelTone, className)}
       aria-label={`${complete} of ${total} training complete`}
     >
       {complete} / {total}
@@ -70,16 +74,17 @@ export function summariseTraining(rows: TrainingAssignmentRow[]): {
   share: number;
 } {
   const total = rows.length;
-  const complete = rows.filter((r) => r.effectiveStatus === 'complete').length;
-  const overdue = rows.filter((r) => r.effectiveStatus === 'overdue').length;
+  const complete = rows.filter((r) => r.effectiveStatus === "complete").length;
+  const overdue = rows.filter((r) => r.effectiveStatus === "overdue").length;
   const inProgress = rows.filter(
-    (r) => r.effectiveStatus === 'in_progress' || r.effectiveStatus === 'due',
+    (r) => r.effectiveStatus === "in_progress" || r.effectiveStatus === "due",
   ).length;
   // "Not started" = nothing completed yet AND not currently in progress.
   // A row whose status is `due` (assigned, no steps ticked) counts as not
   // started; a row whose status is `in_progress` does not.
   const notStarted = rows.filter(
-    (r) => r.effectiveStatus === 'due' && r.assignment.completedStepIds.length === 0,
+    (r) =>
+      r.effectiveStatus === "due" && r.assignment.completedStepIds.length === 0,
   ).length;
   const share = total > 0 ? Math.round((complete / total) * 100) : 0;
   return { total, complete, inProgress, notStarted, overdue, share };
@@ -89,15 +94,15 @@ export function summariseTraining(rows: TrainingAssignmentRow[]): {
  *  truth so the list and detail page can't drift. */
 export function trainingStatusTone(
   status: TrainingAssignmentStatus,
-): 'ok' | 'progress' | 'warn' | 'bad' {
+): "ok" | "progress" | "warn" | "bad" {
   switch (status) {
-    case 'complete':
-      return 'ok';
-    case 'in_progress':
-      return 'progress';
-    case 'due':
-      return 'warn';
-    case 'overdue':
-      return 'bad';
+    case "complete":
+      return "ok";
+    case "in_progress":
+      return "progress";
+    case "due":
+      return "warn";
+    case "overdue":
+      return "bad";
   }
 }

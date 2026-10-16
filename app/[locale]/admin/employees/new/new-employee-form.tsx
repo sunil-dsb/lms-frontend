@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState, useTransition, useMemo, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CustomSelect } from '@/components/ui/custom-select';
-import { MultiSelectChips } from '@/components/ui/multi-select-chips';
-import { PageHeader } from '@/components/admin/page-header';
-import { LuUserPlus, LuLoader } from 'react-icons/lu';
-import { createEmployee } from '@/services/employees/api';
-import { toast } from '@/components/ui/toast';
-import { fetchLocations } from '@/services/locations/api';
-import { fetchJobs, fetchJobStations } from '@/services/jobs/api';
-import { ApiException } from '@/lib/api';
+import * as React from "react";
+import { useState, useTransition, useMemo, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { MultiSelectChips } from "@/components/ui/multi-select-chips";
+import { PageHeader } from "@/components/admin/page-header";
+import { LuUserPlus, LuLoader } from "react-icons/lu";
+import { createEmployee } from "@/services/employees/api";
+import { toast } from "@/components/ui/toast";
+import { fetchLocations } from "@/services/locations/api";
+import { fetchJobs, fetchJobStations } from "@/services/jobs/api";
+import { ApiException } from "@/lib/api";
 import type {
   AccessLevel,
   Employee,
@@ -24,9 +24,13 @@ import type {
   Location,
   Role,
   Station,
-} from '@/lib/types';
-import { InviteResultCard } from './invite-result';
-import { EmployeeAccessSection, EmployeeAdditionalSection, EmployeeDetailsSection } from './employee-form-sections';
+} from "@/lib/types";
+import { InviteResultCard } from "./invite-result";
+import {
+  EmployeeAccessSection,
+  EmployeeAdditionalSection,
+  EmployeeDetailsSection,
+} from "./employee-form-sections";
 
 interface NewEmployeeFormProps {
   locale: string;
@@ -38,7 +42,7 @@ export interface FormState {
   name: string;
   email: string;
   locationId: string;
-  accessLevel: AccessLevel | '';
+  accessLevel: AccessLevel | "";
   roleIds: string[];
   stationIds: string[];
   employeeCode: string;
@@ -46,14 +50,14 @@ export interface FormState {
 }
 
 const initialState = (defaultLocationId: string): FormState => ({
-  name: '',
-  email: '',
+  name: "",
+  email: "",
   locationId: defaultLocationId,
-  accessLevel: '',
+  accessLevel: "",
   roleIds: [],
   stationIds: [],
-  employeeCode: '',
-  languagePref: 'en',
+  employeeCode: "",
+  languagePref: "en",
 });
 
 export interface FieldErrors {
@@ -74,14 +78,16 @@ export function NewEmployeeForm({
   locations: initialLocations,
   roles: initialRoles,
 }: NewEmployeeFormProps): React.ReactElement {
-  const t = useTranslations('admin');
+  const t = useTranslations("admin");
 
   // Filter out any mock 'loc-main' id from initial locations
-  const validInitialLocations = initialLocations.filter((l) => l.id !== 'loc-main');
+  const validInitialLocations = initialLocations.filter(
+    (l) => l.id !== "loc-main",
+  );
   const [locations, setLocations] = useState<Location[]>(validInitialLocations);
   const [roles, setRoles] = useState<Role[]>(initialRoles);
 
-  const defaultLocationId = validInitialLocations[0]?.id ?? '';
+  const defaultLocationId = validInitialLocations[0]?.id ?? "";
   const [form, setForm] = useState<FormState>(initialState(defaultLocationId));
 
   const [allStations, setAllStations] = useState<Station[]>([]);
@@ -91,7 +97,10 @@ export function NewEmployeeForm({
   const [isLoadingLocations, setIsLoadingLocations] = useState<boolean>(false);
   const [isLoadingRoles, setIsLoadingRoles] = useState<boolean>(false);
   const [isLoadingStations, setIsLoadingStations] = useState<boolean>(false);
-  const [result, setResult] = useState<{ employee: Employee; invite: InviteResult } | null>(null);
+  const [result, setResult] = useState<{
+    employee: Employee;
+    invite: InviteResult;
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
   const hasLoadedRef = React.useRef(false);
   // Roleâ†’stations fetches race when roles are toggled quickly: a slow
@@ -112,7 +121,10 @@ export function NewEmployeeForm({
           setLocations(locsRes.locations);
           setForm((f) => ({
             ...f,
-            locationId: !f.locationId || f.locationId === 'loc-main' ? locsRes.locations[0].id : f.locationId,
+            locationId:
+              !f.locationId || f.locationId === "loc-main"
+                ? locsRes.locations[0].id
+                : f.locationId,
           }));
         }
       } catch {
@@ -134,7 +146,10 @@ export function NewEmployeeForm({
     });
   }
 
-  function update<K extends keyof FormState>(key: K, value: FormState[K]): void {
+  function update<K extends keyof FormState>(
+    key: K,
+    value: FormState[K],
+  ): void {
     setForm((f) => ({ ...f, [key]: value }));
     clearFieldError(key as keyof FieldErrors);
     if (error) setError(null);
@@ -142,18 +157,18 @@ export function NewEmployeeForm({
 
   function onLocationChange(newLocationId: string): void {
     setForm((f) => ({ ...f, locationId: newLocationId }));
-    clearFieldError('locationId');
+    clearFieldError("locationId");
     if (error) setError(null);
   }
 
   // Handle access level toggle:
   // When Employee is selected: fetch jobs from jobs API; keep selections empty until user selects role
   // When Manager is selected: fetch jobs and send all jobs to get all stations; preselect all jobs and all stations
-  async function setAccessLevel(next: AccessLevel | ''): Promise<void> {
-    clearFieldError('accessLevel');
+  async function setAccessLevel(next: AccessLevel | ""): Promise<void> {
+    clearFieldError("accessLevel");
     if (error) setError(null);
 
-    if (next === 'manager') {
+    if (next === "manager") {
       setIsLoadingRoles(true);
       setIsLoadingStations(true);
       try {
@@ -161,7 +176,7 @@ export function NewEmployeeForm({
         const currentRoles: Role[] = fetchedJobs.map((j) => ({
           id: j.id,
           name: j.name,
-          clearanceLevel: 'general',
+          clearanceLevel: "general",
           stationIds: [],
           createdAt: j.createdAt || new Date().toISOString(),
         }));
@@ -183,27 +198,27 @@ export function NewEmployeeForm({
         // Preselect ALL job roles and ALL stations for Manager
         setForm((f) => ({
           ...f,
-          accessLevel: 'manager',
+          accessLevel: "manager",
           roleIds: currentRoles.map((r) => r.id),
           stationIds: uniqueStations.map((s) => s.id),
         }));
-        clearFieldError('roleIds');
+        clearFieldError("roleIds");
       } catch (err) {
         const msg =
           err instanceof ApiException && err.message
             ? err.message
             : err instanceof Error && err.message
               ? err.message
-              : t('errorGeneric');
+              : t("errorGeneric");
         toast.error(msg);
         setAvailableStations(allStations);
         setForm((f) => ({
           ...f,
-          accessLevel: 'manager',
+          accessLevel: "manager",
           roleIds: roles.map((r) => r.id),
           stationIds: allStations.map((s) => s.id),
         }));
-        clearFieldError('roleIds');
+        clearFieldError("roleIds");
       } finally {
         setIsLoadingRoles(false);
         setIsLoadingStations(false);
@@ -211,14 +226,14 @@ export function NewEmployeeForm({
       return;
     }
 
-    if (next === 'employee') {
+    if (next === "employee") {
       setIsLoadingRoles(true);
       try {
         const { jobs: fetchedJobs } = await fetchJobs();
         const currentRoles: Role[] = fetchedJobs.map((j) => ({
           id: j.id,
           name: j.name,
-          clearanceLevel: 'general',
+          clearanceLevel: "general",
           stationIds: [],
           createdAt: j.createdAt || new Date().toISOString(),
         }));
@@ -229,7 +244,7 @@ export function NewEmployeeForm({
             ? err.message
             : err instanceof Error && err.message
               ? err.message
-              : t('errorGeneric');
+              : t("errorGeneric");
         toast.error(msg);
       } finally {
         setIsLoadingRoles(false);
@@ -238,7 +253,7 @@ export function NewEmployeeForm({
       setAvailableStations([]);
       setForm((f) => ({
         ...f,
-        accessLevel: 'employee',
+        accessLevel: "employee",
         roleIds: [],
         stationIds: [],
       }));
@@ -249,7 +264,7 @@ export function NewEmployeeForm({
     setAvailableStations([]);
     setForm((f) => ({
       ...f,
-      accessLevel: '',
+      accessLevel: "",
       roleIds: [],
       stationIds: [],
     }));
@@ -260,7 +275,7 @@ export function NewEmployeeForm({
   // If jobs are cancelled, remove stations per their job.
   async function handleRoleIdsChange(nextRoleIds: string[]): Promise<void> {
     if (nextRoleIds.length > 0) {
-      clearFieldError('roleIds');
+      clearFieldError("roleIds");
     }
 
     if (nextRoleIds.length === 0) {
@@ -287,7 +302,9 @@ export function NewEmployeeForm({
         isArchived: false,
       }));
 
-      const availableStationIdSet = new Set(newAvailableStations.map((s) => s.id));
+      const availableStationIdSet = new Set(
+        newAvailableStations.map((s) => s.id),
+      );
 
       setAvailableStations(newAvailableStations);
       setForm((f) => ({
@@ -304,7 +321,7 @@ export function NewEmployeeForm({
           ? err.message
           : err instanceof Error && err.message
             ? err.message
-            : t('errorGeneric');
+            : t("errorGeneric");
       toast.error(msg);
       setForm((f) => ({
         ...f,
@@ -326,58 +343,68 @@ export function NewEmployeeForm({
   }
 
   const stationsBlockedReason = useMemo<string | undefined>(() => {
-    if (!form.accessLevel || form.roleIds.length === 0) return t('stationsEmptyNeedRole');
-    if (availableStations.length === 0) return t('stationsEmptyForRoles');
+    if (!form.accessLevel || form.roleIds.length === 0)
+      return t("stationsEmptyNeedRole");
+    if (availableStations.length === 0) return t("stationsEmptyForRoles");
     return undefined;
   }, [form.accessLevel, form.roleIds.length, availableStations.length, t]);
 
   function reset(): void {
-    setForm(initialState(locations[0]?.id ?? ''));
+    setForm(initialState(locations[0]?.id ?? ""));
     setAvailableStations([]);
     setError(null);
     setFieldErrors({});
   }
 
-  function validate(): { isValid: boolean; errors: FieldErrors; firstError: string | null } {
+  function validate(): {
+    isValid: boolean;
+    errors: FieldErrors;
+    firstError: string | null;
+  } {
     const errs: FieldErrors = {};
     let firstErr: string | null = null;
 
     const trimmedName = form.name.trim();
     if (!trimmedName) {
-      errs.name = t('errorNeedName');
+      errs.name = t("errorNeedName");
       firstErr = firstErr ?? errs.name;
-    } else if (trimmedName.length < MIN_NAME_LENGTH || trimmedName.length > MAX_NAME_LENGTH) {
-      errs.name = t('errorNameLength') || `Employee name must be between ${MIN_NAME_LENGTH} and ${MAX_NAME_LENGTH} characters.`;
+    } else if (
+      trimmedName.length < MIN_NAME_LENGTH ||
+      trimmedName.length > MAX_NAME_LENGTH
+    ) {
+      errs.name =
+        t("errorNameLength") ||
+        `Employee name must be between ${MIN_NAME_LENGTH} and ${MAX_NAME_LENGTH} characters.`;
       firstErr = firstErr ?? errs.name;
     }
 
     const trimmedEmail = form.email.trim();
     if (!trimmedEmail) {
-      errs.email = t('errorNeedEmail');
+      errs.email = t("errorNeedEmail");
       firstErr = firstErr ?? errs.email;
     } else if (!EMAIL_REGEX.test(trimmedEmail)) {
-      errs.email = t('errorInvalidEmail');
+      errs.email = t("errorInvalidEmail");
       firstErr = firstErr ?? errs.email;
     }
 
     if (!form.locationId) {
-      errs.locationId = t('errorNeedLocation');
+      errs.locationId = t("errorNeedLocation");
       firstErr = firstErr ?? errs.locationId;
     }
 
     if (!form.accessLevel) {
-      errs.accessLevel = t('errorNeedAccessLevel');
+      errs.accessLevel = t("errorNeedAccessLevel");
       firstErr = firstErr ?? errs.accessLevel;
     }
 
     if (form.roleIds.length === 0) {
-      errs.roleIds = t('errorNeedJobRole');
+      errs.roleIds = t("errorNeedJobRole");
       firstErr = firstErr ?? errs.roleIds;
     }
 
     const trimmedCode = form.employeeCode.trim();
     if (trimmedCode && trimmedCode.length !== 6) {
-      errs.employeeCode = t('errorNeedCode');
+      errs.employeeCode = t("errorNeedCode");
       firstErr = firstErr ?? errs.employeeCode;
     }
 
@@ -432,13 +459,17 @@ export function NewEmployeeForm({
         // If it ever stores extras, say so loudly instead of looking saved.
         const saved = new Set(res.employee.stationIds ?? []);
         const extras = selectedStationIds.filter((id) => !saved.has(id));
-        const added = [...saved].filter((id) => !selectedStationIds.includes(id));
+        const added = [...saved].filter(
+          (id) => !selectedStationIds.includes(id),
+        );
         if (extras.length > 0 || added.length > 0) {
           toast.warning(
             `Stations mismatch: sent ${selectedStationIds.length}, saved ${saved.size}.`,
           );
         }
-        toast.success(t('inviteCreatedHeading') || 'Employee invite generated successfully');
+        toast.success(
+          t("inviteCreatedHeading") || "Employee invite generated successfully",
+        );
         setResult(res);
       } catch (err) {
         // Surface the backend's own message field (ApiException.message is
@@ -450,7 +481,7 @@ export function NewEmployeeForm({
             ? err.message
             : err instanceof Error && err.message
               ? err.message
-              : t('errorGeneric');
+              : t("errorGeneric");
         setError(msg);
         toast.error(msg);
 
@@ -458,27 +489,29 @@ export function NewEmployeeForm({
         const newFieldErrors: FieldErrors = {};
 
         if (err instanceof ApiException) {
-          if (err.code === 'EMAIL_TAKEN' || /email/i.test(msg)) {
+          if (err.code === "EMAIL_TAKEN" || /email/i.test(msg)) {
             newFieldErrors.email = msg;
           }
           if (
-            err.code === 'EMPLOYEE_CODE_TAKEN' ||
+            err.code === "EMPLOYEE_CODE_TAKEN" ||
             /employee code/i.test(msg) ||
             /code.*taken/i.test(msg) ||
             /code.*already/i.test(msg)
           ) {
             newFieldErrors.employeeCode = msg;
           }
-          if (err.code === 'LOCATION_NOT_FOUND' || /location/i.test(msg)) {
+          if (err.code === "LOCATION_NOT_FOUND" || /location/i.test(msg)) {
             newFieldErrors.locationId = msg;
           }
-          if (err.code === 'JOB_NOT_FOUND' || /job/i.test(msg)) {
+          if (err.code === "JOB_NOT_FOUND" || /job/i.test(msg)) {
             newFieldErrors.roleIds = msg;
           }
           if (Array.isArray(err.details) && err.details.length > 0) {
             for (const d of err.details) {
               if (d.path) {
-                const fieldKey = (d.path === 'jobIds' ? 'roleIds' : d.path) as keyof FieldErrors;
+                const fieldKey = (
+                  d.path === "jobIds" ? "roleIds" : d.path
+                ) as keyof FieldErrors;
                 newFieldErrors[fieldKey] = d.message;
               }
             }
@@ -512,17 +545,17 @@ export function NewEmployeeForm({
     );
   }
 
-  const field = 'flex flex-col gap-1.5';
+  const field = "flex flex-col gap-1.5";
 
   return (
     <div className="mx-auto max-w-[760px] w-full space-y-6">
       <PageHeader
-        title={t('newHeading')}
-        subtitle={t('newDescription')}
+        title={t("newHeading")}
+        subtitle={t("newDescription")}
         actions={
           <Link href={`/${locale}/admin/employees`}>
             <Button type="button" variant="neutral">
-              {t('cancel')}
+              {t("cancel")}
             </Button>
           </Link>
         }
@@ -551,9 +584,17 @@ export function NewEmployeeForm({
           onRolesChange={(ids) => void handleRoleIdsChange(ids)}
           onStationsChange={handleStationIdsChange}
         />
-        <EmployeeAdditionalSection form={form} fieldErrors={fieldErrors} isPending={isPending} onUpdate={update} />
+        <EmployeeAdditionalSection
+          form={form}
+          fieldErrors={fieldErrors}
+          isPending={isPending}
+          onUpdate={update}
+        />
         {error ? (
-          <p role="alert" className="text-sm font-medium text-[var(--color-bad)]">
+          <p
+            role="alert"
+            className="text-sm font-medium text-[var(--color-bad)]"
+          >
             {error}
           </p>
         ) : null}
@@ -561,14 +602,18 @@ export function NewEmployeeForm({
         <div className="flex items-center justify-end gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-6 py-4 shadow-e1 sm:px-8">
           <Button
             type="submit"
-            disabled={isPending || isLoadingLocations || isLoadingRoles || isLoadingStations}
+            disabled={
+              isPending ||
+              isLoadingLocations ||
+              isLoadingRoles ||
+              isLoadingStations
+            }
             icon={LuUserPlus}
           >
-            {isPending ? t('submitting') : t('submit')}
+            {isPending ? t("submitting") : t("submit")}
           </Button>
         </div>
       </form>
     </div>
   );
 }
-

@@ -1,11 +1,30 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { ALLERGEN_LABELS, type AllergenKey } from '@/lib/allergens';
-import { LuArrowLeft, LuArrowLeftRight, LuBadgeCheck, LuCheck, LuChevronDown, LuChevronRight, LuCircleAlert, LuDownload, LuFocus, LuImage, LuLightbulb, LuLock, LuPlay, LuTestTube, LuTriangleAlert, LuUtensils, LuWrench, LuX } from 'react-icons/lu';
-import { Icon, iconByName } from '@/components/ui/icon';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import type { IconType } from 'react-icons';
+import * as React from "react";
+import { ALLERGEN_LABELS, type AllergenKey } from "@/lib/allergens";
+import {
+  LuArrowLeft,
+  LuArrowLeftRight,
+  LuBadgeCheck,
+  LuCheck,
+  LuChevronDown,
+  LuChevronRight,
+  LuCircleAlert,
+  LuDownload,
+  LuFocus,
+  LuImage,
+  LuLightbulb,
+  LuLock,
+  LuPlay,
+  LuTestTube,
+  LuTriangleAlert,
+  LuUtensils,
+  LuWrench,
+  LuX,
+} from "react-icons/lu";
+import { Icon, iconByName } from "@/components/ui/icon";
+import { classifyVideoUrl } from "@/lib/procedure-media";
+import type { IconType } from "react-icons";
 
 /**
  * The vocabulary of an SOP / recipe / training chapter page.
@@ -19,7 +38,7 @@ import type { IconType } from 'react-icons';
  */
 
 const cn = (...parts: Array<string | false | null | undefined>) =>
-  parts.filter(Boolean).join(' ');
+  parts.filter(Boolean).join(" ");
 
 /* ----------------------------------------------------------------
    Page chrome
@@ -61,7 +80,7 @@ export function DocBar({
         <button
           type="button"
           onClick={onBack}
-          aria-label={backLabel ?? 'Back'}
+          aria-label={backLabel ?? "Back"}
           className="btn btn-ghost btn-icon btn-lg"
         >
           <LuArrowLeft aria-hidden="true" className="i" />
@@ -70,7 +89,7 @@ export function DocBar({
         <a
           className="btn btn-ghost btn-icon btn-lg"
           href={backHref}
-          aria-label={backLabel ?? 'Back'}
+          aria-label={backLabel ?? "Back"}
         >
           <LuArrowLeft aria-hidden="true" className="i" />
         </a>
@@ -82,7 +101,11 @@ export function DocBar({
       {rightSlot}
       {children}
       {action ? (
-        <button type="button" className="btn btn-ghost btn-lg" onClick={action.onClick}>
+        <button
+          type="button"
+          className="btn btn-ghost btn-lg"
+          onClick={action.onClick}
+        >
           <action.icon aria-hidden="true" className="i" />
           {action.label}
         </button>
@@ -108,7 +131,11 @@ export function Cover({ src, alt }: { src?: string; alt?: string }) {
     );
   }
   // eslint-disable-next-line @next/next/no-img-element
-  return <div className="cover"><img src={src} alt={alt ?? ''} width={1600} height={900} /></div>;
+  return (
+    <div className="cover">
+      <img src={src} alt={alt ?? ""} width={1600} height={900} />
+    </div>
+  );
 }
 
 /** Page icon (straddles the cover) + crumb + title. */
@@ -129,7 +156,7 @@ export function DocHead({
   const showImg = Boolean(iconImageUrl && !imgError);
 
   return (
-    <header className={icon || showImg ? 'doc-head' : 'doc-head pt-6'}>
+    <header className={icon || showImg ? "doc-head" : "doc-head pt-6"}>
       {showImg ? (
         <div className="doc-icon is-img">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -140,9 +167,15 @@ export function DocHead({
           <Icon icon={iconByName(icon)} className="i" />
         </div>
       ) : null}
-      <div className="doc-crumb" suppressHydrationWarning>{category}</div>
+      <div className="doc-crumb" suppressHydrationWarning>
+        {category}
+      </div>
       <h1 className="doc-title display">{title}</h1>
-      {!withCover && <div className="qr print-only"><span className="code">QR</span></div>}
+      {!withCover && (
+        <div className="qr print-only">
+          <span className="code">QR</span>
+        </div>
+      )}
     </header>
   );
 }
@@ -159,7 +192,7 @@ export function Allergen({
   /** Structured FDA Big-9 list — rendered as chips above the summary when
    *  present. `detail`/`summary` stay as supplementary free-form copy. */
   selectedAllergens?: readonly string[];
-  locale: 'en' | 'es';
+  locale: "en" | "es";
 }) {
   return (
     <div className="allergen" role="note">
@@ -193,7 +226,7 @@ export function DocPurpose({ children }: { children: React.ReactNode }) {
    Readouts: facts + yield
    ---------------------------------------------------------------- */
 
-export type FactKind = 'default' | 'ok';
+export type FactKind = "default" | "ok";
 export type Fact = {
   /** Icon name, not the component: this crosses the server/client boundary. */
   icon: string;
@@ -207,7 +240,7 @@ export function Facts({ items }: { items: Fact[] }) {
   return (
     <dl className="facts">
       {items.map((f, i) => (
-        <div key={i} className={f.kind === 'ok' ? 'ok' : undefined}>
+        <div key={i} className={f.kind === "ok" ? "ok" : undefined}>
           <dt>
             <Icon icon={iconByName(f.icon)} className="i i-sm" />
             {f.label}
@@ -268,12 +301,17 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className={cn('doc-sec', part && 'phase', className)} id={id}>
+    <section className={cn("doc-sec", part && "phase", className)} id={id}>
       {part ? <p className="phase-part">{part}</p> : null}
       {title ? (
         <h2>
           {title}
-          {count && <span className="count">{' · '}{count}</span>}
+          {count && (
+            <span className="count">
+              {" · "}
+              {count}
+            </span>
+          )}
         </h2>
       ) : null}
       {children}
@@ -318,4 +356,3 @@ export function FixList({
 /* ----------------------------------------------------------------
    Typed step notes
    ---------------------------------------------------------------- */
-

@@ -1,4 +1,4 @@
-import type { Procedure, CreateProcedureInput } from '@/lib/types';
+import type { Procedure, CreateProcedureInput } from "@/lib/types";
 
 export type { Procedure, CreateProcedureInput };
 
@@ -20,7 +20,7 @@ export interface ProcedureFilterOptions {
 }
 
 export interface AssignedProceduresFilterOptions {
-  scope?: 'all' | 'mine';
+  scope?: "all" | "mine";
   categoryId?: string;
   page?: number;
   limit?: number;

@@ -8,13 +8,13 @@
  * to the build machine's locale, which is almost never what the cook sees.
  */
 export function formatDiscardAt(hours: number = 48): string {
-  if (typeof window === 'undefined') return '—';
+  if (typeof window === "undefined") return "—";
   const d = new Date(Date.now() + hours * 3600 * 1000);
   return new Intl.DateTimeFormat(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(d);
 }

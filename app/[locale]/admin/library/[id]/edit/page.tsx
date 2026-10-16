@@ -1,15 +1,15 @@
-import * as React from 'react';
-import { cookies } from 'next/headers';
-import { setRequestLocale } from 'next-intl/server';
-import { getProcedureBySlug, ApiException } from '@/lib/api';
-import type { Procedure } from '@/lib/types';
-import { EditProcedureLoader } from './edit-procedure-loader';
+import * as React from "react";
+import { cookies } from "next/headers";
+import { setRequestLocale } from "next-intl/server";
+import { getProcedureBySlug, ApiException } from "@/lib/api";
+import type { Procedure } from "@/lib/types";
+import { EditProcedureLoader } from "./edit-procedure-loader";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
 }
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function AdminLibraryEditPage({
   params,
@@ -21,7 +21,7 @@ export default async function AdminLibraryEditPage({
   const cookieHeader = cookieStore
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+    .join("; ");
 
   // Load the procedure to edit when the server can see it. A miss used
   // to 404 immediately — but procedures the server can't reach may still

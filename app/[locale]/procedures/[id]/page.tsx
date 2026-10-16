@@ -1,27 +1,29 @@
-import * as React from 'react';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { ApiException, fetchMe } from '@/lib/api';
-import { readViewAs } from '@/lib/view-as-server';
-import { ProcedureViewClient } from './procedure-view-client';
+import * as React from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { ApiException, fetchMe } from "@/lib/api";
+import { readViewAs } from "@/lib/view-as-server";
+import { ProcedureViewClient } from "./procedure-view-client";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
 }
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default async function ProcedurePage({ params }: PageProps): Promise<React.ReactElement> {
+export default async function ProcedurePage({
+  params,
+}: PageProps): Promise<React.ReactElement> {
   const { locale, id } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations('employee.doc');
+  const t = await getTranslations("employee.doc");
 
   const cookieStore = await cookies();
   const cookieHeader = cookieStore
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+    .join("; ");
 
   let employee;
   try {
@@ -37,7 +39,7 @@ export default async function ProcedurePage({ params }: PageProps): Promise<Reac
   // anyone who wants the library nav context while here. The proxy injects
   // the value as the x-lms-view-as request header. See lib/view-as.
   const viewAs = await readViewAs();
-  const effectiveRole = viewAs ?? 'employee';
+  const effectiveRole = viewAs ?? "employee";
 
   // The procedure itself is NOT fetched here: ProcedureViewClient
   // paints instantly from the on-device cache (the procedures list
@@ -45,12 +47,12 @@ export default async function ProcedurePage({ params }: PageProps): Promise<Reac
   // the background. Only the session is resolved server-side.
 
   const labels = {
-    back: t('back'),
-    tabHome: t('tabHome'),
-    tabProcedures: t('tabProcedures'),
-    tabTraining: t('tabTraining'),
-    tabSoon: t('tabSoon'),
-    tabsNav: t('tabsNav'),
+    back: t("back"),
+    tabHome: t("tabHome"),
+    tabProcedures: t("tabProcedures"),
+    tabTraining: t("tabTraining"),
+    tabSoon: t("tabSoon"),
+    tabsNav: t("tabsNav"),
   };
 
   return (

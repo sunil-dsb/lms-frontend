@@ -1,3 +1,3 @@
-'use client';
+"use client";
 
-export { SetPasswordForm as ActivateForm } from '../../set-password/set-password-form';
+export { SetPasswordForm as ActivateForm } from "../../set-password/set-password-form";

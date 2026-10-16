@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 /**
  * Resolves a category slug to its default illustration under
@@ -11,29 +11,29 @@ import * as React from 'react';
  * `.png`) and it renders.
  */
 const SLUG_FOR: Readonly<Record<string, string>> = {
-  cleaning: 'cleaning',
-  'cleaning-schedules': 'cleaning',
-  'food-safety': 'food-safety',
-  safety: 'food-safety',
-  'kitchen-operations': 'kitchen-operations',
-  station: 'kitchen-operations',
-  'station-procedures': 'kitchen-operations',
-  'opening-closing': 'opening-closing',
-  equipment: 'equipment',
-  'equipment-handling': 'equipment',
-  recipes: 'recipes',
-  recipe: 'recipes',
-  onboarding: 'onboarding',
-  delivery: 'delivery',
-  'delivery-receiving': 'delivery',
-  admin: 'general',
-  general: 'general',
-  'general-procedures': 'general',
+  cleaning: "cleaning",
+  "cleaning-schedules": "cleaning",
+  "food-safety": "food-safety",
+  safety: "food-safety",
+  "kitchen-operations": "kitchen-operations",
+  station: "kitchen-operations",
+  "station-procedures": "kitchen-operations",
+  "opening-closing": "opening-closing",
+  equipment: "equipment",
+  "equipment-handling": "equipment",
+  recipes: "recipes",
+  recipe: "recipes",
+  onboarding: "onboarding",
+  delivery: "delivery",
+  "delivery-receiving": "delivery",
+  admin: "general",
+  general: "general",
+  "general-procedures": "general",
 };
 
 export function categoryArtBase(slug: string | null | undefined): string {
-  const key = (slug || '').toLowerCase();
-  const file = SLUG_FOR[key] ?? 'general';
+  const key = (slug || "").toLowerCase();
+  const file = SLUG_FOR[key] ?? "general";
   return `/category-art/${file}`;
 }
 
@@ -51,7 +51,7 @@ export function CategoryArt({
       <img
         src={`${base}.png`}
         alt=""
-        className={className ?? 'size-full object-cover'}
+        className={className ?? "size-full object-cover"}
       />
     </picture>
   );

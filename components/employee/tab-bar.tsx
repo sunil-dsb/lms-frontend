@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { LuBookOpen, LuGraduationCap, LuHouse } from 'react-icons/lu';
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { LuBookOpen, LuGraduationCap, LuHouse } from "react-icons/lu";
 
-export type EmployeeTab = 'home' | 'procedures' | 'training';
+export type EmployeeTab = "home" | "procedures" | "training";
 
 export function TabBar({
   locale,
@@ -13,19 +13,49 @@ export function TabBar({
 }: {
   locale: string;
   active: EmployeeTab;
-  labels: { home: string; procedures: string; training: string; soon: string; nav: string };
+  labels: {
+    home: string;
+    procedures: string;
+    training: string;
+    soon: string;
+    nav: string;
+  };
 }): React.ReactElement {
   const router = useRouter();
   const [isPending, startTransition] = React.useTransition();
   const [targetTab, setTargetTab] = React.useState<EmployeeTab | null>(null);
 
-  const tabs: { key: EmployeeTab; href?: string; icon: typeof LuHouse; label: string; soon?: boolean }[] = [
-    { key: 'home', href: `/${locale}/employee/home`, icon: LuHouse, label: labels.home },
-    { key: 'procedures', href: `/${locale}/procedures`, icon: LuBookOpen, label: labels.procedures },
-    { key: 'training', href: `/${locale}/employee/training`, icon: LuGraduationCap, label: labels.training },
+  const tabs: {
+    key: EmployeeTab;
+    href?: string;
+    icon: typeof LuHouse;
+    label: string;
+    soon?: boolean;
+  }[] = [
+    {
+      key: "home",
+      href: `/${locale}/employee/home`,
+      icon: LuHouse,
+      label: labels.home,
+    },
+    {
+      key: "procedures",
+      href: `/${locale}/procedures`,
+      icon: LuBookOpen,
+      label: labels.procedures,
+    },
+    {
+      key: "training",
+      href: `/${locale}/employee/training`,
+      icon: LuGraduationCap,
+      label: labels.training,
+    },
   ];
 
-  const handleTabClick = (e: React.MouseEvent<HTMLAnchorElement>, tab: (typeof tabs)[0]) => {
+  const handleTabClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    tab: (typeof tabs)[0],
+  ) => {
     // 1. If clicking the tab we are already on, do nothing
     if (tab.key === active) {
       e.preventDefault();
@@ -71,7 +101,7 @@ export function TabBar({
               <tab.icon
                 aria-hidden="true"
                 className={`text-lg sm:text-xl transition-transform duration-200 group-hover:scale-110 ${
-                  isTarget ? 'animate-pulse' : ''
+                  isTarget ? "animate-pulse" : ""
                 }`}
               />
               <span className="tracking-tight">{tab.label}</span>
@@ -80,27 +110,31 @@ export function TabBar({
           );
           const shape = `group flex flex-1 flex-col items-center justify-center text-xs font-semibold transition-colors duration-150 ${
             on
-              ? 'text-[var(--color-brand-700)]'
+              ? "text-[var(--color-brand-700)]"
               : isTarget
-              ? 'text-[var(--color-brand-600)] opacity-80'
-              : tab.soon
-              ? 'text-[var(--color-ink-3)]'
-              : 'text-[var(--color-ink-2)] hover:text-[var(--color-ink)]'
-          } ${isPending ? 'cursor-wait pointer-events-none' : ''}`;
+                ? "text-[var(--color-brand-600)] opacity-80"
+                : tab.soon
+                  ? "text-[var(--color-ink-3)]"
+                  : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
+          } ${isPending ? "cursor-wait pointer-events-none" : ""}`;
 
           return tab.href ? (
             <a
               key={tab.key}
               href={tab.href}
               onClick={(e) => handleTabClick(e, tab)}
-              aria-current={on ? 'page' : undefined}
+              aria-current={on ? "page" : undefined}
               className={shape}
-              style={{ minHeight: '56px', gap: '3px' }}
+              style={{ minHeight: "56px", gap: "3px" }}
             >
               {inner}
             </a>
           ) : (
-            <span key={tab.key} className={shape} style={{ minHeight: '56px', gap: '3px' }}>
+            <span
+              key={tab.key}
+              className={shape}
+              style={{ minHeight: "56px", gap: "3px" }}
+            >
               {inner}
             </span>
           );

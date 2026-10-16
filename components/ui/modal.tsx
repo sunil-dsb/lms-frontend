@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { LuX } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { LuX } from "react-icons/lu";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // The dialog's name comes from the header it holds. Modals built their own <h2>
 // and never passed `title`, so every dialog on the category pages reached a
@@ -16,15 +16,15 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  size?: "sm" | "md" | "lg" | "xl" | "2xl";
 }
 
-const sizeClasses: Record<NonNullable<ModalProps['size']>, string> = {
-  sm: 'max-w-card',
-  md: 'max-w-note',
-  lg: 'max-w-narrow',
-  xl: 'max-w-doc',
-  '2xl': 'max-w-[860px]',
+const sizeClasses: Record<NonNullable<ModalProps["size"]>, string> = {
+  sm: "max-w-card",
+  md: "max-w-note",
+  lg: "max-w-narrow",
+  xl: "max-w-doc",
+  "2xl": "max-w-[860px]",
 };
 
 export function Modal({
@@ -33,7 +33,7 @@ export function Modal({
   title,
   children,
   className,
-  size = 'md',
+  size = "md",
 }: ModalProps): React.ReactElement | null {
   const modalRef = React.useRef<HTMLDivElement>(null);
   const titleId = React.useId();
@@ -41,14 +41,14 @@ export function Modal({
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
@@ -80,12 +80,14 @@ export function Modal({
         ref={modalRef}
         tabIndex={-1}
         className={cn(
-          'dialog-in relative flex max-h-[calc(100vh-2.5rem)] w-full flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-e3 focus:outline-none sm:max-h-[calc(100vh-4rem)]',
+          "dialog-in relative flex max-h-[calc(100vh-2.5rem)] w-full flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-e3 focus:outline-none sm:max-h-[calc(100vh-4rem)]",
           sizeClasses[size],
           className,
         )}
       >
-        <ModalTitleId.Provider value={titleId}>{children}</ModalTitleId.Provider>
+        <ModalTitleId.Provider value={titleId}>
+          {children}
+        </ModalTitleId.Provider>
       </div>
     </div>
   );
@@ -102,7 +104,7 @@ export function ModalHeader({
   title,
   description,
   onClose,
-  closeLabel = 'Close',
+  closeLabel = "Close",
 }: {
   title: string;
   description?: string;
@@ -113,12 +115,25 @@ export function ModalHeader({
   return (
     <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--color-line)] px-5 py-4">
       <div className="min-w-0">
-        <h2 id={id} className="font-[family-name:var(--font-ui)] text-md font-semibold tracking-snug text-[var(--color-ink)]">
+        <h2
+          id={id}
+          className="font-[family-name:var(--font-ui)] text-md font-semibold tracking-snug text-[var(--color-ink)]"
+        >
           {title}
         </h2>
-        {description ? <p className="mt-0.5 text-sm text-[var(--color-ink-2)]">{description}</p> : null}
+        {description ? (
+          <p className="mt-0.5 text-sm text-[var(--color-ink-2)]">
+            {description}
+          </p>
+        ) : null}
       </div>
-      <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label={closeLabel}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onClose}
+        aria-label={closeLabel}
+      >
         <LuX aria-hidden="true" className="text-lg" />
       </Button>
     </header>
@@ -126,17 +141,43 @@ export function ModalHeader({
 }
 
 /** The dialog's content, at the padding every dialog shares. */
-export function ModalBody({ children, className }: { children: React.ReactNode; className?: string }): React.ReactElement {
-  return <div className={cn('min-h-0 flex-1 overflow-y-auto overflow-x-hidden space-y-4 p-5 sm:p-6', className)}>{children}</div>;
+export function ModalBody({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}): React.ReactElement {
+  return (
+    <div
+      className={cn(
+        "min-h-0 flex-1 overflow-y-auto overflow-x-hidden space-y-4 p-5 sm:p-6",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 /**
  * The actions, bottom right, on the faintest ground so they read as the end of
  * the dialog. One primary at most; Cancel is neutral.
  */
-export function ModalFooter({ children, className }: { children: React.ReactNode; className?: string }): React.ReactElement {
+export function ModalFooter({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}): React.ReactElement {
   return (
-    <footer className={cn('flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--color-line)] bg-[var(--color-wash)] px-5 py-3', className)}>
+    <footer
+      className={cn(
+        "flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--color-line)] bg-[var(--color-wash)] px-5 py-3",
+        className,
+      )}
+    >
       {children}
     </footer>
   );

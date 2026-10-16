@@ -176,7 +176,7 @@
 .ds-code,
 .ds-token,
 .ds-spec-head code {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
   font-variant-numeric: tabular-nums;
 }
 
@@ -306,7 +306,7 @@
 }
 
 .ds-values {
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
   font-size: 0.8125rem;
   color: var(--ink-2);
   overflow-wrap: anywhere;
@@ -426,7 +426,7 @@
   font-weight: 600;
 }
 
-.ds-table th[scope='row'] {
+.ds-table th[scope="row"] {
   font-weight: 400;
 }
 

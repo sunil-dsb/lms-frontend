@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { LuCircleCheck } from 'react-icons/lu';
-import { Button, buttonClassName } from '@/components/ui/button';
-import { finishCourse } from './actions';
+import * as React from "react";
+import Link from "next/link";
+import { LuCircleCheck } from "react-icons/lu";
+import { Button, buttonClassName } from "@/components/ui/button";
+import { finishCourse } from "./actions";
 
 /**
  * The end of a course: tick that you read it (when the course asks for a
@@ -31,12 +31,21 @@ export function FinishCourse({
 
   if (done) {
     return (
-      <div role="status" className="space-y-4 rounded-[var(--radius-lg)] bg-[var(--color-ok-tint)] p-5">
+      <div
+        role="status"
+        className="space-y-4 rounded-[var(--radius-lg)] bg-[var(--color-ok-tint)] p-5"
+      >
         <p className="flex items-center gap-2 text-md font-semibold text-[var(--color-ok)]">
           <LuCircleCheck aria-hidden="true" />
           {labels.finished}
         </p>
-        <Link href={`/${locale}/employee/training`} className={buttonClassName({ variant: 'neutral', className: 'min-h-tap' })}>
+        <Link
+          href={`/${locale}/employee/training`}
+          className={buttonClassName({
+            variant: "neutral",
+            className: "min-h-tap",
+          })}
+        >
           {labels.back}
         </Link>
       </div>
@@ -69,7 +78,9 @@ export function FinishCourse({
       >
         {labels.finish}
       </Button>
-      {!agreed ? <p className="text-sm text-[var(--color-ink-2)]">{labels.hint}</p> : null}
+      {!agreed ? (
+        <p className="text-sm text-[var(--color-ink-2)]">{labels.hint}</p>
+      ) : null}
     </div>
   );
 }

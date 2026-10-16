@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { Toaster as SonnerToaster } from 'sonner';
+import * as React from "react";
+import { Toaster as SonnerToaster } from "sonner";
 
-export { toast } from 'sonner';
+export { toast } from "sonner";
 
 export function Toaster(): React.ReactElement {
   return (
@@ -19,7 +19,7 @@ export function Toaster(): React.ReactElement {
         // mirroring them moves the cross to the opposite (top-right) corner
         // with the same half-outside offset — no sonner CSS fork needed.
         className:
-          'font-medium text-xs shadow-e3 rounded-[var(--radius-lg)] [--toast-close-button-start:unset] [--toast-close-button-end:0] [--toast-close-button-transform:translate(35%,-35%)]',
+          "font-medium text-xs shadow-e3 rounded-[var(--radius-lg)] [--toast-close-button-start:unset] [--toast-close-button-end:0] [--toast-close-button-transform:translate(35%,-35%)]",
         duration: 4000,
       }}
     />

@@ -4,25 +4,30 @@
  * this path: every read and write goes to the API.
  */
 
-import type { Category } from '@/lib/types';
-import http from '@/lib/http';
-import { ApiException } from '@/lib/errors';
-import type {
-  CreateCategoryInput,
-  UpdateCategoryInput,
-} from './types';
+import type { Category } from "@/lib/types";
+import http from "@/lib/http";
+import { ApiException } from "@/lib/errors";
+import type { CreateCategoryInput, UpdateCategoryInput } from "./types";
 
 export async function createCategory(
-  input: CreateCategoryInput
+  input: CreateCategoryInput,
 ): Promise<Category> {
   const { data } = await http.post<{
     success: boolean;
-    data: { category: { id: string; nameEn: string; nameEs: string; categoryType: string; categoryIcon: string } };
+    data: {
+      category: {
+        id: string;
+        nameEn: string;
+        nameEs: string;
+        categoryType: string;
+        categoryIcon: string;
+      };
+    };
   }>(CATEGORIES_ENDPOINTS.LIST, {
     nameEn: input.nameEn,
     nameEs: input.nameEs,
-    categoryType: input.kind === 'station-tied' ? 'station_based' : 'general',
-    categoryIcon: input.icon || 'folder',
+    categoryType: input.kind === "station-tied" ? "station_based" : "general",
+    categoryIcon: input.icon || "folder",
   });
   clearBackendCategoriesCache();
   const category = data.data.category;
@@ -33,7 +38,7 @@ export async function createCategory(
     nameEs: category.nameEs,
     icon: category.categoryIcon,
     isArchived: false,
-    kind: /station/i.test(category.categoryType) ? 'station-tied' : 'general',
+    kind: /station/i.test(category.categoryType) ? "station-tied" : "general",
     subcategories: [],
   };
 }
@@ -56,11 +61,12 @@ export async function updateCategory(
   if (input.nameEn !== undefined) payload.nameEn = input.nameEn;
   if (input.nameEs !== undefined) payload.nameEs = input.nameEs;
   if (input.kind !== undefined) {
-    payload.categoryType = input.kind === 'station-tied' ? 'station_based' : 'general';
+    payload.categoryType =
+      input.kind === "station-tied" ? "station_based" : "general";
   }
   if (input.icon !== undefined) payload.categoryIcon = input.icon;
   if (Object.keys(payload).length === 0) {
-    throw new ApiException(400, 'INVALID_INPUT', 'Nothing to update');
+    throw new ApiException(400, "INVALID_INPUT", "Nothing to update");
   }
   const { data } = await http.patch<{
     success: boolean;
@@ -83,8 +89,8 @@ export async function archiveCategory(id: string): Promise<Category> {
 // ---------------------------------------------------------------------------
 
 const CATEGORIES_ENDPOINTS = {
-  LIST: '/api/v1/categories',
-  SUBCATEGORIES_ALL: '/api/v1/categories/subcategories',
+  LIST: "/api/v1/categories",
+  SUBCATEGORIES_ALL: "/api/v1/categories/subcategories",
 } as const;
 
 /** Backend ("Recipes") and mock ("Recipe") names for the same shelf rarely
@@ -92,10 +98,14 @@ const CATEGORIES_ENDPOINTS = {
  *  after normalization (`recipe`/`recipes`, `cleaning`/`cleaning-schedules`,
  *  `opening-closing`/`opening-and-closing`). Tight enough for a single-digit
  *  category domain; exact equality is checked first. */
-export function categorySlugsMatch(a: string | undefined, b: string | undefined): boolean {
-  const norm = (s: string): string => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const x = norm(a ?? '');
-  const y = norm(b ?? '');
+export function categorySlugsMatch(
+  a: string | undefined,
+  b: string | undefined,
+): boolean {
+  const norm = (s: string): string =>
+    (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const x = norm(a ?? "");
+  const y = norm(b ?? "");
   if (!x || !y) return false;
   if (x === y) return true;
   return x.includes(y) || y.includes(x);
@@ -104,19 +114,19 @@ export function categorySlugsMatch(a: string | undefined, b: string | undefined)
 /** Backend categories carry no slug — derive it the same way the mock
  *  creator does so backend and mock rows share one stable handle space. */
 export function backendSlug(nameEn: string): string {
-  return (nameEn || '')
+  return (nameEn || "")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function makeBackendHeaders(cookieHeader?: string): Record<string, string> {
   const headers: Record<string, string> = {};
   if (cookieHeader) {
-    headers['Cookie'] = cookieHeader;
+    headers["Cookie"] = cookieHeader;
     const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
     if (tokenMatch) {
-      headers['Authorization'] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+      headers["Authorization"] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
     }
   }
   return headers;
@@ -128,7 +138,7 @@ export interface BackendCategoryOptions {
   /** Backend defaults to 10 — pass explicitly so the list never truncates. */
   limit?: number;
   /** Backend `?status=` filter. Omitted = all statuses. */
-  status?: 'active' | 'archived' | 'all';
+  status?: "active" | "archived" | "all";
 }
 
 interface BackendCategoryRow {
@@ -137,30 +147,33 @@ interface BackendCategoryRow {
   nameEs: string;
   categoryType: string;
   categoryIcon: string;
-  status?: 'active' | 'archived';
+  status?: "active" | "archived";
   proceduresCount?: number;
 }
 
 /** Backend row → frontend Category (single mapping point for every
  *  categories read: list, single, create, update, archive). */
 function mapBackendCategory(c: BackendCategoryRow): Category {
-  const status = c.status ?? 'active';
+  const status = c.status ?? "active";
   return {
     id: c.id,
     slug: backendSlug(c.nameEn),
     nameEn: c.nameEn,
     nameEs: c.nameEs,
     icon: c.categoryIcon || undefined,
-    isArchived: status === 'archived',
+    isArchived: status === "archived",
     status,
     proceduresCount: c.proceduresCount ?? 0,
-    kind: /station/i.test(c.categoryType || '') ? 'station-tied' : 'general',
+    kind: /station/i.test(c.categoryType || "") ? "station-tied" : "general",
     subcategories: [],
   };
 }
 
 const inFlightBackendCategories = new Map<string, Promise<Category[]>>();
-const cachedBackendCategories = new Map<string, { data: Category[]; expiresAt: number }>();
+const cachedBackendCategories = new Map<
+  string,
+  { data: Category[]; expiresAt: number }
+>();
 const BACKEND_CATEGORIES_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour in-memory cache
 
 export function clearBackendCategoriesCache(): void {
@@ -170,10 +183,12 @@ export function clearBackendCategoriesCache(): void {
 
 export function clearBackendSubcategoriesCache(categoryId?: string): void {
   for (const key of cachedBackendSubcategories.keys()) {
-    if (!categoryId || key.endsWith(`::${categoryId}`)) cachedBackendSubcategories.delete(key);
+    if (!categoryId || key.endsWith(`::${categoryId}`))
+      cachedBackendSubcategories.delete(key);
   }
   for (const key of inFlightBackendSubcategories.keys()) {
-    if (!categoryId || key.endsWith(`::${categoryId}`)) inFlightBackendSubcategories.delete(key);
+    if (!categoryId || key.endsWith(`::${categoryId}`))
+      inFlightBackendSubcategories.delete(key);
   }
 }
 
@@ -185,8 +200,8 @@ export async function fetchBackendCategories(
   // process-wide server cache would keep showing the old list because the
   // browser-side POST cannot clear that server memory. Keep the cache only
   // in the browser, where mutations can invalidate it locally.
-  const useLocalCache = typeof window !== 'undefined';
-  const cacheKey = `${cookieHeader || 'client'}::${options.search || ''}::${options.page || 1}::${options.limit || 100}`;
+  const useLocalCache = typeof window !== "undefined";
+  const cacheKey = `${cookieHeader || "client"}::${options.search || ""}::${options.page || 1}::${options.limit || 100}`;
   const now = Date.now();
 
   const cached = cachedBackendCategories.get(cacheKey);
@@ -202,7 +217,7 @@ export async function fetchBackendCategories(
   const promise = (async () => {
     try {
       const headers = makeBackendHeaders(cookieHeader);
-      const { default: http } = await import('@/lib/http');
+      const { default: http } = await import("@/lib/http");
       const { data } = await http.get<{
         success: boolean;
         data: {
@@ -219,11 +234,16 @@ export async function fetchBackendCategories(
         },
       });
 
-      const rawList = Array.isArray(data.data?.categories) ? data.data.categories : [];
+      const rawList = Array.isArray(data.data?.categories)
+        ? data.data.categories
+        : [];
       const res = rawList.map(mapBackendCategory);
 
       if (useLocalCache) {
-        cachedBackendCategories.set(cacheKey, { data: res, expiresAt: Date.now() + BACKEND_CATEGORIES_CACHE_TTL_MS });
+        cachedBackendCategories.set(cacheKey, {
+          data: res,
+          expiresAt: Date.now() + BACKEND_CATEGORIES_CACHE_TTL_MS,
+        });
       }
       return res;
     } finally {
@@ -281,7 +301,10 @@ export interface LiveSubcategory {
   subcategoryIcon: string;
 }
 
-const inFlightBackendSubcategories = new Map<string, Promise<LiveSubcategory[]>>();
+const inFlightBackendSubcategories = new Map<
+  string,
+  Promise<LiveSubcategory[]>
+>();
 const cachedBackendSubcategories = new Map<
   string,
   { data: LiveSubcategory[]; expiresAt: number }
@@ -294,7 +317,7 @@ export async function fetchBackendSubcategories(
   categoryId: string,
   cookieHeader?: string,
 ): Promise<LiveSubcategory[]> {
-  const cacheKey = `${cookieHeader || 'client'}::${categoryId}`;
+  const cacheKey = `${cookieHeader || "client"}::${categoryId}`;
   const cached = cachedBackendSubcategories.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.data;
 
@@ -304,7 +327,7 @@ export async function fetchBackendSubcategories(
   const request = (async () => {
     try {
       const headers = makeBackendHeaders(cookieHeader);
-      const { default: http } = await import('@/lib/http');
+      const { default: http } = await import("@/lib/http");
       const { data } = await http.get<{
         success: boolean;
         data: { subcategories: LiveSubcategory[]; meta?: { total: number } };
@@ -313,13 +336,15 @@ export async function fetchBackendSubcategories(
         // Backend paginates (default 10) — a category's full shelf fits one page.
         params: { page: 1, limit: 200 },
       });
-      const list = Array.isArray(data.data?.subcategories) ? data.data.subcategories : [];
+      const list = Array.isArray(data.data?.subcategories)
+        ? data.data.subcategories
+        : [];
       const mapped: LiveSubcategory[] = list.map((s) => ({
         id: s.id,
         categoryId: s.categoryId,
         nameEn: s.nameEn,
         nameEs: s.nameEs,
-        subcategoryIcon: s.subcategoryIcon || '',
+        subcategoryIcon: s.subcategoryIcon || "",
       }));
       cachedBackendSubcategories.set(cacheKey, {
         data: mapped,
@@ -353,7 +378,7 @@ export async function fetchAllSubcategories(
   cookieHeader?: string,
 ): Promise<LiveSubcategory[]> {
   const headers = makeBackendHeaders(cookieHeader);
-  const { default: http } = await import('@/lib/http');
+  const { default: http } = await import("@/lib/http");
   const { data } = await http.get<{
     success: boolean;
     data: {
@@ -375,13 +400,15 @@ export async function fetchAllSubcategories(
       limit: options.limit ?? 200,
     },
   });
-  const list = Array.isArray(data.data?.subcategories) ? data.data.subcategories : [];
+  const list = Array.isArray(data.data?.subcategories)
+    ? data.data.subcategories
+    : [];
   return list.map((s) => ({
     id: s.id,
     categoryId: s.categoryId,
     nameEn: s.nameEn,
     nameEs: s.nameEs,
-    subcategoryIcon: s.subcategoryIcon || '',
+    subcategoryIcon: s.subcategoryIcon || "",
   }));
 }
 
@@ -414,12 +441,14 @@ export async function resolveLiveSubcategoryId(input: {
 }): Promise<string | null> {
   try {
     const cats = await fetchBackendCategories();
-    const normName = (s: string | null | undefined): string => (s || '').trim().toLowerCase();
+    const normName = (s: string | null | undefined): string =>
+      (s || "").trim().toLowerCase();
     const cat =
       cats.find((c) => input.categoryId != null && c.id === input.categoryId) ??
       cats.find(
         (c) =>
-          input.categorySlug != null && categorySlugsMatch(c.slug, input.categorySlug),
+          input.categorySlug != null &&
+          categorySlugsMatch(c.slug, input.categorySlug),
       ) ??
       cats.find(
         (c) =>
@@ -429,7 +458,9 @@ export async function resolveLiveSubcategoryId(input: {
     if (!cat) return null;
     const subs = await fetchBackendSubcategories(cat.id);
     const sub =
-      subs.find((s) => input.subcategoryId != null && s.id === input.subcategoryId) ??
+      subs.find(
+        (s) => input.subcategoryId != null && s.id === input.subcategoryId,
+      ) ??
       subs.find(
         (s) =>
           input.subcategorySlug != null &&

@@ -1,4 +1,8 @@
-import type { Station, CreateStationInput, UpdateStationInput } from '@/lib/types';
+import type {
+  Station,
+  CreateStationInput,
+  UpdateStationInput,
+} from "@/lib/types";
 
 export type { Station, CreateStationInput, UpdateStationInput };
 

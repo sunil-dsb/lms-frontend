@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ApiException } from '@/lib/errors';
+import * as React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ApiException } from "@/lib/errors";
 
 /**
  * TanStack Query provider with sensible defaults for the LMS.
@@ -19,7 +19,11 @@ import { ApiException } from '@/lib/errors';
  * - `mutations.retry: false`: a button-click mutation should not retry
  *   without the user's knowledge.
  */
-export function QueryProvider({ children }: { children: React.ReactNode }): React.ReactElement {
+export function QueryProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactElement {
   const [queryClient] = React.useState(
     () =>
       new QueryClient({
@@ -29,7 +33,11 @@ export function QueryProvider({ children }: { children: React.ReactNode }): Reac
             gcTime: 1000 * 60 * 30,
             refetchOnWindowFocus: false,
             retry: (failureCount, error) => {
-              if (error instanceof ApiException && error.status >= 400 && error.status < 500) {
+              if (
+                error instanceof ApiException &&
+                error.status >= 400 &&
+                error.status < 500
+              ) {
                 return false;
               }
               return failureCount < 2;
@@ -42,5 +50,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }): Reac
       }),
   );
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
 }

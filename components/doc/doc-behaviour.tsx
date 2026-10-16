@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { ProximityRail } from './proximity-rail';
+import * as React from "react";
+import { ProximityRail } from "./proximity-rail";
 
 /**
  * The document's three behaviours, ported from /lms.js so the React pages act
@@ -25,21 +25,21 @@ export function DocBehaviour({
   markCurrent?: boolean;
 } = {}): React.ReactElement {
   React.useEffect(() => {
-    const doc = document.querySelector<HTMLElement>('.doc');
+    const doc = document.querySelector<HTMLElement>(".doc");
     if (!doc) return;
     const cleanups: (() => void)[] = [];
 
     /* --- the bar's title ------------------------------------------------- */
-    const bar = doc.querySelector<HTMLElement>('.doc-bar');
-    const title = doc.querySelector<HTMLElement>('.doc-title');
-    if (bar && title && 'IntersectionObserver' in window) {
-      bar.classList.add('can-reveal');
-      const frame = requestAnimationFrame(() => bar.classList.add('is-ready'));
+    const bar = doc.querySelector<HTMLElement>(".doc-bar");
+    const title = doc.querySelector<HTMLElement>(".doc-title");
+    if (bar && title && "IntersectionObserver" in window) {
+      bar.classList.add("can-reveal");
+      const frame = requestAnimationFrame(() => bar.classList.add("is-ready"));
       const barH = bar.getBoundingClientRect().height || 64;
       const watch = new IntersectionObserver(
         (entries) => {
           const last = entries[entries.length - 1]!;
-          bar.classList.toggle('is-scrolled', !last.isIntersecting);
+          bar.classList.toggle("is-scrolled", !last.isIntersecting);
         },
         { rootMargin: `-${barH}px 0px 0px 0px` },
       );
@@ -47,27 +47,31 @@ export function DocBehaviour({
       cleanups.push(() => {
         cancelAnimationFrame(frame);
         watch.disconnect();
-        bar.classList.remove('can-reveal', 'is-ready', 'is-scrolled');
+        bar.classList.remove("can-reveal", "is-ready", "is-scrolled");
       });
     }
 
     /* --- which step is current ------------------------------------------- */
-    const steps = markCurrent ? Array.from(doc.querySelectorAll<HTMLElement>('.steps:not(.prep) .step')) : [];
-    if (steps.length && 'IntersectionObserver' in window) {
+    const steps = markCurrent
+      ? Array.from(doc.querySelectorAll<HTMLElement>(".steps:not(.prep) .step"))
+      : [];
+    if (steps.length && "IntersectionObserver" in window) {
       const watcher = new IntersectionObserver(
         (entries) => {
           entries.forEach((e) => {
-            (e.target as HTMLElement).dataset.inBand = e.isIntersecting ? '1' : '';
+            (e.target as HTMLElement).dataset.inBand = e.isIntersecting
+              ? "1"
+              : "";
           });
           const now = steps.find((s) => s.dataset.inBand);
-          steps.forEach((s) => s.classList.toggle('is-now', s === now));
+          steps.forEach((s) => s.classList.toggle("is-now", s === now));
         },
-        { rootMargin: '-30% 0px -45% 0px' },
+        { rootMargin: "-30% 0px -45% 0px" },
       );
       steps.forEach((s) => watcher.observe(s));
       cleanups.push(() => {
         watcher.disconnect();
-        steps.forEach((s) => s.classList.remove('is-now'));
+        steps.forEach((s) => s.classList.remove("is-now"));
       });
     }
 

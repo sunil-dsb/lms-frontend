@@ -1,13 +1,16 @@
-'use client';
-
+"use client";
 
 import * as React from "react";
 import Link from "next/link";
 
-
-
-
-import { LuArrowLeft, LuEye, LuFileText, LuLayoutGrid, LuSparkles, LuTriangleAlert } from "react-icons/lu";
+import {
+  LuArrowLeft,
+  LuEye,
+  LuFileText,
+  LuLayoutGrid,
+  LuSparkles,
+  LuTriangleAlert,
+} from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -21,7 +24,6 @@ import { PageHeader } from "@/components/admin/page-header";
 import { FormSection } from "@/components/admin/form-section";
 import { IconTile } from "@/components/ui/icon-tile";
 
-
 import { QuizEditor } from "@/components/admin/quiz-editor";
 
 import { BlockRenderer } from "@/components/doc/block-renderer";
@@ -30,19 +32,19 @@ import { NotionBlockList } from "@/app/[locale]/admin/library/new/notion-block-l
 
 import { cn } from "@/lib/utils";
 
-
-
 import type { ProcedureBlock } from "@/lib/types";
 
+import { AssignBlock, CategoryAccordion } from "./procedure-editor-fields";
 
+import type { ProcedureEditorModel } from "./procedure-editor-model";
+import { ProcedureEditorImportPanel } from "./procedure-editor-import-panel";
+import { ProcedureEditorReviewPanel } from "./procedure-editor-review-panel";
 
-import { AssignBlock, CategoryAccordion } from './procedure-editor-fields';
-
-import type { ProcedureEditorModel } from './procedure-editor-model';
-import { ProcedureEditorImportPanel } from './procedure-editor-import-panel';
-import { ProcedureEditorReviewPanel } from './procedure-editor-review-panel';
-
-export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }): React.ReactElement {
+export function ProcedureEditorView({
+  model,
+}: {
+  model: ProcedureEditorModel;
+}): React.ReactElement {
   const {
     locale,
     initial,
@@ -171,7 +173,7 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
     handleNext,
     handleSelectStep,
     save,
-    published
+    published,
   } = model;
   return (
     <div>
@@ -179,18 +181,42 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
         {showEntryCards ? (
           /* On the choose screen the sidebar already leads back to Procedures,
              so there is no eyebrow: the page opens straight on its question. */
-          <PageHeader title={t('importChooseTitle')} subtitle={t('importChooseSubtitle')} />
+          <PageHeader
+            title={t("importChooseTitle")}
+            subtitle={t("importChooseSubtitle")}
+          />
         ) : (
           <PageHeader
-            eyebrow={(creationMode === 'manual' || creationMode === 'upload') && !initial && !importedId ? t("importBack") : t("back")}
-            eyebrowHref={(creationMode === 'manual' || creationMode === 'upload') && !initial && !importedId ? undefined : `/${locale}/admin/library`}
-            onEyebrowClick={(creationMode === 'manual' || creationMode === 'upload') && !initial && !importedId ? () => (creationMode === 'upload' ? cancelImport() : resetToChoiceScreen()) : undefined}
+            eyebrow={
+              (creationMode === "manual" || creationMode === "upload") &&
+              !initial &&
+              !importedId
+                ? t("importBack")
+                : t("back")
+            }
+            eyebrowHref={
+              (creationMode === "manual" || creationMode === "upload") &&
+              !initial &&
+              !importedId
+                ? undefined
+                : `/${locale}/admin/library`
+            }
+            onEyebrowClick={
+              (creationMode === "manual" || creationMode === "upload") &&
+              !initial &&
+              !importedId
+                ? () =>
+                    creationMode === "upload"
+                      ? cancelImport()
+                      : resetToChoiceScreen()
+                : undefined
+            }
             title={isEdit ? t("titleEdit") : t("titleNew")}
           />
         )}
       </div>
 
-      {!showEntryCards && creationMode !== 'upload' ? (
+      {!showEntryCards && creationMode !== "upload" ? (
         <div className="sticky top-[56px] z-10 -mx-4 bg-[var(--color-bg-admin)]/95 px-4 py-2.5 backdrop-blur-md transition-all sm:-mx-6 sm:px-6 lg:top-[75px] lg:-mx-10 lg:px-10">
           <div className="mx-auto max-w-page">
             <WizardStepper
@@ -202,14 +228,20 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
                 label: s.label,
                 progress: stepProgress[s.id],
               }))}
-              onSelect={(id) => handleSelectStep(id as import("./procedure-editor-model").WizardStepId)}
+              onSelect={(id) =>
+                handleSelectStep(
+                  id as import("./procedure-editor-model").WizardStepId,
+                )
+              }
             />
           </div>
         </div>
       ) : null}
 
-
-      {!showEntryCards && !importing && !importLoadingId && creationMode !== 'upload' ? (
+      {!showEntryCards &&
+      !importing &&
+      !importLoadingId &&
+      creationMode !== "upload" ? (
         <div className="pointer-events-none fixed bottom-[90px] right-5 z-30 lg:right-6">
           <Button
             type="button"
@@ -224,10 +256,10 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
       ) : null}
 
       <div className="mx-auto max-w-page mt-4 space-y-4 pb-20">
-                <ProcedureEditorImportPanel model={model} />
+        <ProcedureEditorImportPanel model={model} />
 
-{/* ── Step 1 form — only rendered once a method is chosen ─────── */}
-        {step === "details" && (creationMode === 'manual' || initial) ? (
+        {/* ── Step 1 form — only rendered once a method is chosen ─────── */}
+        {step === "details" && (creationMode === "manual" || initial) ? (
           <>
             <FormSection
               id="proc-details"
@@ -398,8 +430,8 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
                     {audience.stationIds.length === 0
                       ? t("stationsRowNone")
                       : t("stationsRowCount", {
-                        count: audience.stationIds.length,
-                      })}
+                          count: audience.stationIds.length,
+                        })}
                   </StatusPill>
                 </div>
                 <p className="mt-2 text-xs leading-meta text-[var(--color-ink-3)]">
@@ -448,9 +480,7 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
                 stations={stations}
                 roles={roles}
                 filterStationIds={
-                  audience.stationIds.length > 0
-                    ? audience.stationIds
-                    : null
+                  audience.stationIds.length > 0 ? audience.stationIds : null
                 }
                 selected={audience.employeeIds}
                 onToggle={(id) => {
@@ -465,19 +495,21 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
           </div>
         ) : null}
 
-                <ProcedureEditorReviewPanel model={model} />
+        <ProcedureEditorReviewPanel model={model} />
       </div>
 
-{/* ── Sticky wizard footer (hidden on the choose screen and while a
+      {/* ── Sticky wizard footer (hidden on the choose screen and while a
           document is being drafted: there is nothing to save or move on to) ── */}
-      {!showEntryCards && creationMode !== 'upload' ? (
+      {!showEntryCards && creationMode !== "upload" ? (
         <div className="fixed bottom-0 left-0 right-0 z-sticky flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3 shadow-e2 sm:px-6">
           <p className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)]">
             <StatusPill tone={published ? "ok" : "neutral"} withDot>
               {published ? t("statusPublished") : t("statusDraft")}
             </StatusPill>
             {dirty ? (
-              <span className="text-[var(--color-warn-ink)]">{t("unsaved")}</span>
+              <span className="text-[var(--color-warn-ink)]">
+                {t("unsaved")}
+              </span>
             ) : null}
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -528,10 +560,7 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
                 {published ? t("saveChanges") : t("publishNow")}
               </Button>
             ) : (
-              <Button
-                type="button"
-                onClick={handleNext}
-              >
+              <Button type="button" onClick={handleNext}>
                 {step === "quiz" && !hasQuizContent
                   ? t("wizardSkip")
                   : t("wizardNext")}
@@ -565,7 +594,9 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
               (lang === "en" ? title.en || title.es : title.es || title.en) ||
               t("previewUntitled");
             const headingPurpose =
-              lang === "en" ? purpose.en || purpose.es : purpose.es || purpose.en;
+              lang === "en"
+                ? purpose.en || purpose.es
+                : purpose.es || purpose.en;
             const categoryLabel = category
               ? lang === "es"
                 ? category.nameEs || category.nameEn
@@ -577,17 +608,25 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
                 {cover ? <Cover src={cover.src} alt={cover.alt} /> : null}
                 <div className="px-4 py-3 sm:px-6">
                   <DocHead
-                    icon={subcategory?.slug ? `procedure-${subcategory.slug}` : "file-text"}
+                    icon={
+                      subcategory?.slug
+                        ? `procedure-${subcategory.slug}`
+                        : "file-text"
+                    }
                     iconImageUrl={iconImageUrl}
                     category={categoryLabel}
                     title={headingTitle}
                     withCover={Boolean(cover)}
                   />
-                  {headingPurpose ? <DocPurpose>{headingPurpose}</DocPurpose> : null}
+                  {headingPurpose ? (
+                    <DocPurpose>{headingPurpose}</DocPurpose>
+                  ) : null}
                   {rest.length ? (
                     <BlockRenderer blocks={rest} locale={lang} />
                   ) : (
-                    <p className="py-4 text-[var(--color-ink-3)]">{t("previewEmpty")}</p>
+                    <p className="py-4 text-[var(--color-ink-3)]">
+                      {t("previewEmpty")}
+                    </p>
                   )}
                 </div>
               </div>
@@ -597,14 +636,15 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
       </Drawer>
     </div>
   );
-
 }
 
 function splitCover(blocks: ProcedureBlock[]): {
   cover?: { src: string; alt: string };
   rest: ProcedureBlock[];
 } {
-  const i = blocks.findIndex((b, idx) => b.kind === "image" && Boolean(b.src) && idx === 0);
+  const i = blocks.findIndex(
+    (b, idx) => b.kind === "image" && Boolean(b.src) && idx === 0,
+  );
   if (i === -1) return { rest: blocks };
   const b = blocks[i] as Extract<ProcedureBlock, { kind: "image" }>;
   return {

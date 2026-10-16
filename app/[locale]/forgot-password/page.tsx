@@ -1,7 +1,7 @@
-import * as React from 'react';
-import { setRequestLocale } from 'next-intl/server';
-import { AuthShell } from '@/components/auth/auth-shell';
-import { ForgotPasswordForm } from './forgot-password-form';
+import * as React from "react";
+import { setRequestLocale } from "next-intl/server";
+import { AuthShell } from "@/components/auth/auth-shell";
+import { ForgotPasswordForm } from "./forgot-password-form";
 
 interface ForgotPasswordPageProps {
   params: Promise<{ locale: string }>;

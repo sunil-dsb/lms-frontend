@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { LuPlus, LuX, LuLoader } from 'react-icons/lu';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverItem } from '@/components/ui/popover';
+import * as React from "react";
+import { LuPlus, LuX, LuLoader } from "react-icons/lu";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverItem } from "@/components/ui/popover";
 
 export interface MultiSelectOption {
   value: string;
@@ -31,8 +31,8 @@ interface MultiSelectChipsProps {
   maxSelected?: number;
   visibleChipLimit?: number;
   labelTrailing?: React.ReactNode;
-  tone?: 'brand' | 'neutral';
-  shape?: 'pill' | 'badge';
+  tone?: "brand" | "neutral";
+  shape?: "pill" | "badge";
   className?: string;
 }
 
@@ -52,12 +52,12 @@ export function MultiSelectChips({
   maxSelected,
   visibleChipLimit = 6,
   labelTrailing,
-  tone = 'neutral',
-  shape = 'badge',
+  tone = "neutral",
+  shape = "badge",
   className,
 }: MultiSelectChipsProps): React.ReactElement {
-  const isNeutral = tone === 'neutral';
-  const isPill = shape === 'pill';
+  const isNeutral = tone === "neutral";
+  const isPill = shape === "pill";
   const labelsById = React.useMemo(
     () => new Map(options.map((o) => [o.value, o.label])),
     [options],
@@ -92,25 +92,35 @@ export function MultiSelectChips({
   const visibleChips = selectedOptions.slice(0, visibleChipLimit);
   const isBlocked = Boolean(blockedReason);
   const atLimit = maxSelected != null && value.length >= maxSelected;
-  const triggerDisabled = disabled || isLoading || isBlocked || atLimit || pickableOptions.length === 0;
+  const triggerDisabled =
+    disabled ||
+    isLoading ||
+    isBlocked ||
+    atLimit ||
+    pickableOptions.length === 0;
 
   return (
-    <div className={cn('flex flex-col gap-2 h-full', className)} data-slot="multi-select-chips">
+    <div
+      className={cn("flex flex-col gap-2 h-full", className)}
+      data-slot="multi-select-chips"
+    >
       <div className="flex flex-col gap-0.5 min-h-[44px]">
         <span className="text-sm font-semibold text-[var(--color-ink)]">
           {label}
           {labelTrailing}
         </span>
         {hint ? (
-          <span className="text-xs text-[var(--color-ink-2)] leading-relaxed">{hint}</span>
+          <span className="text-xs text-[var(--color-ink-2)] leading-relaxed">
+            {hint}
+          </span>
         ) : null}
       </div>
 
       <div
         className={cn(
-          'flex min-h-12 flex-1 flex-wrap items-center gap-x-3 gap-y-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-2 shadow-2xs transition-colors',
-          isBlocked && 'bg-[var(--color-panel)]',
-          isLoading && 'bg-[var(--color-wash)]/40',
+          "flex min-h-12 flex-1 flex-wrap items-center gap-x-3 gap-y-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-2 shadow-2xs transition-colors",
+          isBlocked && "bg-[var(--color-panel)]",
+          isLoading && "bg-[var(--color-wash)]/40",
         )}
         id={id}
         role="group"
@@ -120,11 +130,11 @@ export function MultiSelectChips({
           <span
             key={opt.value}
             className={cn(
-              'inline-flex shrink-0 items-center gap-2 px-3 py-1 text-xs font-medium transition-colors',
-              isPill ? 'rounded-full' : 'rounded-[var(--radius-md)]',
+              "inline-flex shrink-0 items-center gap-2 px-3 py-1 text-xs font-medium transition-colors",
+              isPill ? "rounded-full" : "rounded-[var(--radius-md)]",
               isNeutral
-                ? 'border border-[var(--color-line-2)] bg-[var(--color-panel)] text-[var(--color-ink)]'
-                : 'bg-[var(--color-brand-tint)] font-semibold text-[var(--color-brand-700)] shadow-[inset_0_0_0_1px_var(--color-brand-600)]',
+                ? "border border-[var(--color-line-2)] bg-[var(--color-panel)] text-[var(--color-ink)]"
+                : "bg-[var(--color-brand-tint)] font-semibold text-[var(--color-brand-700)] shadow-[inset_0_0_0_1px_var(--color-brand-600)]",
             )}
           >
             <span className="truncate">{opt.label}</span>
@@ -134,10 +144,10 @@ export function MultiSelectChips({
               onClick={() => handleRemove(opt.value)}
               disabled={disabled || isLoading}
               className={cn(
-                'inline-flex size-4 shrink-0 items-center justify-center rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] disabled:opacity-50',
+                "inline-flex size-4 shrink-0 items-center justify-center rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] disabled:opacity-50",
                 isNeutral
-                  ? 'text-[var(--color-ink-3)] hover:bg-[var(--color-panel-2)] hover:text-[var(--color-ink)]'
-                  : 'text-[var(--color-brand-700)] hover:bg-[var(--color-panel)]',
+                  ? "text-[var(--color-ink-3)] hover:bg-[var(--color-panel-2)] hover:text-[var(--color-ink)]"
+                  : "text-[var(--color-brand-700)] hover:bg-[var(--color-panel)]",
               )}
             >
               <LuX className="size-3" aria-hidden="true" />
@@ -148,8 +158,8 @@ export function MultiSelectChips({
         {overflow > 0 ? (
           <span
             className={cn(
-              'inline-flex shrink-0 items-center px-3 py-1 text-xs font-semibold text-[var(--color-ink-2)] bg-[var(--color-panel)]',
-              isPill ? 'rounded-full' : 'rounded-[var(--radius-md)]',
+              "inline-flex shrink-0 items-center px-3 py-1 text-xs font-semibold text-[var(--color-ink-2)] bg-[var(--color-panel)]",
+              isPill ? "rounded-full" : "rounded-[var(--radius-md)]",
             )}
           >
             +{overflow}
@@ -158,8 +168,11 @@ export function MultiSelectChips({
 
         {isLoading ? (
           <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--color-ink-3)]">
-            <LuLoader className="size-3.5 animate-spin text-[var(--color-brand-600)]" aria-hidden="true" />
-            <span>{loadingText || 'Loading options...'}</span>
+            <LuLoader
+              className="size-3.5 animate-spin text-[var(--color-brand-600)]"
+              aria-hidden="true"
+            />
+            <span>{loadingText || "Loading options..."}</span>
           </span>
         ) : isBlocked ? (
           <span className="text-xs italic text-[var(--color-ink-3)]">
@@ -191,18 +204,18 @@ function PickerTrigger({
   options: MultiSelectOption[];
   addLabel: string;
   onPick: (value: string) => void;
-  triggerVariant?: 'neutral' | 'secondary';
+  triggerVariant?: "neutral" | "secondary";
   isPill?: boolean;
 }): React.ReactElement {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const [open, setOpen] = React.useState(false);
 
   const actionClasses = cn(
-    'group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-[var(--radius-md)] px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-1',
+    "group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-[var(--radius-md)] px-3 py-1 text-xs font-medium transition-colors whitespace-nowrap",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-1",
     disabled
-      ? 'cursor-not-allowed opacity-50 text-[var(--color-ink-3)]'
-      : 'text-[var(--color-ink-2)] hover:text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:bg-[var(--color-panel-2)]',
+      ? "cursor-not-allowed opacity-50 text-[var(--color-ink-3)]"
+      : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:bg-[var(--color-panel-2)]",
   );
 
   if (disabled) {
@@ -213,7 +226,10 @@ function PickerTrigger({
         title={disabledReason}
         className={actionClasses}
       >
-        <LuPlus className="size-4 shrink-0 text-[var(--color-ink-3)]" aria-hidden="true" />
+        <LuPlus
+          className="size-4 shrink-0 text-[var(--color-ink-3)]"
+          aria-hidden="true"
+        />
         <span>{addLabel}</span>
       </button>
     );
@@ -229,7 +245,10 @@ function PickerTrigger({
         aria-expanded={open}
         className={actionClasses}
       >
-        <LuPlus className="size-4 shrink-0 text-[var(--color-brand-600)] transition-transform group-hover:scale-110" aria-hidden="true" />
+        <LuPlus
+          className="size-4 shrink-0 text-[var(--color-brand-600)] transition-transform group-hover:scale-110"
+          aria-hidden="true"
+        />
         <span>{addLabel}</span>
       </button>
       <Popover

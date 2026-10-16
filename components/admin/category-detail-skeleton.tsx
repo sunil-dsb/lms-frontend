@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Loading state for the admin category detail page. Mirrors the real layout
@@ -11,18 +11,18 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export function CategoryDetailSkeleton({
   className,
-  'aria-label': ariaLabel,
+  "aria-label": ariaLabel,
   hideHeader = false,
 }: {
   className?: string;
-  'aria-label'?: string;
+  "aria-label"?: string;
   hideHeader?: boolean;
 }): React.ReactElement {
   return (
     <div
       aria-busy="true"
-      aria-label={ariaLabel ?? 'Loading category'}
-      className={cn('mx-auto max-w-page space-y-6', className)}
+      aria-label={ariaLabel ?? "Loading category"}
+      className={cn("mx-auto max-w-page space-y-6", className)}
     >
       {/* PageHeader skeleton */}
       {!hideHeader ? (
@@ -54,7 +54,10 @@ export function CategoryDetailSkeleton({
           <div className="border-t border-[var(--color-line-2)]">
             <ul className="divide-y divide-[var(--color-line)]">
               {[0, 1, 2, 3].map((i) => (
-                <li key={i} className="flex items-center justify-between gap-4 overflow-hidden px-4 py-3">
+                <li
+                  key={i}
+                  className="flex items-center justify-between gap-4 overflow-hidden px-4 py-3"
+                >
                   <div className="min-w-0 flex-1 space-y-1.5 overflow-hidden">
                     <Skeleton className="h-4 w-48 max-w-full" />
                     <Skeleton className="h-3.5 w-32 max-w-full bg-[var(--color-panel)]" />

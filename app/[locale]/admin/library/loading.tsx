@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { LibraryExplorerSkeleton } from '@/components/admin/library-explorer-skeleton';
+import * as React from "react";
+import { LibraryExplorerSkeleton } from "@/components/admin/library-explorer-skeleton";
 
 export default function AdminLibraryLoading(): React.ReactElement {
   return (

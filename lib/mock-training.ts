@@ -1,7 +1,12 @@
-import { mockSops, mockTrainingAssignments, mockTrainingCourses, mockTrainingEmployees } from './mock-training-data';
+import {
+  mockSops,
+  mockTrainingAssignments,
+  mockTrainingCourses,
+  mockTrainingEmployees,
+} from "./mock-training-data";
 export { mockSops, mockTrainingEmployees };
-export type { MockEmployee } from './mock-training-data';
-import type { MockEmployee } from './mock-training-data';
+export type { MockEmployee } from "./mock-training-data";
+import type { MockEmployee } from "./mock-training-data";
 import type {
   Procedure,
   ProcedureAcknowledgement,
@@ -12,14 +17,14 @@ import type {
   TrainingAssignmentStatus,
   TrainingAssignmentRow,
   TrainingCourseRow,
-} from './types';
+} from "./types";
 
 export function effectiveStatus(
   a: TrainingAssignment,
   now: Date = new Date(),
 ): TrainingAssignmentStatus {
-  if (a.status === 'complete') return 'complete';
-  if (new Date(a.dueAt).getTime() < now.getTime()) return 'overdue';
+  if (a.status === "complete") return "complete";
+  if (new Date(a.dueAt).getTime() < now.getTime()) return "overdue";
   return a.status;
 }
 
@@ -31,11 +36,15 @@ export function listTrainingAssignments(): TrainingAssignment[] {
   return mockTrainingAssignments;
 }
 
-export function listTrainingAssignmentsForCourse(courseId: string): TrainingAssignment[] {
+export function listTrainingAssignmentsForCourse(
+  courseId: string,
+): TrainingAssignment[] {
   return mockTrainingAssignments.filter((a) => a.courseId === courseId);
 }
 
-export function listTrainingAssignmentsForEmployee(employeeId: string): TrainingAssignment[] {
+export function listTrainingAssignmentsForEmployee(
+  employeeId: string,
+): TrainingAssignment[] {
   return mockTrainingAssignments.filter((a) => a.employeeId === employeeId);
 }
 
@@ -47,31 +56,37 @@ export function getTrainingRowsForEmployee(
   employeeId: string,
   now: Date = new Date(),
 ): TrainingAssignmentRow[] {
-  return listTrainingAssignmentsForEmployee(employeeId).flatMap((assignment) => {
-    const course = getCourseById(assignment.courseId);
-    if (!course) return [];
-    return [
-      {
-        assignment,
-        course,
-        effectiveStatus: effectiveStatus(assignment, now),
-      },
-    ];
-  });
+  return listTrainingAssignmentsForEmployee(employeeId).flatMap(
+    (assignment) => {
+      const course = getCourseById(assignment.courseId);
+      if (!course) return [];
+      return [
+        {
+          assignment,
+          course,
+          effectiveStatus: effectiveStatus(assignment, now),
+        },
+      ];
+    },
+  );
 }
 
-export function getTrainingCourseRowsForAdmin(now: Date = new Date()): TrainingCourseRow[] {
+export function getTrainingCourseRowsForAdmin(
+  now: Date = new Date(),
+): TrainingCourseRow[] {
   return listTrainingCourses().map((course) => {
     const assignments = listTrainingAssignmentsForCourse(course.id);
     return {
       course,
       assignmentCount: assignments.length,
-      completeCount: assignments.filter((a) => a.status === 'complete').length,
+      completeCount: assignments.filter((a) => a.status === "complete").length,
       inProgressCount: assignments.filter((a) => {
         const s = effectiveStatus(a, now);
-        return s === 'in_progress' || s === 'due';
+        return s === "in_progress" || s === "due";
       }).length,
-      overdueCount: assignments.filter((a) => effectiveStatus(a, now) === 'overdue').length,
+      overdueCount: assignments.filter(
+        (a) => effectiveStatus(a, now) === "overdue",
+      ).length,
     };
   });
 }
@@ -106,10 +121,13 @@ export function listLinkedSops(course: Procedure): Procedure[] {
  *  read, so Home, the Training tab and the admin side all see it until the dev
  *  server restarts. The backend will record date, score, attempts and the
  *  content version (PROJECT_OVERVIEW §02). */
-export function completeAssignment(assignmentId: string, at: Date = new Date()): TrainingAssignment | null {
+export function completeAssignment(
+  assignmentId: string,
+  at: Date = new Date(),
+): TrainingAssignment | null {
   const a = mockTrainingAssignments.find((x) => x.id === assignmentId);
   if (!a) return null;
-  a.status = 'complete';
+  a.status = "complete";
   a.acknowledgedAt = a.acknowledgedAt ?? at.toISOString();
   return a;
 }
@@ -117,21 +135,32 @@ export function completeAssignment(assignmentId: string, at: Date = new Date()):
 /** The steps a course asks the reader through: all its "Steps" blocks
  *  together, the ones the reader ticks off. What "2 of 5 steps" counts. */
 export function courseStepCount(course: Procedure): number {
-  const blocks = (course?.bodyEn?.blocks?.length ?? 0) > 0 ? course.bodyEn!.blocks : (course?.bodyEs?.blocks ?? []);
-  return blocks.reduce((n, b) => n + (b.kind === 'method' ? b.steps?.length ?? 0 : 0), 0);
+  const blocks =
+    (course?.bodyEn?.blocks?.length ?? 0) > 0
+      ? course.bodyEn!.blocks
+      : (course?.bodyEs?.blocks ?? []);
+  return blocks.reduce(
+    (n, b) => n + (b.kind === "method" ? (b.steps?.length ?? 0) : 0),
+    0,
+  );
 }
 
 /** Tick or untick one step of a course. Mock: the in-memory record, like
  *  completeAssignment. A first tick moves a course from "not started" to "in
  *  progress". */
-export function toggleAssignmentStep(assignmentId: string, stepId: string, done: boolean): TrainingAssignment | null {
+export function toggleAssignmentStep(
+  assignmentId: string,
+  stepId: string,
+  done: boolean,
+): TrainingAssignment | null {
   const a = mockTrainingAssignments.find((x) => x.id === assignmentId);
-  if (!a || a.status === 'complete') return a ?? null;
+  if (!a || a.status === "complete") return a ?? null;
   const set = new Set(a.completedStepIds);
   if (done) set.add(stepId);
   else set.delete(stepId);
   a.completedStepIds = [...set];
-  if (a.completedStepIds.length > 0 && a.status === 'due') a.status = 'in_progress';
+  if (a.completedStepIds.length > 0 && a.status === "due")
+    a.status = "in_progress";
   return a;
 }
 
@@ -143,9 +172,9 @@ export function toggleAssignmentStep(assignmentId: string, stepId: string, done:
 // ---------------------------------------------------------------------------
 
 export const ONBOARDING_COURSE_IDS = {
-  onboarding: ['course-004'],
-  'food-safety': ['course-001', 'course-003'],
-  cleaning: ['course-005'],
+  onboarding: ["course-004"],
+  "food-safety": ["course-001", "course-003"],
+  cleaning: ["course-005"],
 } as const;
 
 export type OnboardingChapterKey = keyof typeof ONBOARDING_COURSE_IDS;
@@ -156,7 +185,7 @@ export interface OnboardingChapter {
   titleEs: string;
   courseIds: readonly string[];
   rows: TrainingAssignmentRow[];
-  status: TrainingAssignmentStatus | 'locked';
+  status: TrainingAssignmentStatus | "locked";
   unblocked: boolean;
 }
 
@@ -191,47 +220,61 @@ export function getOnboardingChapters(
   let previousComplete = true;
   let done = 0;
 
-  (Object.keys(ONBOARDING_COURSE_IDS) as OnboardingChapterKey[]).forEach((key, index) => {
-    const courseIds = ONBOARDING_COURSE_IDS[key];
-    const rows = allRows.filter((r) => (courseIds as readonly string[]).includes(r.course.id));
+  (Object.keys(ONBOARDING_COURSE_IDS) as OnboardingChapterKey[]).forEach(
+    (key, index) => {
+      const courseIds = ONBOARDING_COURSE_IDS[key];
+      const rows = allRows.filter((r) =>
+        (courseIds as readonly string[]).includes(r.course.id),
+      );
 
-    // Resolve status. A chapter with zero assignments is "complete" (nothing
-    // to gate) — the cook was never issued it, so don't block the surface.
-    let status: OnboardingChapter['status'];
-    if (rows.length === 0) {
-      status = 'complete';
-    } else if (!previousComplete) {
-      // A chapter that comes after a not-complete one is locked until the
-      // earlier one clears, even if the cook already finished it.
-      status = 'locked';
-    } else if (rows.every((r) => r.effectiveStatus === 'complete')) {
-      status = 'complete';
-    } else if (rows.some((r) => r.effectiveStatus === 'overdue')) {
-      status = 'overdue';
-    } else if (rows.some((r) => r.effectiveStatus === 'in_progress')) {
-      status = 'in_progress';
-    } else {
-      status = 'due';
-    }
+      // Resolve status. A chapter with zero assignments is "complete" (nothing
+      // to gate) — the cook was never issued it, so don't block the surface.
+      let status: OnboardingChapter["status"];
+      if (rows.length === 0) {
+        status = "complete";
+      } else if (!previousComplete) {
+        // A chapter that comes after a not-complete one is locked until the
+        // earlier one clears, even if the cook already finished it.
+        status = "locked";
+      } else if (rows.every((r) => r.effectiveStatus === "complete")) {
+        status = "complete";
+      } else if (rows.some((r) => r.effectiveStatus === "overdue")) {
+        status = "overdue";
+      } else if (rows.some((r) => r.effectiveStatus === "in_progress")) {
+        status = "in_progress";
+      } else {
+        status = "due";
+      }
 
-    const unblocked = previousComplete;
-    const titleEn = ONBOARDING_CHAPTER_TITLES[key].en;
-    const titleEs = ONBOARDING_CHAPTER_TITLES[key].es;
+      const unblocked = previousComplete;
+      const titleEn = ONBOARDING_CHAPTER_TITLES[key].en;
+      const titleEs = ONBOARDING_CHAPTER_TITLES[key].es;
 
-    chapters.push({ key, titleEn, titleEs, courseIds, rows, status, unblocked });
-    if (status === 'complete') done += 1;
-    previousComplete = status === 'complete' && unblocked;
+      chapters.push({
+        key,
+        titleEn,
+        titleEs,
+        courseIds,
+        rows,
+        status,
+        unblocked,
+      });
+      if (status === "complete") done += 1;
+      previousComplete = status === "complete" && unblocked;
 
-    // Touch index so eslint doesn't flag the unused param (it documents the
-    // iteration order of `Object.keys`, which we rely on).
-    void index;
-  });
+      // Touch index so eslint doesn't flag the unused param (it documents the
+      // iteration order of `Object.keys`, which we rely on).
+      void index;
+    },
+  );
 
   // The "next" pointer is the first incomplete chapter's first course. We use
   // the first course id in the chapter as the canonical entry point — every
   // chapter reads top-down.
-  const nextChapter = chapters.find((c) => c.status !== 'complete' && c.status !== 'locked');
-  const next: OnboardingSummary['next'] = nextChapter
+  const nextChapter = chapters.find(
+    (c) => c.status !== "complete" && c.status !== "locked",
+  );
+  const next: OnboardingSummary["next"] = nextChapter
     ? (() => {
         const firstCourseId = nextChapter.courseIds[0];
         const course = getCourseById(firstCourseId);
@@ -250,12 +293,15 @@ export function getOnboardingChapters(
     done,
     total: chapters.length,
     next,
-    onboardingDone: chapters.every((c) => c.status === 'complete'),
+    onboardingDone: chapters.every((c) => c.status === "complete"),
   };
 }
 
-const ONBOARDING_CHAPTER_TITLES: Record<OnboardingChapterKey, { en: string; es: string }> = {
-  onboarding: { en: 'Onboarding', es: 'Inducción' },
-  'food-safety': { en: 'Food safety', es: 'Seguridad alimentaria' },
-  cleaning: { en: 'Cleaning', es: 'Limpieza' },
+const ONBOARDING_CHAPTER_TITLES: Record<
+  OnboardingChapterKey,
+  { en: string; es: string }
+> = {
+  onboarding: { en: "Onboarding", es: "Inducción" },
+  "food-safety": { en: "Food safety", es: "Seguridad alimentaria" },
+  cleaning: { en: "Cleaning", es: "Limpieza" },
 };

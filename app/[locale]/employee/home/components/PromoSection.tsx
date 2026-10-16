@@ -1,8 +1,11 @@
-import * as React from 'react';
-import { ProcedureRow, type FlagLabels } from '@/components/employee/procedure-row';
-import { SectionHead } from './SectionHead';
-import { HomeRowsSkeleton } from './home-rows-skeleton';
-import type { HomeRow } from './EmployeeHome';
+import * as React from "react";
+import {
+  ProcedureRow,
+  type FlagLabels,
+} from "@/components/employee/procedure-row";
+import { SectionHead } from "./SectionHead";
+import { HomeRowsSkeleton } from "./home-rows-skeleton";
+import type { HomeRow } from "./EmployeeHome";
 
 /**
  * Limited-time promo dishes. Up to 3 rows, no "See all" — promos are a focused
@@ -26,17 +29,24 @@ export function PromoSection({
 }): React.ReactElement | null {
   if (rows.length === 0 && !loading) return null;
   return (
-    <section aria-labelledby="promo-h" style={{ marginTop: '24px' }}>
+    <section aria-labelledby="promo-h" style={{ marginTop: "24px" }}>
       {/* Bordered card wrapping heading + rows */}
       <div
         className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)]"
-        style={{ padding: '14px 14px' }}
+        style={{ padding: "14px 14px" }}
       >
         <SectionHead id="promo-h" title={heading} />
         {loading ? (
           <HomeRowsSkeleton count={2} />
         ) : (
-          <ul style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <ul
+            style={{
+              marginTop: "10px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+            }}
+          >
             {rows.map((r) => (
               <li key={r.key}>
                 <ProcedureRow

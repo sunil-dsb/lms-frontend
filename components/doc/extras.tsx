@@ -1,11 +1,30 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { ALLERGEN_LABELS, type AllergenKey } from '@/lib/allergens';
-import { LuArrowLeft, LuArrowLeftRight, LuBadgeCheck, LuCheck, LuChevronDown, LuChevronRight, LuCircleAlert, LuDownload, LuFocus, LuImage, LuLightbulb, LuLock, LuPlay, LuTestTube, LuTriangleAlert, LuUtensils, LuWrench, LuX } from 'react-icons/lu';
-import { Icon, iconByName } from '@/components/ui/icon';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import type { IconType } from 'react-icons';
+import * as React from "react";
+import { ALLERGEN_LABELS, type AllergenKey } from "@/lib/allergens";
+import {
+  LuArrowLeft,
+  LuArrowLeftRight,
+  LuBadgeCheck,
+  LuCheck,
+  LuChevronDown,
+  LuChevronRight,
+  LuCircleAlert,
+  LuDownload,
+  LuFocus,
+  LuImage,
+  LuLightbulb,
+  LuLock,
+  LuPlay,
+  LuTestTube,
+  LuTriangleAlert,
+  LuUtensils,
+  LuWrench,
+  LuX,
+} from "react-icons/lu";
+import { Icon, iconByName } from "@/components/ui/icon";
+import { classifyVideoUrl } from "@/lib/procedure-media";
+import type { IconType } from "react-icons";
 
 /**
  * The vocabulary of an SOP / recipe / training chapter page.
@@ -19,14 +38,14 @@ import type { IconType } from 'react-icons';
  */
 
 const cn = (...parts: Array<string | false | null | undefined>) =>
-  parts.filter(Boolean).join(' ');
+  parts.filter(Boolean).join(" ");
 export type ChapterRow = {
-  icon: IconType;        // remix icon class
+  icon: IconType; // remix icon class
   title: string;
   meta?: React.ReactNode;
   href: string;
   /** "download" for attachments, "chevron" for related procedures. */
-  kind: 'attachment' | 'related';
+  kind: "attachment" | "related";
 };
 
 export function Chapters({ rows }: { rows: ChapterRow[] }) {
@@ -42,7 +61,10 @@ export function Chapters({ rows }: { rows: ChapterRow[] }) {
             {r.meta && <div className="meta">{r.meta}</div>}
           </div>
           <span className="tail">
-            <Icon icon={r.kind === 'attachment' ? LuDownload : LuChevronRight} className="i" />
+            <Icon
+              icon={r.kind === "attachment" ? LuDownload : LuChevronRight}
+              className="i"
+            />
           </span>
         </a>
       ))}
@@ -63,7 +85,13 @@ export function Chapters({ rows }: { rows: ChapterRow[] }) {
 export type DocControlEntry = { label: string; value: React.ReactNode };
 
 /** Document control <details>. Ships open by default — survives without JS. */
-export function DocControl({ entries, defaultOpen = true }: { entries: DocControlEntry[]; defaultOpen?: boolean }) {
+export function DocControl({
+  entries,
+  defaultOpen = true,
+}: {
+  entries: DocControlEntry[];
+  defaultOpen?: boolean;
+}) {
   return (
     <details className="doc-ctl" open={defaultOpen}>
       <summary>
@@ -86,21 +114,27 @@ export function DocControl({ entries, defaultOpen = true }: { entries: DocContro
    ---------------------------------------------------------------- */
 
 const PILL_META = {
-  complete:  { icon: LuCheck, useDot: false },
-  verified:  { icon: LuBadgeCheck, useDot: false },
-  progress:  { icon: null, useDot: true },
-  due:       { icon: null, useDot: true },
-  overdue:   { icon: null, useDot: true },
-  notstart:  { icon: null, useDot: true },
-  locked:    { icon: LuLock, useDot: false },
+  complete: { icon: LuCheck, useDot: false },
+  verified: { icon: LuBadgeCheck, useDot: false },
+  progress: { icon: null, useDot: true },
+  due: { icon: null, useDot: true },
+  overdue: { icon: null, useDot: true },
+  notstart: { icon: null, useDot: true },
+  locked: { icon: LuLock, useDot: false },
 } as const;
 
 export type PillKind = keyof typeof PILL_META;
 
-export function Pill({ kind, children }: { kind: PillKind; children: React.ReactNode }) {
+export function Pill({
+  kind,
+  children,
+}: {
+  kind: PillKind;
+  children: React.ReactNode;
+}) {
   const meta = PILL_META[kind];
   return (
-    <span className={cn('pill', `pill-${kind}`)}>
+    <span className={cn("pill", `pill-${kind}`)}>
       {meta.useDot ? (
         <i className="dot" aria-hidden="true" />
       ) : (

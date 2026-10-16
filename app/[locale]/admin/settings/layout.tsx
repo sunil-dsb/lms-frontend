@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 /**
  * Settings chrome — outer container only. The page itself (header, eyebrow,
@@ -13,8 +13,6 @@ export default function SettingsLayout({
   children: ReactNode;
 }): React.ReactElement {
   return (
-    <div className="mx-auto w-full max-w-page space-y-6 pb-12">
-      {children}
-    </div>
+    <div className="mx-auto w-full max-w-page space-y-6 pb-12">{children}</div>
   );
 }

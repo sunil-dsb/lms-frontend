@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { setRequestLocale } from 'next-intl/server';
-import { EmployeeHomeClient } from './employee-home-client';
+import * as React from "react";
+import { setRequestLocale } from "next-intl/server";
+import { EmployeeHomeClient } from "./employee-home-client";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -17,9 +17,12 @@ interface PageProps {
  * each section through the shared query caches (skeleton → content on
  * first visit, instant from cache on every back-navigation).
  */
-export default async function EmployeeHomePage({ params, searchParams }: PageProps): Promise<React.ReactElement> {
+export default async function EmployeeHomePage({
+  params,
+  searchParams,
+}: PageProps): Promise<React.ReactElement> {
   const { locale } = await params;
-  const { view = '' } = await searchParams;
+  const { view = "" } = await searchParams;
   setRequestLocale(locale);
 
   return <EmployeeHomeClient locale={locale} initialView={view} />;

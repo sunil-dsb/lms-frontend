@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import * as React from "react";
+import { useState, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
 import {
   LuArrowLeft,
   LuCalendar,
@@ -15,36 +15,39 @@ import {
   LuMail,
   LuMapPin,
   LuPencil,
-} from 'react-icons/lu';
+} from "react-icons/lu";
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar } from '@/components/ui/avatar';
-import { StatusPill, type StatusTone } from '@/components/ui/status-pill';
-import { Meter } from '@/components/ui/meter';
-import { ChipStack } from '@/components/admin/chip-stack';
-import { FormSection } from '@/components/admin/form-section';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar } from "@/components/ui/avatar";
+import { StatusPill, type StatusTone } from "@/components/ui/status-pill";
+import { Meter } from "@/components/ui/meter";
+import { ChipStack } from "@/components/admin/chip-stack";
+import { FormSection } from "@/components/admin/form-section";
 import {
   TrainingSummary,
   summariseTraining,
   trainingStatusTone,
-} from '@/components/admin/training-summary';
-import { EmployeeRowActions } from '../employee-row-actions';
-import { EditRolesModal } from './edit-roles-modal';
+} from "@/components/admin/training-summary";
+import { EmployeeRowActions } from "../employee-row-actions";
+import { EditRolesModal } from "./edit-roles-modal";
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { fetchEmployeeById } from '@/services/employees/api';
-import { useRoles } from '@/services/jobs/hooks';
-import { useStations } from '@/services/stations/hooks';
-import { useLocations } from '@/services/locations/hooks';
-import { EMPLOYEES_UPDATED_EVENT, type UpdateEmployeeInput } from '@/services/employees/types';
-import { getTrainingRowsForEmployee } from '@/lib/mock-training';
+import { fetchEmployeeById } from "@/services/employees/api";
+import { useRoles } from "@/services/jobs/hooks";
+import { useStations } from "@/services/stations/hooks";
+import { useLocations } from "@/services/locations/hooks";
+import {
+  EMPLOYEES_UPDATED_EVENT,
+  type UpdateEmployeeInput,
+} from "@/services/employees/types";
+import { getTrainingRowsForEmployee } from "@/lib/mock-training";
 import type {
   AdminEmployee,
   TrainingAssignmentRow,
   TrainingAssignmentStatus,
-} from '@/lib/types';
+} from "@/lib/types";
 
 interface EmployeeDetailClientProps {
   locale: string;
@@ -58,7 +61,7 @@ export function EmployeeDetailClient({
   const params = useParams<{ id: string }>();
   const id = propId ?? params.id;
   const router = useRouter();
-  const t = useTranslations('admin');
+  const t = useTranslations("admin");
 
   // The detail API is the ONE source for this page — called client-side
   // so the request is visible in the Network tab. React Query dedupes
@@ -68,14 +71,16 @@ export function EmployeeDetailClient({
   // below can offer it for copy.
   const queryClient = useQueryClient();
   const employeeQuery = useQuery({
-    queryKey: ['employee', id],
+    queryKey: ["employee", id],
     enabled: Boolean(id),
     queryFn: async (): Promise<AdminEmployee> => {
       const res = await fetchEmployeeById(id);
       if (res.employee) {
-        return res.inviteUrl ? { ...res.employee, inviteUrl: res.inviteUrl } : res.employee;
+        return res.inviteUrl
+          ? { ...res.employee, inviteUrl: res.inviteUrl }
+          : res.employee;
       }
-      throw new Error('Employee not found');
+      throw new Error("Employee not found");
     },
     staleTime: 60_000,
   });
@@ -84,12 +89,12 @@ export function EmployeeDetailClient({
   React.useEffect(() => {
     if (!id) return;
     const refresh = (): void => {
-      void queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      void queryClient.invalidateQueries({ queryKey: ["employee", id] });
     };
-    window.addEventListener('storage', refresh);
+    window.addEventListener("storage", refresh);
     window.addEventListener(EMPLOYEES_UPDATED_EVENT, refresh);
     return () => {
-      window.removeEventListener('storage', refresh);
+      window.removeEventListener("storage", refresh);
       window.removeEventListener(EMPLOYEES_UPDATED_EVENT, refresh);
     };
   }, [id, queryClient]);
@@ -114,10 +119,14 @@ export function EmployeeDetailClient({
   // location in the modal needs no refetch.
   function onLocationChange(): void {}
 
-  function onSaved(next: AdminEmployee, _prior: UpdateEmployeeInput, inviteUrl?: string): void {
+  function onSaved(
+    next: AdminEmployee,
+    _prior: UpdateEmployeeInput,
+    inviteUrl?: string,
+  ): void {
     const merged = inviteUrl ? { ...next, inviteUrl } : next;
     if (id) {
-      queryClient.setQueryData(['employee', id], merged);
+      queryClient.setQueryData(["employee", id], merged);
     }
     if (inviteUrl) {
       // The edit modal owns the inline invite panel. Keep it open and avoid
@@ -129,7 +138,7 @@ export function EmployeeDetailClient({
       // just re-invited (email change). A pending employee may still hold
       // an older active link that only GET returns — refetch so the banner
       // below converges instead of waiting out the query staleTime.
-      void queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      void queryClient.invalidateQueries({ queryKey: ["employee", id] });
     }
     router.refresh();
   }
@@ -142,11 +151,11 @@ export function EmployeeDetailClient({
       ok = true;
     } catch {
       try {
-        const ta = document.createElement('textarea');
+        const ta = document.createElement("textarea");
         ta.value = employee.inviteUrl;
         document.body.appendChild(ta);
         ta.select();
-        ok = document.execCommand('copy');
+        ok = document.execCommand("copy");
         ta.remove();
       } catch {
         ok = false;
@@ -174,14 +183,17 @@ export function EmployeeDetailClient({
   const [roleLabels, stationLabels] = useMemo(() => {
     if (!employee) return [[], []];
     const denormJobs = Array.isArray(employee.jobs) ? employee.jobs : null;
-    const denormStations = Array.isArray(employee.stations) ? employee.stations : null;
+    const denormStations = Array.isArray(employee.stations)
+      ? employee.stations
+      : null;
     const rIds = employee.roleIds ?? (employee as any).jobIds ?? [];
     const sIds = employee.stationIds ?? [];
     const nameFor = (
       xid: string,
       denorm: Array<{ id: string; name: string }> | null,
       map: Map<string, string>,
-    ): string | undefined => denorm?.find((d) => d.id === xid)?.name ?? map.get(xid);
+    ): string | undefined =>
+      denorm?.find((d) => d.id === xid)?.name ?? map.get(xid);
     return [
       rIds
         .map((rid: string) => nameFor(rid, denormJobs, roleLabel))
@@ -199,7 +211,7 @@ export function EmployeeDetailClient({
       const match = locations.find((loc) => loc.id === employee.locationId);
       if (match) return match.name;
     }
-    return '';
+    return "";
   }, [employee?.locationName, employee?.locationId, locations]);
 
   const trainingRows: TrainingAssignmentRow[] = useMemo(() => {
@@ -209,19 +221,19 @@ export function EmployeeDetailClient({
   const trainingSummary = summariseTraining(trainingRows);
 
   const statusTone: StatusTone =
-    employee?.status === 'active'
-      ? 'ok'
-      : employee?.status === 'pending'
-        ? 'warn'
-        : 'bad';
+    employee?.status === "active"
+      ? "ok"
+      : employee?.status === "pending"
+        ? "warn"
+        : "bad";
 
   const joinedLabel = employee?.createdAt
     ? new Date(employee.createdAt).toLocaleDateString(locale, {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
+        day: "numeric",
+        month: "short",
+        year: "numeric",
       })
-    : '—';
+    : "—";
 
   return (
     <div className="mx-auto max-w-page space-y-6 pb-12">
@@ -232,7 +244,7 @@ export function EmployeeDetailClient({
           className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)] transition-colors hover:text-[var(--color-ink)]"
         >
           <LuArrowLeft className="size-4" aria-hidden="true" />
-          <span>{t('backToList')}</span>
+          <span>{t("backToList")}</span>
         </Link>
         <div className="flex items-center gap-2">
           <Button
@@ -242,21 +254,26 @@ export function EmployeeDetailClient({
             icon={LuPencil}
             disabled={!employee}
           >
-            {t('actionsEdit')}
+            {t("actionsEdit")}
           </Button>
         </div>
       </div>
 
       <Card>
         <CardContent className="flex flex-wrap items-start gap-4 p-6 sm:flex-nowrap">
-          <Avatar initials={employee?.name ? initials(employee.name) : '—'} size="md" />
+          <Avatar
+            initials={employee?.name ? initials(employee.name) : "—"}
+            size="md"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold leading-display tracking-tight text-[var(--color-ink)] min-h-[32px]">
-                {employee?.name ?? ''}
+                {employee?.name ?? ""}
               </h1>
               {employee?.status && (
-                <StatusPill tone={statusTone}>{t(statusKey(employee.status))}</StatusPill>
+                <StatusPill tone={statusTone}>
+                  {t(statusKey(employee.status))}
+                </StatusPill>
               )}
             </div>
             <p className="mt-2 text-sm text-[var(--color-ink-2)] min-h-[20px]">
@@ -265,23 +282,28 @@ export function EmployeeDetailClient({
                     roleLabels:
                       roleLabels.length > 0
                         ? roleLabels
-                        : (employee.roleIds?.length || (employee as any).jobIds?.length)
-                          ? [t('detailRolesEmpty')]
+                        : employee.roleIds?.length ||
+                            (employee as any).jobIds?.length
+                          ? [t("detailRolesEmpty")]
                           : [],
                     stationLabels:
                       stationLabels.length > 0
                         ? stationLabels
                         : employee.stationIds?.length
-                          ? [t('stationsEmpty')]
+                          ? [t("stationsEmpty")]
                           : [],
                     location: resolvedLocationName || null,
                   })
-                : ''}
+                : ""}
             </p>
           </div>
           <div className="shrink-0">
             {employee && (
-              <EmployeeRowActions locale={locale} employee={employee} onEdit={openEdit} />
+              <EmployeeRowActions
+                locale={locale}
+                employee={employee}
+                onEdit={openEdit}
+              />
             )}
           </div>
         </CardContent>
@@ -290,13 +312,13 @@ export function EmployeeDetailClient({
       {/* Pending invite — the backend returns the active magic-link
           `inviteUrl` for pending employees. Offer it for copy for the
           kitchens where email delivery is unreliable. */}
-      {employee?.status === 'pending' && employee?.inviteUrl ? (
+      {employee?.status === "pending" && employee?.inviteUrl ? (
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4">
           <p className="text-sm font-semibold text-[var(--color-ink)]">
-            {t('inviteCreatedHeading')}
+            {t("inviteCreatedHeading")}
           </p>
           <p className="mt-1 text-xs text-[var(--color-ink-2)]">
-            {t('inviteEmailSent')}
+            {t("inviteEmailSent")}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <p className="min-w-0 flex-1 break-all rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-panel)] px-3 py-2 text-xs text-[var(--color-ink-2)]">
@@ -308,7 +330,7 @@ export function EmployeeDetailClient({
               onClick={() => void copyInvite()}
               icon={copied ? LuCheck : LuCopy}
             >
-              {copied ? t('copied') : t('copyUrl')}
+              {copied ? t("copied") : t("copyUrl")}
             </Button>
           </div>
         </div>
@@ -317,13 +339,13 @@ export function EmployeeDetailClient({
       {/* Employee information. Six facts in the .facts grid. */}
       <FormSection
         icon={LuCircleAlert}
-        title={t('detailInfoHeading')}
-        subtitle={t('detailInfoHint')}
+        title={t("detailInfoHeading")}
+        subtitle={t("detailInfoHint")}
       >
         <dl className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4 pt-1">
           <div>
             <dt className="text-sm font-medium text-[var(--color-ink-3)]">
-              {t('detailFactAccessLevel')}
+              {t("detailFactAccessLevel")}
             </dt>
             <dd className="mt-1">
               {employee ? (
@@ -337,40 +359,46 @@ export function EmployeeDetailClient({
           </div>
           <div>
             <dt className="text-sm font-medium text-[var(--color-ink-3)]">
-              {t('detailFactJobRole')}
+              {t("detailFactJobRole")}
             </dt>
             <dd className="mt-1 min-w-0">
               <ChipStack
                 items={roleLabels}
-                emptyText={employee ? t('jobRolesEmpty') : '—'}
+                emptyText={employee ? t("jobRolesEmpty") : "—"}
               />
             </dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-[var(--color-ink-3)]">
-              {t('detailFactStation')}
+              {t("detailFactStation")}
             </dt>
             <dd className="mt-1 min-w-0">
               <ChipStack
                 items={stationLabels}
                 tone="station"
-                emptyText={employee ? t('stationsEmpty') : '—'}
+                emptyText={employee ? t("stationsEmpty") : "—"}
               />
             </dd>
           </div>
           <div>
             <dt className="flex items-center gap-2 text-sm font-medium text-[var(--color-ink-3)]">
-              <LuMapPin className="size-4 shrink-0 text-[var(--color-ink-3)]" aria-hidden="true" />
-              <span>{t('detailFactLocation')}</span>
+              <LuMapPin
+                className="size-4 shrink-0 text-[var(--color-ink-3)]"
+                aria-hidden="true"
+              />
+              <span>{t("detailFactLocation")}</span>
             </dt>
             <dd className="mt-1 text-sm font-semibold text-[var(--color-ink)]">
-              {resolvedLocationName || '—'}
+              {resolvedLocationName || "—"}
             </dd>
           </div>
           <div>
             <dt className="flex items-center gap-2 text-sm font-medium text-[var(--color-ink-3)]">
-              <LuMail className="size-4 shrink-0 text-[var(--color-ink-3)]" aria-hidden="true" />
-              <span>{t('detailFactEmail')}</span>
+              <LuMail
+                className="size-4 shrink-0 text-[var(--color-ink-3)]"
+                aria-hidden="true"
+              />
+              <span>{t("detailFactEmail")}</span>
             </dt>
             <dd className="mt-1 text-sm font-semibold">
               {employee?.email ? (
@@ -387,18 +415,25 @@ export function EmployeeDetailClient({
           </div>
           <div>
             <dt className="flex items-center gap-2 text-sm font-medium text-[var(--color-ink-3)]">
-              <LuCalendar className="size-4 shrink-0 text-[var(--color-ink-3)]" aria-hidden="true" />
-              <span>{t('detailFactJoined')}</span>
+              <LuCalendar
+                className="size-4 shrink-0 text-[var(--color-ink-3)]"
+                aria-hidden="true"
+              />
+              <span>{t("detailFactJoined")}</span>
             </dt>
-            <dd className="mt-1 text-sm font-semibold text-[var(--color-ink)]">{joinedLabel}</dd>
+            <dd className="mt-1 text-sm font-semibold text-[var(--color-ink)]">
+              {joinedLabel}
+            </dd>
           </div>
           <div>
             <dt className="text-sm font-medium text-[var(--color-ink-3)]">
-              {t('detailFactAccountStatus')}
+              {t("detailFactAccountStatus")}
             </dt>
             <dd className="mt-1">
               {employee?.status ? (
-                <StatusPill tone={statusTone}>{t(statusKey(employee.status))}</StatusPill>
+                <StatusPill tone={statusTone}>
+                  {t(statusKey(employee.status))}
+                </StatusPill>
               ) : (
                 <span className="text-sm text-[var(--color-ink-3)]">—</span>
               )}
@@ -410,19 +445,19 @@ export function EmployeeDetailClient({
       {/* Training overview */}
       <FormSection
         icon={LuCheck}
-        title={t('detailTrainingHeading')}
+        title={t("detailTrainingHeading")}
         subtitle={
           trainingSummary.total > 0
-            ? t('detailTrainingCount', {
+            ? t("detailTrainingCount", {
                 done: trainingSummary.complete,
                 total: trainingSummary.total,
               })
-            : t('detailTrainingHint')
+            : t("detailTrainingHint")
         }
       >
         {trainingSummary.total === 0 ? (
           <p className="text-sm text-[var(--color-ink-2)]">
-            {t('detailTrainingEmpty')}
+            {t("detailTrainingEmpty")}
           </p>
         ) : (
           <div className="flex flex-wrap items-center gap-6">
@@ -431,27 +466,27 @@ export function EmployeeDetailClient({
               total={trainingSummary.total}
               size={64}
               stroke={7}
-              tone={trainingSummary.overdue > 0 ? 'warn' : 'ok'}
+              tone={trainingSummary.overdue > 0 ? "warn" : "ok"}
               label={`${trainingSummary.share}%`}
             />
             <dl className="grid flex-1 grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
               <TrainingCount
-                label={t('detailTrainingCompleted')}
+                label={t("detailTrainingCompleted")}
                 value={trainingSummary.complete}
                 tone="ok"
               />
               <TrainingCount
-                label={t('detailTrainingInProgress')}
+                label={t("detailTrainingInProgress")}
                 value={trainingSummary.inProgress}
                 tone="neutral"
               />
               <TrainingCount
-                label={t('detailTrainingNotStarted')}
+                label={t("detailTrainingNotStarted")}
                 value={trainingSummary.notStarted}
                 tone="neutral"
               />
               <TrainingCount
-                label={t('detailTrainingOverdue')}
+                label={t("detailTrainingOverdue")}
                 value={trainingSummary.overdue}
                 tone="bad"
               />
@@ -463,11 +498,13 @@ export function EmployeeDetailClient({
       {/* Assigned training list */}
       <FormSection
         icon={LuClock}
-        title={t('detailAssignedHeading')}
-        subtitle={t('detailAssignedHint')}
+        title={t("detailAssignedHeading")}
+        subtitle={t("detailAssignedHint")}
       >
         {trainingRows.length === 0 ? (
-          <p className="text-sm text-[var(--color-ink-2)]">{t('detailAssignedEmpty')}</p>
+          <p className="text-sm text-[var(--color-ink-2)]">
+            {t("detailAssignedEmpty")}
+          </p>
         ) : (
           <ul className="divide-y divide-[var(--color-line)]">
             {trainingRows.map((row) => (
@@ -480,8 +517,8 @@ export function EmployeeDetailClient({
                     {row.course.titleEn}
                   </p>
                   <p className="mt-0.5 text-sm text-[var(--color-ink-3)]">
-                    {row.assignment.status === 'complete'
-                      ? t('detailAssignedCompleted', {
+                    {row.assignment.status === "complete"
+                      ? t("detailAssignedCompleted", {
                           when: formatDate(
                             row.assignment.acknowledgedAt ??
                               row.assignment.quizPassedAt ??
@@ -489,7 +526,7 @@ export function EmployeeDetailClient({
                             locale,
                           ),
                         })
-                      : t('detailAssignedDueAt', {
+                      : t("detailAssignedDueAt", {
                           when: formatDate(row.assignment.dueAt, locale),
                         })}
                   </p>
@@ -527,57 +564,59 @@ export function EmployeeDetailClient({
 // Small helpers local to the detail page.
 // ----------------------------------------------------------------------------
 
-function statusKey(status: AdminEmployee['status'] | undefined): string {
-  if (status === 'active') return 'statusActive';
-  if (status === 'pending') return 'statusPending';
-  return 'statusDeactivated';
+function statusKey(status: AdminEmployee["status"] | undefined): string {
+  if (status === "active") return "statusActive";
+  if (status === "pending") return "statusPending";
+  return "statusDeactivated";
 }
 
-type LmsRole = 'admin' | 'manager' | 'employee';
+type LmsRole = "admin" | "manager" | "employee";
 
 function lmsRole(e: AdminEmployee | null | undefined): LmsRole {
-  if (!e) return 'employee';
-  if (e.role === 'admin' || (e.role as string) === 'super_admin') return 'admin';
-  if (e.accessLevel === 'manager' || (e.role as string) === 'manager') return 'manager';
-  return 'employee';
+  if (!e) return "employee";
+  if (e.role === "admin" || (e.role as string) === "super_admin")
+    return "admin";
+  if (e.accessLevel === "manager" || (e.role as string) === "manager")
+    return "manager";
+  return "employee";
 }
 
 function accessLevelKey(role: LmsRole): string {
-  if (role === 'admin') return 'accessLevelAdmin';
-  if (role === 'manager') return 'accessLevelManager';
-  return 'accessLevelEmployee';
+  if (role === "admin") return "accessLevelAdmin";
+  if (role === "manager") return "accessLevelManager";
+  return "accessLevelEmployee";
 }
 
 function accessLevelTone(role: LmsRole): StatusTone {
-  if (role === 'admin') return 'info';
-  if (role === 'manager') return 'warn';
-  return 'neutral';
+  if (role === "admin") return "info";
+  if (role === "manager") return "warn";
+  return "neutral";
 }
 
 function trainingStatusKey(status: TrainingAssignmentStatus): string {
   switch (status) {
-    case 'complete':
-      return 'detailAssignedStatusComplete';
-    case 'in_progress':
-      return 'detailAssignedStatusInProgress';
-    case 'due':
-      return 'detailAssignedStatusDue';
-    case 'overdue':
-      return 'detailAssignedStatusOverdue';
+    case "complete":
+      return "detailAssignedStatusComplete";
+    case "in_progress":
+      return "detailAssignedStatusInProgress";
+    case "due":
+      return "detailAssignedStatusDue";
+    case "overdue":
+      return "detailAssignedStatusOverdue";
   }
 }
 
 function initials(name?: string | null): string {
-  if (!name) return '—';
+  if (!name) return "—";
   const words = name.trim().split(/\s+/).slice(0, 2);
-  return words.map((w) => w.charAt(0).toUpperCase()).join('') || '—';
+  return words.map((w) => w.charAt(0).toUpperCase()).join("") || "—";
 }
 
 function formatDate(iso: string, locale: string): string {
   return new Date(iso).toLocaleDateString(locale, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
@@ -591,7 +630,7 @@ function oneLiner({
   location: string | null;
 }): string {
   const parts = [roleLabels[0], stationLabels[0], location].filter(Boolean);
-  return parts.join(' · ');
+  return parts.join(" · ");
 }
 
 function TrainingCount({
@@ -601,18 +640,20 @@ function TrainingCount({
 }: {
   label: string;
   value: number;
-  tone: 'ok' | 'bad' | 'neutral';
+  tone: "ok" | "bad" | "neutral";
 }): React.ReactElement {
   const valueClass =
-    tone === 'ok'
-      ? 'text-[var(--color-ok)]'
-      : tone === 'bad'
-        ? 'text-[var(--color-bad)]'
-        : 'text-[var(--color-ink-2)]';
+    tone === "ok"
+      ? "text-[var(--color-ok)]"
+      : tone === "bad"
+        ? "text-[var(--color-bad)]"
+        : "text-[var(--color-ink-2)]";
   return (
     <div>
       <dt className="text-sm text-[var(--color-ink-3)]">{label}</dt>
-      <dd className={`mt-0.5 text-md font-semibold tabular-nums ${valueClass}`}>{value}</dd>
+      <dd className={`mt-0.5 text-md font-semibold tabular-nums ${valueClass}`}>
+        {value}
+      </dd>
     </div>
   );
 }

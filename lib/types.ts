@@ -1,11 +1,10 @@
-
-export const ROLES = ['super_admin', 'manager', 'employee'] as const;
+export const ROLES = ["super_admin", "manager", "employee"] as const;
 export type SystemRole = (typeof ROLES)[number];
-export type EmployeeRole = (typeof ROLES)[number] | 'admin';
-export type ClearanceLevel = 'general' | 'station' | 'confidential' | 'master';
-export type LanguagePref = 'en' | 'es';
-export type EmployeeStatus = 'pending' | 'active' | 'deactivated';
-export type AccessLevel = 'employee' | 'manager';
+export type EmployeeRole = (typeof ROLES)[number] | "admin";
+export type ClearanceLevel = "general" | "station" | "confidential" | "master";
+export type LanguagePref = "en" | "es";
+export type EmployeeStatus = "pending" | "active" | "deactivated";
+export type AccessLevel = "employee" | "manager";
 
 export interface Employee {
   id: string;
@@ -147,8 +146,8 @@ export interface UpdateLocationInput {
 // Library — procedures (SOPs, recipes, training chapters)
 // ============================================================================
 
-export type ProcedureStatus = 'draft' | 'published';
-export type ProcedureSeason = 'summer' | 'winter';
+export type ProcedureStatus = "draft" | "published";
+export type ProcedureSeason = "summer" | "winter";
 export type ActiveSeason = ProcedureSeason | null;
 
 /** Manager-defined category. Slug is the stable handle (URL-safe, unique
@@ -176,7 +175,7 @@ export interface Category {
   isArchived: boolean;
   /** Backend `status` column (`active` | `archived`). Mirrors `isArchived`
    *  — mapped from the same response field. */
-  status?: 'active' | 'archived';
+  status?: "active" | "archived";
   /** Real-time procedure count from the backend (procedures assigned to
    *  subcategories under this category). */
   proceduresCount?: number;
@@ -184,7 +183,7 @@ export interface Category {
    *  `general` → subcategory procedures save with `stationScope: null`.
    *  `station-tied` → the procedure wizard's Access step pre-fills with the
    *  station the manager picked on the categories page. */
-  kind: 'general' | 'station-tied';
+  kind: "general" | "station-tied";
   subcategories?: Subcategory[];
 }
 
@@ -210,7 +209,7 @@ export interface CriticalLimit {
   breachResponse: string;
 }
 
-export type ProcedureNoteKind = 'warn' | 'tip' | 'alt' | 'equip' | 'allergen';
+export type ProcedureNoteKind = "warn" | "tip" | "alt" | "equip" | "allergen";
 
 /** A clip within a video file, pinned to a specific procedure step. */
 export interface ProcedureVideoSegment {
@@ -307,15 +306,20 @@ export interface ProcedureIngredient {
 // Block discriminated union
 // ============================================================================
 
-export type ProcedureImageHint = 'photo' | 'diagram';
+export type ProcedureImageHint = "photo" | "diagram";
 
 export type ProcedureBlock =
-  | { id: string; kind: 'text'; body: Localised }
-  | { id: string; kind: 'heading'; level: 1 | 2 | 3; text: Localised }
-  | { id: string; kind: 'method'; title?: Localised; steps: ProcedureMethodStep[] }
+  | { id: string; kind: "text"; body: Localised }
+  | { id: string; kind: "heading"; level: 1 | 2 | 3; text: Localised }
   | {
       id: string;
-      kind: 'ingredients';
+      kind: "method";
+      title?: Localised;
+      steps: ProcedureMethodStep[];
+    }
+  | {
+      id: string;
+      kind: "ingredients";
       audience?: string;
       allergen?: ProcedureAllergen;
       yieldItems?: ProcedureYieldItem[];
@@ -324,7 +328,7 @@ export type ProcedureBlock =
     }
   | {
       id: string;
-      kind: 'recipe';
+      kind: "recipe";
       audience?: string;
       allergen?: ProcedureAllergen;
       yieldItems?: ProcedureYieldItem[];
@@ -334,24 +338,35 @@ export type ProcedureBlock =
     }
   | {
       id: string;
-      kind: 'image';
+      kind: "image";
       src: string;
       alt: Localised;
       caption?: LocalisedOptional;
       hint: ProcedureImageHint;
     }
-  | { id: string; kind: 'video'; src: string; caption?: LocalisedOptional }
-  | { id: string; kind: 'warning'; severity: ProcedureNoteKind; body: Localised }
-  | { id: string; kind: 'attachment'; title: Localised; href: string; meta?: string }
-  | { id: string; kind: 'table'; headers: Localised[]; rows: Localised[][] }
+  | { id: string; kind: "video"; src: string; caption?: LocalisedOptional }
   | {
       id: string;
-      kind: 'checklist';
+      kind: "warning";
+      severity: ProcedureNoteKind;
+      body: Localised;
+    }
+  | {
+      id: string;
+      kind: "attachment";
+      title: Localised;
+      href: string;
+      meta?: string;
+    }
+  | { id: string; kind: "table"; headers: Localised[]; rows: Localised[][] }
+  | {
+      id: string;
+      kind: "checklist";
       title?: LocalisedOptional;
       items: { id: string; text: Localised }[];
     };
 
-export type ProcedureBlockKind = ProcedureBlock['kind'];
+export type ProcedureBlockKind = ProcedureBlock["kind"];
 
 export interface ProcedureBody {
   blocks: ProcedureBlock[];
@@ -402,7 +417,7 @@ export interface Quiz {
  *  - `'always'`: quiz surfaces on every read of the SOP, with completion
  *    state tracked per employee (stage 3 — collapse + completed badge UX).
  *  Ignored when `quizId` is null. */
-export type ProcedureQuizMode = 'training' | 'always';
+export type ProcedureQuizMode = "training" | "always";
 
 /** Which stations this procedure applies to. `mode: 'all'` means the
  *  procedure is shown to every station regardless of the cook's station
@@ -417,7 +432,7 @@ export type ProcedureQuizMode = 'training' | 'always';
  *  (PROJECT_OVERVIEW §02: "open to all employees by default. Restriction is a
  *  deliberate choice"). "some" admits anyone matching one of the lists. */
 export interface ProcedureAudience {
-  mode: 'everyone' | 'some';
+  mode: "everyone" | "some";
   stationIds: string[];
   roleIds: string[];
   employeeIds: string[];
@@ -425,10 +440,10 @@ export interface ProcedureAudience {
 
 /** How closely a document is guarded. Confidential and master recipes carry
  *  the reader's watermark and log every view (§02 Recipe Confidentiality). */
-export type ProcedureProtection = 'standard' | 'confidential' | 'master';
+export type ProcedureProtection = "standard" | "confidential" | "master";
 
 export interface ProcedureStationScope {
-  mode: 'all' | 'specific';
+  mode: "all" | "specific";
   stationIds: string[];
 }
 
@@ -610,7 +625,8 @@ export interface CreateProcedureInput {
 /** Per-employee progress on a single training course. `overdue` is a
  *  derived status (dueAt < now && !complete) so it does not need to be
  *  persisted — the admin UI computes it from `dueAt` and `status`. */
-export type TrainingAssignmentStatus = 'due' | 'in_progress' | 'complete' | 'overdue';
+export type TrainingAssignmentStatus =
+  "due" | "in_progress" | "complete" | "overdue";
 
 export interface TrainingAssignment {
   id: string;
@@ -624,7 +640,7 @@ export interface TrainingAssignment {
   dueAt: string;
   /** Last non-terminal status from the employee side. The admin list
    *  re-derives `overdue` from `dueAt` — see TrainingAssignmentRow below. */
-  status: Exclude<TrainingAssignmentStatus, 'overdue'>;
+  status: Exclude<TrainingAssignmentStatus, "overdue">;
   /** Procedure step ids the employee marked done. Empty array until they
    *  start; the per-step list lets the receipt show "X of Y steps done"
    *  without leaking an overall % (forbidden by DESIGN.md §8). */

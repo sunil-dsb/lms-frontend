@@ -1,15 +1,14 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { LuCheck } from 'react-icons/lu';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { LuCheck } from "react-icons/lu";
+import { cn } from "@/lib/utils";
 
 export interface WizardStep {
   id: string;
   label: string;
   progress: number;
 }
-
 
 export function WizardStepper({
   steps,
@@ -34,25 +33,29 @@ export function WizardStepper({
 
   const [reducedMotion, setReducedMotion] = React.useState(false);
   React.useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReducedMotion(mq.matches);
     const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
-  const motion = reducedMotion ? '' : 'transition-all duration-[400ms] ease-out';
+  const motion = reducedMotion
+    ? ""
+    : "transition-all duration-[400ms] ease-out";
 
   return (
-    <nav aria-label={ariaLabel} className={cn('w-full', className ?? 'my-6')}>
+    <nav aria-label={ariaLabel} className={cn("w-full", className ?? "my-6")}>
       <div className="py-2">
         <ol className="flex w-full items-center justify-between">
           {steps.map((step, idx) => {
             const isPast = idx < activeIdx;
             const isActive = step.id === current;
             const isFuture = idx > activeIdx;
-            const isComplete = isPast || (idx <= maxVisited && step.progress >= 1);
-            const isStarted = !isPast && !isComplete && idx <= maxVisited && step.progress > 0;
+            const isComplete =
+              isPast || (idx <= maxVisited && step.progress >= 1);
+            const isStarted =
+              !isPast && !isComplete && idx <= maxVisited && step.progress > 0;
             const percent = Math.round(step.progress * 100);
 
             // Connector line after this step
@@ -68,58 +71,54 @@ export function WizardStepper({
             const circleStyle: React.CSSProperties =
               isActive || isComplete
                 ? {
-                    backgroundColor: 'var(--color-brand-600)',
-                    color: '#ffffff',
+                    backgroundColor: "var(--color-brand-600)",
+                    color: "#ffffff",
                   }
                 : isStarted
                   ? {
-                      backgroundColor: 'var(--color-surface)',
-                      color: 'var(--color-brand-700)',
+                      backgroundColor: "var(--color-surface)",
+                      color: "var(--color-brand-700)",
                     }
                   : {
-                      backgroundColor: 'var(--color-surface)',
-                      color: 'var(--color-ink-3)',
+                      backgroundColor: "var(--color-surface)",
+                      color: "var(--color-ink-3)",
                     };
 
             if (isActive) {
               circleStyle.boxShadow =
-                '0 0 0 4px var(--color-brand-tint), 0 1px 2px rgb(34 34 34 / 0.06)';
-              circleStyle.transform = 'scale(1.05)';
+                "0 0 0 4px var(--color-brand-tint), 0 1px 2px rgb(34 34 34 / 0.06)";
+              circleStyle.transform = "scale(1.05)";
             } else {
-              circleStyle.boxShadow = '0 1px 2px rgb(34 34 34 / 0.06)';
+              circleStyle.boxShadow = "0 1px 2px rgb(34 34 34 / 0.06)";
             }
 
             const labelStyle: React.CSSProperties = isActive
-              ? { color: 'var(--color-brand-700)' }
+              ? { color: "var(--color-brand-700)" }
               : isComplete
-                ? { color: 'var(--color-ink)' }
+                ? { color: "var(--color-ink)" }
                 : isStarted
-                  ? { color: 'var(--color-ink-2)' }
-                  : { color: 'var(--color-ink-3)' };
+                  ? { color: "var(--color-ink-2)" }
+                  : { color: "var(--color-ink-3)" };
 
             const ringClass = isActive
-              ? ''
+              ? ""
               : isComplete
-                ? ''
+                ? ""
                 : isStarted
-                  ? 'ring-2 ring-inset ring-[var(--color-brand-600)]'
-                  : 'ring-1 ring-inset ring-[var(--color-line-3)]';
+                  ? "ring-2 ring-inset ring-[var(--color-brand-600)]"
+                  : "ring-1 ring-inset ring-[var(--color-line-3)]";
 
             const circleClass = cn(
-              'flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold',
+              "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold",
               motion,
               ringClass,
             );
 
-            const labelClass = cn(
-              'text-sm font-semibold',
-              motion,
-            );
+            const labelClass = cn("text-sm font-semibold", motion);
 
-   
             const labelVisibility = isActive
-              ? 'inline-block'
-              : 'hidden sm:inline-block';
+              ? "inline-block"
+              : "hidden sm:inline-block";
 
             return (
               <React.Fragment key={step.id}>
@@ -127,7 +126,7 @@ export function WizardStepper({
                   <button
                     type="button"
                     onClick={() => onSelect?.(step.id)}
-                    aria-current={isActive ? 'step' : undefined}
+                    aria-current={isActive ? "step" : undefined}
                     aria-label={`${step.label}, ${percent}% complete`}
                     className="group flex items-center gap-3 focus-visible:outline-none"
                   >
@@ -158,7 +157,7 @@ export function WizardStepper({
                   >
                     <div
                       className={cn(
-                        'h-full bg-[var(--color-brand-600)]',
+                        "h-full bg-[var(--color-brand-600)]",
                         motion,
                       )}
                       style={{ width: `${linePercent}%` }}

@@ -1,15 +1,15 @@
-import * as React from 'react';
-import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
-import { ApiException, fetchMe } from '@/lib/api';
-import { AdminProcedureDetailLoader } from './admin-procedure-detail-loader';
+import * as React from "react";
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
+import { setRequestLocale } from "next-intl/server";
+import { ApiException, fetchMe } from "@/lib/api";
+import { AdminProcedureDetailLoader } from "./admin-procedure-detail-loader";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
 }
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function AdminLibraryDetailPage({
   params,
@@ -26,7 +26,7 @@ export default async function AdminLibraryDetailPage({
   const cookieHeader = cookieStore
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+    .join("; ");
 
   let employee;
   try {
@@ -42,11 +42,7 @@ export default async function AdminLibraryDetailPage({
   return (
     // Matches the demo procedure view reading column width (`max-w-doc`).
     <div className="mx-auto max-w-doc space-y-6 pb-12">
-      <AdminProcedureDetailLoader
-        locale={locale}
-        id={id}
-        employee={employee}
-      />
+      <AdminProcedureDetailLoader locale={locale} id={id} employee={employee} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Locations data layer (TanStack Query).
@@ -9,10 +9,10 @@
  * 4xx never retried). Consumers read `data?.locations`.
  */
 
-import { useQuery } from '@tanstack/react-query';
-import { fetchLocations } from './api';
+import { useQuery } from "@tanstack/react-query";
+import { fetchLocations } from "./api";
 
-export const LOCATIONS_QUERY_KEY = ['locations'] as const;
+export const LOCATIONS_QUERY_KEY = ["locations"] as const;
 
 export function useLocations() {
   return useQuery({

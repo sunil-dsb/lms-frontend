@@ -1,16 +1,20 @@
-import * as React from 'react';
-import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
-import { backendSlug, fetchBackendCategories, fetchBackendSubcategories } from '@/services/categories/api';
-import type { Category, Subcategory } from '@/lib/types';
-import { SubcategoryDetailClient } from './subcategory-detail-client';
+import * as React from "react";
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
+import { setRequestLocale } from "next-intl/server";
+import {
+  backendSlug,
+  fetchBackendCategories,
+  fetchBackendSubcategories,
+} from "@/services/categories/api";
+import type { Category, Subcategory } from "@/lib/types";
+import { SubcategoryDetailClient } from "./subcategory-detail-client";
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string; subSlug: string }>;
 }
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 /**
  * Dedicated subcategory page. The category page lists every subcategory
@@ -30,13 +34,16 @@ export default async function AdminSubcategoryDetailPage({
   const cookieHeader = cookieStore
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+    .join("; ");
 
   let category: Category | null = null;
   let subcategory: Subcategory | null = null;
 
   try {
-    const categories = await fetchBackendCategories({ page: 1, limit: 200 }, cookieHeader);
+    const categories = await fetchBackendCategories(
+      { page: 1, limit: 200 },
+      cookieHeader,
+    );
     const match = categories.find((c) => c.slug === slug);
     if (match) {
       const subs = await fetchBackendSubcategories(match.id, cookieHeader);

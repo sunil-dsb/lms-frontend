@@ -1,20 +1,29 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { queryWords, scoreProcedure } from '@/lib/procedure-search';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useBackendCategories } from '@/services/categories/hooks';
-import { backendSlug, categorySlugsMatch } from '@/services/categories/api';
-import { useAssignedProcedures } from '@/services/library/hooks';
-import { getCategoryIcon } from '@/lib/category-icons';
-import { Icon } from '@/components/ui/icon';
-import type { Category, Procedure } from '@/lib/types';
-import { withAs, type ViewAs } from '@/lib/view-as';
-import { LuSearch, LuBookOpen, LuInbox, LuFolderX, LuRotateCcw } from 'react-icons/lu';
-import { ProcedureRow } from '@/components/employee/procedure-row';
-import { allergenWords, factsOf } from '@/app/[locale]/employee/home/components/procedure-facts';
+import * as React from "react";
+import { queryWords, scoreProcedure } from "@/lib/procedure-search";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useBackendCategories } from "@/services/categories/hooks";
+import { backendSlug, categorySlugsMatch } from "@/services/categories/api";
+import { useAssignedProcedures } from "@/services/library/hooks";
+import { getCategoryIcon } from "@/lib/category-icons";
+import { Icon } from "@/components/ui/icon";
+import type { Category, Procedure } from "@/lib/types";
+import { withAs, type ViewAs } from "@/lib/view-as";
+import {
+  LuSearch,
+  LuBookOpen,
+  LuInbox,
+  LuFolderX,
+  LuRotateCcw,
+} from "react-icons/lu";
+import { ProcedureRow } from "@/components/employee/procedure-row";
+import {
+  allergenWords,
+  factsOf,
+} from "@/app/[locale]/employee/home/components/procedure-facts";
 
 interface ProceduresClientListProps {
   initialQuery: string;
@@ -55,30 +64,31 @@ export function ProceduresClientList({
   // Translations must be resolved inside the client: next-intl's translation
   // object contains function values for interpolated keys, and those cannot be
   // serialised across the server→client boundary.
-  const tBrowse = useTranslations('employee.browse');
-  const tHome = useTranslations('employee.home');
+  const tBrowse = useTranslations("employee.browse");
+  const tHome = useTranslations("employee.home");
 
   const labels = {
-    all: tBrowse('all'),
-    myStation: tBrowse('myStation'),
-    assignedToMe: tBrowse('assignedToMe'),
-    count: (c: number) => tBrowse('count', { count: c }),
-    none: tBrowse('none'),
-    noneFor: (q: string) => tBrowse('noneFor', { query: q }),
-    searchPlaceholder: tBrowse('searchPlaceholder'),
-    searchLabel: tBrowse('searchLabel'),
-    uncategorised: tBrowse('uncategorised'),
+    all: tBrowse("all"),
+    myStation: tBrowse("myStation"),
+    assignedToMe: tBrowse("assignedToMe"),
+    count: (c: number) => tBrowse("count", { count: c }),
+    none: tBrowse("none"),
+    noneFor: (q: string) => tBrowse("noneFor", { query: q }),
+    searchPlaceholder: tBrowse("searchPlaceholder"),
+    searchLabel: tBrowse("searchLabel"),
+    uncategorised: tBrowse("uncategorised"),
   };
 
   const flagLabels = {
-    allergen: (list: string) => tHome('flagAllergen', { list }),
-    critical: tHome('flagCritical'),
-    english: tHome('flagEnglishOnly'),
+    allergen: (list: string) => tHome("flagAllergen", { list }),
+    critical: tHome("flagCritical"),
+    english: tHome("flagEnglishOnly"),
   };
 
   const [query, setQuery] = React.useState<string>(initialQuery);
-  const [activeCategory, setActiveCategory] = React.useState<string>(initialCategory);
-  const [scope, setScope] = React.useState<'' | 'assigned'>('');
+  const [activeCategory, setActiveCategory] =
+    React.useState<string>(initialCategory);
+  const [scope, setScope] = React.useState<"" | "assigned">("");
 
   const [debouncedQuery, setDebouncedQuery] = React.useState(query);
   React.useEffect(() => {
@@ -96,7 +106,9 @@ export function ProceduresClientList({
     for (const c of backendCategories) {
       const slug = c.slug || backendSlug(c.nameEn);
       const dup = merged.find(
-        (m) => categorySlugsMatch(m.slug, slug) || (Boolean(m.id) && Boolean(c.id) && m.id === c.id),
+        (m) =>
+          categorySlugsMatch(m.slug, slug) ||
+          (Boolean(m.id) && Boolean(c.id) && m.id === c.id),
       );
       if (!dup) merged.push({ ...c, slug });
     }
@@ -114,7 +126,8 @@ export function ProceduresClientList({
     [categories, activeCategory],
   );
 
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const categoryUuid =
     selectedCategoryObj?.id && uuidRegex.test(selectedCategoryObj.id)
       ? selectedCategoryObj.id
@@ -123,7 +136,7 @@ export function ProceduresClientList({
         : undefined;
 
   const assignedProceduresQuery = useAssignedProcedures({
-    scope: scope === 'assigned' ? 'mine' : 'all',
+    scope: scope === "assigned" ? "mine" : "all",
     categoryId: categoryUuid,
     search: debouncedQuery.trim() || undefined,
     limit: 100,
@@ -136,26 +149,31 @@ export function ProceduresClientList({
   // mutates the on-device stores.
   React.useEffect(() => {
     const syncData = () => {
-      void queryClient.invalidateQueries({ queryKey: ['categories'] });
-      void queryClient.invalidateQueries({ queryKey: ['procedures', 'browse'] });
+      void queryClient.invalidateQueries({ queryKey: ["categories"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["procedures", "browse"],
+      });
     };
-    window.addEventListener('storage', syncData);
-    window.addEventListener('lms_categories_updated', syncData);
+    window.addEventListener("storage", syncData);
+    window.addEventListener("lms_categories_updated", syncData);
     return () => {
-      window.removeEventListener('storage', syncData);
-      window.removeEventListener('lms_categories_updated', syncData);
+      window.removeEventListener("storage", syncData);
+      window.removeEventListener("lms_categories_updated", syncData);
     };
   }, [queryClient]);
 
-  const isEs = locale === 'es';
-  const titleOf = (p: Procedure): string => (isEs ? p.titleEs || p.titleEn : p.titleEn || p.titleEs);
-  const purposeOf = (p: Procedure): string => (isEs ? p.purposeEs || p.purposeEn : p.purposeEn || p.purposeEs) || '';
-  const nameOf = (c: Category): string => (isEs ? c.nameEs || c.nameEn : c.nameEn || c.nameEs);
+  const isEs = locale === "es";
+  const titleOf = (p: Procedure): string =>
+    isEs ? p.titleEs || p.titleEn : p.titleEn || p.titleEs;
+  const purposeOf = (p: Procedure): string =>
+    (isEs ? p.purposeEs || p.purposeEn : p.purposeEn || p.purposeEs) || "";
+  const nameOf = (c: Category): string =>
+    isEs ? c.nameEs || c.nameEn : c.nameEn || c.nameEs;
 
   const coverOf = (p: Procedure): string | undefined => {
     const body = p.bodyEn?.blocks?.length ? p.bodyEn : p.bodyEs;
     if (!body?.blocks) return undefined;
-    for (const b of body.blocks) if (b.kind === 'image' && b.src) return b.src;
+    for (const b of body.blocks) if (b.kind === "image" && b.src) return b.src;
     return undefined;
   };
 
@@ -163,18 +181,28 @@ export function ProceduresClientList({
   // procedure says, best answers first (see lib/procedure-search).
   // With no question, the reader's own station leads, then A to Z.
   const words = queryWords(query);
-  const myStationIds = stationIds && stationIds.length > 0 ? stationIds : stationId ? [stationId] : [];
+  const myStationIds =
+    stationIds && stationIds.length > 0
+      ? stationIds
+      : stationId
+        ? [stationId]
+        : [];
   const mine = (p: Procedure): number =>
     p.isStationProcedure ||
     (myStationIds.length > 0 &&
-      ((p.stationScope?.mode === 'specific' && p.stationScope.stationIds.some((id) => myStationIds.includes(id))) ||
+      ((p.stationScope?.mode === "specific" &&
+        p.stationScope.stationIds.some((id) => myStationIds.includes(id))) ||
         (p.station?.id && myStationIds.includes(p.station.id)) ||
-        (p.audience?.mode === 'some' && p.audience.stationIds.some((id) => myStationIds.includes(id)))))
+        (p.audience?.mode === "some" &&
+          p.audience.stationIds.some((id) => myStationIds.includes(id)))))
       ? 1
       : 0;
   const assignedToMe = (p: Procedure): boolean =>
-    p.isDirectlyAssigned === true || Boolean(employeeId && p.assignUsers?.includes(employeeId));
-  const published = procedures.filter((p) => p.status === 'published' && !p.isArchived);
+    p.isDirectlyAssigned === true ||
+    Boolean(employeeId && p.assignUsers?.includes(employeeId));
+  const published = procedures.filter(
+    (p) => p.status === "published" && !p.isArchived,
+  );
   const results = published
     .filter((p) => {
       if (!activeCategory) return true;
@@ -185,28 +213,42 @@ export function ProceduresClientList({
         categorySlugsMatch(p.category?.slug, activeCategory)
       );
     })
-    .filter((p) => (scope === 'assigned' ? assignedToMe(p) : true))
+    .filter((p) => (scope === "assigned" ? assignedToMe(p) : true))
     .map((p) => ({ p, score: query.trim() ? scoreProcedure(p, words) : 1 }))
     .filter((r) => r.score > 0)
     .sort((a, b) => {
       // Prioritize Guacamole Fresco at the top when no specific text search is active
-      const isGuacA = a.p.id === 'proc-guacamole-fresco' || a.p.slug === 'guacamole-fresco' ? 1 : 0;
-      const isGuacB = b.p.id === 'proc-guacamole-fresco' || b.p.slug === 'guacamole-fresco' ? 1 : 0;
+      const isGuacA =
+        a.p.id === "proc-guacamole-fresco" || a.p.slug === "guacamole-fresco"
+          ? 1
+          : 0;
+      const isGuacB =
+        b.p.id === "proc-guacamole-fresco" || b.p.slug === "guacamole-fresco"
+          ? 1
+          : 0;
       if (!query.trim() && isGuacA !== isGuacB) {
         return isGuacB - isGuacA;
       }
       return (
         b.score - a.score ||
         mine(b.p) - mine(a.p) ||
-        new Date(b.p.updatedAt || b.p.createdAt).getTime() - new Date(a.p.updatedAt || a.p.createdAt).getTime() ||
+        new Date(b.p.updatedAt || b.p.createdAt).getTime() -
+          new Date(a.p.updatedAt || a.p.createdAt).getTime() ||
         titleOf(a.p).localeCompare(titleOf(b.p), locale)
       );
     })
     .map((r) => r.p);
 
   /* All chip sizing uses inline styles — Tailwind v4 resets --spacing-* so gap-x, px-x classes produce no CSS */
-  const chipBase = 'inline-flex items-center rounded-full font-semibold whitespace-nowrap cursor-pointer transition-colors duration-150 text-xs';
-  const chipStyle = { height: '30px', minHeight: '30px', paddingLeft: '10px', paddingRight: '10px', gap: '4px' };
+  const chipBase =
+    "inline-flex items-center rounded-full font-semibold whitespace-nowrap cursor-pointer transition-colors duration-150 text-xs";
+  const chipStyle = {
+    height: "30px",
+    minHeight: "30px",
+    paddingLeft: "10px",
+    paddingRight: "10px",
+    gap: "4px",
+  };
   const chipStyleSm = { ...chipStyle }; // same for now, can scale up with sm: breakpoint if needed
 
   return (
@@ -218,9 +260,12 @@ export function ProceduresClientList({
         </label>
         <div
           className="flex items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--color-line-3)] bg-[var(--color-surface)] px-3 transition-colors duration-[var(--dur)] ease-[var(--ease)] focus-within:border-[var(--color-ring)] focus-within:outline focus-within:outline-2 focus-within:outline-[var(--color-ring)] sm:px-4"
-          style={{ height: '40px' }}
+          style={{ height: "40px" }}
         >
-          <LuSearch aria-hidden="true" className="shrink-0 text-base text-[var(--color-ink-2)] sm:text-lg" />
+          <LuSearch
+            aria-hidden="true"
+            className="shrink-0 text-base text-[var(--color-ink-2)] sm:text-lg"
+          />
           <input
             id="q-client"
             type="search"
@@ -228,7 +273,7 @@ export function ProceduresClientList({
             onChange={(e) => setQuery(e.target.value)}
             placeholder={labels.searchPlaceholder}
             className="min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-3)]"
-            style={{ height: '100%' }}
+            style={{ height: "100%" }}
           />
         </div>
       </div>
@@ -238,15 +283,15 @@ export function ProceduresClientList({
       ) : (
         <>
           {/* Category filter chips — always wrap, all visible without scrolling */}
-          <div style={{ marginTop: '10px' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          <div style={{ marginTop: "10px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
               <button
                 type="button"
                 onClick={() => {
-                  setActiveCategory('');
-                  setScope('');
+                  setActiveCategory("");
+                  setScope("");
                 }}
-                className={`${chipBase} ${activeCategory === '' && scope === '' ? 'bg-[var(--color-ink)] text-[var(--color-surface)]' : 'bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]'}`}
+                className={`${chipBase} ${activeCategory === "" && scope === "" ? "bg-[var(--color-ink)] text-[var(--color-surface)]" : "bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]"}`}
                 style={chipStyle}
               >
                 {labels.all}
@@ -255,10 +300,10 @@ export function ProceduresClientList({
                 <button
                   type="button"
                   onClick={() => {
-                    setActiveCategory('');
-                    setScope(scope === 'assigned' ? '' : 'assigned');
+                    setActiveCategory("");
+                    setScope(scope === "assigned" ? "" : "assigned");
                   }}
-                  className={`${chipBase} ${scope === 'assigned' ? 'bg-[var(--color-ink)] text-[var(--color-surface)]' : 'bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]'}`}
+                  className={`${chipBase} ${scope === "assigned" ? "bg-[var(--color-ink)] text-[var(--color-surface)]" : "bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]"}`}
                   style={chipStyle}
                 >
                   {labels.assignedToMe}
@@ -271,16 +316,16 @@ export function ProceduresClientList({
                     (activeCategory === c.slug ||
                       (c.id && activeCategory === c.id) ||
                       categorySlugsMatch(activeCategory, c.slug)) &&
-                    scope === '';
+                    scope === "";
                   return (
                     <button
                       type="button"
                       key={c.id || c.slug}
                       onClick={() => {
-                        setScope('');
-                        setActiveCategory(on ? '' : c.slug || c.id);
+                        setScope("");
+                        setActiveCategory(on ? "" : c.slug || c.id);
                       }}
-                      className={`${chipBase} ${on ? 'bg-[var(--color-ink)] text-[var(--color-surface)]' : 'bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]'}`}
+                      className={`${chipBase} ${on ? "bg-[var(--color-ink)] text-[var(--color-surface)]" : "bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]"}`}
                       style={chipStyle}
                     >
                       <Icon icon={getCategoryIcon(c)} />
@@ -291,7 +336,10 @@ export function ProceduresClientList({
             </div>
           </div>
 
-          <p className="mt-4 text-sm text-[var(--color-ink-2)]" aria-live="polite">
+          <p
+            className="mt-4 text-sm text-[var(--color-ink-2)]"
+            aria-live="polite"
+          >
             {labels.count(results.length)}
           </p>
 
@@ -300,15 +348,17 @@ export function ProceduresClientList({
               hasFilter={Boolean(query.trim() || activeCategory || scope)}
               hasQuery={Boolean(query.trim())}
               hasCategory={Boolean(activeCategory)}
-              hasScope={scope === 'assigned'}
-              categoryName={selectedCategoryObj ? nameOf(selectedCategoryObj) : undefined}
+              hasScope={scope === "assigned"}
+              categoryName={
+                selectedCategoryObj ? nameOf(selectedCategoryObj) : undefined
+              }
               onReset={() => {
-                setQuery('');
-                setActiveCategory('');
-                setScope('');
+                setQuery("");
+                setActiveCategory("");
+                setScope("");
               }}
-              onClearCategory={() => setActiveCategory('')}
-              onClearScope={() => setScope('')}
+              onClearCategory={() => setActiveCategory("")}
+              onClearScope={() => setScope("")}
               isEs={isEs}
               noneForText={labels.noneFor(query.trim())}
             />
@@ -317,8 +367,10 @@ export function ProceduresClientList({
               {results.map((p) => {
                 const cover = p.procedureImage || coverOf(p);
                 const sub = p.subcategoryId
-                  ? p.category?.subcategories?.find((s) => s.id === p.subcategoryId) ?? null
-                  : (p as any).subcategory ?? null;
+                  ? (p.category?.subcategories?.find(
+                      (s) => s.id === p.subcategoryId,
+                    ) ?? null)
+                  : ((p as any).subcategory ?? null);
                 return (
                   <li key={p.id}>
                     <ProcedureRow
@@ -329,10 +381,15 @@ export function ProceduresClientList({
                       subcategory={sub}
                       title={titleOf(p)}
                       purpose={purposeOf(p)}
-                      meta={p.category ? nameOf(p.category) : labels.uncategorised}
+                      meta={
+                        p.category ? nameOf(p.category) : labels.uncategorised
+                      }
                       flags={{
                         ...factsOf(p, readsSpanish),
-                        allergens: allergenWords(factsOf(p, readsSpanish).allergens, isEs ? 'es' : 'en'),
+                        allergens: allergenWords(
+                          factsOf(p, readsSpanish).allergens,
+                          isEs ? "es" : "en",
+                        ),
                       }}
                       flagLabels={flagLabels}
                       locked={locked}
@@ -415,30 +472,36 @@ function EmptyProceduresCard({
     <LuBookOpen className="size-8 text-[var(--color-ink-2)]" />
   );
 
-  let title = isEs ? 'No se encontraron procedimientos' : 'No procedures found';
+  let title = isEs ? "No se encontraron procedimientos" : "No procedures found";
   if (hasQuery) {
-    title = isEs ? 'Sin resultados de búsqueda' : 'No matching procedures';
+    title = isEs ? "Sin resultados de búsqueda" : "No matching procedures";
   } else if (hasScope) {
-    title = isEs ? 'Sin procedimientos asignados a ti' : 'No procedures directly assigned';
+    title = isEs
+      ? "Sin procedimientos asignados a ti"
+      : "No procedures directly assigned";
   } else if (hasCategory && categoryName) {
-    title = isEs ? `Sin procedimientos en ${categoryName}` : `No procedures in ${categoryName}`;
+    title = isEs
+      ? `Sin procedimientos en ${categoryName}`
+      : `No procedures in ${categoryName}`;
   } else if (!hasFilter) {
-    title = isEs ? 'No hay procedimientos disponibles' : 'No procedures assigned yet';
+    title = isEs
+      ? "No hay procedimientos disponibles"
+      : "No procedures assigned yet";
   }
 
   let body = isEs
-    ? 'Los procedimientos asignados a tu estación aparecerán aquí cuando tu gerente los publique.'
-    : 'Procedures assigned to your station will appear here once published by your manager.';
+    ? "Los procedimientos asignados a tu estación aparecerán aquí cuando tu gerente los publique."
+    : "Procedures assigned to your station will appear here once published by your manager.";
   if (hasQuery) {
     body = noneForText;
   } else if (hasScope) {
     body = isEs
-      ? 'No tienes procedimientos asignados directamente de forma individual. Puedes explorar los procedimientos disponibles para tu estación con el botón de abajo.'
-      : 'You have no individual procedures directly assigned to you. You can browse all procedures available for your station.';
+      ? "No tienes procedimientos asignados directamente de forma individual. Puedes explorar los procedimientos disponibles para tu estación con el botón de abajo."
+      : "You have no individual procedures directly assigned to you. You can browse all procedures available for your station.";
   } else if (hasCategory) {
     body = isEs
-      ? 'Actualmente no hay procedimientos publicados bajo esta categoría para tu estación.'
-      : 'There are currently no procedures in this category assigned to your station.';
+      ? "Actualmente no hay procedimientos publicados bajo esta categoría para tu estación."
+      : "There are currently no procedures in this category assigned to your station.";
   }
 
   return (
@@ -463,7 +526,7 @@ function EmptyProceduresCard({
             className="inline-flex min-h-[38px] items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 py-2 text-xs font-semibold text-[var(--color-surface)] shadow-xs transition hover:opacity-90 cursor-pointer"
           >
             <LuRotateCcw className="size-3.5" />
-            {isEs ? 'Restablecer todos los filtros' : 'Clear all filters'}
+            {isEs ? "Restablecer todos los filtros" : "Clear all filters"}
           </button>
           {hasScope ? (
             <button
@@ -471,7 +534,9 @@ function EmptyProceduresCard({
               onClick={onClearScope}
               className="inline-flex min-h-[38px] items-center gap-2 rounded-full border border-[var(--color-line-2)] bg-[var(--color-panel)] px-4 py-2 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-panel-2)] cursor-pointer"
             >
-              {isEs ? 'Ver procedimientos de estación' : 'Browse station procedures'}
+              {isEs
+                ? "Ver procedimientos de estación"
+                : "Browse station procedures"}
             </button>
           ) : null}
           {hasCategory ? (
@@ -480,7 +545,7 @@ function EmptyProceduresCard({
               onClick={onClearCategory}
               className="inline-flex min-h-[38px] items-center gap-2 rounded-full border border-[var(--color-line-2)] bg-[var(--color-panel)] px-4 py-2 text-xs font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-panel-2)] cursor-pointer"
             >
-              {isEs ? 'Ver todas las categorías' : 'View all categories'}
+              {isEs ? "Ver todas las categorías" : "View all categories"}
             </button>
           ) : null}
         </div>
@@ -488,4 +553,3 @@ function EmptyProceduresCard({
     </div>
   );
 }
-

@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import * as React from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type {
   AdminEmployee,
   EmployeeStatus,
   TrainingAssignmentRow,
-} from '@/lib/types';
-import { StatusPill, type StatusTone } from '@/components/ui/status-pill';
-import { Avatar } from '@/components/ui/avatar';
-import { TrainingSummary } from '@/components/admin/training-summary';
-import { EmployeeRowActions } from './employee-row-actions';
-import { EditRolesModal } from './[id]/edit-roles-modal';
-import { Card, CardContent } from '@/components/ui/card';
-import { getTrainingRowsForEmployee } from '@/lib/mock-training';
-import { useQueryClient } from '@tanstack/react-query';
-import { useEmployees, EMPLOYEES_QUERY_KEY } from '@/services/employees/hooks';
-import { Pagination } from '@/components/ui/pagination';
-import { useRoles } from '@/services/jobs/hooks';
-import { useStations } from '@/services/stations/hooks';
-import { useLocations } from '@/services/locations/hooks';
-import type { UpdateEmployeeInput } from '@/services/employees/types';
-import { fold } from '@/lib/utils';
+} from "@/lib/types";
+import { StatusPill, type StatusTone } from "@/components/ui/status-pill";
+import { Avatar } from "@/components/ui/avatar";
+import { TrainingSummary } from "@/components/admin/training-summary";
+import { EmployeeRowActions } from "./employee-row-actions";
+import { EditRolesModal } from "./[id]/edit-roles-modal";
+import { Card, CardContent } from "@/components/ui/card";
+import { getTrainingRowsForEmployee } from "@/lib/mock-training";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEmployees, EMPLOYEES_QUERY_KEY } from "@/services/employees/hooks";
+import { Pagination } from "@/components/ui/pagination";
+import { useRoles } from "@/services/jobs/hooks";
+import { useStations } from "@/services/stations/hooks";
+import { useLocations } from "@/services/locations/hooks";
+import type { UpdateEmployeeInput } from "@/services/employees/types";
+import { fold } from "@/lib/utils";
 
 interface EmployeesClientTableProps {
-  statusFilter: EmployeeStatus | 'all';
+  statusFilter: EmployeeStatus | "all";
   searchQuery: string;
   locale: string;
   /** Label lookups translated by the server page. Role / station /
@@ -79,13 +79,16 @@ export function EmployeesClientTable({
   /** 10 rows per page — long rosters page instead of scrolling. */
   const PAGE_SIZE = 10;
   const [currentPage, setCurrentPage] = useState(1);
-  const isEs = locale === 'es';
+  const isEs = locale === "es";
 
   function openEdit(employee: AdminEmployee): void {
     setEditing(employee);
   }
 
-  function onModalSaved(next: AdminEmployee, _prior: UpdateEmployeeInput): void {
+  function onModalSaved(
+    next: AdminEmployee,
+    _prior: UpdateEmployeeInput,
+  ): void {
     setEditing(null);
     // The PUT already persisted server-side — refresh the cached list so
     // the row reflects the new state.
@@ -103,7 +106,7 @@ export function EmployeesClientTable({
   // the page doesn't see the list shuffle within the same group.
   const visible = React.useMemo<AdminEmployee[]>(() => {
     const byStatus =
-      statusFilter === 'all'
+      statusFilter === "all"
         ? employees
         : employees.filter((e) => e.status === statusFilter);
     const bySearch = searchQuery.trim()
@@ -112,8 +115,8 @@ export function EmployeesClientTable({
           return byStatus.filter(
             (e) =>
               fold(e.name).includes(q) ||
-              fold(e.employeeCode ?? '').includes(q) ||
-              fold(e.email ?? '').includes(q),
+              fold(e.employeeCode ?? "").includes(q) ||
+              fold(e.email ?? "").includes(q),
           );
         })()
       : byStatus;
@@ -151,8 +154,8 @@ export function EmployeesClientTable({
   );
 
   const statusBadge = (s: EmployeeStatus): string => {
-    if (s === 'pending') return labels.statusPending;
-    if (s === 'active') return labels.statusActive;
+    if (s === "pending") return labels.statusPending;
+    if (s === "active") return labels.statusActive;
     return labels.statusDeactivated;
   };
 
@@ -165,20 +168,20 @@ export function EmployeesClientTable({
 
   return (
     <>
-    <Card>
-      <CardContent className="p-0">
-        {isLoading ? (
-          <p className="px-6 py-8 text-center text-sm text-[var(--color-muted-foreground)]">
-            {labels.loading}
-          </p>
-        ) : visible.length === 0 ? (
-          <p className="px-6 py-8 text-center text-sm text-[var(--color-muted-foreground)]">
-            {labels.empty}
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="atable">
-              {/* Column order, from left to right: identity (avatar + name
+      <Card>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <p className="px-6 py-8 text-center text-sm text-[var(--color-muted-foreground)]">
+              {labels.loading}
+            </p>
+          ) : visible.length === 0 ? (
+            <p className="px-6 py-8 text-center text-sm text-[var(--color-muted-foreground)]">
+              {labels.empty}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="atable">
+                {/* Column order, from left to right: identity (avatar + name
                   + email), job role(s), station(s), training count, status,
                   actions. Code / location / raw tier-as-text are gone —
                   the code is duplicated by the email, the location is
@@ -187,142 +190,157 @@ export function EmployeesClientTable({
                   text (comma-separated when multiple) rather than chips —
                   chips added visual weight that the eye scans as
                   decoration, not data; text reads as data. */}
-              <thead>
-                <tr>
-                  <th>{labels.thEmployee}</th>
-                  <th>{labels.thJobRole}</th>
-                  <th>{labels.thStation}</th>
-                  <th>{labels.thTraining}</th>
-                  <th>{labels.thStatus}</th>
-                  <th>
-                    <span className="sr-only">{labels.thActions}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map((e) => {
-                  const tone: StatusTone =
-                    e.status === 'active'
-                      ? 'ok'
-                      : e.status === 'pending'
-                        ? 'warn'
-                        : 'bad';
+                <thead>
+                  <tr>
+                    <th>{labels.thEmployee}</th>
+                    <th>{labels.thJobRole}</th>
+                    <th>{labels.thStation}</th>
+                    <th>{labels.thTraining}</th>
+                    <th>{labels.thStatus}</th>
+                    <th>
+                      <span className="sr-only">{labels.thActions}</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map((e) => {
+                    const tone: StatusTone =
+                      e.status === "active"
+                        ? "ok"
+                        : e.status === "pending"
+                          ? "warn"
+                          : "bad";
 
-                  // Role / station labels, in the order the employee has
-                  // them. Unknown ids are dropped (a station could be
-                  // archived out from under a row). Multiple values join
-                  // with ", " — chips would add a `--panel-2` ground that
-                  // competes with the avatar's ground at this density.
-                  const roleLabels = Array.isArray(e.jobs) && e.jobs.length
-                    ? e.jobs.map((job) => job.name)
-                    : (e.roleIds ?? (e as any).jobIds ?? [])
-                        .map((id: string) => roleLabel.get(id))
-                        .filter((s: string | undefined): s is string => Boolean(s));
-                  const stationLabels = Array.isArray(e.stations) && e.stations.length
-                    ? e.stations.map((station) => station.name)
-                    : (e.stationIds ?? [])
-                        .map((id: string) => stationLabel.get(id))
-                        .filter((s: string | undefined): s is string => Boolean(s));
+                    // Role / station labels, in the order the employee has
+                    // them. Unknown ids are dropped (a station could be
+                    // archived out from under a row). Multiple values join
+                    // with ", " — chips would add a `--panel-2` ground that
+                    // competes with the avatar's ground at this density.
+                    const roleLabels =
+                      Array.isArray(e.jobs) && e.jobs.length
+                        ? e.jobs.map((job) => job.name)
+                        : (e.roleIds ?? (e as any).jobIds ?? [])
+                            .map((id: string) => roleLabel.get(id))
+                            .filter((s: string | undefined): s is string =>
+                              Boolean(s),
+                            );
+                    const stationLabels =
+                      Array.isArray(e.stations) && e.stations.length
+                        ? e.stations.map((station) => station.name)
+                        : (e.stationIds ?? [])
+                            .map((id: string) => stationLabel.get(id))
+                            .filter((s: string | undefined): s is string =>
+                              Boolean(s),
+                            );
 
-                  // Training rows for this employee. `getTrainingRowsForEmployee`
-                  // is a pure selector over the mock training store; calling
-                  // it on every render is fine for 19 rows.
-                  const trainingRows: TrainingAssignmentRow[] =
-                    getTrainingRowsForEmployee(e.id);
+                    // Training rows for this employee. `getTrainingRowsForEmployee`
+                    // is a pure selector over the mock training store; calling
+                    // it on every render is fine for 19 rows.
+                    const trainingRows: TrainingAssignmentRow[] =
+                      getTrainingRowsForEmployee(e.id);
 
-                  return (
-                    <tr
-                      key={e.id}
-                      role="link"
-                      tabIndex={0}
-                      aria-label={e.name}
-                      onClick={() => openRow(e.id)}
-                      onKeyDown={(ev) => {
-                        // Skip when the user pressed Enter/Space inside an
-                        // interactive element inside the row — e.g. the
-                        // kebab trigger — so its native activation wins.
-                        const target = ev.target as HTMLElement | null;
-                        if (target?.closest('button, a, input, select, textarea')) return;
-                        if (ev.key === 'Enter' || ev.key === ' ') {
-                          ev.preventDefault();
-                          openRow(e.id);
-                        }
-                      }}
-                      className="cursor-pointer transition-colors hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-600)]"
-                    >
-                      <td>
-                        <div className="flex items-center gap-3">
-                          <Avatar initials={initials(e.name)} size="sm" />
-                          <div className="min-w-0">
-                            <div className="truncate font-medium text-[var(--color-ink)]">
-                              {e.name}
-                            </div>
-                            <div className="truncate text-sm text-[var(--color-ink-3)]">
-                              {e.email || '—'}
+                    return (
+                      <tr
+                        key={e.id}
+                        role="link"
+                        tabIndex={0}
+                        aria-label={e.name}
+                        onClick={() => openRow(e.id)}
+                        onKeyDown={(ev) => {
+                          // Skip when the user pressed Enter/Space inside an
+                          // interactive element inside the row — e.g. the
+                          // kebab trigger — so its native activation wins.
+                          const target = ev.target as HTMLElement | null;
+                          if (
+                            target?.closest(
+                              "button, a, input, select, textarea",
+                            )
+                          )
+                            return;
+                          if (ev.key === "Enter" || ev.key === " ") {
+                            ev.preventDefault();
+                            openRow(e.id);
+                          }
+                        }}
+                        className="cursor-pointer transition-colors hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-600)]"
+                      >
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <Avatar initials={initials(e.name)} size="sm" />
+                            <div className="min-w-0">
+                              <div className="truncate font-medium text-[var(--color-ink)]">
+                                {e.name}
+                              </div>
+                              <div className="truncate text-sm text-[var(--color-ink-3)]">
+                                {e.email || "—"}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="text-sm text-[var(--color-ink-2)]">
-                        {roleLabels.length > 0 ? roleLabels.join(', ') : '—'}
-                      </td>
-                      <td className="text-sm text-[var(--color-ink-2)]">
-                        {stationLabels.length > 0 ? stationLabels.join(', ') : '—'}
-                      </td>
-                      <td>
-                        <TrainingSummary rows={trainingRows} />
-                      </td>
-                      <td>
-                        <StatusPill tone={tone}>{statusBadge(e.status)}</StatusPill>
-                      </td>
-                      <td onClick={(ev) => ev.stopPropagation()}>
-                        <EmployeeRowActions
-                          locale={locale}
-                          employee={e}
-                          onEdit={() => void openEdit(e)}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-    {totalItems > 0 && !isLoading ? (
-      <div className="pt-2">
-        <Pagination
-          page={safePage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          pageSize={PAGE_SIZE}
-          onPageChange={(p) => {
-            setCurrentPage(p);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          isEs={isEs}
-          itemLabel={isEs ? 'empleados' : 'employees'}
-        />
-      </div>
-    ) : null}
-    {/* In-place edit modal. Mounted at the table level so the kebab Edit
+                        </td>
+                        <td className="text-sm text-[var(--color-ink-2)]">
+                          {roleLabels.length > 0 ? roleLabels.join(", ") : "—"}
+                        </td>
+                        <td className="text-sm text-[var(--color-ink-2)]">
+                          {stationLabels.length > 0
+                            ? stationLabels.join(", ")
+                            : "—"}
+                        </td>
+                        <td>
+                          <TrainingSummary rows={trainingRows} />
+                        </td>
+                        <td>
+                          <StatusPill tone={tone}>
+                            {statusBadge(e.status)}
+                          </StatusPill>
+                        </td>
+                        <td onClick={(ev) => ev.stopPropagation()}>
+                          <EmployeeRowActions
+                            locale={locale}
+                            employee={e}
+                            onEdit={() => void openEdit(e)}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      {totalItems > 0 && !isLoading ? (
+        <div className="pt-2">
+          <Pagination
+            page={safePage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={PAGE_SIZE}
+            onPageChange={(p) => {
+              setCurrentPage(p);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            isEs={isEs}
+            itemLabel={isEs ? "empleados" : "employees"}
+          />
+        </div>
+      ) : null}
+      {/* In-place edit modal. Mounted at the table level so the kebab Edit
         can open it without a route change. The list re-renders off the
         same `lms_employees_updated` event the modal dispatches on save,
         so the row reflects the new state without `router.refresh`. */}
-    {editing ? (
-      <EditRolesModal
-        open
-        onClose={() => setEditing(null)}
-        employee={editing}
-        roles={roles}
-        locations={locations}
-        stations={stations}
-        onLocationChange={() => undefined}
-        onSaved={onModalSaved}
-      />
-    ) : null}
+      {editing ? (
+        <EditRolesModal
+          open
+          onClose={() => setEditing(null)}
+          employee={editing}
+          roles={roles}
+          locations={locations}
+          stations={stations}
+          onLocationChange={() => undefined}
+          onSaved={onModalSaved}
+        />
+      ) : null}
     </>
   );
 }
@@ -333,5 +351,5 @@ export function EmployeesClientTable({
  *  single-word name returns the first letter. */
 function initials(name: string): string {
   const words = name.trim().split(/\s+/).slice(0, 2);
-  return words.map((w) => w.charAt(0).toUpperCase()).join('') || '?';
+  return words.map((w) => w.charAt(0).toUpperCase()).join("") || "?";
 }

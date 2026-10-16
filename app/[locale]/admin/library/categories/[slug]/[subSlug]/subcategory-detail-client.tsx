@@ -1,29 +1,29 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import type { Category, Subcategory } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { CustomSelect } from '@/components/ui/custom-select';
-import { RowActions } from '@/components/ui/row-actions';
-import { getSubcategoryIcon } from '@/lib/category-icons';
-import { IconTile } from '@/components/ui/icon-tile';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import type { Category, Subcategory } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { RowActions } from "@/components/ui/row-actions";
+import { getSubcategoryIcon } from "@/lib/category-icons";
+import { IconTile } from "@/components/ui/icon-tile";
+import { cn } from "@/lib/utils";
 import {
   LuChevronLeft,
   LuChevronRight,
   LuPlus,
   LuSearch,
   LuX,
-} from 'react-icons/lu';
+} from "react-icons/lu";
 
 const STATIONS: ReadonlyArray<{ id: string; name: string }> = [
-  { id: 'stn-gm', name: 'GM' },
-  { id: 'stn-grill', name: 'Grill' },
-  { id: 'stn-expo', name: 'Expo' },
-  { id: 'stn-prep', name: 'Prep Kitchen' },
-  { id: 'stn-dish', name: 'Dishwasher' },
+  { id: "stn-gm", name: "GM" },
+  { id: "stn-grill", name: "Grill" },
+  { id: "stn-expo", name: "Expo" },
+  { id: "stn-prep", name: "Prep Kitchen" },
+  { id: "stn-dish", name: "Dishwasher" },
 ];
 
 interface ProcedureRow {
@@ -38,58 +38,58 @@ interface ProcedureRow {
 
 const PLATING_PROCEDURES: ReadonlyArray<ProcedureRow> = [
   {
-    id: 'proc-1',
-    slug: 'cold-section-plating-sop',
-    titleEn: 'Cold Section Plating SOP',
-    titleEs: 'Emplatado - Sección fría',
-    stationIds: ['stn-gm'],
-    updatedAgoEn: 'Updated 2 days ago',
-    updatedAgoEs: 'Actualizado hace 2 días',
+    id: "proc-1",
+    slug: "cold-section-plating-sop",
+    titleEn: "Cold Section Plating SOP",
+    titleEs: "Emplatado - Sección fría",
+    stationIds: ["stn-gm"],
+    updatedAgoEn: "Updated 2 days ago",
+    updatedAgoEs: "Actualizado hace 2 días",
   },
   {
-    id: 'proc-2',
-    slug: 'grill-plating-sop',
-    titleEn: 'Grill Plating SOP',
-    titleEs: 'Emplatado - Parrilla',
-    stationIds: ['stn-grill'],
-    updatedAgoEn: 'Updated 3 days ago',
-    updatedAgoEs: 'Actualizado hace 3 días',
+    id: "proc-2",
+    slug: "grill-plating-sop",
+    titleEn: "Grill Plating SOP",
+    titleEs: "Emplatado - Parrilla",
+    stationIds: ["stn-grill"],
+    updatedAgoEn: "Updated 3 days ago",
+    updatedAgoEs: "Actualizado hace 3 días",
   },
   {
-    id: 'proc-3',
-    slug: 'expo-plating-sop',
-    titleEn: 'Expo Plating SOP',
-    titleEs: 'Emplatado - Expo',
-    stationIds: ['stn-expo'],
-    updatedAgoEn: 'Updated 4 days ago',
-    updatedAgoEs: 'Actualizado hace 4 días',
+    id: "proc-3",
+    slug: "expo-plating-sop",
+    titleEn: "Expo Plating SOP",
+    titleEs: "Emplatado - Expo",
+    stationIds: ["stn-expo"],
+    updatedAgoEn: "Updated 4 days ago",
+    updatedAgoEs: "Actualizado hace 4 días",
   },
   {
-    id: 'proc-4',
-    slug: 'prep-kitchen-plating-sop',
-    titleEn: 'Prep Kitchen Plating SOP',
-    titleEs: 'Emplatado - Cocina de preparación',
-    stationIds: ['stn-prep'],
-    updatedAgoEn: 'Updated 5 days ago',
-    updatedAgoEs: 'Actualizado hace 5 días',
+    id: "proc-4",
+    slug: "prep-kitchen-plating-sop",
+    titleEn: "Prep Kitchen Plating SOP",
+    titleEs: "Emplatado - Cocina de preparación",
+    stationIds: ["stn-prep"],
+    updatedAgoEn: "Updated 5 days ago",
+    updatedAgoEs: "Actualizado hace 5 días",
   },
   {
-    id: 'proc-5',
-    slug: 'shared-plating-sop',
-    titleEn: 'Shared Plating SOP',
-    titleEs: 'Emplatado - Procedimiento compartido',
-    stationIds: ['stn-grill', 'stn-expo'],
-    updatedAgoEn: 'Updated 1 day ago',
-    updatedAgoEs: 'Actualizado hace 1 día',
+    id: "proc-5",
+    slug: "shared-plating-sop",
+    titleEn: "Shared Plating SOP",
+    titleEs: "Emplatado - Procedimiento compartido",
+    stationIds: ["stn-grill", "stn-expo"],
+    updatedAgoEn: "Updated 1 day ago",
+    updatedAgoEs: "Actualizado hace 1 día",
   },
 ];
 
 function getInitialProcedures(subcategory: Subcategory): ProcedureRow[] {
-  const subSlug = subcategory.slug || '';
-  const subNameEn = subcategory.nameEn || 'General';
+  const subSlug = subcategory.slug || "";
+  const subNameEn = subcategory.nameEn || "General";
   const subNameEs = subcategory.nameEs || subNameEn;
 
-  if (subSlug === 'plating') {
+  if (subSlug === "plating") {
     return [...PLATING_PROCEDURES];
   }
 
@@ -99,36 +99,36 @@ function getInitialProcedures(subcategory: Subcategory): ProcedureRow[] {
       slug: `${subSlug}-standard-sop`,
       titleEn: `${subNameEn} Standard Operating Procedure`,
       titleEs: `Procedimiento Operativo Estándar - ${subNameEs}`,
-      stationIds: ['stn-gm', 'stn-grill'],
-      updatedAgoEn: 'Updated 2 days ago',
-      updatedAgoEs: 'Actualizado hace 2 días',
+      stationIds: ["stn-gm", "stn-grill"],
+      updatedAgoEn: "Updated 2 days ago",
+      updatedAgoEs: "Actualizado hace 2 días",
     },
     {
       id: `${subSlug}-2`,
       slug: `${subSlug}-shift-prep`,
       titleEn: `${subNameEn} Shift Prep & Checklist`,
       titleEs: `Lista de preparación y verificación - ${subNameEs}`,
-      stationIds: ['stn-prep', 'stn-gm'],
-      updatedAgoEn: 'Updated 4 days ago',
-      updatedAgoEs: 'Actualizado hace 4 días',
+      stationIds: ["stn-prep", "stn-gm"],
+      updatedAgoEn: "Updated 4 days ago",
+      updatedAgoEs: "Actualizado hace 4 días",
     },
     {
       id: `${subSlug}-3`,
       slug: `${subSlug}-quality-check`,
       titleEn: `${subNameEn} Quality & Safety Inspection`,
       titleEs: `Inspección de Calidad y Seguridad - ${subNameEs}`,
-      stationIds: ['stn-expo'],
-      updatedAgoEn: 'Updated 1 week ago',
-      updatedAgoEs: 'Actualizado hace 1 semana',
+      stationIds: ["stn-expo"],
+      updatedAgoEn: "Updated 1 week ago",
+      updatedAgoEs: "Actualizado hace 1 semana",
     },
     {
       id: `${subSlug}-4`,
       slug: `${subSlug}-station-maintenance`,
       titleEn: `${subNameEn} Station Maintenance & Cleaning`,
       titleEs: `Mantenimiento y Limpieza de Estación - ${subNameEs}`,
-      stationIds: ['stn-grill', 'stn-expo'],
-      updatedAgoEn: 'Updated 3 days ago',
-      updatedAgoEs: 'Actualizado hace 3 días',
+      stationIds: ["stn-grill", "stn-expo"],
+      updatedAgoEn: "Updated 3 days ago",
+      updatedAgoEs: "Actualizado hace 3 días",
     },
   ];
 }
@@ -146,9 +146,9 @@ export function SubcategoryDetailClient({
 }: SubcategoryDetailClientProps): React.ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isEs = locale === 'es';
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [sortBy, setSortBy] = React.useState('newest');
+  const isEs = locale === "es";
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [sortBy, setSortBy] = React.useState("newest");
 
   const catName = isEs ? category.nameEs : category.nameEn;
   const subName = isEs ? subcategory.nameEs : subcategory.nameEn;
@@ -162,13 +162,11 @@ export function SubcategoryDetailClient({
   const stationIdsFromUrl = React.useMemo(() => {
     const seen = new Set<string>();
     const known = new Set(STATIONS.map((s) => s.id));
-    return searchParams
-      .getAll('station')
-      .filter((id) => {
-        if (seen.has(id) || !known.has(id)) return false;
-        seen.add(id);
-        return true;
-      });
+    return searchParams.getAll("station").filter((id) => {
+      if (seen.has(id) || !known.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
   }, [searchParams]);
 
   // Display only the stations that were selected on the categories page,
@@ -187,7 +185,7 @@ export function SubcategoryDetailClient({
   const filteredProcedures = React.useMemo(() => {
     return procedures.filter((proc) => {
       const matchSearch =
-        searchQuery.trim() === '' ||
+        searchQuery.trim() === "" ||
         proc.titleEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
         proc.titleEs.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -203,9 +201,11 @@ export function SubcategoryDetailClient({
 
   const sortedProcedures = React.useMemo(() => {
     const result = [...filteredProcedures];
-    if (sortBy === 'alphabetical') {
+    if (sortBy === "alphabetical") {
       result.sort((a, b) =>
-        (isEs ? a.titleEs : a.titleEn).localeCompare(isEs ? b.titleEs : b.titleEn),
+        (isEs ? a.titleEs : a.titleEn).localeCompare(
+          isEs ? b.titleEs : b.titleEn,
+        ),
       );
     }
     return result;
@@ -216,12 +216,15 @@ export function SubcategoryDetailClient({
   return (
     <div className="mx-auto max-w-page space-y-4 pb-12">
       {/* Breadcrumb Navigation */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-[var(--color-ink-3)] font-medium">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-2 text-xs text-[var(--color-ink-3)] font-medium"
+      >
         <Link
           href={`/${locale}/admin/library/categories`}
           className="hover:text-[var(--color-ink)] transition-colors"
         >
-          {isEs ? 'Categorías' : 'Categories'}
+          {isEs ? "Categorías" : "Categories"}
         </Link>
         <LuChevronRight className="text-[10px] text-[var(--color-ink-3)]" />
         <Link
@@ -254,7 +257,7 @@ export function SubcategoryDetailClient({
           {displayedStations.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-[var(--color-ink-3)]">
-                {isEs ? 'Estaciones:' : 'Stations:'}
+                {isEs ? "Estaciones:" : "Stations:"}
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 {displayedStations.map((s) => (
@@ -278,8 +281,8 @@ export function SubcategoryDetailClient({
                   : displayedStations.map((s) => s.id);
               const stationQuery =
                 idsToForward.length > 0
-                  ? `&${idsToForward.map((id) => `station=${encodeURIComponent(id)}`).join('&')}`
-                  : '';
+                  ? `&${idsToForward.map((id) => `station=${encodeURIComponent(id)}`).join("&")}`
+                  : "";
               router.push(
                 `/${locale}/admin/library/new?category=${category.slug}&subcategory=${subcategory.slug}${stationQuery}`,
               );
@@ -287,7 +290,7 @@ export function SubcategoryDetailClient({
             className="shrink-0 font-semibold shadow-2xs"
           >
             <LuPlus className="text-base" />
-            <span>{isEs ? 'Añadir procedimiento' : 'Add procedure'}</span>
+            <span>{isEs ? "Añadir procedimiento" : "Add procedure"}</span>
           </Button>
         </div>
       </div>
@@ -297,20 +300,20 @@ export function SubcategoryDetailClient({
         <div className="find max-w-sm" role="search">
           <LuSearch aria-hidden="true" className="i" />
           <label className="sr-only" htmlFor="subcat-search">
-            {isEs ? 'Buscar procedimientos' : 'Search procedures'}
+            {isEs ? "Buscar procedimientos" : "Search procedures"}
           </label>
           <input
             id="subcat-search"
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isEs ? 'Buscar procedimientos…' : 'Search procedures…'}
+            placeholder={isEs ? "Buscar procedimientos…" : "Search procedures…"}
           />
           {searchQuery ? (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
-              aria-label={isEs ? 'Borrar búsqueda' : 'Clear search'}
+              onClick={() => setSearchQuery("")}
+              aria-label={isEs ? "Borrar búsqueda" : "Clear search"}
               className="shrink-0 text-[var(--color-ink-3)] hover:text-[var(--color-ink)]"
             >
               <LuX aria-hidden="true" />
@@ -324,8 +327,14 @@ export function SubcategoryDetailClient({
               value={sortBy}
               onChange={(val) => setSortBy(val)}
               options={[
-                { value: 'newest', label: isEs ? 'Más recientes' : 'Sort by newest' },
-                { value: 'alphabetical', label: isEs ? 'Alfabético' : 'Sort A-Z' },
+                {
+                  value: "newest",
+                  label: isEs ? "Más recientes" : "Sort by newest",
+                },
+                {
+                  value: "alphabetical",
+                  label: isEs ? "Alfabético" : "Sort A-Z",
+                },
               ]}
               size="sm"
               className="h-tap-admin text-sm"
@@ -340,8 +349,8 @@ export function SubcategoryDetailClient({
           <div className="flex flex-col items-center justify-center p-10 text-center">
             <p className="text-xs text-[var(--color-ink-2)]">
               {isEs
-                ? 'No se encontraron procedimientos en esta subcategoría.'
-                : 'No procedures found in this subcategory.'}
+                ? "No se encontraron procedimientos en esta subcategoría."
+                : "No procedures found in this subcategory."}
             </p>
           </div>
         ) : (
@@ -355,9 +364,11 @@ export function SubcategoryDetailClient({
                   <div
                     role="button"
                     tabIndex={0}
-                    onClick={() => router.push(`/${locale}/admin/library/${proc.slug}`)}
+                    onClick={() =>
+                      router.push(`/${locale}/admin/library/${proc.slug}`)
+                    }
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+                      if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         router.push(`/${locale}/admin/library/${proc.slug}`);
                       }
@@ -379,7 +390,9 @@ export function SubcategoryDetailClient({
                     {proc.stationIds.length > 0 && (
                       <div className="flex flex-wrap items-center gap-2">
                         {proc.stationIds.map((stationId) => {
-                          const station = STATIONS.find((s) => s.id === stationId);
+                          const station = STATIONS.find(
+                            (s) => s.id === stationId,
+                          );
                           if (!station) return null;
                           return (
                             <span
@@ -400,12 +413,18 @@ export function SubcategoryDetailClient({
                     <RowActions
                       items={[
                         {
-                          label: isEs ? 'Ver procedimiento' : 'View procedure',
-                          onSelect: () => router.push(`/${locale}/admin/library/${proc.slug}`),
+                          label: isEs ? "Ver procedimiento" : "View procedure",
+                          onSelect: () =>
+                            router.push(
+                              `/${locale}/admin/library/${proc.slug}`,
+                            ),
                         },
                         {
-                          label: isEs ? 'Editar' : 'Edit',
-                          onSelect: () => router.push(`/${locale}/admin/library/${proc.slug}/edit`),
+                          label: isEs ? "Editar" : "Edit",
+                          onSelect: () =>
+                            router.push(
+                              `/${locale}/admin/library/${proc.slug}/edit`,
+                            ),
                         },
                       ]}
                       triggerLabel={proc.titleEn}
@@ -420,17 +439,18 @@ export function SubcategoryDetailClient({
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-[var(--color-line)] px-4 py-3 text-xs font-medium text-[var(--color-ink-3)]">
           <span>
-            {sortedProcedures.length} {isEs ? 'procedimientos' : 'procedures'}
+            {sortedProcedures.length} {isEs ? "procedimientos" : "procedures"}
             {displayedStations.length > 0 && (
               <>
-                {' '}· {displayedStations.length}{' '}
+                {" "}
+                · {displayedStations.length}{" "}
                 {displayedStations.length === 1
                   ? isEs
-                    ? 'estación seleccionada'
-                    : 'selected station'
+                    ? "estación seleccionada"
+                    : "selected station"
                   : isEs
-                    ? 'estaciones seleccionadas'
-                    : 'selected stations'}
+                    ? "estaciones seleccionadas"
+                    : "selected stations"}
               </>
             )}
           </span>
@@ -460,4 +480,3 @@ export function SubcategoryDetailClient({
     </div>
   );
 }
-

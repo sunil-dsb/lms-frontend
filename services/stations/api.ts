@@ -1,10 +1,18 @@
-import http from '@/lib/http';
-import { STATIONS_ENDPOINTS } from './endpoints';
-import { ApiException } from '@/lib/errors';
-import type { Station, CreateStationInput, UpdateStationInput, StationFilterOptions } from './types';
+import http from "@/lib/http";
+import { STATIONS_ENDPOINTS } from "./endpoints";
+import { ApiException } from "@/lib/errors";
+import type {
+  Station,
+  CreateStationInput,
+  UpdateStationInput,
+  StationFilterOptions,
+} from "./types";
 
 const inFlightStations = new Map<string, Promise<{ stations: Station[] }>>();
-const cachedStations = new Map<string, { data: { stations: Station[] }; expiresAt: number }>();
+const cachedStations = new Map<
+  string,
+  { data: { stations: Station[] }; expiresAt: number }
+>();
 const STATIONS_CACHE_TTL_MS = 15_000;
 
 export function clearStationsCache(): void {
@@ -20,8 +28,8 @@ export async function fetchStations(
   // across requests, so a cached server response would hide freshly created
   // stations from the re-render after router.refresh() (same staleness bug
   // as the jobs cache — see services/jobs/api.ts → fetchJobs).
-  const useCache = typeof window !== 'undefined';
-  const cacheKey = `${JSON.stringify(opts)}_${cookieHeader || (useCache ? 'client' : 'server_default')}`;
+  const useCache = typeof window !== "undefined";
+  const cacheKey = `${JSON.stringify(opts)}_${cookieHeader || (useCache ? "client" : "server_default")}`;
   const now = Date.now();
 
   if (useCache) {
@@ -41,10 +49,11 @@ export async function fetchStations(
       const headers: Record<string, string> = {};
 
       if (cookieHeader) {
-        headers['Cookie'] = cookieHeader;
+        headers["Cookie"] = cookieHeader;
         const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
         if (tokenMatch) {
-          headers['Authorization'] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+          headers["Authorization"] =
+            `Bearer ${decodeURIComponent(tokenMatch[1])}`;
         }
       }
 
@@ -66,7 +75,10 @@ export async function fetchStations(
 
       const res = { stations };
       if (useCache) {
-        cachedStations.set(cacheKey, { data: res, expiresAt: Date.now() + STATIONS_CACHE_TTL_MS });
+        cachedStations.set(cacheKey, {
+          data: res,
+          expiresAt: Date.now() + STATIONS_CACHE_TTL_MS,
+        });
       }
       return res;
     } finally {
@@ -109,7 +121,7 @@ export async function updateStation(
   const payload: { name?: string } = {};
   if (patch.name !== undefined) payload.name = patch.name;
   if (Object.keys(payload).length === 0) {
-    throw new ApiException(400, 'INVALID_INPUT', 'Nothing to update');
+    throw new ApiException(400, "INVALID_INPUT", "Nothing to update");
   }
   const { data } = await http.patch<{
     success: boolean;

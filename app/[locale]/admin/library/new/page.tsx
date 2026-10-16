@@ -1,14 +1,16 @@
-import * as React from 'react';
-import { setRequestLocale } from 'next-intl/server';
-import { NewProcedureLoader } from './new-procedure-loader';
+import * as React from "react";
+import { setRequestLocale } from "next-intl/server";
+import { NewProcedureLoader } from "./new-procedure-loader";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
 }
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default async function AdminLibraryNewPage({ params }: PageProps): Promise<React.ReactElement> {
+export default async function AdminLibraryNewPage({
+  params,
+}: PageProps): Promise<React.ReactElement> {
   const { locale } = await params;
   setRequestLocale(locale);
 

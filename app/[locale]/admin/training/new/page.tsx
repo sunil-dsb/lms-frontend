@@ -1,21 +1,23 @@
-import * as React from 'react';
-import Link from 'next/link';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { PageHeader } from '@/components/admin/page-header';
-import { Button } from '@/components/ui/button';
-import { listAvailableSops } from '@/lib/mock-training';
-import { NewCourseForm } from './new-course-form';
+import * as React from "react";
+import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { PageHeader } from "@/components/admin/page-header";
+import { Button } from "@/components/ui/button";
+import { listAvailableSops } from "@/lib/mock-training";
+import { NewCourseForm } from "./new-course-form";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
 }
 
-export default async function NewCoursePage({ params }: PageProps): Promise<React.ReactElement> {
+export default async function NewCoursePage({
+  params,
+}: PageProps): Promise<React.ReactElement> {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const t = await getTranslations('admin.training');
-  const tForm = await getTranslations('admin.training.form');
+  const t = await getTranslations("admin.training");
+  const tForm = await getTranslations("admin.training.form");
   const availableSops = listAvailableSops();
 
   return (
@@ -24,12 +26,12 @@ export default async function NewCoursePage({ params }: PageProps): Promise<Reac
           same pair the procedure wizard uses. A third link above the title said
           it a second time. */}
       <PageHeader
-        eyebrow={t('pageEyebrow')}
-        title={t('newCourseTitle')}
-        subtitle={t('newCourseSubtitle')}
+        eyebrow={t("pageEyebrow")}
+        title={t("newCourseTitle")}
+        subtitle={t("newCourseSubtitle")}
         actions={
           <Link href={`/${locale}/admin/training`}>
-            <Button variant="neutral">{tForm('cancel')}</Button>
+            <Button variant="neutral">{tForm("cancel")}</Button>
           </Link>
         }
       />

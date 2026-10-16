@@ -1,25 +1,38 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations, useLocale } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui/modal';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
-import { cn } from '@/lib/utils';
-import { BilingualInput, type BilingualValue } from '@/components/ui/bilingual-input';
-import { useCreateCategory, useUpdateCategory, useArchiveCategory, useUnarchiveCategory } from '@/services/categories/hooks';
-import type { Category } from '@/lib/types';
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
+import { Button } from "@/components/ui/button";
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "@/components/ui/modal";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
+import { cn } from "@/lib/utils";
+import {
+  BilingualInput,
+  type BilingualValue,
+} from "@/components/ui/bilingual-input";
+import {
+  useCreateCategory,
+  useUpdateCategory,
+  useArchiveCategory,
+  useUnarchiveCategory,
+} from "@/services/categories/hooks";
+import type { Category } from "@/lib/types";
 import {
   LuArchive,
   LuPencil,
   LuPlus,
   LuUndo2,
   LuChevronDown,
-} from 'react-icons/lu';
-import { IconTile } from '@/components/ui/icon-tile';
+} from "react-icons/lu";
+import { IconTile } from "@/components/ui/icon-tile";
 import {
   PiBookOpenText,
   PiBookOpenUser,
@@ -43,41 +56,43 @@ import {
   PiUserCirclePlus,
   PiUserPlus,
   PiUsers,
-} from 'react-icons/pi';
+} from "react-icons/pi";
 
 export const AVAILABLE_ICONS = [
-  { id: 'onboarding', label: 'Onboarding', icon: PiUserCirclePlus },
-  { id: 'food-safety', label: 'Food Safety', icon: PiShieldCheck },
-  { id: 'kitchen-operations', label: 'Kitchen Ops', icon: PiCookingPot },
-  { id: 'cleaning', label: 'Cleaning', icon: PiSparkle },
-  { id: 'opening-closing', label: 'Opening / Closing', icon: PiDoorOpen },
-  { id: 'equipment', label: 'Equipment', icon: PiToolbox },
-  { id: 'recipes', label: 'Recipes', icon: PiBookOpenText },
-  { id: 'staff', label: 'Staff', icon: PiUsers },
-  { id: 'training', label: 'Training', icon: PiBookOpenUser },
-  { id: 'temperature', label: 'Temperature', icon: PiThermometer },
-  { id: 'cold-storage', label: 'Cold Storage', icon: PiSnowflake },
-  { id: 'hot-line', label: 'Hot Line', icon: PiFlame },
-  { id: 'prep', label: 'Prep', icon: PiForkKnife },
-  { id: 'service', label: 'Service', icon: PiUserPlus },
-  { id: 'delivery', label: 'Delivery', icon: PiPackage },
-  { id: 'communication', label: 'Communication', icon: PiChatCircle },
-  { id: 'checklist', label: 'Checklist', icon: PiListChecks },
-  { id: 'quick', label: 'Quick Reference', icon: PiLightning },
-  { id: 'safety', label: 'Safety', icon: PiHardHat },
-  { id: 'procedure', label: 'Procedure', icon: PiFileText },
-  { id: 'cooking', label: 'Cooking', icon: PiFire },
-  { id: 'folder', label: 'Other', icon: PiFolder },
+  { id: "onboarding", label: "Onboarding", icon: PiUserCirclePlus },
+  { id: "food-safety", label: "Food Safety", icon: PiShieldCheck },
+  { id: "kitchen-operations", label: "Kitchen Ops", icon: PiCookingPot },
+  { id: "cleaning", label: "Cleaning", icon: PiSparkle },
+  { id: "opening-closing", label: "Opening / Closing", icon: PiDoorOpen },
+  { id: "equipment", label: "Equipment", icon: PiToolbox },
+  { id: "recipes", label: "Recipes", icon: PiBookOpenText },
+  { id: "staff", label: "Staff", icon: PiUsers },
+  { id: "training", label: "Training", icon: PiBookOpenUser },
+  { id: "temperature", label: "Temperature", icon: PiThermometer },
+  { id: "cold-storage", label: "Cold Storage", icon: PiSnowflake },
+  { id: "hot-line", label: "Hot Line", icon: PiFlame },
+  { id: "prep", label: "Prep", icon: PiForkKnife },
+  { id: "service", label: "Service", icon: PiUserPlus },
+  { id: "delivery", label: "Delivery", icon: PiPackage },
+  { id: "communication", label: "Communication", icon: PiChatCircle },
+  { id: "checklist", label: "Checklist", icon: PiListChecks },
+  { id: "quick", label: "Quick Reference", icon: PiLightning },
+  { id: "safety", label: "Safety", icon: PiHardHat },
+  { id: "procedure", label: "Procedure", icon: PiFileText },
+  { id: "cooking", label: "Cooking", icon: PiFire },
+  { id: "folder", label: "Other", icon: PiFolder },
 ] as const;
 
 interface CategoryActionsProps {
   category: Category;
 }
 
-export function CategoryActions({ category }: CategoryActionsProps): React.ReactElement {
-  const t = useTranslations('admin.library.categories');
-  const tCommon = useTranslations('admin');
-  const isEs = useLocale() === 'es';
+export function CategoryActions({
+  category,
+}: CategoryActionsProps): React.ReactElement {
+  const t = useTranslations("admin.library.categories");
+  const tCommon = useTranslations("admin");
+  const isEs = useLocale() === "es";
   const router = useRouter();
   const [isPending, setIsPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -86,21 +101,25 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
   const archiveMutation = useArchiveCategory();
   const unarchiveMutation = useUnarchiveCategory();
   const updateMutation = useUpdateCategory();
-  const pending = isPending || archiveMutation.isPending || unarchiveMutation.isPending || updateMutation.isPending;
+  const pending =
+    isPending ||
+    archiveMutation.isPending ||
+    unarchiveMutation.isPending ||
+    updateMutation.isPending;
 
-  const isArchived = category.status === 'archived' || category.isArchived;
+  const isArchived = category.status === "archived" || category.isArchived;
 
   const items: RowActionItem[] = React.useMemo(() => {
     const out: RowActionItem[] = [
       {
-        label: t('renameAction'),
+        label: t("renameAction"),
         icon: LuPencil,
         onSelect: () => setRenameOpen(true),
       },
     ];
     if (isArchived) {
       out.push({
-        label: t('unarchive'),
+        label: t("unarchive"),
         icon: LuUndo2,
         onSelect: () => {
           void runUnarchive(category);
@@ -108,14 +127,14 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
       });
     } else {
       out.push({
-        label: t('archive'),
+        label: t("archive"),
         icon: LuArchive,
         destructive: true,
-        confirmTitle: isEs ? 'Archivar categorÃ­a' : 'Archive category',
+        confirmTitle: isEs ? "Archivar categorÃ­a" : "Archive category",
         confirmDescription: isEs
           ? `"${category.nameEs || category.nameEn}" se archivarÃ¡. Puedes restaurarla mÃ¡s tarde.`
           : `"${category.nameEn}" will be archived. You can restore it later.`,
-        confirmLabel: isEs ? 'SÃ­, archivar' : 'Yes, archive',
+        confirmLabel: isEs ? "SÃ­, archivar" : "Yes, archive",
         onSelect: () => {
           void runArchive(category);
         },
@@ -148,8 +167,8 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
     <>
       <RowActions
         items={items}
-        triggerLabel={`${tCommon('rowActionsLabel')}: ${category.nameEn}`}
-        className={pending ? 'pointer-events-none opacity-50' : undefined}
+        triggerLabel={`${tCommon("rowActionsLabel")}: ${category.nameEn}`}
+        className={pending ? "pointer-events-none opacity-50" : undefined}
       />
       {error ? (
         <span role="alert" className="sr-only">
@@ -181,8 +200,8 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
             setRenameOpen(false);
             setError(null);
           }}
-          cancelLabel={t('cancel')}
-          saveLabel={t('save')}
+          cancelLabel={t("cancel")}
+          saveLabel={t("save")}
         />
       </Modal>
     </>
@@ -190,7 +209,7 @@ export function CategoryActions({ category }: CategoryActionsProps): React.React
 }
 
 export function CreateCategoryButton(): React.ReactElement {
-  const t = useTranslations('admin.library.categories');
+  const t = useTranslations("admin.library.categories");
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [pending, setPending] = React.useState(false);
@@ -210,7 +229,7 @@ export function CreateCategoryButton(): React.ReactElement {
         className="shrink-0 font-semibold shadow-2xs"
       >
         <LuPlus className="text-base" />
-        <span>{t('addButton')}</span>
+        <span>{t("addButton")}</span>
       </Button>
 
       <Modal open={open} onClose={close} size="md">
@@ -227,8 +246,8 @@ export function CreateCategoryButton(): React.ReactElement {
             router.refresh();
           }}
           onCancel={close}
-          cancelLabel={t('cancel')}
-          saveLabel={t('save')}
+          cancelLabel={t("cancel")}
+          saveLabel={t("save")}
         />
       </Modal>
     </>
@@ -236,7 +255,7 @@ export function CreateCategoryButton(): React.ReactElement {
 }
 
 interface CategoryFormProps {
-  mode: 'create' | 'rename';
+  mode: "create" | "rename";
   category: Category | null;
   pending: boolean;
   error: string | null;
@@ -261,21 +280,21 @@ function CategoryForm({
   saveLabel,
 }: CategoryFormProps): React.ReactElement {
   const locale = useLocale();
-  const isEs = locale === 'es';
+  const isEs = locale === "es";
 
   const [name, setName] = React.useState<BilingualValue>({
-    en: category?.nameEn ?? '',
-    es: category?.nameEs ?? '',
+    en: category?.nameEn ?? "",
+    es: category?.nameEs ?? "",
   });
-  const [icon, setIcon] = React.useState(category?.icon ?? 'onboarding');
+  const [icon, setIcon] = React.useState(category?.icon ?? "onboarding");
   const [showIconPicker, setShowIconPicker] = React.useState(false);
   // `kind` is structural — it gates the Access step in the wizard and
   // decides whether the category lives under "By station" on the
   // categories page. Once a category exists with procedures, flipping
   // it would orphan those procedures, so the picker only appears at
   // create time; rename mode preserves the existing `kind`.
-  const [kind, setKind] = React.useState<'general' | 'station-tied'>(
-    category?.kind ?? 'general',
+  const [kind, setKind] = React.useState<"general" | "station-tied">(
+    category?.kind ?? "general",
   );
 
   const createMutation = useCreateCategory();
@@ -295,11 +314,11 @@ function CategoryForm({
     const finalEs = trimmedEs || trimmedEn;
 
     try {
-      if (mode === 'create') {
+      if (mode === "create") {
         await createMutation.mutateAsync({
           nameEn: finalEn,
           nameEs: finalEs,
-          kind: 'general', // Station selection is now handled flexibly per procedure; default to 'general'
+          kind: "general", // Station selection is now handled flexibly per procedure; default to 'general'
           icon,
         });
       } else if (category) {
@@ -329,32 +348,33 @@ function CategoryForm({
   // least one has to be filled before the user can save.
   const canSubmit =
     !pending && (name.en.trim().length > 0 || name.es.trim().length > 0);
-  const currentIconObj = AVAILABLE_ICONS.find((i) => i.id === icon) ?? AVAILABLE_ICONS[0];
+  const currentIconObj =
+    AVAILABLE_ICONS.find((i) => i.id === icon) ?? AVAILABLE_ICONS[0];
   const CurrentIconComp = currentIconObj.icon;
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col">
       <ModalHeader
         title={
-          mode === 'create'
+          mode === "create"
             ? isEs
-              ? 'Crear categoría'
-              : 'Create category'
+              ? "Crear categoría"
+              : "Create category"
             : isEs
-              ? 'Editar categoría'
-              : 'Edit category'
+              ? "Editar categoría"
+              : "Edit category"
         }
         description={
-          mode === 'create'
+          mode === "create"
             ? isEs
-              ? 'Agrega una categoría para organizar tus procedimientos.'
-              : 'Add a category to organize your procedures in the library.'
+              ? "Agrega una categoría para organizar tus procedimientos."
+              : "Add a category to organize your procedures in the library."
             : isEs
-              ? 'Cambia su nombre o su icono.'
-              : 'Change its name or its icon.'
+              ? "Cambia su nombre o su icono."
+              : "Change its name or its icon."
         }
         onClose={onCancel}
-        closeLabel={isEs ? 'Cerrar' : 'Close'}
+        closeLabel={isEs ? "Cerrar" : "Close"}
       />
 
       {/* The header draws no icon: the chosen one is previewed beside Choose
@@ -363,19 +383,19 @@ function CategoryForm({
         {/* Bilingual adaptive input for category name */}
         <div className="space-y-1.5">
           <BilingualInput
-            label={isEs ? 'Nombre de la categoría' : 'Category name'}
+            label={isEs ? "Nombre de la categoría" : "Category name"}
             value={name}
             onChange={setName}
             maxLength={100}
             placeholder={{
-              en: 'e.g. Food Safety',
-              es: 'e.g. Seguridad Alimentaria',
+              en: "e.g. Food Safety",
+              es: "e.g. Seguridad Alimentaria",
             }}
           />
           <p className="text-xs text-[var(--color-ink-3)]">
             {isEs
-              ? 'Al menos uno de los dos nombres es obligatorio.'
-              : 'At least one of the two names is required.'}
+              ? "Al menos uno de los dos nombres es obligatorio."
+              : "At least one of the two names is required."}
           </p>
         </div>
 
@@ -421,7 +441,7 @@ function CategoryForm({
         */}
 
         <div className="space-y-1.5">
-          <Label htmlFor="cat-icon-toggle">{isEs ? 'Icono' : 'Icon'}</Label>
+          <Label htmlFor="cat-icon-toggle">{isEs ? "Icono" : "Icon"}</Label>
           <div className="flex items-center gap-3">
             <IconTile size="md" icon={CurrentIconComp} />
             <Button
@@ -432,7 +452,7 @@ function CategoryForm({
               aria-expanded={showIconPicker}
               onClick={() => setShowIconPicker(!showIconPicker)}
             >
-              {isEs ? 'Elegir icono' : 'Choose icon'}
+              {isEs ? "Elegir icono" : "Choose icon"}
             </Button>
           </div>
 
@@ -452,30 +472,39 @@ function CategoryForm({
                       setShowIconPicker(false);
                     }}
                     className={cn(
-                      'flex flex-col items-center gap-1 rounded-[var(--radius-md)] border p-2 text-sm transition-colors',
+                      "flex flex-col items-center gap-1 rounded-[var(--radius-md)] border p-2 text-sm transition-colors",
                       isSelected
-                        ? 'border-[var(--color-ring)] bg-[var(--color-brand-tint)] font-semibold text-[var(--color-brand-700)]'
-                        : 'border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-panel)]',
+                        ? "border-[var(--color-ring)] bg-[var(--color-brand-tint)] font-semibold text-[var(--color-brand-700)]"
+                        : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-panel)]",
                     )}
                   >
                     <IconComponent aria-hidden="true" className="text-lg" />
-                    <span className="w-full truncate text-center">{item.label}</span>
+                    <span className="w-full truncate text-center">
+                      {item.label}
+                    </span>
                   </button>
                 );
               })}
             </div>
           )}
         </div>
-
       </ModalBody>
 
       <ModalFooter className="mb-3">
-        <Button type="button" variant="neutral" onClick={onCancel} disabled={pending}>
+        <Button
+          type="button"
+          variant="neutral"
+          onClick={onCancel}
+          disabled={pending}
+        >
           {cancelLabel}
         </Button>
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {error ? (
-            <p role="alert" className="min-w-0 flex-1 text-left text-xs font-medium text-[var(--color-bad)]">
+            <p
+              role="alert"
+              className="min-w-0 flex-1 text-left text-xs font-medium text-[var(--color-bad)]"
+            >
               {error}
             </p>
           ) : null}
@@ -486,9 +515,13 @@ function CategoryForm({
             onClick={() => void submitCategory()}
           >
             {pending
-              ? (isEs ? 'Guardando...' : 'Saving...')
-              : mode === 'create'
-                ? (isEs ? 'Crear' : 'Create')
+              ? isEs
+                ? "Guardando..."
+                : "Saving..."
+              : mode === "create"
+                ? isEs
+                  ? "Crear"
+                  : "Create"
                 : saveLabel}
           </Button>
         </div>
@@ -498,9 +531,9 @@ function CategoryForm({
 }
 
 interface KindOptionProps {
-  value: 'general' | 'station-tied';
-  current: 'general' | 'station-tied';
-  onChange: (v: 'general' | 'station-tied') => void;
+  value: "general" | "station-tied";
+  current: "general" | "station-tied";
+  onChange: (v: "general" | "station-tied") => void;
   title: string;
   description: string;
 }
@@ -519,10 +552,10 @@ function KindOption({
   return (
     <label
       className={cn(
-        'flex items-start gap-2.5 rounded-[var(--radius-md)] border p-3 cursor-pointer transition-colors',
+        "flex items-start gap-2.5 rounded-[var(--radius-md)] border p-3 cursor-pointer transition-colors",
         checked
-          ? 'border-[var(--color-ring)] bg-[var(--color-brand-tint)]'
-          : 'border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-panel)]',
+          ? "border-[var(--color-ring)] bg-[var(--color-brand-tint)]"
+          : "border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-panel)]",
       )}
     >
       <input
@@ -534,8 +567,12 @@ function KindOption({
         className="mt-0.5 accent-[var(--color-brand-600)]"
       />
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-sm font-semibold text-[var(--color-ink)]">{title}</span>
-        <span className="text-xs text-[var(--color-ink-2)] leading-snug">{description}</span>
+        <span className="text-sm font-semibold text-[var(--color-ink)]">
+          {title}
+        </span>
+        <span className="text-xs text-[var(--color-ink-2)] leading-snug">
+          {description}
+        </span>
       </span>
     </label>
   );

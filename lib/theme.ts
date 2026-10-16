@@ -7,13 +7,13 @@
  * reading a cookie called `undefined` and finding nothing, while the cookie it
  * wanted sat right there in the request.
  */
-export const THEME_COOKIE = 'lms-theme';
+export const THEME_COOKIE = "lms-theme";
 
 /** A year. The choice should outlive the session it was made in. */
 export const THEME_MAX_AGE = 60 * 60 * 24 * 365;
 
-export type Theme = 'light' | 'dark';
+export type Theme = "light" | "dark";
 
 export function isTheme(value: string | undefined): value is Theme {
-  return value === 'light' || value === 'dark';
+  return value === "light" || value === "dark";
 }

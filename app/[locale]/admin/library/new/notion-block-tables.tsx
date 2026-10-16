@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Notion-style composer for procedure blocks.
@@ -13,11 +13,11 @@
  * import + a `<NotionBlockList />` render.
  */
 
-import * as React from 'react';
-import { createPortal } from 'react-dom';
-import { useTranslations } from 'next-intl';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import { Icon } from '@/components/ui/icon';
+import * as React from "react";
+import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
+import { classifyVideoUrl } from "@/lib/procedure-media";
+import { Icon } from "@/components/ui/icon";
 import type {
   Localised,
   LocalisedOptional,
@@ -25,30 +25,43 @@ import type {
   ProcedureBlockKind,
   ProcedureMethodStep,
   ProcedureNoteKind,
-} from '@/lib/types';
-import { IconTile } from '@/components/ui/icon-tile';
-import { IngredientsBlockBody } from './ingredients-block-body';
-import { BilingualInput } from '@/components/ui/bilingual-input';
-import { LocalisedInput } from '@/components/ui/localised-input';
-import { StepTimerEditor } from './step-timer-editor';
-import { asLoc, asOpt, type BodyProps, setLoc, setOpt } from './notion-block-shared';
+} from "@/lib/types";
+import { IconTile } from "@/components/ui/icon-tile";
+import { IngredientsBlockBody } from "./ingredients-block-body";
+import { BilingualInput } from "@/components/ui/bilingual-input";
+import { LocalisedInput } from "@/components/ui/localised-input";
+import { StepTimerEditor } from "./step-timer-editor";
+import {
+  asLoc,
+  asOpt,
+  type BodyProps,
+  setLoc,
+  setOpt,
+} from "./notion-block-shared";
 
-const TABLE_LANGS: Array<'en' | 'es'> = ['en', 'es'];
+const TABLE_LANGS: Array<"en" | "es"> = ["en", "es"];
 
 export function TableBody({
   block,
   onPatch,
-}: BodyProps<Extract<ProcedureBlock, { kind: 'table' }>>): React.ReactElement {
-  const [activeLang, setActiveLang] = React.useState<'en' | 'es'>('en');
+}: BodyProps<Extract<ProcedureBlock, { kind: "table" }>>): React.ReactElement {
+  const [activeLang, setActiveLang] = React.useState<"en" | "es">("en");
 
-  function setHeader(j: number, lang: 'en' | 'es', value: string): void {
+  function setHeader(j: number, lang: "en" | "es", value: string): void {
     onPatch({
       ...block,
-      headers: block.headers.map((h, k) => (k === j ? { ...h, [lang]: value } : h)),
+      headers: block.headers.map((h, k) =>
+        k === j ? { ...h, [lang]: value } : h,
+      ),
     });
   }
 
-  function setCell(i: number, j: number, lang: 'en' | 'es', value: string): void {
+  function setCell(
+    i: number,
+    j: number,
+    lang: "en" | "es",
+    value: string,
+  ): void {
     onPatch({
       ...block,
       rows: block.rows.map((row, k) =>
@@ -60,7 +73,7 @@ export function TableBody({
   }
 
   function addColumn(): void {
-    const empty: Localised = { en: '', es: '' };
+    const empty: Localised = { en: "", es: "" };
     onPatch({
       ...block,
       headers: [...block.headers, empty],
@@ -78,7 +91,10 @@ export function TableBody({
   }
 
   function addRow(): void {
-    const emptyRow: Localised[] = Array.from({ length: block.headers.length }, () => ({ en: '', es: '' }));
+    const emptyRow: Localised[] = Array.from(
+      { length: block.headers.length },
+      () => ({ en: "", es: "" }),
+    );
     onPatch({ ...block, rows: [...block.rows, emptyRow] });
   }
 
@@ -106,9 +122,14 @@ export function TableBody({
               >
                 <div className="flex items-center justify-between px-1">
                   <span className="text-xs font-semibold text-[var(--color-ink)]">
-                    {lang === 'en' ? 'English Table' : 'Spanish Table (Español)'}
+                    {lang === "en"
+                      ? "English Table"
+                      : "Spanish Table (Español)"}
                   </span>
-                  <span translate="no" className="font-mono text-xs font-semibold text-[var(--color-ink-3)] uppercase tracking-wider notranslate">
+                  <span
+                    translate="no"
+                    className="font-mono text-xs font-semibold text-[var(--color-ink-3)] uppercase tracking-wider notranslate"
+                  >
                     {lang.toUpperCase()}
                   </span>
                 </div>
@@ -127,8 +148,10 @@ export function TableBody({
                                 lang={lang}
                                 maxLength={100}
                                 showCount
-                                value={block.headers[j] ?? { en: '', es: '' }}
-                                onText={(nextLang, text) => setHeader(j, nextLang, text)}
+                                value={block.headers[j] ?? { en: "", es: "" }}
+                                onText={(nextLang, text) =>
+                                  setHeader(j, nextLang, text)
+                                }
                                 type="text"
                                 placeholder={`Header ${j + 1} (${lang.toUpperCase()})`}
                                 className="w-full rounded px-2 py-1 text-sm font-semibold text-[var(--color-ink)] bg-transparent placeholder:text-[var(--color-ink-3)] border border-transparent hover:border-[var(--color-line-2)] focus:border-[var(--color-ring)] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)] transition-colors"
@@ -141,7 +164,10 @@ export function TableBody({
                                   onClick={() => removeColumn(j)}
                                   className="flex size-5 shrink-0 items-center justify-center rounded text-[var(--color-ink-3)] opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bad-tint)] hover:text-[var(--color-bad)] transition-all mt-1"
                                 >
-                                  <Icon icon="ri-close-line" className="text-sm" />
+                                  <Icon
+                                    icon="ri-close-line"
+                                    className="text-sm"
+                                  />
                                 </button>
                               )}
                             </div>
@@ -155,14 +181,20 @@ export function TableBody({
                             onClick={addColumn}
                             className="mx-auto flex size-8 items-center justify-center rounded text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors"
                           >
-                            <Icon icon="ri-add-line" className="text-base font-semibold" />
+                            <Icon
+                              icon="ri-add-line"
+                              className="text-base font-semibold"
+                            />
                           </button>
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--color-line)]">
                       {block.rows.map((row, i) => (
-                        <tr key={i} className="group/row transition-colors hover:bg-[var(--color-wash)]/40">
+                        <tr
+                          key={i}
+                          className="group/row transition-colors hover:bg-[var(--color-wash)]/40"
+                        >
                           {row.map((_, j) => (
                             <td
                               key={j}
@@ -175,8 +207,10 @@ export function TableBody({
                                   rows={2}
                                   maxLength={500}
                                   showCount
-                                  value={row[j] ?? { en: '', es: '' }}
-                                  onText={(nextLang, text) => setCell(i, j, nextLang, text)}
+                                  value={row[j] ?? { en: "", es: "" }}
+                                  onText={(nextLang, text) =>
+                                    setCell(i, j, nextLang, text)
+                                  }
                                   placeholder={`Cell (${lang.toUpperCase()})`}
                                   className="w-full resize-y rounded px-2 py-1 text-sm text-[var(--color-ink)] bg-transparent placeholder:text-[var(--color-ink-3)] border border-transparent hover:border-[var(--color-line-2)] focus:border-[var(--color-ring)] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)] transition-colors min-h-[44px]"
                                 />
@@ -192,7 +226,10 @@ export function TableBody({
                                 onClick={() => removeRow(i)}
                                 className="mx-auto flex size-6 items-center justify-center rounded text-[var(--color-ink-3)] opacity-0 group-hover/row:opacity-100 hover:bg-[var(--color-bad-tint)] hover:text-[var(--color-bad)] transition-all"
                               >
-                                <Icon icon="ri-close-line" className="text-sm" />
+                                <Icon
+                                  icon="ri-close-line"
+                                  className="text-sm"
+                                />
                               </button>
                             )}
                           </td>
@@ -218,7 +255,10 @@ export function TableBody({
                             onClick={addRow}
                             className="mx-auto flex size-8 items-center justify-center rounded text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors"
                           >
-                            <Icon icon="ri-add-line" className="text-base font-semibold" />
+                            <Icon
+                              icon="ri-add-line"
+                              className="text-base font-semibold"
+                            />
                           </button>
                         </td>
                       </tr>
@@ -237,7 +277,7 @@ export function TableBody({
               tabIndex={0}
               onClick={() => setActiveLang(lang)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   setActiveLang(lang);
                 }
@@ -247,9 +287,13 @@ export function TableBody({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 overflow-hidden text-sm">
                   <span className="shrink-0 text-xs font-semibold text-[var(--color-ink-2)]">
-                    {lang === 'en' ? 'English Table' : 'Spanish Table (Español)'}
+                    {lang === "en"
+                      ? "English Table"
+                      : "Spanish Table (Español)"}
                   </span>
-                  <span className="shrink-0 text-xs text-[var(--color-ink-3)]">·</span>
+                  <span className="shrink-0 text-xs text-[var(--color-ink-3)]">
+                    ·
+                  </span>
                   <div className="flex items-center gap-1.5 overflow-hidden">
                     {block.headers.map((h, k) => (
                       <span
@@ -261,7 +305,10 @@ export function TableBody({
                     ))}
                   </div>
                 </div>
-                <span translate="no" className="shrink-0 font-mono text-xs font-semibold text-[var(--color-ink-3)] uppercase tracking-wider notranslate">
+                <span
+                  translate="no"
+                  className="shrink-0 font-mono text-xs font-semibold text-[var(--color-ink-3)] uppercase tracking-wider notranslate"
+                >
                   {lang.toUpperCase()}
                 </span>
               </div>
@@ -275,39 +322,41 @@ export function TableBody({
 
 // ---- Checklist ----
 
-const CHECKLIST_LANGS: Array<'en' | 'es'> = ['en', 'es'];
+const CHECKLIST_LANGS: Array<"en" | "es"> = ["en", "es"];
 
 export function ChecklistBody({
   block,
   onPatch,
-}: BodyProps<Extract<ProcedureBlock, { kind: 'checklist' }>>): React.ReactElement {
+}: BodyProps<
+  Extract<ProcedureBlock, { kind: "checklist" }>
+>): React.ReactElement {
   const items = block.items;
-  const [activeLang, setActiveLang] = React.useState<'en' | 'es'>('en');
+  const [activeLang, setActiveLang] = React.useState<"en" | "es">("en");
 
-  function setTitleText(lang: 'en' | 'es', val: string): void {
+  function setTitleText(lang: "en" | "es", val: string): void {
     onPatch({
       ...block,
       title: {
-        en: block.title?.en ?? '',
-        es: block.title?.es ?? '',
+        en: block.title?.en ?? "",
+        es: block.title?.es ?? "",
         [lang]: val,
       },
     });
   }
 
-  function setItemText(i: number, lang: 'en' | 'es', val: string): void {
+  function setItemText(i: number, lang: "en" | "es", val: string): void {
     onPatch({
       ...block,
       items: items.map((it, j) =>
         j === i
           ? {
-            ...it,
-            text: {
-              en: it.text?.en ?? '',
-              es: it.text?.es ?? '',
-              [lang]: val,
-            },
-          }
+              ...it,
+              text: {
+                en: it.text?.en ?? "",
+                es: it.text?.es ?? "",
+                [lang]: val,
+              },
+            }
           : it,
       ),
     });
@@ -316,7 +365,13 @@ export function ChecklistBody({
   function addItem(): void {
     onPatch({
       ...block,
-      items: [...items, { id: `ci-${Math.random().toString(36).slice(2, 8)}`, text: { en: '', es: '' } }],
+      items: [
+        ...items,
+        {
+          id: `ci-${Math.random().toString(36).slice(2, 8)}`,
+          text: { en: "", es: "" },
+        },
+      ],
     });
   }
 
@@ -325,8 +380,8 @@ export function ChecklistBody({
     onPatch({ ...block, items: items.filter((_, j) => j !== i) });
   }
 
-  function moveItem(i: number, dir: 'up' | 'down'): void {
-    const j = dir === 'up' ? i - 1 : i + 1;
+  function moveItem(i: number, dir: "up" | "down"): void {
+    const j = dir === "up" ? i - 1 : i + 1;
     if (j < 0 || j >= items.length) return;
     const next = items.slice();
     [next[i], next[j]] = [next[j], next[i]];
@@ -343,9 +398,14 @@ export function ChecklistBody({
             <div key={lang} className="bli-card is-active">
               <header className="flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-wash)] px-4 py-2.5">
                 <span className="text-xs font-semibold text-[var(--color-ink)]">
-                  {lang === 'en' ? 'Checklist (English)' : 'Lista de verificación (Español)'}
+                  {lang === "en"
+                    ? "Checklist (English)"
+                    : "Lista de verificación (Español)"}
                 </span>
-                <span translate="no" className="font-mono text-xs font-bold text-[var(--color-ink-2)] uppercase tracking-wider notranslate">
+                <span
+                  translate="no"
+                  className="font-mono text-xs font-bold text-[var(--color-ink-2)] uppercase tracking-wider notranslate"
+                >
                   {lang.toUpperCase()}
                 </span>
               </header>
@@ -357,14 +417,17 @@ export function ChecklistBody({
                     lang={lang}
                     maxLength={100}
                     showCount
-                    value={{ en: block.title?.en ?? '', es: block.title?.es ?? '' }}
+                    value={{
+                      en: block.title?.en ?? "",
+                      es: block.title?.es ?? "",
+                    }}
                     onText={(nextLang, text) => setTitleText(nextLang, text)}
                     showStatus
                     type="text"
                     placeholder={
-                      lang === 'en'
-                        ? 'Checklist title (English)…'
-                        : 'Título de la lista (Español)…'
+                      lang === "en"
+                        ? "Checklist title (English)…"
+                        : "Título de la lista (Español)…"
                     }
                     className="w-full rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] placeholder:font-normal placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-ring)] focus:outline-none focus:ring-1 focus:ring-[var(--color-ring)] transition-colors"
                   />
@@ -382,7 +445,7 @@ export function ChecklistBody({
                         <button
                           type="button"
                           disabled={i === 0}
-                          onClick={() => moveItem(i, 'up')}
+                          onClick={() => moveItem(i, "up")}
                           className="p-0.5 text-[var(--color-ink-3)] hover:text-[var(--color-ink)] disabled:opacity-30"
                           aria-label="Move up"
                           title="Move up"
@@ -392,7 +455,7 @@ export function ChecklistBody({
                         <button
                           type="button"
                           disabled={i === items.length - 1}
-                          onClick={() => moveItem(i, 'down')}
+                          onClick={() => moveItem(i, "down")}
                           className="p-0.5 text-[var(--color-ink-3)] hover:text-[var(--color-ink)] disabled:opacity-30"
                           aria-label="Move down"
                           title="Move down"
@@ -418,11 +481,16 @@ export function ChecklistBody({
                           lang={lang}
                           maxLength={150}
                           showCount
-                          value={{ en: it.text?.en ?? '', es: it.text?.es ?? '' }}
-                          onText={(nextLang, text) => setItemText(i, nextLang, text)}
+                          value={{
+                            en: it.text?.en ?? "",
+                            es: it.text?.es ?? "",
+                          }}
+                          onText={(nextLang, text) =>
+                            setItemText(i, nextLang, text)
+                          }
                           type="text"
                           placeholder={
-                            lang === 'en'
+                            lang === "en"
                               ? `Item ${i + 1} (English)…`
                               : `Elemento ${i + 1} (Español)…`
                           }
@@ -452,7 +520,9 @@ export function ChecklistBody({
                   className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-semibold text-[var(--color-brand-600)] hover:bg-[var(--color-panel)] hover:text-[var(--color-brand-700)] transition-colors mt-1"
                 >
                   <Icon icon="ri-add-line" className="text-sm" />
-                  <span>{lang === 'en' ? 'Add checklist item' : 'Agregar elemento'}</span>
+                  <span>
+                    {lang === "en" ? "Add checklist item" : "Agregar elemento"}
+                  </span>
                 </button>
               </div>
             </div>
@@ -462,8 +532,12 @@ export function ChecklistBody({
         // Inactive language card: collapsed slim preview matching quiz
         const preview =
           block.title?.[lang]?.trim() ||
-          (lang === 'es' ? 'Lista de verificación (Español)' : 'Checklist (English)');
-        const filled = items.filter((it) => Boolean(it.text?.[lang]?.trim())).length;
+          (lang === "es"
+            ? "Lista de verificación (Español)"
+            : "Checklist (English)");
+        const filled = items.filter((it) =>
+          Boolean(it.text?.[lang]?.trim()),
+        ).length;
 
         return (
           <div
@@ -472,13 +546,17 @@ export function ChecklistBody({
             tabIndex={0}
             onClick={() => setActiveLang(lang)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 setActiveLang(lang);
               }
             }}
             className="bli-card is-inactive px-4"
-            title={lang === 'es' ? 'Click to edit in Spanish' : 'Click to edit in English'}
+            title={
+              lang === "es"
+                ? "Click to edit in Spanish"
+                : "Click to edit in English"
+            }
           >
             <div className="flex w-full items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
@@ -486,10 +564,14 @@ export function ChecklistBody({
                   {preview}
                 </span>
                 <span className="text-[11px] text-[var(--color-ink-3)] shrink-0">
-                  · {filled}/{items.length} {lang === 'es' ? 'completados' : 'items'}
+                  · {filled}/{items.length}{" "}
+                  {lang === "es" ? "completados" : "items"}
                 </span>
               </div>
-              <span translate="no" className="shrink-0 font-mono text-xs font-bold text-[var(--color-ink-3)] uppercase tracking-wider notranslate">
+              <span
+                translate="no"
+                className="shrink-0 font-mono text-xs font-bold text-[var(--color-ink-3)] uppercase tracking-wider notranslate"
+              >
                 {lang.toUpperCase()}
               </span>
             </div>
@@ -501,10 +583,8 @@ export function ChecklistBody({
 }
 
 const bodyTextareaCls =
-  'flex w-full resize-none rounded-[var(--radius-md)] border border-transparent bg-transparent px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-2)] hover:bg-[var(--color-surface)] focus:border-[var(--color-ring)] focus:bg-[var(--color-surface)] focus:outline-none';
-
+  "flex w-full resize-none rounded-[var(--radius-md)] border border-transparent bg-transparent px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-2)] hover:bg-[var(--color-surface)] focus:border-[var(--color-ring)] focus:bg-[var(--color-surface)] focus:outline-none";
 
 // ---------------------------------------------------------------------------
 // Empty state — a clean "press / for blocks" surface. No 8-card grid.
 // ---------------------------------------------------------------------------
-

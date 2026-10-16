@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Notion-style composer for procedure blocks.
@@ -13,12 +13,12 @@
  * import + a `<NotionBlockList />` render.
  */
 
-import * as React from 'react';
-import { createPortal } from 'react-dom';
-import { useTranslations } from 'next-intl';
-import { CustomSelect } from '@/components/ui/custom-select';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import { Icon } from '@/components/ui/icon';
+import * as React from "react";
+import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { classifyVideoUrl } from "@/lib/procedure-media";
+import { Icon } from "@/components/ui/icon";
 import type {
   Localised,
   LocalisedOptional,
@@ -26,19 +26,24 @@ import type {
   ProcedureBlockKind,
   ProcedureMethodStep,
   ProcedureNoteKind,
-} from '@/lib/types';
-import { IconTile } from '@/components/ui/icon-tile';
-import { IngredientsBlockBody } from './ingredients-block-body';
-import { BilingualInput } from '@/components/ui/bilingual-input';
-import { LocalisedInput } from '@/components/ui/localised-input';
-import { StepTimerEditor } from './step-timer-editor';
-import { asLoc, setLoc, SLASH_BLOCK_OPTIONS, type BodyProps } from './notion-block-shared';
+} from "@/lib/types";
+import { IconTile } from "@/components/ui/icon-tile";
+import { IngredientsBlockBody } from "./ingredients-block-body";
+import { BilingualInput } from "@/components/ui/bilingual-input";
+import { LocalisedInput } from "@/components/ui/localised-input";
+import { StepTimerEditor } from "./step-timer-editor";
+import {
+  asLoc,
+  setLoc,
+  SLASH_BLOCK_OPTIONS,
+  type BodyProps,
+} from "./notion-block-shared";
 
 export function TextBody({
   block,
   onPatch,
   onInsertAfter,
-}: BodyProps<Extract<ProcedureBlock, { kind: 'text' }>> & {
+}: BodyProps<Extract<ProcedureBlock, { kind: "text" }>> & {
   onInsertAfter?: (kind: ProcedureBlockKind) => void;
 }): React.ReactElement {
   const [slashOpen, setSlashOpen] = React.useState(false);
@@ -50,9 +55,9 @@ export function TextBody({
 
   function handleInputKeyDown(
     e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-    _lang: 'en' | 'es',
+    _lang: "en" | "es",
   ): void {
-    if (e.key === '/' && !e.currentTarget.value) {
+    if (e.key === "/" && !e.currentTarget.value) {
       e.preventDefault();
       setSlashOpen(true);
     }
@@ -64,11 +69,11 @@ export function TextBody({
         value={block.body}
         maxLength={1000}
         onChange={(val) => {
-          if (val.en === '/' && !block.body?.en) {
+          if (val.en === "/" && !block.body?.en) {
             setSlashOpen(true);
             return;
           }
-          if (val.es === '/' && !block.body?.es) {
+          if (val.es === "/" && !block.body?.es) {
             setSlashOpen(true);
             return;
           }
@@ -76,8 +81,8 @@ export function TextBody({
         }}
         multiline
         placeholder={{
-          en: 'Type something… (or / for blocks)',
-          es: 'Escribe algo… (o / para bloques)',
+          en: "Type something… (or / for blocks)",
+          es: "Escribe algo… (o / para bloques)",
         }}
         onInputKeyDown={handleInputKeyDown}
       />
@@ -94,7 +99,10 @@ export function TextBody({
                 onClick={() => handleSlashSelect(opt.kind)}
                 className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-[var(--color-ink)] hover:bg-[var(--color-wash)] transition-colors"
               >
-                <Icon icon={opt.icon} className="text-base text-[var(--color-ink-2)]" />
+                <Icon
+                  icon={opt.icon}
+                  className="text-base text-[var(--color-ink-2)]"
+                />
                 <span className="font-medium">{opt.label}</span>
               </button>
             ))}
@@ -119,7 +127,9 @@ export function TextBody({
 export function HeadingBody({
   block,
   onPatch,
-}: BodyProps<Extract<ProcedureBlock, { kind: 'heading' }>>): React.ReactElement {
+}: BodyProps<
+  Extract<ProcedureBlock, { kind: "heading" }>
+>): React.ReactElement {
   return (
     <div className="flex items-start gap-2">
       {/* Heading level selector — always visible, compact */}
@@ -129,9 +139,9 @@ export function HeadingBody({
           value={String(block.level)}
           onChange={(v) => onPatch({ ...block, level: Number(v) as 1 | 2 | 3 })}
           options={[
-            { value: '1', label: 'H1', icon: 'ri-h-1' },
-            { value: '2', label: 'H2', icon: 'ri-h-2' },
-            { value: '3', label: 'H3', icon: 'ri-h-3' },
+            { value: "1", label: "H1", icon: "ri-h-1" },
+            { value: "2", label: "H2", icon: "ri-h-2" },
+            { value: "3", label: "H3", icon: "ri-h-3" },
           ]}
         />
       </div>
@@ -141,8 +151,8 @@ export function HeadingBody({
           maxLength={100}
           onChange={(val) => onPatch({ ...block, text: val })}
           placeholder={{
-            en: 'Section title (English)…',
-            es: 'Título de la sección (Español)…',
+            en: "Section title (English)…",
+            es: "Título de la sección (Español)…",
           }}
           className="bli--heading"
           inputClassName={headingCls(block.level)}
@@ -154,10 +164,11 @@ export function HeadingBody({
 
 function headingCls(level: 1 | 2 | 3): string {
   // Phone first: at 390px the desktop sizes ran the title past the field.
-  if (level === 1) return 'text-lg font-semibold tracking-tight sm:font-[family-name:var(--font-display)] sm:text-2xl';
-  if (level === 2) return 'text-md font-semibold tracking-tight sm:font-[family-name:var(--font-display)] sm:text-xl';
-  return 'text-base font-semibold tracking-tight sm:text-lg';
+  if (level === 1)
+    return "text-lg font-semibold tracking-tight sm:font-[family-name:var(--font-display)] sm:text-2xl";
+  if (level === 2)
+    return "text-md font-semibold tracking-tight sm:font-[family-name:var(--font-display)] sm:text-xl";
+  return "text-base font-semibold tracking-tight sm:text-lg";
 }
 
 // ---- Method (numbered steps) ----
-

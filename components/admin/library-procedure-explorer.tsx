@@ -1,13 +1,26 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { deleteProcedure, listProcedures, clearLibraryListCache, canPublishProcedure, setProcedureState } from '@/lib/api';
-import type { Procedure, Category, ProcedureStatus, Station, Subcategory, ProcedureBlock } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { CustomSelect } from '@/components/ui/custom-select';
+import * as React from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  deleteProcedure,
+  listProcedures,
+  clearLibraryListCache,
+  canPublishProcedure,
+  setProcedureState,
+} from "@/lib/api";
+import type {
+  Procedure,
+  Category,
+  ProcedureStatus,
+  Station,
+  Subcategory,
+  ProcedureBlock,
+} from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { CustomSelect } from "@/components/ui/custom-select";
 import {
   LuArchive,
   LuArchiveRestore,
@@ -22,7 +35,7 @@ import {
   LuSearch,
   LuTrash2,
   LuX,
-} from 'react-icons/lu';
+} from "react-icons/lu";
 import {
   PiBookOpenText,
   PiBookOpenUser,
@@ -35,24 +48,24 @@ import {
   PiSparkle,
   PiSquaresFour,
   PiToolbox,
-} from 'react-icons/pi';
-import type { IconType } from 'react-icons';
-import { StatusPill } from '@/components/ui/status-pill';
-import { FilterChips } from '@/components/ui/filter-chips';
-import { Skeleton } from '@/components/ui/skeleton';
-import { IconTile } from '@/components/ui/icon-tile';
-import { HoverImagePreview } from '@/components/ui/hover-image-preview';
-import { EmptyState } from '@/components/ui/empty-state';
-import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
-import { getProcedureIcon } from '@/lib/category-icons';
-import { backendSlug, categorySlugsMatch } from '@/services/categories/api';
-import { LibraryExplorerSkeleton } from '@/components/admin/library-explorer-skeleton';
-import { Pagination } from '@/components/ui/pagination';
-import { ProcedureExplorerFilters } from './library-procedure-explorer-filters';
-import { ProcedureExplorerResults } from './library-procedure-explorer-results';
-import { getCategoryTheme } from './library-category-theme';
+} from "react-icons/pi";
+import type { IconType } from "react-icons";
+import { StatusPill } from "@/components/ui/status-pill";
+import { FilterChips } from "@/components/ui/filter-chips";
+import { Skeleton } from "@/components/ui/skeleton";
+import { IconTile } from "@/components/ui/icon-tile";
+import { HoverImagePreview } from "@/components/ui/hover-image-preview";
+import { EmptyState } from "@/components/ui/empty-state";
+import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { PROCEDURES_QUERY_KEY } from "@/services/library/hooks";
+import { getProcedureIcon } from "@/lib/category-icons";
+import { backendSlug, categorySlugsMatch } from "@/services/categories/api";
+import { LibraryExplorerSkeleton } from "@/components/admin/library-explorer-skeleton";
+import { Pagination } from "@/components/ui/pagination";
+import { ProcedureExplorerFilters } from "./library-procedure-explorer-filters";
+import { ProcedureExplorerResults } from "./library-procedure-explorer-results";
+import { getCategoryTheme } from "./library-category-theme";
 
 interface LibraryProcedureExplorerProps {
   procedures: Procedure[];
@@ -94,19 +107,21 @@ export function LibraryProcedureExplorer({
     return <LibraryExplorerSkeleton />;
   }
 
-  const isEs = locale === 'es';
+  const isEs = locale === "es";
   const router = useRouter();
 
   const queryClient = useQueryClient();
   const [archivedIds, setArchivedIds] = React.useState<Set<string>>(new Set());
   const [deletedIds, setDeletedIds] = React.useState<Set<string>>(new Set());
-  const [statusOverrides, setStatusOverrides] = React.useState<Map<string, ProcedureStatus>>(new Map());
+  const [statusOverrides, setStatusOverrides] = React.useState<
+    Map<string, ProcedureStatus>
+  >(new Map());
 
   const onArchive = React.useCallback(
     async (id: string): Promise<void> => {
       setArchivedIds((prev) => new Set([...prev, id]));
       try {
-        const { archiveProcedure } = await import('@/services/library/api');
+        const { archiveProcedure } = await import("@/services/library/api");
         await archiveProcedure(id);
         clearLibraryListCache();
         await queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY });
@@ -150,12 +165,11 @@ export function LibraryProcedureExplorer({
 
   // Filters State
   const searchParams = useSearchParams();
-  const [selectedCategorySlug, setSelectedCategorySlug] = React.useState<string>(
-    () => searchParams.get('category') || 'all'
-  );
+  const [selectedCategorySlug, setSelectedCategorySlug] =
+    React.useState<string>(() => searchParams.get("category") || "all");
 
   React.useEffect(() => {
-    const categoryParam = searchParams.get('category');
+    const categoryParam = searchParams.get("category");
     if (categoryParam) {
       setSelectedCategorySlug(categoryParam);
     }
@@ -164,157 +178,179 @@ export function LibraryProcedureExplorer({
   // "Food Safety" and only Hygiene / Cross-Contamination / Labeling & Dating /
   // Allergy appear. Reset the subcategory whenever the category narrows so a
   // stale subcategory from another category does not produce an empty list.
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = React.useState<string>('all');
+  const [selectedSubcategoryId, setSelectedSubcategoryId] =
+    React.useState<string>("all");
 
   const lastCategoryRef = React.useRef<string>(selectedCategorySlug);
   React.useEffect(() => {
     if (lastCategoryRef.current !== selectedCategorySlug) {
       lastCategoryRef.current = selectedCategorySlug;
-      setSelectedSubcategoryId('all');
+      setSelectedSubcategoryId("all");
       setCurrentPage(1);
     }
   }, [selectedCategorySlug]);
 
-  const [searchQuery, setSearchQuery] = React.useState<string>('');
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
   // Debounced search for the server round-trip. The client-side filter below
   // keeps using the live `searchQuery` so keystrokes feel instant on rows
   // already in hand; the backend query follows once the user pauses instead
   // of firing per keystroke.
-  const [debouncedSearch, setDebouncedSearch] = React.useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = React.useState<string>("");
   React.useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(t);
   }, [searchQuery]);
   // Archived is its own choice: out of the list by default, one pick away for
   // the audit.
-  const [statusFilter, setStatusFilter] = React.useState<'all' | ProcedureStatus | 'archived'>('all');
+  const [statusFilter, setStatusFilter] = React.useState<
+    "all" | ProcedureStatus | "archived"
+  >("all");
   // Station filter: narrows the list to procedures whose stationScope covers
   // the chosen station. `mode: 'all'` procedures are always kept because they
   // apply to every station; `mode: 'specific'` matches when stationIds contains
   // the picked id. The 'all' option restores the un-narrowed view.
-  const [stationFilter, setStationFilter] = React.useState<string>('all');
-  const [sortBy, setSortBy] = React.useState<'updated_desc' | 'updated_asc' | 'title_asc' | 'title_desc'>(
-    'updated_desc',
-  );
+  const [stationFilter, setStationFilter] = React.useState<string>("all");
+  const [sortBy, setSortBy] = React.useState<
+    "updated_desc" | "updated_asc" | "title_asc" | "title_desc"
+  >("updated_desc");
   const [currentPage, setCurrentPage] = React.useState<number>(1);
 
   const isUuid = (val: string | null | undefined): boolean => {
     if (!val) return false;
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      val,
+    );
   };
 
   const liveCategories = categories ?? [];
   const liveStations = stations ?? [];
 
   // Category counts & deduplication matching exact category pills in design reference
-  const { categoryList, categoryCounts, categorySlugMap } = React.useMemo(() => {
-    // The library's own categories first, then this fallback set for a location
-    // that has none yet. Both orders matter: the real ones win, and the fallback
-    // only fills gaps.
-    const fallback: Category[] = [
-      {
-        id: 'cat-recipes',
-        slug: 'recipes',
-        nameEn: 'Recipe',
-        nameEs: 'Recetas',
-        isArchived: false,
-        kind: 'general',
-      },
-      {
-        id: 'cat-kitchen-ops',
-        slug: 'kitchen-operations',
-        nameEn: 'Kitchen Operations',
-        nameEs: 'Operaciones de Cocina',
-        isArchived: false,
-        kind: 'general',
-      },
-      {
-        id: 'cat-cleaning',
-        slug: 'cleaning',
-        nameEn: 'Cleaning Schedules',
-        nameEs: 'Horarios de Limpieza',
-        isArchived: false,
-        kind: 'general',
-      },
-      {
-        id: 'cat-onboarding',
-        slug: 'onboarding',
-        nameEn: 'Onboarding',
-        nameEs: 'Inducción y Capacitación',
-        isArchived: false,
-        kind: 'general',
-      },
-    ];
-    const rawCategories: Category[] = [...(liveCategories ?? []).filter((c) => !c.isArchived), ...fallback];
+  const { categoryList, categoryCounts, categorySlugMap } =
+    React.useMemo(() => {
+      // The library's own categories first, then this fallback set for a location
+      // that has none yet. Both orders matter: the real ones win, and the fallback
+      // only fills gaps.
+      const fallback: Category[] = [
+        {
+          id: "cat-recipes",
+          slug: "recipes",
+          nameEn: "Recipe",
+          nameEs: "Recetas",
+          isArchived: false,
+          kind: "general",
+        },
+        {
+          id: "cat-kitchen-ops",
+          slug: "kitchen-operations",
+          nameEn: "Kitchen Operations",
+          nameEs: "Operaciones de Cocina",
+          isArchived: false,
+          kind: "general",
+        },
+        {
+          id: "cat-cleaning",
+          slug: "cleaning",
+          nameEn: "Cleaning Schedules",
+          nameEs: "Horarios de Limpieza",
+          isArchived: false,
+          kind: "general",
+        },
+        {
+          id: "cat-onboarding",
+          slug: "onboarding",
+          nameEn: "Onboarding",
+          nameEs: "Inducción y Capacitación",
+          isArchived: false,
+          kind: "general",
+        },
+      ];
+      const rawCategories: Category[] = [
+        ...(liveCategories ?? []).filter((c) => !c.isArchived),
+        ...fallback,
+      ];
 
-    const canonicalByName = new Map<string, Category>();
-    const slugToCanonicalSlug = new Map<string, string>();
+      const canonicalByName = new Map<string, Category>();
+      const slugToCanonicalSlug = new Map<string, string>();
 
-    for (const cat of rawCategories) {
-      const normKey = (cat.slug || cat.nameEn || cat.nameEs).toLowerCase().trim();
-      const existing =
-        canonicalByName.get(normKey) ??
-        Array.from(canonicalByName.values()).find(
-          (c) =>
-            categorySlugsMatch(c.slug, cat.slug) ||
-            (Boolean(c.id) && Boolean(cat.id) && c.id === cat.id),
-        );
+      for (const cat of rawCategories) {
+        const normKey = (cat.slug || cat.nameEn || cat.nameEs)
+          .toLowerCase()
+          .trim();
+        const existing =
+          canonicalByName.get(normKey) ??
+          Array.from(canonicalByName.values()).find(
+            (c) =>
+              categorySlugsMatch(c.slug, cat.slug) ||
+              (Boolean(c.id) && Boolean(cat.id) && c.id === cat.id),
+          );
 
-      if (!existing) {
-        canonicalByName.set(normKey, cat);
-        slugToCanonicalSlug.set(cat.slug, cat.slug);
-        if (cat.id) slugToCanonicalSlug.set(cat.id, cat.slug);
-      } else {
-        slugToCanonicalSlug.set(cat.slug, existing.slug);
-        if (cat.id) slugToCanonicalSlug.set(cat.id, existing.slug);
-      }
-    }
-
-    const uniqueCategories = Array.from(canonicalByName.values());
-    const enrichedCategories = uniqueCategories.map((c) => ({
-      ...c,
-      subcategories: [...(c.subcategories ?? [])],
-    }));
-    const enrichedById = new Map(enrichedCategories.map((c) => [c.id, c]));
-    for (const p of procedures ?? []) {
-      const sub = (
-        p as unknown as {
-          subcategory?: { id: string; categoryId: string; nameEn: string; nameEs: string } | null;
+        if (!existing) {
+          canonicalByName.set(normKey, cat);
+          slugToCanonicalSlug.set(cat.slug, cat.slug);
+          if (cat.id) slugToCanonicalSlug.set(cat.id, cat.slug);
+        } else {
+          slugToCanonicalSlug.set(cat.slug, existing.slug);
+          if (cat.id) slugToCanonicalSlug.set(cat.id, existing.slug);
         }
-      ).subcategory;
-      if (!sub?.id) continue;
-      const cat = enrichedById.get(sub.categoryId);
-      if (!cat || cat.subcategories.some((s) => s.id === sub.id)) continue;
-      cat.subcategories.push({
-        id: sub.id,
-        slug: backendSlug(sub.nameEn),
-        nameEn: sub.nameEn,
-        nameEs: sub.nameEs,
-        categoryId: sub.categoryId,
-      });
-    }
+      }
 
-    const current = (procedures ?? []).filter((p) => !p.isArchived);
-    const counts: Record<string, number> = { all: current.length };
+      const uniqueCategories = Array.from(canonicalByName.values());
+      const enrichedCategories = uniqueCategories.map((c) => ({
+        ...c,
+        subcategories: [...(c.subcategories ?? [])],
+      }));
+      const enrichedById = new Map(enrichedCategories.map((c) => [c.id, c]));
+      for (const p of procedures ?? []) {
+        const sub = (
+          p as unknown as {
+            subcategory?: {
+              id: string;
+              categoryId: string;
+              nameEn: string;
+              nameEs: string;
+            } | null;
+          }
+        ).subcategory;
+        if (!sub?.id) continue;
+        const cat = enrichedById.get(sub.categoryId);
+        if (!cat || cat.subcategories.some((s) => s.id === sub.id)) continue;
+        cat.subcategories.push({
+          id: sub.id,
+          slug: backendSlug(sub.nameEn),
+          nameEn: sub.nameEn,
+          nameEs: sub.nameEs,
+          categoryId: sub.categoryId,
+        });
+      }
 
-    for (const p of current) {
-      const procCat = p.category ?? (p.subcategoryId ? enrichedCategories.find((c) => c.subcategories?.some((s) => s.id === p.subcategoryId)) : null);
-      if (!procCat) continue;
-      const rawKey = procCat.slug || procCat.id;
-      const canonicalSlug = slugToCanonicalSlug.get(rawKey) || procCat.slug;
-      counts[canonicalSlug] = (counts[canonicalSlug] || 0) + 1;
-    }
+      const current = (procedures ?? []).filter((p) => !p.isArchived);
+      const counts: Record<string, number> = { all: current.length };
 
-    return {
-      categoryList: enrichedCategories,
-      categoryCounts: counts,
-      categorySlugMap: slugToCanonicalSlug,
-    };
-  }, [categories, procedures]);
+      for (const p of current) {
+        const procCat =
+          p.category ??
+          (p.subcategoryId
+            ? enrichedCategories.find((c) =>
+                c.subcategories?.some((s) => s.id === p.subcategoryId),
+              )
+            : null);
+        if (!procCat) continue;
+        const rawKey = procCat.slug || procCat.id;
+        const canonicalSlug = slugToCanonicalSlug.get(rawKey) || procCat.slug;
+        counts[canonicalSlug] = (counts[canonicalSlug] || 0) + 1;
+      }
+
+      return {
+        categoryList: enrichedCategories,
+        categoryCounts: counts,
+        categorySlugMap: slugToCanonicalSlug,
+      };
+    }, [categories, procedures]);
 
   // Derive backend-compatible filter query params
   const selectedCategoryObj = React.useMemo(() => {
-    if (selectedCategorySlug === 'all') return null;
+    if (selectedCategorySlug === "all") return null;
     return (
       categoryList.find(
         (c) =>
@@ -326,22 +362,24 @@ export function LibraryProcedureExplorer({
   }, [selectedCategorySlug, categoryList]);
 
   const backendCategoryIds = React.useMemo(() => {
-    if (!selectedCategoryObj?.id || !isUuid(selectedCategoryObj.id)) return undefined;
+    if (!selectedCategoryObj?.id || !isUuid(selectedCategoryObj.id))
+      return undefined;
     return [selectedCategoryObj.id];
   }, [selectedCategoryObj]);
 
   const backendSubcategoryIds = React.useMemo(() => {
-    if (selectedSubcategoryId === 'all' || !isUuid(selectedSubcategoryId)) return undefined;
+    if (selectedSubcategoryId === "all" || !isUuid(selectedSubcategoryId))
+      return undefined;
     return [selectedSubcategoryId];
   }, [selectedSubcategoryId]);
 
   const backendStationIds = React.useMemo(() => {
-    if (stationFilter === 'all' || !isUuid(stationFilter)) return undefined;
+    if (stationFilter === "all" || !isUuid(stationFilter)) return undefined;
     return [stationFilter];
   }, [stationFilter]);
 
   const backendStatus = React.useMemo(() => {
-    if (statusFilter === 'all') return undefined;
+    if (statusFilter === "all") return undefined;
     return statusFilter;
   }, [statusFilter]);
 
@@ -356,7 +394,7 @@ export function LibraryProcedureExplorer({
   const { data: filterApiResponse, isLoading: isFilterLoading } = useQuery({
     queryKey: [
       ...PROCEDURES_QUERY_KEY,
-      'admin-filter',
+      "admin-filter",
       {
         categoryIds: backendCategoryIds,
         subcategoryIds: backendSubcategoryIds,
@@ -366,7 +404,7 @@ export function LibraryProcedureExplorer({
       },
     ],
     queryFn: async () => {
-      const { fetchProcedures } = await import('@/services/library/api');
+      const { fetchProcedures } = await import("@/services/library/api");
       return fetchProcedures(
         {
           categoryIds: backendCategoryIds,
@@ -383,7 +421,10 @@ export function LibraryProcedureExplorer({
   });
 
   const allProcedures = React.useMemo(() => {
-    const list = (hasActiveBackendFilters && filterApiResponse?.procedures ? filterApiResponse.procedures : procedures) ?? [];
+    const list =
+      (hasActiveBackendFilters && filterApiResponse?.procedures
+        ? filterApiResponse.procedures
+        : procedures) ?? [];
     return list
       .filter((p) => !deletedIds.has(p.id) && !deletedIds.has(p.slug))
       .map((p) => {
@@ -391,13 +432,21 @@ export function LibraryProcedureExplorer({
         if (archivedIds.has(p.id) || archivedIds.has(p.slug)) {
           item = { ...item, isArchived: true };
         }
-        const statusOverride = statusOverrides.get(p.id) || statusOverrides.get(p.slug);
+        const statusOverride =
+          statusOverrides.get(p.id) || statusOverrides.get(p.slug);
         if (statusOverride) {
           item = { ...item, status: statusOverride };
         }
         return item;
       });
-  }, [procedures, filterApiResponse, hasActiveBackendFilters, archivedIds, deletedIds, statusOverrides]);
+  }, [
+    procedures,
+    filterApiResponse,
+    hasActiveBackendFilters,
+    archivedIds,
+    deletedIds,
+    statusOverrides,
+  ]);
 
   // Options for CustomSelect dropdowns
   const subById = React.useMemo(() => {
@@ -414,8 +463,8 @@ export function LibraryProcedureExplorer({
   const categorySelectOptions = React.useMemo(() => {
     return [
       {
-        value: 'all',
-        label: `${isEs ? 'Todas las categorías' : 'All categories'} (${categoryCounts.all || 0})`,
+        value: "all",
+        label: `${isEs ? "Todas las categorías" : "All categories"} (${categoryCounts.all || 0})`,
         icon: PiSquaresFour,
       },
       ...categoryList.map((cat) => {
@@ -436,11 +485,11 @@ export function LibraryProcedureExplorer({
   // category picked) shows every subcategory across every category.
   const subcategoryOptions = React.useMemo(() => {
     const pool: Subcategory[] =
-      selectedCategorySlug === 'all'
+      selectedCategorySlug === "all"
         ? categoryList.flatMap((cat) => cat.subcategories ?? [])
         : categoryList
-          .filter((cat) => cat.slug === selectedCategorySlug)
-          .flatMap((cat) => cat.subcategories ?? []);
+            .filter((cat) => cat.slug === selectedCategorySlug)
+            .flatMap((cat) => cat.subcategories ?? []);
 
     // Dedupe by id — two categories with overlapping subcategory ids would
     // otherwise show the same name twice.
@@ -460,8 +509,8 @@ export function LibraryProcedureExplorer({
 
     return [
       {
-        value: 'all',
-        label: isEs ? 'Todas las subcategorías' : 'All subcategories',
+        value: "all",
+        label: isEs ? "Todas las subcategorías" : "All subcategories",
         icon: PiFolders,
       },
       ...unique.map((sub) => {
@@ -478,23 +527,23 @@ export function LibraryProcedureExplorer({
   const statusOptions = React.useMemo(() => {
     return [
       {
-        value: 'all',
-        label: isEs ? 'Todos los estados' : 'All statuses',
+        value: "all",
+        label: isEs ? "Todos los estados" : "All statuses",
         icon: PiFolder,
       },
       {
-        value: 'published',
-        label: isEs ? 'Publicados' : 'Published',
+        value: "published",
+        label: isEs ? "Publicados" : "Published",
         icon: LuCircleCheck,
       },
       {
-        value: 'draft',
-        label: isEs ? 'Borradores' : 'Drafts',
+        value: "draft",
+        label: isEs ? "Borradores" : "Drafts",
         icon: LuFilePen,
       },
       {
-        value: 'archived',
-        label: isEs ? 'Archivados' : 'Archived',
+        value: "archived",
+        label: isEs ? "Archivados" : "Archived",
         icon: LuArchive,
       },
     ];
@@ -507,11 +556,14 @@ export function LibraryProcedureExplorer({
   const stationOptions = React.useMemo(() => {
     const visible = (liveStations ?? []).filter((s) => !s.isArchived);
     if (visible.length === 0) return [];
-    const sorted = [...visible].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
+    const sorted = [...visible].sort(
+      (a, b) =>
+        (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name),
+    );
     return [
       {
-        value: 'all',
-        label: isEs ? 'Todas las estaciones' : 'All stations',
+        value: "all",
+        label: isEs ? "Todas las estaciones" : "All stations",
         icon: PiSquaresFour,
       },
       ...sorted.map((s) => ({
@@ -527,26 +579,33 @@ export function LibraryProcedureExplorer({
     return allProcedures
       .filter((p) => {
         // Category Filter
-        if (selectedCategorySlug !== 'all') {
-          const procCat = p.category ?? (p.subcategoryId ? categoryList.find((c) => c.subcategories?.some((s) => s.id === p.subcategoryId)) : null);
+        if (selectedCategorySlug !== "all") {
+          const procCat =
+            p.category ??
+            (p.subcategoryId
+              ? categoryList.find((c) =>
+                  c.subcategories?.some((s) => s.id === p.subcategoryId),
+                )
+              : null);
           if (!procCat) return false;
           const rawKey = procCat.slug || procCat.id;
           const canonicalSlug = categorySlugMap.get(rawKey) || procCat.slug;
-          if (!categorySlugsMatch(canonicalSlug, selectedCategorySlug)) return false;
+          if (!categorySlugsMatch(canonicalSlug, selectedCategorySlug))
+            return false;
         }
 
         // Status Filter
-        if (statusFilter === 'archived') {
+        if (statusFilter === "archived") {
           if (!p.isArchived) return false;
         } else {
           if (p.isArchived) return false;
-          if (statusFilter !== 'all' && p.status !== statusFilter) return false;
+          if (statusFilter !== "all" && p.status !== statusFilter) return false;
         }
 
         // Subcategory Filter — string match on the procedure's FK. The
         // dropdown's options are already scoped to the selected category,
         // so an empty result means "no procedures in this subcategory yet".
-        if (selectedSubcategoryId !== 'all') {
+        if (selectedSubcategoryId !== "all") {
           if (!p.subcategoryId || p.subcategoryId !== selectedSubcategoryId) {
             return false;
           }
@@ -555,9 +614,13 @@ export function LibraryProcedureExplorer({
         // Station Filter — keep kitchen-wide procedures (mode: 'all') and the
         // ones whose stationScope explicitly names the picked station.
         // Procedures with no stationScope are treated as kitchen-wide.
-        if (stationFilter !== 'all') {
+        if (stationFilter !== "all") {
           const scope = p.stationScope;
-          if (scope && scope.mode === 'specific' && !scope.stationIds.includes(stationFilter)) {
+          if (
+            scope &&
+            scope.mode === "specific" &&
+            !scope.stationIds.includes(stationFilter)
+          ) {
             return false;
           }
         }
@@ -565,12 +628,14 @@ export function LibraryProcedureExplorer({
         // Search Query
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().trim();
-          const titleEn = (p.titleEn || '').toLowerCase();
-          const titleEs = (p.titleEs || '').toLowerCase();
-          const purposeEn = (p.purposeEn || '').toLowerCase();
-          const purposeEs = (p.purposeEs || '').toLowerCase();
-          const slug = (p.slug || '').toLowerCase();
-          const catName = p.category ? (isEs ? p.category.nameEs : p.category.nameEn).toLowerCase() : '';
+          const titleEn = (p.titleEn || "").toLowerCase();
+          const titleEs = (p.titleEs || "").toLowerCase();
+          const purposeEn = (p.purposeEn || "").toLowerCase();
+          const purposeEs = (p.purposeEs || "").toLowerCase();
+          const slug = (p.slug || "").toLowerCase();
+          const catName = p.category
+            ? (isEs ? p.category.nameEs : p.category.nameEn).toLowerCase()
+            : "";
 
           const match =
             titleEn.includes(q) ||
@@ -587,41 +652,69 @@ export function LibraryProcedureExplorer({
       })
       .sort((a, b) => {
         // Prioritize Guacamole Fresco dish at the top on default / updated sort
-        const isGuacA = a.id === 'proc-guacamole-fresco' || a.slug === 'guacamole-fresco' ? 1 : 0;
-        const isGuacB = b.id === 'proc-guacamole-fresco' || b.slug === 'guacamole-fresco' ? 1 : 0;
-        if ((!sortBy || sortBy === 'updated_desc') && isGuacA !== isGuacB) {
+        const isGuacA =
+          a.id === "proc-guacamole-fresco" || a.slug === "guacamole-fresco"
+            ? 1
+            : 0;
+        const isGuacB =
+          b.id === "proc-guacamole-fresco" || b.slug === "guacamole-fresco"
+            ? 1
+            : 0;
+        if ((!sortBy || sortBy === "updated_desc") && isGuacA !== isGuacB) {
           return isGuacB - isGuacA;
         }
-        if (sortBy === 'title_asc') {
-          const titleA = (isEs ? a.titleEs || a.titleEn : a.titleEn || a.titleEs).toLowerCase();
-          const titleB = (isEs ? b.titleEs || b.titleEn : b.titleEn || b.titleEs).toLowerCase();
+        if (sortBy === "title_asc") {
+          const titleA = (
+            isEs ? a.titleEs || a.titleEn : a.titleEn || a.titleEs
+          ).toLowerCase();
+          const titleB = (
+            isEs ? b.titleEs || b.titleEn : b.titleEn || b.titleEs
+          ).toLowerCase();
           return titleA.localeCompare(titleB);
         }
-        if (sortBy === 'title_desc') {
-          const titleA = (isEs ? a.titleEs || a.titleEn : a.titleEn || a.titleEs).toLowerCase();
-          const titleB = (isEs ? b.titleEs || b.titleEn : b.titleEn || b.titleEs).toLowerCase();
+        if (sortBy === "title_desc") {
+          const titleA = (
+            isEs ? a.titleEs || a.titleEn : a.titleEn || a.titleEs
+          ).toLowerCase();
+          const titleB = (
+            isEs ? b.titleEs || b.titleEn : b.titleEn || b.titleEs
+          ).toLowerCase();
           return titleB.localeCompare(titleA);
         }
-        if (sortBy === 'updated_asc') {
-          return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+        if (sortBy === "updated_asc") {
+          return (
+            new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()
+          );
         }
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        return (
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
       });
-  }, [allProcedures, selectedCategorySlug, selectedSubcategoryId, statusFilter, stationFilter, searchQuery, sortBy, isEs, categorySlugMap]);
+  }, [
+    allProcedures,
+    selectedCategorySlug,
+    selectedSubcategoryId,
+    statusFilter,
+    stationFilter,
+    searchQuery,
+    sortBy,
+    isEs,
+    categorySlugMap,
+  ]);
 
   const hasActiveFilters =
-    selectedCategorySlug !== 'all' ||
-    selectedSubcategoryId !== 'all' ||
-    statusFilter !== 'all' ||
-    stationFilter !== 'all' ||
+    selectedCategorySlug !== "all" ||
+    selectedSubcategoryId !== "all" ||
+    statusFilter !== "all" ||
+    stationFilter !== "all" ||
     searchQuery.trim().length > 0;
 
   const resetFilters = (): void => {
-    setSelectedCategorySlug('all');
-    setSelectedSubcategoryId('all');
-    setStatusFilter('all');
-    setStationFilter('all');
-    setSearchQuery('');
+    setSelectedCategorySlug("all");
+    setSelectedSubcategoryId("all");
+    setStatusFilter("all");
+    setStationFilter("all");
+    setSearchQuery("");
     setCurrentPage(1);
   };
 
@@ -630,7 +723,10 @@ export function LibraryProcedureExplorer({
   const totalItems = filteredProcedures.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const safePage = Math.min(Math.max(1, currentPage), totalPages);
-  const visibleProcedures = filteredProcedures.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const visibleProcedures = filteredProcedures.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
 
   // Clamp back into range when a filter shrinks the list under the page.
   React.useEffect(() => {
@@ -664,32 +760,58 @@ export function LibraryProcedureExplorer({
       <ProcedureExplorerFilters
         isEs={isEs}
         selectedCategorySlug={selectedCategorySlug}
-        onCategoryChange={(value) => { setSelectedCategorySlug(value); setCurrentPage(1); }}
+        onCategoryChange={(value) => {
+          setSelectedCategorySlug(value);
+          setCurrentPage(1);
+        }}
         categoryCounts={categoryCounts}
         categorySelectOptions={categorySelectOptions}
         selectedSubcategoryId={selectedSubcategoryId}
-        onSubcategoryChange={(value) => { setSelectedSubcategoryId(value); setCurrentPage(1); }}
+        onSubcategoryChange={(value) => {
+          setSelectedSubcategoryId(value);
+          setCurrentPage(1);
+        }}
         subcategoryOptions={subcategoryOptions}
         stationOptions={stationOptions}
         stationFilter={stationFilter}
-        onStationChange={(value) => { setStationFilter(value); setCurrentPage(1); }}
+        onStationChange={(value) => {
+          setStationFilter(value);
+          setCurrentPage(1);
+        }}
         statusFilter={statusFilter}
-        onStatusChange={(value) => { setStatusFilter(value as ProcedureStatus | 'all' | 'archived'); setCurrentPage(1); }}
+        onStatusChange={(value) => {
+          setStatusFilter(value as ProcedureStatus | "all" | "archived");
+          setCurrentPage(1);
+        }}
         statusOptions={statusOptions}
         searchQuery={searchQuery}
-        onSearchChange={(value) => { setSearchQuery(value); setCurrentPage(1); }}
+        onSearchChange={(value) => {
+          setSearchQuery(value);
+          setCurrentPage(1);
+        }}
         hasActiveFilters={hasActiveFilters}
         filteredCount={filteredProcedures.length}
         totalCount={allProcedures.length}
         onReset={resetFilters}
       />
       <ProcedureExplorerResults
-        loading={proceduresLoading || (hasActiveBackendFilters && isFilterLoading && !filterApiResponse)}
-        isEs={isEs} locale={locale} allProcedures={allProcedures}
-        filteredProcedures={filteredProcedures} visibleProcedures={visibleProcedures}
-        hasActiveFilters={hasActiveFilters} resetFilters={resetFilters}
-        categoryList={categoryList} subById={subById} liveStations={liveStations}
-        act={act} onArchive={onArchive} onDelete={handleDelete}
+        loading={
+          proceduresLoading ||
+          (hasActiveBackendFilters && isFilterLoading && !filterApiResponse)
+        }
+        isEs={isEs}
+        locale={locale}
+        allProcedures={allProcedures}
+        filteredProcedures={filteredProcedures}
+        visibleProcedures={visibleProcedures}
+        hasActiveFilters={hasActiveFilters}
+        resetFilters={resetFilters}
+        categoryList={categoryList}
+        subById={subById}
+        liveStations={liveStations}
+        act={act}
+        onArchive={onArchive}
+        onDelete={handleDelete}
       />
       {/* Pagination footer — 10 rows per page, no long scroll. */}
       {totalItems > 0 && (
@@ -700,7 +822,7 @@ export function LibraryProcedureExplorer({
           pageSize={PAGE_SIZE}
           onPageChange={setCurrentPage}
           isEs={isEs}
-          itemLabel={isEs ? 'procedimientos' : 'procedures'}
+          itemLabel={isEs ? "procedimientos" : "procedures"}
         />
       )}
     </div>

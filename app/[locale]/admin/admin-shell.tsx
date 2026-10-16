@@ -1,17 +1,32 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
-import type { Employee } from '@/lib/types';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { LocaleSwitch } from '@/components/ui/locale-switch';
-import { LuArrowLeft, LuArrowUpRight, LuChartColumn, LuChefHat, LuCirclePlus, LuClipboardList, LuFolders, LuGraduationCap, LuHouse, LuLogOut, LuMenu, LuUserPlus, LuUsers, LuX } from 'react-icons/lu';
-import { Icon } from '@/components/ui/icon';
-import { AdminSearch } from '@/components/admin/admin-search';
-import type { IconType } from 'react-icons';
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
+import type { Employee } from "@/lib/types";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { LocaleSwitch } from "@/components/ui/locale-switch";
+import {
+  LuArrowLeft,
+  LuArrowUpRight,
+  LuChartColumn,
+  LuChefHat,
+  LuCirclePlus,
+  LuClipboardList,
+  LuFolders,
+  LuGraduationCap,
+  LuHouse,
+  LuLogOut,
+  LuMenu,
+  LuUserPlus,
+  LuUsers,
+  LuX,
+} from "react-icons/lu";
+import { Icon } from "@/components/ui/icon";
+import { AdminSearch } from "@/components/admin/admin-search";
+import type { IconType } from "react-icons";
 
 /**
  * AdminShell — DESIGN.md §3.5 admin navigation.
@@ -45,7 +60,7 @@ import type { IconType } from 'react-icons';
 interface AdminShellProps {
   children: React.ReactNode;
   locale: string;
-  employee: Pick<Employee, 'id' | 'name' | 'role'>;
+  employee: Pick<Employee, "id" | "name" | "role">;
   /** The restaurant this admin area belongs to. The sidebar is the chrome, so
    *  the workspace name lives there rather than being repeated on every page. */
   workspace: string;
@@ -62,54 +77,63 @@ type NavItem = {
 
 type NavGroup = {
   headingKey:
-    | 'groupWorkspace'
-    | 'groupLibrary'
-    | 'groupTraining'
-    | 'groupPeople'
-    | 'groupSettings'
-    | 'groupSoon';
+    | "groupWorkspace"
+    | "groupLibrary"
+    | "groupTraining"
+    | "groupPeople"
+    | "groupSettings"
+    | "groupSoon";
   items: NavItem[];
 };
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    headingKey: 'groupWorkspace',
-    items: [{ href: '', icon: LuHouse, labelKey: 'navHome' }],
+    headingKey: "groupWorkspace",
+    items: [{ href: "", icon: LuHouse, labelKey: "navHome" }],
   },
   {
-    headingKey: 'groupLibrary',
+    headingKey: "groupLibrary",
     items: [
-      { href: '/library', icon: LuClipboardList, labelKey: 'navProcedures' },
-      { href: '/library/categories', icon: LuFolders, labelKey: 'navCategories' },
-      { href: '/library/new', icon: LuCirclePlus, labelKey: 'navNewProcedure' },
+      { href: "/library", icon: LuClipboardList, labelKey: "navProcedures" },
+      {
+        href: "/library/categories",
+        icon: LuFolders,
+        labelKey: "navCategories",
+      },
+      { href: "/library/new", icon: LuCirclePlus, labelKey: "navNewProcedure" },
     ],
   },
   {
-    headingKey: 'groupTraining',
+    headingKey: "groupTraining",
     items: [
-      { href: '/training', icon: LuGraduationCap, labelKey: 'navTraining' },
+      { href: "/training", icon: LuGraduationCap, labelKey: "navTraining" },
     ],
   },
   {
-    headingKey: 'groupPeople',
+    headingKey: "groupPeople",
     items: [
-      { href: '/employees', icon: LuUsers, labelKey: 'navEmployees' },
-      { href: '/employees/new', icon: LuUserPlus, labelKey: 'inviteEmployee' },
+      { href: "/employees", icon: LuUsers, labelKey: "navEmployees" },
+      { href: "/employees/new", icon: LuUserPlus, labelKey: "inviteEmployee" },
     ],
   },
   {
-    headingKey: 'groupSettings',
+    headingKey: "groupSettings",
     items: [
       // One Settings row that opens the single /admin/settings page — the
       // three sub-resources (stations, roles, locations) are now inline
       // panels in that page rather than separate URLs.
-      { href: '/settings', icon: LuChefHat, labelKey: 'navSettings' },
+      { href: "/settings", icon: LuChefHat, labelKey: "navSettings" },
     ],
   },
   {
-    headingKey: 'groupSoon',
+    headingKey: "groupSoon",
     items: [
-      { href: '/reports', icon: LuChartColumn, labelKey: 'navReports', soon: true },
+      {
+        href: "/reports",
+        icon: LuChartColumn,
+        labelKey: "navReports",
+        soon: true,
+      },
     ],
   },
 ];
@@ -121,9 +145,9 @@ export function AdminShell({
   workspace,
   signOutAction,
 }: AdminShellProps): React.ReactElement {
-  const t = useTranslations('admin');
-  const tApp = useTranslations('app');
-  const tShell = useTranslations('admin.shell');
+  const t = useTranslations("admin");
+  const tApp = useTranslations("app");
+  const tShell = useTranslations("admin.shell");
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
@@ -139,7 +163,7 @@ export function AdminShell({
       for (const item of group.items) {
         const full = `/${locale}/admin${item.href}`;
         const matches =
-          item.href === ''
+          item.href === ""
             ? pathname === full || pathname === `${full}/`
             : pathname === full || pathname.startsWith(`${full}/`);
         if (matches && (best === null || item.href.length > best.length)) {
@@ -167,13 +191,13 @@ export function AdminShell({
   React.useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setDrawerOpen(false);
+      if (e.key === "Escape") setDrawerOpen(false);
     };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
   }, [drawerOpen]);
@@ -187,10 +211,10 @@ export function AdminShell({
     headingFor: (key: string) => tShell(key),
     isActive,
     onNavigate: () => setDrawerOpen(false),
-    signOutLabel: t('signOut'),
-    backToAppLabel: t('backToApp'),
-    titleLabel: tShell('title'),
-    soonLabel: tShell('soon'),
+    signOutLabel: t("signOut"),
+    backToAppLabel: t("backToApp"),
+    titleLabel: tShell("title"),
+    soonLabel: tShell("soon"),
     signOutAction,
   };
 
@@ -198,22 +222,29 @@ export function AdminShell({
     // When viewing an individual procedure in the admin library (e.g. /admin/library/[id]),
     // make the background pure white to match the procedure document sheet.
     // Edit page /admin/library/[id]/edit is a wizard form, so keep the standard admin background.
-    const parts = pathname.split('/').filter(Boolean);
-    const adminIdx = parts.indexOf('admin');
-    if (adminIdx !== -1 && parts[adminIdx + 1] === 'library' && parts[adminIdx + 2]) {
+    const parts = pathname.split("/").filter(Boolean);
+    const adminIdx = parts.indexOf("admin");
+    if (
+      adminIdx !== -1 &&
+      parts[adminIdx + 1] === "library" &&
+      parts[adminIdx + 2]
+    ) {
       const segment = parts[adminIdx + 2];
       const subSegment = parts[adminIdx + 3];
-      return segment !== 'new' && segment !== 'categories' && subSegment !== 'edit';
+      return (
+        segment !== "new" && segment !== "categories" && subSegment !== "edit"
+      );
     }
     return false;
   }, [pathname]);
 
-
   return (
     <div
       className={cn(
-        'flex min-h-screen',
-        isProcedureDetailPage ? 'bg-[var(--color-bg)]' : 'bg-[var(--color-bg-admin)]',
+        "flex min-h-screen",
+        isProcedureDetailPage
+          ? "bg-[var(--color-bg)]"
+          : "bg-[var(--color-bg-admin)]",
       )}
     >
       {/* Desktop sidebar — visible at >= 900 px (DESIGN.md §5). */}
@@ -224,52 +255,57 @@ export function AdminShell({
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
-          aria-label={tShell('openNav')}
+          aria-label={tShell("openNav")}
           className={cn(
-            'inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)]',
-            'text-[var(--color-ink)] transition-colors duration-[var(--dur)] ease-[var(--ease)]',
-            'hover:bg-[var(--color-panel)] active:translate-y-px',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2',
+            "inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)]",
+            "text-[var(--color-ink)] transition-colors duration-[var(--dur)] ease-[var(--ease)]",
+            "hover:bg-[var(--color-panel)] active:translate-y-px",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2",
           )}
         >
           <LuMenu aria-hidden="true" className="text-lg" />
         </button>
         <span className="font-[family-name:var(--font-ui)] text-md font-semibold tracking-tight text-[var(--color-ink)]">
-          {tShell('title')}
+          {tShell("title")}
         </span>
         <span className="w-12" aria-hidden="true" />
       </header>
 
       {/* Mobile drawer — slide-in from the left, full-height, dark backdrop. */}
       {drawerOpen ? (
-        <div className="fixed inset-0 z-backdrop lg:hidden" role="dialog" aria-modal="true" aria-label={tShell('title')}>
+        <div
+          className="fixed inset-0 z-backdrop lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label={tShell("title")}
+        >
           <button
             type="button"
-            aria-label={tShell('closeNav')}
+            aria-label={tShell("closeNav")}
             onClick={() => setDrawerOpen(false)}
             className="absolute inset-0 cursor-default bg-scrim"
           />
           <div
             className={cn(
-              'absolute inset-y-0 left-0 flex w-sheet max-w-sheet flex-col',
-              'border-r border-[var(--color-line)] bg-[var(--color-surface)]',
-              'shadow-[var(--e-3)]',
+              "absolute inset-y-0 left-0 flex w-sheet max-w-sheet flex-col",
+              "border-r border-[var(--color-line)] bg-[var(--color-surface)]",
+              "shadow-[var(--e-3)]",
             )}
-            style={{ animation: 'drawer-in var(--dur) var(--ease) both' }}
+            style={{ animation: "drawer-in var(--dur) var(--ease) both" }}
           >
             <div className="flex h-bar items-center justify-between border-b border-[var(--color-line)] px-4">
               <span className="font-[family-name:var(--font-ui)] text-md font-semibold tracking-tight text-[var(--color-ink)]">
-                {tShell('title')}
+                {tShell("title")}
               </span>
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
-                aria-label={tShell('closeNav')}
+                aria-label={tShell("closeNav")}
                 className={cn(
-                  'inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)]',
-                  'text-[var(--color-ink)] transition-colors duration-[var(--dur)] ease-[var(--ease)]',
-                  'hover:bg-[var(--color-panel)] active:translate-y-px',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2',
+                  "inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)]",
+                  "text-[var(--color-ink)] transition-colors duration-[var(--dur)] ease-[var(--ease)]",
+                  "hover:bg-[var(--color-panel)] active:translate-y-px",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2",
                 )}
               >
                 <LuX aria-hidden="true" className="text-lg" />
@@ -293,13 +329,13 @@ export function AdminShell({
           <AdminSearch
             locale={locale}
             labels={{
-              label: tShell('searchLabel'),
-              placeholder: tShell('searchPlaceholder'),
-              procedures: tShell('searchProcedures'),
-              people: tShell('searchPeople'),
-              empty: tShell('searchEmpty'),
-              hint: tShell('searchHint'),
-              results: (n: number) => tShell('searchResults', { count: n }),
+              label: tShell("searchLabel"),
+              placeholder: tShell("searchPlaceholder"),
+              procedures: tShell("searchProcedures"),
+              people: tShell("searchPeople"),
+              empty: tShell("searchEmpty"),
+              hint: tShell("searchHint"),
+              results: (n: number) => tShell("searchResults", { count: n }),
             }}
           />
           <div className="ml-auto flex items-center gap-3">
@@ -312,19 +348,24 @@ export function AdminShell({
               href={`/${locale}/employee/home`}
               className="inline-flex min-h-tap-admin items-center gap-1 rounded-full px-3 text-sm font-medium text-[var(--color-ink-2)] transition-colors duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]"
             >
-              {t('backToApp')}
+              {t("backToApp")}
               {/* The mark for a link that leaves this area for the other one. */}
               <LuArrowUpRight aria-hidden="true" />
             </Link>
-            <ThemeToggle labels={{ toDark: tApp('themeToDark'), toLight: tApp('themeToLight') }} />
-            <LocaleSwitch locale={locale} label={tShell('langLabel')} />
+            <ThemeToggle
+              labels={{
+                toDark: tApp("themeToDark"),
+                toLight: tApp("themeToLight"),
+              }}
+            />
+            <LocaleSwitch locale={locale} label={tShell("langLabel")} />
           </div>
         </header>
 
         <main
           className={cn(
-            'min-w-0 flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8',
-            isProcedureDetailPage && 'bg-[var(--color-bg)]',
+            "min-w-0 flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8",
+            isProcedureDetailPage && "bg-[var(--color-bg)]",
           )}
         >
           {/* Keyed by locale, so the fade runs when the language changes rather
@@ -340,11 +381,11 @@ export function AdminShell({
 
 interface SidebarProps {
   locale: string;
-  employee: Pick<Employee, 'id' | 'name' | 'role'>;
+  employee: Pick<Employee, "id" | "name" | "role">;
   workspace: string;
   groups: NavGroup[];
   labelFor: (key: string) => string;
-  headingFor: (key: NavGroup['headingKey']) => string;
+  headingFor: (key: NavGroup["headingKey"]) => string;
   isActive: (href: string) => boolean;
   onNavigate: () => void;
   signOutLabel: string;
@@ -374,7 +415,7 @@ function Sidebar({
   return (
     <aside
       className={cn(
-        'sticky top-0 h-screen w-sidebar shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-surface)]',
+        "sticky top-0 h-screen w-sidebar shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-surface)]",
         className,
       )}
       aria-label={titleLabel}
@@ -396,12 +437,12 @@ function Sidebar({
         />
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold leading-heading text-[var(--color-white)]">
-            {workspace.split(',')[0] || titleLabel}
+            {workspace.split(",")[0] || titleLabel}
           </span>
           {/* White, not the peach tint: the tint reads at 4.09:1 on terracotta,
               under the 4.5:1 this size needs. The weight carries the hierarchy. */}
           <span className="block truncate text-sm leading-meta text-[var(--color-white)]">
-            {workspace.split(',').slice(1).join(',').trim() || titleLabel}
+            {workspace.split(",").slice(1).join(",").trim() || titleLabel}
           </span>
         </span>
       </div>
@@ -417,14 +458,14 @@ function Sidebar({
             {/* 14px, because 12px is the one size this system does not use on an
                 admin screen — and a group label is read, not decoration. The first
                 group is a single row called Home, which needs no heading over it. */}
-            {group.headingKey === 'groupWorkspace' ? null : (
+            {group.headingKey === "groupWorkspace" ? null : (
               <p className="px-3 pb-1 text-sm leading-meta text-[var(--color-ink-3)]">
                 {headingFor(group.headingKey)}
               </p>
             )}
             <ul className="space-y-0.5">
               {group.items.map((item) => (
-                <li key={item.href || 'home'}>
+                <li key={item.href || "home"}>
                   <NavLink
                     href={`/${locale}/admin${item.href}`}
                     icon={item.icon}
@@ -446,7 +487,13 @@ function Sidebar({
             aria-hidden="true"
             className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-sm font-semibold text-[var(--color-ink)]"
           >
-            {employee.name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase()}
+            {employee.name
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((w) => w[0])
+              .join("")
+              .toUpperCase()}
           </span>
           <span className="min-w-0 truncate text-sm font-medium text-[var(--color-ink)]">
             {employee.name}
@@ -456,11 +503,11 @@ function Sidebar({
           href={`/${locale}/employee/home`}
           onClick={onNavigate}
           className={cn(
-            'flex min-h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2',
-            'text-sm font-medium text-[var(--color-ink-2)]',
-            'transition-colors duration-[var(--dur)] ease-[var(--ease)]',
-            'hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2',
+            "flex min-h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2",
+            "text-sm font-medium text-[var(--color-ink-2)]",
+            "transition-colors duration-[var(--dur)] ease-[var(--ease)]",
+            "hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2",
           )}
         >
           <LuArrowLeft aria-hidden="true" className="text-md" />
@@ -516,27 +563,27 @@ function NavLink({
         }
         onClick();
       }}
-      aria-current={active ? 'page' : undefined}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        'group flex min-h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2',
-        'text-sm font-medium',
+        "group flex min-h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2",
+        "text-sm font-medium",
         // A sidebar link is passed over dozens of times an hour: the colour
         // lands at press speed, and the row gives a little when pressed.
-        'transition-[background-color,color,transform] duration-[var(--dur-press)] ease-[var(--ease)]',
-        'active:scale-[var(--press)]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2',
+        "transition-[background-color,color,transform] duration-[var(--dur-press)] ease-[var(--ease)]",
+        "active:scale-[var(--press)]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2",
         active
-          ? 'bg-[var(--color-nav-current)] text-[var(--color-brand-700)]'
-          : 'text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]',
+          ? "bg-[var(--color-nav-current)] text-[var(--color-brand-700)]"
+          : "text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]",
       )}
     >
       <Icon
         icon={icon}
         className={cn(
-          'text-md',
+          "text-md",
           active
-            ? 'text-[var(--color-brand-700)]'
-            : 'text-[var(--color-ink-3)] group-hover:text-[var(--color-ink-2)]',
+            ? "text-[var(--color-brand-700)]"
+            : "text-[var(--color-ink-3)] group-hover:text-[var(--color-ink-2)]",
         )}
       />
       <span className="flex-1 truncate">{label}</span>

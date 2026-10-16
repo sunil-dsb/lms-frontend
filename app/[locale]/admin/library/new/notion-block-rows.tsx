@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Notion-style composer for procedure blocks.
@@ -13,18 +13,18 @@
  * import + a `<NotionBlockList />` render.
  */
 
-import * as React from 'react';
-import { createPortal } from 'react-dom';
-import { useTranslations } from 'next-intl';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Popover } from '@/components/ui/popover';
-import { RowActions } from '@/components/ui/row-actions';
-import { LuTriangleAlert } from 'react-icons/lu';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import { Icon } from '@/components/ui/icon';
+import * as React from "react";
+import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Popover } from "@/components/ui/popover";
+import { RowActions } from "@/components/ui/row-actions";
+import { LuTriangleAlert } from "react-icons/lu";
+import { classifyVideoUrl } from "@/lib/procedure-media";
+import { Icon } from "@/components/ui/icon";
 import type {
   Localised,
   LocalisedOptional,
@@ -32,14 +32,21 @@ import type {
   ProcedureBlockKind,
   ProcedureMethodStep,
   ProcedureNoteKind,
-} from '@/lib/types';
-import { IconTile } from '@/components/ui/icon-tile';
-import { IngredientsBlockBody } from './ingredients-block-body';
-import { BilingualInput } from '@/components/ui/bilingual-input';
-import { LocalisedInput } from '@/components/ui/localised-input';
-import { StepTimerEditor } from './step-timer-editor';
-import { BlockBody } from './notion-block-body';
-import { asLoc, asOpt, isAllowedImageFile, readFileAsDataUrl, setLoc, setOpt } from './notion-block-shared';
+} from "@/lib/types";
+import { IconTile } from "@/components/ui/icon-tile";
+import { IngredientsBlockBody } from "./ingredients-block-body";
+import { BilingualInput } from "@/components/ui/bilingual-input";
+import { LocalisedInput } from "@/components/ui/localised-input";
+import { StepTimerEditor } from "./step-timer-editor";
+import { BlockBody } from "./notion-block-body";
+import {
+  asLoc,
+  asOpt,
+  isAllowedImageFile,
+  readFileAsDataUrl,
+  setLoc,
+  setOpt,
+} from "./notion-block-shared";
 
 interface BlockMenuProps {
   block: ProcedureBlock;
@@ -48,7 +55,7 @@ interface BlockMenuProps {
   onChange: (next: ProcedureBlock[]) => void;
   onDuplicate: () => void;
   onRemove?: () => void;
-  onMove: (direction: 'up' | 'down') => void;
+  onMove: (direction: "up" | "down") => void;
 }
 
 function getBlockDeleteInfo(block: ProcedureBlock): {
@@ -58,101 +65,101 @@ function getBlockDeleteInfo(block: ProcedureBlock): {
   description: string;
 } {
   switch (block.kind) {
-    case 'method': {
+    case "method": {
       const stepCount = block.steps?.length ?? 0;
-      const stepText = stepCount === 1 ? '1 step' : `${stepCount} steps`;
+      const stepText = stepCount === 1 ? "1 step" : `${stepCount} steps`;
       return {
-        title: 'Delete this section?',
-        name: 'Numbered steps',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Numbered steps",
+        label: "Delete section",
         description: `"Numbered steps" and its ${stepText}, photos, and timers will be permanently removed. This can't be undone.`,
       };
     }
-    case 'recipe': {
+    case "recipe": {
       const stepCount = block.steps?.length ?? 0;
-      const stepText = stepCount === 1 ? '1 step' : `${stepCount} steps`;
+      const stepText = stepCount === 1 ? "1 step" : `${stepCount} steps`;
       return {
-        title: 'Delete this section?',
-        name: 'Recipe',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Recipe",
+        label: "Delete section",
         description: `"Recipe" and its ingredients, ${stepText}, and metrics will be permanently removed. This can't be undone.`,
       };
     }
-    case 'ingredients': {
+    case "ingredients": {
       const ingCount = block.ingredients?.length ?? 0;
       return {
-        title: 'Delete this section?',
-        name: 'Ingredients',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Ingredients",
+        label: "Delete section",
         description: `"Ingredients" and its ${ingCount} items will be permanently removed. This can't be undone.`,
       };
     }
-    case 'table': {
+    case "table": {
       const rowCount = block.rows?.length ?? 0;
       const colCount = block.headers?.length ?? 0;
       return {
-        title: 'Delete this section?',
-        name: 'Table',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Table",
+        label: "Delete section",
         description: `"Table" and its ${colCount} columns and ${rowCount} rows will be permanently removed. This can't be undone.`,
       };
     }
-    case 'checklist': {
+    case "checklist": {
       const itemCount = block.items?.length ?? 0;
       return {
-        title: 'Delete this section?',
-        name: 'Checklist',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Checklist",
+        label: "Delete section",
         description: `"Checklist" and its ${itemCount} items will be permanently removed. This can't be undone.`,
       };
     }
-    case 'warning':
+    case "warning":
       return {
-        title: 'Delete this section?',
-        name: 'Callout',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Callout",
+        label: "Delete section",
         description: `"Callout" and its notice text will be permanently removed. This can't be undone.`,
       };
-    case 'image':
+    case "image":
       return {
-        title: 'Delete this section?',
-        name: 'Image',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Image",
+        label: "Delete section",
         description: `"Image" and its media content will be permanently removed. This can't be undone.`,
       };
-    case 'video':
+    case "video":
       return {
-        title: 'Delete this section?',
-        name: 'Video',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Video",
+        label: "Delete section",
         description: `"Video" and its media content will be permanently removed. This can't be undone.`,
       };
-    case 'attachment':
+    case "attachment":
       return {
-        title: 'Delete this section?',
-        name: 'Attachment',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Attachment",
+        label: "Delete section",
         description: `"Attachment" and its file link will be permanently removed. This can't be undone.`,
       };
-    case 'heading':
+    case "heading":
       return {
-        title: 'Delete this section?',
+        title: "Delete this section?",
         name: `Heading H${block.level}`,
-        label: 'Delete section',
+        label: "Delete section",
         description: `"Heading H${block.level}" will be permanently removed. This can't be undone.`,
       };
-    case 'text':
+    case "text":
       return {
-        title: 'Delete this section?',
-        name: 'Text',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Text",
+        label: "Delete section",
         description: `"Text" and its paragraph content will be permanently removed. This can't be undone.`,
       };
     default:
       return {
-        title: 'Delete this section?',
-        name: 'Block',
-        label: 'Delete section',
+        title: "Delete this section?",
+        name: "Block",
+        label: "Delete section",
         description: `This block and its contents will be permanently removed. This can't be undone.`,
       };
   }
@@ -163,13 +170,20 @@ interface BlockDeleteButtonProps {
   onRemove: () => void;
 }
 
-function BlockDeleteButton({ block, onRemove }: BlockDeleteButtonProps): React.ReactElement {
-  const tAdmin = useTranslations('admin');
+function BlockDeleteButton({
+  block,
+  onRemove,
+}: BlockDeleteButtonProps): React.ReactElement {
+  const tAdmin = useTranslations("admin");
   const deleteInfo = React.useMemo(() => getBlockDeleteInfo(block), [block]);
   const [open, setOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const popoverRef = React.useRef<HTMLDivElement>(null);
-  const [pos, setPos] = React.useState<{ top: number; right: number; origin: string } | null>(null);
+  const [pos, setPos] = React.useState<{
+    top: number;
+    right: number;
+    origin: string;
+  } | null>(null);
 
   const anchor = React.useCallback((): void => {
     const trigger = triggerRef.current;
@@ -187,18 +201,18 @@ function BlockDeleteButton({ block, onRemove }: BlockDeleteButtonProps): React.R
     setPos({
       top: Math.max(12, Math.min(window.innerHeight - height - 12, top)),
       right: Math.max(12, right),
-      origin: flipped ? 'bottom right' : 'top right',
+      origin: flipped ? "bottom right" : "top right",
     });
   }, []);
 
   React.useLayoutEffect(() => {
     if (!open) return;
     anchor();
-    window.addEventListener('scroll', anchor, true);
-    window.addEventListener('resize', anchor);
+    window.addEventListener("scroll", anchor, true);
+    window.addEventListener("resize", anchor);
     return () => {
-      window.removeEventListener('scroll', anchor, true);
-      window.removeEventListener('resize', anchor);
+      window.removeEventListener("scroll", anchor, true);
+      window.removeEventListener("resize", anchor);
     };
   }, [open, anchor]);
 
@@ -215,24 +229,24 @@ function BlockDeleteButton({ block, onRemove }: BlockDeleteButtonProps): React.R
       }
     };
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
     };
   }, [open]);
 
   return (
     <div
       className={cn(
-        'relative inline-flex rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] shadow-e1 transition-colors',
-        'hover:border-[var(--color-bad)]/40 hover:bg-[var(--color-bad-tint)]',
-        open && 'border-[var(--color-bad)]/40 bg-[var(--color-bad-tint)]',
+        "relative inline-flex rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] shadow-e1 transition-colors",
+        "hover:border-[var(--color-bad)]/40 hover:bg-[var(--color-bad-tint)]",
+        open && "border-[var(--color-bad)]/40 bg-[var(--color-bad-tint)]",
       )}
     >
       <Button
@@ -246,8 +260,8 @@ function BlockDeleteButton({ block, onRemove }: BlockDeleteButtonProps): React.R
         title={deleteInfo.label}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          'text-[var(--color-ink-3)] hover:text-[var(--color-bad)] hover:bg-transparent',
-          open && 'text-[var(--color-bad)]',
+          "text-[var(--color-ink-3)] hover:text-[var(--color-bad)] hover:bg-transparent",
+          open && "text-[var(--color-bad)]",
         )}
       >
         <Icon icon="ri-delete-bin-line" className="text-base" />
@@ -263,7 +277,7 @@ function BlockDeleteButton({ block, onRemove }: BlockDeleteButtonProps): React.R
               style={{
                 top: pos?.top ?? -9999,
                 right: pos?.right ?? 0,
-                ['--pop-origin' as string]: pos?.origin ?? 'top right',
+                ["--pop-origin" as string]: pos?.origin ?? "top right",
               }}
               className="pop-in fixed z-dropdown w-[340px] max-w-[calc(100vw-32px)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 shadow-[var(--e-3)] text-left"
             >
@@ -288,7 +302,7 @@ function BlockDeleteButton({ block, onRemove }: BlockDeleteButtonProps): React.R
                     variant="neutral"
                     onClick={() => setOpen(false)}
                   >
-                    {tAdmin('confirmNo')}
+                    {tAdmin("confirmNo")}
                   </Button>
                   <Button
                     type="button"
@@ -312,20 +326,41 @@ function BlockDeleteButton({ block, onRemove }: BlockDeleteButtonProps): React.R
   );
 }
 
-function BlockMenu({ index, total, onDuplicate, onMove }: BlockMenuProps): React.ReactElement {
-  const t = useTranslations('admin.library.new.form');
+function BlockMenu({
+  index,
+  total,
+  onDuplicate,
+  onMove,
+}: BlockMenuProps): React.ReactElement {
+  const t = useTranslations("admin.library.new.form");
   // Items that don't apply at the current boundary are filtered out entirely
   // (move-up at the first row, move-down at the last row). Hiding them is
   // honest about what the user can do and avoids a `disabled` prop on the
   // shared RowActionItem type.
   const items = [
     ...(index > 0
-      ? [{ label: t('blockActions.moveUp'), icon: 'ri-arrow-up-line', onSelect: () => onMove('up') }]
+      ? [
+          {
+            label: t("blockActions.moveUp"),
+            icon: "ri-arrow-up-line",
+            onSelect: () => onMove("up"),
+          },
+        ]
       : []),
     ...(index < total - 1
-      ? [{ label: t('blockActions.moveDown'), icon: 'ri-arrow-down-line', onSelect: () => onMove('down') }]
+      ? [
+          {
+            label: t("blockActions.moveDown"),
+            icon: "ri-arrow-down-line",
+            onSelect: () => onMove("down"),
+          },
+        ]
       : []),
-    { label: t('blockActions.duplicate'), icon: 'ri-file-copy-line', onSelect: onDuplicate },
+    {
+      label: t("blockActions.duplicate"),
+      icon: "ri-file-copy-line",
+      onSelect: onDuplicate,
+    },
   ];
   return (
     <RowActions
@@ -348,7 +383,7 @@ interface BlockRowProps {
   error?: string;
   onPatch: (next: ProcedureBlock) => void;
   onRemove: () => void;
-  onMove: (direction: 'up' | 'down') => void;
+  onMove: (direction: "up" | "down") => void;
   onDuplicate: () => void;
   onInsertAfter: (kind: ProcedureBlockKind) => void;
 }
@@ -364,7 +399,14 @@ export function BlockRow({
   onDuplicate,
   onInsertAfter,
 }: BlockRowProps): React.ReactElement {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: block.id,
   });
   const [isHover, setIsHover] = React.useState(false);
@@ -385,12 +427,13 @@ export function BlockRow({
       onMouseEnter={() => setIsHover(true)}
       onMouseLeave={() => setIsHover(false)}
       className={cn(
-        'group rounded-[var(--radius-lg)] border bg-[var(--color-surface)] p-4 transition-all duration-200 outline-none',
+        "group rounded-[var(--radius-lg)] border bg-[var(--color-surface)] p-4 transition-all duration-200 outline-none",
         error
-          ? 'border-[var(--color-warn)]/60'
-          : 'border-[var(--color-line-2)] hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)]/50 focus-within:border-[var(--color-line-3)] focus-within:bg-[var(--color-wash)] focus-within:shadow-sm',
-        isHover && !error && 'border-[var(--color-line-3)]',
-        isDragging && 'opacity-60 z-dropdown bg-[var(--color-wash)] border-[var(--color-line-3)] shadow-e2',
+          ? "border-[var(--color-warn)]/60"
+          : "border-[var(--color-line-2)] hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)]/50 focus-within:border-[var(--color-line-3)] focus-within:bg-[var(--color-wash)] focus-within:shadow-sm",
+        isHover && !error && "border-[var(--color-line-3)]",
+        isDragging &&
+          "opacity-60 z-dropdown bg-[var(--color-wash)] border-[var(--color-line-3)] shadow-e2",
       )}
     >
       {/* Inline block error text when validation fails */}
@@ -419,27 +462,27 @@ export function BlockRow({
 
         {/* Block kind indicator badge */}
         <span className="inline-flex items-center rounded bg-[var(--color-wash)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-ink-3)] group-focus-within:bg-[var(--color-surface)] group-focus-within:text-[var(--color-ink)] group-focus-within:shadow-e1 transition-all">
-          {block.kind === 'text'
-            ? 'Text'
-            : block.kind === 'heading'
+          {block.kind === "text"
+            ? "Text"
+            : block.kind === "heading"
               ? `Heading H${block.level}`
-              : block.kind === 'method'
-                ? 'Numbered steps'
-                : block.kind === 'checklist'
-                  ? 'Checklist'
-                  : block.kind === 'warning'
-                    ? 'Callout'
-                    : block.kind === 'ingredients'
-                      ? 'Ingredients'
-                      : block.kind === 'recipe'
-                        ? 'Recipe'
-                        : block.kind === 'image'
-                          ? 'Image'
-                          : block.kind === 'video'
-                            ? 'Video'
-                            : block.kind === 'attachment'
-                              ? 'Attachment'
-                              : 'Table'}
+              : block.kind === "method"
+                ? "Numbered steps"
+                : block.kind === "checklist"
+                  ? "Checklist"
+                  : block.kind === "warning"
+                    ? "Callout"
+                    : block.kind === "ingredients"
+                      ? "Ingredients"
+                      : block.kind === "recipe"
+                        ? "Recipe"
+                        : block.kind === "image"
+                          ? "Image"
+                          : block.kind === "video"
+                            ? "Video"
+                            : block.kind === "attachment"
+                              ? "Attachment"
+                              : "Table"}
         </span>
 
         {/* Spacer pushes actions to the right */}
@@ -452,7 +495,9 @@ export function BlockRow({
             block={block}
             index={index}
             total={total}
-            onChange={() => { /* actions route through their own callbacks */ }}
+            onChange={() => {
+              /* actions route through their own callbacks */
+            }}
             onDuplicate={onDuplicate}
             onMove={onMove}
           />
@@ -460,7 +505,11 @@ export function BlockRow({
       </div>
 
       {/* Block body */}
-      <BlockBody block={block} onPatch={onPatch} onInsertAfter={onInsertAfter} />
+      <BlockBody
+        block={block}
+        onPatch={onPatch}
+        onInsertAfter={onInsertAfter}
+      />
     </div>
   );
 }
@@ -489,28 +538,48 @@ export function InsertAfterButton({
         aria-label="Insert block below"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex size-8 items-center justify-center rounded-md transition-all',
+          "flex size-8 items-center justify-center rounded-md transition-all",
           ghost
-            ? 'text-[var(--color-ink-3)] opacity-30 hover:opacity-100 hover:bg-[var(--color-wash)] hover:text-[var(--color-ink-2)]'
-            : 'bg-[var(--color-surface)] text-[var(--color-ink-2)] ring-1 ring-[var(--color-line-2)] shadow-e1 hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] hover:ring-[var(--color-line-3)]',
+            ? "text-[var(--color-ink-3)] opacity-30 hover:opacity-100 hover:bg-[var(--color-wash)] hover:text-[var(--color-ink-2)]"
+            : "bg-[var(--color-surface)] text-[var(--color-ink-2)] ring-1 ring-[var(--color-line-2)] shadow-e1 hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] hover:ring-[var(--color-line-3)]",
         )}
       >
         <Icon icon="ri-add-line" className="text-lg" />
       </button>
-      <Popover open={open} onClose={() => setOpen(false)} triggerRef={triggerRef} align="start" width={220}>
+      <Popover
+        open={open}
+        onClose={() => setOpen(false)}
+        triggerRef={triggerRef}
+        align="start"
+        width={220}
+      >
         <div className="p-1 space-y-0.5">
-          {([
-            { kind: 'text', label: 'Text', icon: 'ri-text' },
-            { kind: 'heading', label: 'Heading', icon: 'ri-h-1' },
-            { kind: 'method', label: 'Numbered steps', icon: 'ri-list-ordered' },
-            { kind: 'checklist', label: 'Checklist', icon: 'ri-list-check' },
-            { kind: 'table', label: 'Table', icon: 'ri-table-line' },
-            { kind: 'warning', label: 'Callout', icon: 'ri-alert-line' },
-            { kind: 'image', label: 'Photograph', icon: 'ri-image-line' },
-            { kind: 'video', label: 'Video', icon: 'ri-video-line' },
-            { kind: 'attachment', label: 'Attachment', icon: 'ri-attachment-line' },
-            { kind: 'ingredients', label: 'Ingredients', icon: 'ri-restaurant-line' },
-          ] as { kind: ProcedureBlockKind; label: string; icon: string }[]).map((opt) => (
+          {(
+            [
+              { kind: "text", label: "Text", icon: "ri-text" },
+              { kind: "heading", label: "Heading", icon: "ri-h-1" },
+              {
+                kind: "method",
+                label: "Numbered steps",
+                icon: "ri-list-ordered",
+              },
+              { kind: "checklist", label: "Checklist", icon: "ri-list-check" },
+              { kind: "table", label: "Table", icon: "ri-table-line" },
+              { kind: "warning", label: "Callout", icon: "ri-alert-line" },
+              { kind: "image", label: "Photograph", icon: "ri-image-line" },
+              { kind: "video", label: "Video", icon: "ri-video-line" },
+              {
+                kind: "attachment",
+                label: "Attachment",
+                icon: "ri-attachment-line",
+              },
+              {
+                kind: "ingredients",
+                label: "Ingredients",
+                icon: "ri-restaurant-line",
+              },
+            ] as { kind: ProcedureBlockKind; label: string; icon: string }[]
+          ).map((opt) => (
             <button
               key={opt.kind}
               type="button"
@@ -520,7 +589,10 @@ export function InsertAfterButton({
               }}
               className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-[var(--color-ink)] hover:bg-[var(--color-wash)] transition-colors"
             >
-              <Icon icon={opt.icon} className="text-base text-[var(--color-ink-2)]" />
+              <Icon
+                icon={opt.icon}
+                className="text-base text-[var(--color-ink-2)]"
+              />
               <span className="font-medium">{opt.label}</span>
             </button>
           ))}
@@ -535,4 +607,3 @@ export function InsertAfterButton({
 // block shows a table, a steps block shows numbered rows, an image block
 // shows a drop zone. No chrome, no badges, no per-block header.
 // ---------------------------------------------------------------------------
-

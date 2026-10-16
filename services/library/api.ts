@@ -7,20 +7,23 @@
  * - POST /api/v1/procedures       (Create Procedure, Bearer auth)
  */
 
-import http from '@/lib/http';
-import { LIBRARY_ENDPOINTS } from './endpoints';
-import type { Procedure, CreateProcedureInput } from '@/lib/types';
-import type { ProcedureFilterOptions, AssignedProceduresFilterOptions } from './types';
-import { normalizeBackendProcedure, normalizeBlocks } from './normalization';
-export { normalizeBackendProcedure } from './normalization';
+import http from "@/lib/http";
+import { LIBRARY_ENDPOINTS } from "./endpoints";
+import type { Procedure, CreateProcedureInput } from "@/lib/types";
+import type {
+  ProcedureFilterOptions,
+  AssignedProceduresFilterOptions,
+} from "./types";
+import { normalizeBackendProcedure, normalizeBlocks } from "./normalization";
+export { normalizeBackendProcedure } from "./normalization";
 
 function makeHeaders(cookieHeader?: string): Record<string, string> {
   const headers: Record<string, string> = {};
   if (cookieHeader) {
-    headers['Cookie'] = cookieHeader;
+    headers["Cookie"] = cookieHeader;
     const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
     if (tokenMatch) {
-      headers['Authorization'] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+      headers["Authorization"] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
     }
   }
   return headers;
@@ -28,7 +31,9 @@ function makeHeaders(cookieHeader?: string): Record<string, string> {
 
 export function isUuid(val: string | null | undefined): boolean {
   if (!val) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    val,
+  );
 }
 
 /** POST /api/v1/procedures/import — upload a doc/pdf/txt file and get back
@@ -40,7 +45,7 @@ export async function importProcedure(
   opts?: { signal?: AbortSignal; timeoutMs?: number },
 ): Promise<Procedure> {
   const form = new FormData();
-  form.append('file', file, file.name);
+  form.append("file", file, file.name);
   const { data } = await http.post<{
     success: boolean;
     message: string;
@@ -50,7 +55,7 @@ export async function importProcedure(
     timeout: opts?.timeoutMs ?? 120_000,
   });
   if (!data.data?.procedure) {
-    throw new Error('Backend did not return imported procedure');
+    throw new Error("Backend did not return imported procedure");
   }
   return normalizeBackendProcedure(data.data.procedure);
 }
@@ -71,9 +76,15 @@ export async function fetchProcedures(
   const search = options.search ?? options.q ?? undefined;
 
   const validCategoryIds = options.categoryIds?.filter((id) => isUuid(id));
-  const validSubcategoryIds = options.subcategoryIds?.filter((id) => isUuid(id));
+  const validSubcategoryIds = options.subcategoryIds?.filter((id) =>
+    isUuid(id),
+  );
   const validStationIds = options.stationIds?.filter((id) => isUuid(id));
-  const validStatus = options.status && ['draft', 'published', 'archived'].includes(options.status) ? options.status : undefined;
+  const validStatus =
+    options.status &&
+    ["draft", "published", "archived"].includes(options.status)
+      ? options.status
+      : undefined;
 
   // ID-list filters and status filters live on GET /procedures/filter; plain search/page
   // stay on GET /procedures. Both return { procedures, meta }.
@@ -87,20 +98,27 @@ export async function fetchProcedures(
   if (validStatus) params.status = validStatus;
   if (search) params.search = search;
   if (useFilter) {
-    if (validCategoryIds?.length) params.categoryIds = validCategoryIds.join(',');
-    if (validSubcategoryIds?.length) params.subcategoryIds = validSubcategoryIds.join(',');
-    if (validStationIds?.length) params.stationIds = validStationIds.join(',');
+    if (validCategoryIds?.length)
+      params.categoryIds = validCategoryIds.join(",");
+    if (validSubcategoryIds?.length)
+      params.subcategoryIds = validSubcategoryIds.join(",");
+    if (validStationIds?.length) params.stationIds = validStationIds.join(",");
   }
 
   const { data } = await http.get<{
     success: boolean;
-    data: { procedures: Procedure[]; meta?: { total: number; totalPages: number } };
+    data: {
+      procedures: Procedure[];
+      meta?: { total: number; totalPages: number };
+    };
   }>(useFilter ? LIBRARY_ENDPOINTS.FILTER : LIBRARY_ENDPOINTS.LIST, {
     headers: Object.keys(headers).length ? headers : undefined,
     params,
   });
 
-  const rawList = Array.isArray(data.data?.procedures) ? data.data.procedures : [];
+  const rawList = Array.isArray(data.data?.procedures)
+    ? data.data.procedures
+    : [];
   const procedures = rawList.map(normalizeBackendProcedure);
   await resolveBackendCategories(procedures, cookieHeader);
   const total = data.data?.meta?.total ?? procedures.length;
@@ -113,18 +131,29 @@ export async function fetchProcedures(
  *  category list (one batched call, in parallel-safe position) and folds the
  *  in-use subcategories into their categories for the dropdowns. Failures
  *  keep the old behavior (null category) — the list still renders. */
-async function resolveBackendCategories(procedures: Procedure[], cookieHeader?: string): Promise<void> {
-  const needsResolution = procedures.some((p) => !p.category && p.subcategoryId);
+async function resolveBackendCategories(
+  procedures: Procedure[],
+  cookieHeader?: string,
+): Promise<void> {
+  const needsResolution = procedures.some(
+    (p) => !p.category && p.subcategoryId,
+  );
   if (!needsResolution) return;
   try {
-    const { fetchBackendCategories, backendSlug } = await import('@/services/categories/api');
+    const { fetchBackendCategories, backendSlug } =
+      await import("@/services/categories/api");
     const cats = await fetchBackendCategories({}, cookieHeader);
     const byId = new Map(cats.map((c) => [c.id, c]));
     const subSeen = new Set<string>();
     for (const p of procedures) {
       const sub = (
         p as unknown as {
-          subcategory?: { id: string; categoryId: string; nameEn: string; nameEs: string } | null;
+          subcategory?: {
+            id: string;
+            categoryId: string;
+            nameEn: string;
+            nameEs: string;
+          } | null;
         }
       ).subcategory;
       if (!sub) continue;
@@ -153,11 +182,15 @@ async function resolveBackendCategories(procedures: Procedure[], cookieHeader?: 
 export async function fetchAssignedProcedures(
   options: AssignedProceduresFilterOptions = {},
   cookieHeader?: string,
-): Promise<{ procedures: Procedure[]; total: number; meta?: { page: number; limit: number; total: number; totalPages: number } }> {
+): Promise<{
+  procedures: Procedure[];
+  total: number;
+  meta?: { page: number; limit: number; total: number; totalPages: number };
+}> {
   const headers = makeHeaders(cookieHeader);
   const params: Record<string, any> = {};
 
-  if (options.scope === 'mine' || options.scope === 'all') {
+  if (options.scope === "mine" || options.scope === "all") {
     params.scope = options.scope;
   }
   if (options.categoryId && isUuid(options.categoryId)) {
@@ -184,7 +217,9 @@ export async function fetchAssignedProcedures(
     params,
   });
 
-  const rawList = Array.isArray(data.data?.procedures) ? data.data.procedures : [];
+  const rawList = Array.isArray(data.data?.procedures)
+    ? data.data.procedures
+    : [];
   const procedures = rawList.map(normalizeBackendProcedure);
   await resolveBackendCategories(procedures, cookieHeader);
   const total = data.data?.meta?.total ?? procedures.length;
@@ -237,49 +272,75 @@ export async function fetchProcedureById(
  *  write must ship the complete payload. Shared between create and
  *  update: titles/purposes fall back across languages, blocks get
  *  normalised, and mock-only ids are mapped to their real UUIDs. */
-function buildProcedurePayload(input: Partial<CreateProcedureInput>): Record<string, any> {
-  let titleEn = (input.titleEn || input.titleEs || 'Untitled Procedure').trim();
-  let titleEs = (input.titleEs || input.titleEn || 'Procedimiento sin título').trim();
+function buildProcedurePayload(
+  input: Partial<CreateProcedureInput>,
+): Record<string, any> {
+  let titleEn = (input.titleEn || input.titleEs || "Untitled Procedure").trim();
+  let titleEs = (
+    input.titleEs ||
+    input.titleEn ||
+    "Procedimiento sin título"
+  ).trim();
   if (titleEn.length > 200) titleEn = titleEn.slice(0, 200);
   if (titleEs.length > 200) titleEs = titleEs.slice(0, 200);
 
-  const purposeEn = (input.purposeEn || input.purposeEs || titleEn).trim() || titleEn;
-  const purposeEs = (input.purposeEs || input.purposeEn || titleEs).trim() || titleEs;
+  const purposeEn =
+    (input.purposeEn || input.purposeEs || titleEn).trim() || titleEn;
+  const purposeEs =
+    (input.purposeEs || input.purposeEn || titleEs).trim() || titleEs;
 
   const blocksEn = normalizeBlocks(input.bodyEn?.blocks ?? []);
   const blocksEs = normalizeBlocks(input.bodyEs?.blocks ?? []);
 
-  const finalBlocksEn = blocksEn.length > 0
-    ? blocksEn
-    : [{ id: 'b-init-1', kind: 'text', body: { en: purposeEn, es: purposeEs } }];
-  const finalBlocksEs = blocksEs.length > 0
-    ? blocksEs
-    : [{ id: 'b-init-1', kind: 'text', body: { en: purposeEn, es: purposeEs } }];
+  const finalBlocksEn =
+    blocksEn.length > 0
+      ? blocksEn
+      : [
+          {
+            id: "b-init-1",
+            kind: "text",
+            body: { en: purposeEn, es: purposeEs },
+          },
+        ];
+  const finalBlocksEs =
+    blocksEs.length > 0
+      ? blocksEs
+      : [
+          {
+            id: "b-init-1",
+            kind: "text",
+            body: { en: purposeEn, es: purposeEs },
+          },
+        ];
 
   // Only live UUIDs go out — the wizard resolves mock picks to live ids
   // before calling. Anything else becomes null (backend-valid: a
   // procedure may live without a subcategory) instead of a dead UUID
   // that dies with SUBCATEGORY_NOT_FOUND.
-  const subcategoryId = isUuid(input.subcategoryId) ? input.subcategoryId : null;
+  const subcategoryId = isUuid(input.subcategoryId)
+    ? input.subcategoryId
+    : null;
   const stationId = isUuid(input.stationId)
     ? input.stationId
-    : input.stationScope?.stationIds?.[0] && isUuid(input.stationScope.stationIds[0])
+    : input.stationScope?.stationIds?.[0] &&
+        isUuid(input.stationScope.stationIds[0])
       ? input.stationScope.stationIds[0]
       : input.audience?.stationIds?.[0] && isUuid(input.audience.stationIds[0])
         ? input.audience.stationIds[0]
         : null;
   const quizId = isUuid(input.quizId) ? input.quizId : null;
   const procedureImage =
-    typeof input.procedureImage === 'string' && input.procedureImage.length > 0
+    typeof input.procedureImage === "string" && input.procedureImage.length > 0
       ? input.procedureImage
-      : typeof input.iconImageUrl === 'string' && input.iconImageUrl.length > 0
+      : typeof input.iconImageUrl === "string" && input.iconImageUrl.length > 0
         ? input.iconImageUrl
         : null;
 
   const rawAssignUsers =
     Array.isArray(input.assignUsers) && input.assignUsers.length > 0
       ? input.assignUsers
-      : Array.isArray(input.audience?.employeeIds) && input.audience.employeeIds.length > 0
+      : Array.isArray(input.audience?.employeeIds) &&
+          input.audience.employeeIds.length > 0
         ? input.audience.employeeIds
         : [];
   const validUsers = rawAssignUsers.filter(isUuid);
@@ -289,7 +350,7 @@ function buildProcedurePayload(input: Partial<CreateProcedureInput>): Record<str
     titleEs,
     purposeEn,
     purposeEs,
-    status: input.status === 'published' ? 'published' : 'draft',
+    status: input.status === "published" ? "published" : "draft",
     bodyEn: { blocks: finalBlocksEn },
     bodyEs: { blocks: finalBlocksEs },
   };
@@ -309,7 +370,7 @@ function buildProcedurePayload(input: Partial<CreateProcedureInput>): Record<str
       ? input.stationIds
       : input.stationScope?.stationIds?.length
         ? input.stationScope.stationIds
-        : input.audience?.stationIds ?? []
+        : (input.audience?.stationIds ?? [])
   ).filter(isUuid);
   if (stationIds.length > 0) payload.stationIds = stationIds;
   if (quizId) payload.quizId = quizId;
@@ -331,16 +392,23 @@ function normalizeWrittenProcedure(
 ): Procedure {
   return {
     ...apiProcedure,
-    subcategoryId: 'subcategoryId' in input ? (input.subcategoryId ?? null) : apiProcedure.subcategoryId,
+    subcategoryId:
+      "subcategoryId" in input
+        ? (input.subcategoryId ?? null)
+        : apiProcedure.subcategoryId,
     stationScope: input.stationScope ?? null,
-    iconImageUrl: input.iconImageUrl ?? apiProcedure.iconImageUrl ?? (apiProcedure as { procedureImage?: string | null }).procedureImage ?? null,
+    iconImageUrl:
+      input.iconImageUrl ??
+      apiProcedure.iconImageUrl ??
+      (apiProcedure as { procedureImage?: string | null }).procedureImage ??
+      null,
     version: apiProcedure.version ?? input.version ?? 1,
     isArchived: apiProcedure.isArchived ?? false,
     audience: input.audience ?? null,
-    protection: input.protection ?? 'standard',
+    protection: input.protection ?? "standard",
     quizId: input.quizId ?? null,
     linkedTrainingId: input.linkedTrainingId ?? null,
-    quizMode: input.quizMode ?? 'training',
+    quizMode: input.quizMode ?? "training",
   };
 }
 
@@ -363,7 +431,7 @@ export async function createProcedure(
     return normalizeWrittenProcedure(data.data.procedure, input);
   }
 
-  throw new Error('Backend did not return created procedure');
+  throw new Error("Backend did not return created procedure");
 }
 
 /** PUT /api/v1/procedures/:id — the backend validates with the same
@@ -388,7 +456,7 @@ export async function updateProcedure(
     return normalizeWrittenProcedure(data.data.procedure, input);
   }
 
-  throw new Error('Backend did not return updated procedure');
+  throw new Error("Backend did not return updated procedure");
 }
 
 /** PATCH /api/v1/procedures/:id/station — replace the station allocation.
@@ -418,7 +486,7 @@ export async function updateProcedureStation(
     return normalizeBackendProcedure(data.data.procedure);
   }
 
-  throw new Error('Backend did not return updated procedure');
+  throw new Error("Backend did not return updated procedure");
 }
 
 export const updateProcedureStations = updateProcedureStation;
@@ -436,7 +504,7 @@ export async function publishProcedure(id: string): Promise<Procedure> {
     return normalizeBackendProcedure(data.data.procedure);
   }
 
-  throw new Error('Backend did not return published procedure');
+  throw new Error("Backend did not return published procedure");
 }
 
 /** POST /api/v1/procedures/:id/archive — soft delete (recoverable via
@@ -452,7 +520,7 @@ export async function archiveProcedure(id: string): Promise<Procedure> {
     return normalizeBackendProcedure(data.data.procedure);
   }
 
-  throw new Error('Backend did not return archived procedure');
+  throw new Error("Backend did not return archived procedure");
 }
 
 /** POST /api/v1/procedures/:id/unarchive — restores an archived procedure. */
@@ -467,7 +535,7 @@ export async function unarchiveProcedure(id: string): Promise<Procedure> {
     return normalizeBackendProcedure(data.data.procedure);
   }
 
-  throw new Error('Backend did not return unarchived procedure');
+  throw new Error("Backend did not return unarchived procedure");
 }
 
 /** DELETE /api/v1/procedures/:id — permanent removal (super_admin).
@@ -492,14 +560,17 @@ export interface ProcedurePatchInput {
   quizId?: string | null;
   procedureImage?: string | null;
   assignUsers?: string[];
-  status?: Procedure['status'];
+  status?: Procedure["status"];
 }
 
 /** PATCH /api/v1/procedures/:id — partial update: only changed fields.
  *  Throws the backend's ApiException on real failures (400 validation,
  *  401/403 auth). A 404 with an empty/HTML body (`code 'UNKNOWN'`) or 405
  *  means the route doesn't exist yet — callers fall back while waiting. */
-export async function patchProcedure(id: string, patch: ProcedurePatchInput): Promise<Procedure> {
+export async function patchProcedure(
+  id: string,
+  patch: ProcedurePatchInput,
+): Promise<Procedure> {
   const { data } = await http.patch<{
     success: boolean;
     message: string;
@@ -510,5 +581,5 @@ export async function patchProcedure(id: string, patch: ProcedurePatchInput): Pr
     return normalizeBackendProcedure(data.data.procedure);
   }
 
-  throw new Error('Backend did not return patched procedure');
+  throw new Error("Backend did not return patched procedure");
 }

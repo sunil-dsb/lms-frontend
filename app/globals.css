@@ -228,7 +228,10 @@
    BASE
    ============================================================ */
 @layer base {
-  html, body { height: 100%; }
+  html,
+  body {
+    height: 100%;
+  }
   body {
     background-color: var(--color-bg);
     color: var(--color-ink);
@@ -237,16 +240,38 @@
     line-height: var(--lh-body);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4, h5 { margin: 0; line-height: var(--lh-heading); text-wrap: balance; }
-  p { margin: 0; text-wrap: pretty; }
-  button, input, select, textarea { font: inherit; color: inherit; }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    margin: 0;
+    line-height: var(--lh-heading);
+    text-wrap: balance;
+  }
+  p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
   /* Single crisp 1px border for all inputs and textareas on focus. No double ring or outline. */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     font-family: var(--font-ui);
   }
-  input:focus, input:focus-visible,
-  textarea:focus, textarea:focus-visible,
-  select:focus, select:focus-visible {
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible {
     outline: none !important;
     box-shadow: none !important;
     --tw-ring-shadow: none !important;
@@ -256,9 +281,14 @@
     border-color: var(--color-brand) !important;
   }
   /* The outline follows each element's own radius. Exclude form controls which handle focus via custom borders. */
-  :focus-visible:not(input):not(textarea):not(select) { outline: 3px solid var(--color-ring); outline-offset: 2px; }
+  :focus-visible:not(input):not(textarea):not(select) {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 2px;
+  }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
@@ -275,15 +305,24 @@
    vocabulary; Tailwind utilities are the higher-level one.
    ============================================================ */
 @layer components {
-.display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: var(--display-track);
-  line-height: 1.1;
-}
-.i { font-size: 1.25em; line-height: 1; flex-shrink: 0; display: inline-flex; }
-.i-sm { font-size: 1em; }
-.i-lg { font-size: 1.5em; }
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: var(--display-track);
+    line-height: 1.1;
+  }
+  .i {
+    font-size: 1.25em;
+    line-height: 1;
+    flex-shrink: 0;
+    display: inline-flex;
+  }
+  .i-sm {
+    font-size: 1em;
+  }
+  .i-lg {
+    font-size: 1.5em;
+  }
 }
 
 /* ============================================================
@@ -291,29 +330,67 @@
    Named with proc- prefix to avoid collisions.
    ============================================================ */
 @keyframes proc-fadein {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes proc-slidein {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes proc-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.4; transform: scale(0.75); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.75);
+  }
 }
 
 @keyframes proc-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(250%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  @keyframes proc-fadein  { from { opacity: 1; } }
-  @keyframes proc-slidein { from { opacity: 1; transform: none; } }
-  @keyframes proc-pulse   { 50% { opacity: 1; transform: none; } }
-  @keyframes proc-shimmer { 100% { transform: none; } }
+  @keyframes proc-fadein {
+    from {
+      opacity: 1;
+    }
+  }
+  @keyframes proc-slidein {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes proc-pulse {
+    50% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes proc-shimmer {
+    100% {
+      transform: none;
+    }
+  }
 }
-

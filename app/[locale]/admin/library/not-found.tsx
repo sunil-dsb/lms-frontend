@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { cookies } from 'next/headers';
-import Link from 'next/link';
-import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { LuFileText } from 'react-icons/lu';
-import { EmptyState } from '@/components/ui/empty-state';
-import { buttonClassName } from '@/components/ui/button';
-import { PageHeader } from '@/components/admin/page-header';
+import * as React from "react";
+import { cookies } from "next/headers";
+import Link from "next/link";
+import { setRequestLocale, getTranslations } from "next-intl/server";
+import { LuFileText } from "react-icons/lu";
+import { EmptyState } from "@/components/ui/empty-state";
+import { buttonClassName } from "@/components/ui/button";
+import { PageHeader } from "@/components/admin/page-header";
 
 /**
  * Friendly 404 for anything inside `/admin/library/*`.
@@ -28,22 +28,25 @@ import { PageHeader } from '@/components/admin/page-header';
  */
 export default async function AdminLibraryNotFound(): Promise<React.ReactElement> {
   const cookieStore = await cookies();
-  const locale = cookieStore.get('NEXT_LOCALE')?.value ?? 'en';
+  const locale = cookieStore.get("NEXT_LOCALE")?.value ?? "en";
   setRequestLocale(locale);
 
-  const t = await getTranslations('admin.library.notFound');
+  const t = await getTranslations("admin.library.notFound");
   const backHref = `/${locale}/admin/library`;
 
   return (
     <div className="mx-auto max-w-page space-y-6 pb-12">
-      <PageHeader eyebrow={t('eyebrow')} title={t('title')} />
+      <PageHeader eyebrow={t("eyebrow")} title={t("title")} />
       <EmptyState
         icon={LuFileText}
-        title={t('title')}
-        body={t('body')}
+        title={t("title")}
+        body={t("body")}
         action={
-          <Link href={backHref} className={buttonClassName({ variant: 'secondary' })}>
-            {t('back')}
+          <Link
+            href={backHref}
+            className={buttonClassName({ variant: "secondary" })}
+          >
+            {t("back")}
           </Link>
         }
       />

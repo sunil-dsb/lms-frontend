@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 /**
  * Instant paint for /admin while the server dashboard resolves.
@@ -8,7 +8,11 @@ import * as React from 'react';
  */
 export default function AdminHomeLoading(): React.ReactElement {
   return (
-    <div className="mx-auto max-w-page space-y-8 pb-12" aria-busy="true" aria-label="Loading dashboard">
+    <div
+      className="mx-auto max-w-page space-y-8 pb-12"
+      aria-busy="true"
+      aria-label="Loading dashboard"
+    >
       {/* Header */}
       <div className="space-y-2">
         <div className="h-4 w-40 rounded-[var(--radius-md)] bg-[var(--color-panel-2)] animate-pulse" />

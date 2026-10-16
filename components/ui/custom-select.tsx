@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { createPortal } from 'react-dom';
-import { cn } from '@/lib/utils';
-import { LuCheck, LuChevronDown, LuLoader } from 'react-icons/lu';
-import { Icon } from '@/components/ui/icon';
-import type { IconType } from 'react-icons';
+import * as React from "react";
+import { createPortal } from "react-dom";
+import { cn } from "@/lib/utils";
+import { LuCheck, LuChevronDown, LuLoader } from "react-icons/lu";
+import { Icon } from "@/components/ui/icon";
+import type { IconType } from "react-icons";
 
 export interface SelectOption {
   value: string;
@@ -27,7 +27,7 @@ export interface CustomSelectProps {
   leadingIcon?: IconType;
   disabled?: boolean;
   isLoading?: boolean;
-  size?: 'default' | 'sm';
+  size?: "default" | "sm";
   className?: string;
 }
 
@@ -37,17 +37,22 @@ export function CustomSelect({
   value,
   onChange,
   options,
-  placeholder = 'Select an option...',
+  placeholder = "Select an option...",
   leadingIcon,
   disabled = false,
   isLoading = false,
-  size = 'default',
+  size = "default",
   className,
 }: CustomSelectProps): React.ReactElement {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
   const [open, setOpen] = React.useState(false);
-  const [pos, setPos] = React.useState<{ top: number; left: number; width: number; origin: string } | null>(null);
+  const [pos, setPos] = React.useState<{
+    top: number;
+    left: number;
+    width: number;
+    origin: string;
+  } | null>(null);
   const [mounted, setMounted] = React.useState(false);
   const [highlightedIndex, setHighlightedIndex] = React.useState<number>(-1);
 
@@ -66,7 +71,7 @@ export function CustomSelect({
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    const width = Math.max(rect.width, size === 'sm' ? 120 : 160);
+    const width = Math.max(rect.width, size === "sm" ? 120 : 160);
     const left = Math.max(12, Math.min(rect.left, vw - width - 12));
 
     const panelHeight = Math.min(options.length * 44 + 16, 280);
@@ -84,7 +89,12 @@ export function CustomSelect({
 
     // Which edge it is attached to, so it can grow from there rather than from
     // its own top-left corner.
-    setPos({ top, left, width, origin: flipped ? 'bottom center' : 'top center' });
+    setPos({
+      top,
+      left,
+      width,
+      origin: flipped ? "bottom center" : "top center",
+    });
   }, [options.length, size]);
 
   React.useEffect(() => {
@@ -100,19 +110,21 @@ export function CustomSelect({
 
     const onResize = (): void => recompute();
     const onScroll = (): void => recompute();
-    window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onScroll, true);
 
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setOpen(false);
-      } else if (e.key === 'ArrowDown') {
+      } else if (e.key === "ArrowDown") {
         e.preventDefault();
         setHighlightedIndex((prev) => (prev + 1) % options.length);
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setHighlightedIndex((prev) => (prev - 1 + options.length) % options.length);
-      } else if (e.key === 'Enter' || e.key === ' ') {
+        setHighlightedIndex(
+          (prev) => (prev - 1 + options.length) % options.length,
+        );
+      } else if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         setHighlightedIndex((currentIdx) => {
           if (currentIdx >= 0 && currentIdx < options.length) {
@@ -123,7 +135,7 @@ export function CustomSelect({
         });
       }
     };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener("keydown", onKey);
 
     const onPointer = (e: PointerEvent): void => {
       const target = e.target as Node | null;
@@ -132,13 +144,13 @@ export function CustomSelect({
       if (triggerRef.current?.contains(target)) return;
       setOpen(false);
     };
-    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener("pointerdown", onPointer);
 
     return () => {
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onScroll, true);
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onPointer);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll, true);
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointer);
     };
   }, [open, recompute, options, value, onChange]);
 
@@ -152,34 +164,52 @@ export function CustomSelect({
         disabled={disabled || isLoading}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          'flex w-full items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--color-line-3)] bg-[var(--color-field)] text-[var(--color-ink)] transition-all duration-[var(--dur)]',
-          size === 'sm'
-            ? 'min-h-8 px-3 py-1 text-sm'
-            : 'min-h-10 px-4 py-2 text-sm',
-          open && 'border-[var(--color-brand)]',
-          'hover:border-[var(--color-line-3)]',
-          'disabled:cursor-not-allowed disabled:opacity-60',
+          "flex w-full items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--color-line-3)] bg-[var(--color-field)] text-[var(--color-ink)] transition-all duration-[var(--dur)]",
+          size === "sm"
+            ? "min-h-8 px-3 py-1 text-sm"
+            : "min-h-10 px-4 py-2 text-sm",
+          open && "border-[var(--color-brand)]",
+          "hover:border-[var(--color-line-3)]",
+          "disabled:cursor-not-allowed disabled:opacity-60",
           className,
         )}
       >
         <div className="flex items-center gap-2 min-w-0">
           {isLoading ? (
-            <LuLoader className="size-4 animate-spin text-[var(--color-brand-600)] shrink-0" aria-hidden="true" />
-          ) : (selectedOption?.icon || leadingIcon) ? (
-            <Icon icon={(selectedOption?.icon ?? leadingIcon)!} className={cn(size === 'sm' ? 'text-sm' : 'text-base', 'text-[var(--color-ink-2)] shrink-0')} />
+            <LuLoader
+              className="size-4 animate-spin text-[var(--color-brand-600)] shrink-0"
+              aria-hidden="true"
+            />
+          ) : selectedOption?.icon || leadingIcon ? (
+            <Icon
+              icon={(selectedOption?.icon ?? leadingIcon)!}
+              className={cn(
+                size === "sm" ? "text-sm" : "text-base",
+                "text-[var(--color-ink-2)] shrink-0",
+              )}
+            />
           ) : null}
-          <span className={cn('truncate font-medium', isLoading && 'text-[var(--color-ink-3)]')}>
-            {isLoading ? 'Loading...' : selectedOption ? selectedOption.label : placeholder}
+          <span
+            className={cn(
+              "truncate font-medium",
+              isLoading && "text-[var(--color-ink-3)]",
+            )}
+          >
+            {isLoading
+              ? "Loading..."
+              : selectedOption
+                ? selectedOption.label
+                : placeholder}
           </span>
         </div>
         {isLoading ? null : (
           <LuChevronDown
             aria-hidden="true"
             className={cn(
-              'shrink-0 transition-transform duration-[var(--dur)]',
-              size === 'sm' ? 'text-sm' : 'text-base',
-              'text-[var(--color-ink-3)]',
-              open && 'rotate-180 text-[var(--color-brand-700)]',
+              "shrink-0 transition-transform duration-[var(--dur)]",
+              size === "sm" ? "text-sm" : "text-base",
+              "text-[var(--color-ink-3)]",
+              open && "rotate-180 text-[var(--color-brand-700)]",
             )}
           />
         )}
@@ -194,13 +224,13 @@ export function CustomSelect({
             role="listbox"
             tabIndex={-1}
             style={{
-              position: 'fixed',
+              position: "fixed",
               top: pos.top,
               left: pos.left,
               width: pos.width,
               maxHeight: 280,
               zIndex: 9999,
-              ['--pop-origin' as string]: pos.origin,
+              ["--pop-origin" as string]: pos.origin,
             }}
             // A transition on a thing that is mounted when it opens never runs;
             // the animation does.
@@ -221,18 +251,27 @@ export function CustomSelect({
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex w-full items-center justify-between gap-3 rounded-[var(--radius-md)] text-left transition-colors',
-                    size === 'sm' ? 'px-3 py-2 text-sm' : 'px-3 py-2 text-sm',
+                    "flex w-full items-center justify-between gap-3 rounded-[var(--radius-md)] text-left transition-colors",
+                    size === "sm" ? "px-3 py-2 text-sm" : "px-3 py-2 text-sm",
                     isSelected
-                      ? 'bg-[var(--color-panel)] font-semibold text-[var(--color-ink)]'
+                      ? "bg-[var(--color-panel)] font-semibold text-[var(--color-ink)]"
                       : isHighlighted
-                      ? 'bg-[var(--color-wash)] text-[var(--color-ink)]'
-                      : 'text-[var(--color-ink)] hover:bg-[var(--color-wash)]',
+                        ? "bg-[var(--color-wash)] text-[var(--color-ink)]"
+                        : "text-[var(--color-ink)] hover:bg-[var(--color-wash)]",
                   )}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {opt.icon && (
-                      <Icon icon={opt.icon} className={cn(size === 'sm' ? 'text-sm' : 'text-base', 'shrink-0', isSelected ? 'text-[var(--color-ink)]' : 'text-[var(--color-ink-3)]')} />
+                      <Icon
+                        icon={opt.icon}
+                        className={cn(
+                          size === "sm" ? "text-sm" : "text-base",
+                          "shrink-0",
+                          isSelected
+                            ? "text-[var(--color-ink)]"
+                            : "text-[var(--color-ink-3)]",
+                        )}
+                      />
                     )}
                     <div className="flex flex-col min-w-0">
                       <span className="truncate">{opt.label}</span>
@@ -246,7 +285,10 @@ export function CustomSelect({
                   {isSelected && (
                     <LuCheck
                       aria-hidden="true"
-                      className={cn('shrink-0 text-[var(--color-ink)]', size === 'sm' ? 'text-sm' : 'text-base')}
+                      className={cn(
+                        "shrink-0 text-[var(--color-ink)]",
+                        size === "sm" ? "text-sm" : "text-base",
+                      )}
                     />
                   )}
                 </button>
@@ -258,4 +300,3 @@ export function CustomSelect({
     </div>
   );
 }
-

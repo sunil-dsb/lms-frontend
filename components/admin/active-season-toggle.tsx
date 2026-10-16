@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * ActiveSeasonToggle — the smallest possible control.
@@ -11,23 +11,23 @@
  * Cross-tab sync rides on the `lms_active_season_updated` event.
  */
 
-import * as React from 'react';
-import { getActiveSeason, setActiveSeason } from '@/lib/api';
-import type { ActiveSeason, ProcedureSeason } from '@/lib/types';
+import * as React from "react";
+import { getActiveSeason, setActiveSeason } from "@/lib/api";
+import type { ActiveSeason, ProcedureSeason } from "@/lib/types";
 
 export function ActiveSeasonToggle(): React.ReactElement {
   const [active, setActive] = React.useState<ProcedureSeason | null>(null);
   React.useEffect(() => {
     setActive(getActiveSeason());
     const onRefresh = () => setActive(getActiveSeason());
-    if (typeof window !== 'undefined') {
-      window.addEventListener('lms_active_season_updated', onRefresh);
-      window.addEventListener('storage', onRefresh);
+    if (typeof window !== "undefined") {
+      window.addEventListener("lms_active_season_updated", onRefresh);
+      window.addEventListener("storage", onRefresh);
     }
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('lms_active_season_updated', onRefresh);
-        window.removeEventListener('storage', onRefresh);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("lms_active_season_updated", onRefresh);
+        window.removeEventListener("storage", onRefresh);
       }
     };
   }, []);
@@ -46,42 +46,53 @@ export function ActiveSeasonToggle(): React.ReactElement {
     >
       <button
         type="button"
-        aria-pressed={active === 'summer'}
-        onClick={() => pick('summer')}
+        aria-pressed={active === "summer"}
+        onClick={() => pick("summer")}
         className={`inline-flex min-h-tap-admin items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors duration-[var(--dur)] ease-[var(--ease)] ${
-          active === 'summer'
-            ? 'bg-[var(--color-brand-600)] text-white shadow-e1'
-            : 'text-[var(--color-ink-2)] hover:text-[var(--color-ink)]'
+          active === "summer"
+            ? "bg-[var(--color-brand-600)] text-white shadow-e1"
+            : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
         }`}
       >
-        <SeasonDot season="summer" on={active === 'summer'} />
+        <SeasonDot season="summer" on={active === "summer"} />
         Summer
       </button>
       <button
         type="button"
-        aria-pressed={active === 'winter'}
-        onClick={() => pick('winter')}
+        aria-pressed={active === "winter"}
+        onClick={() => pick("winter")}
         className={`inline-flex min-h-tap-admin items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors duration-[var(--dur)] ease-[var(--ease)] ${
-          active === 'winter'
-            ? 'bg-[var(--color-brand-600)] text-white shadow-e1'
-            : 'text-[var(--color-ink-2)] hover:text-[var(--color-ink)]'
+          active === "winter"
+            ? "bg-[var(--color-brand-600)] text-white shadow-e1"
+            : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
         }`}
       >
-        <SeasonDot season="winter" on={active === 'winter'} />
+        <SeasonDot season="winter" on={active === "winter"} />
         Winter
       </button>
     </div>
   );
 }
 
-function SeasonDot({ season, on }: { season: ProcedureSeason; on: boolean }): React.ReactElement {
+function SeasonDot({
+  season,
+  on,
+}: {
+  season: ProcedureSeason;
+  on: boolean;
+}): React.ReactElement {
   const colour =
-    season === 'summer'
+    season === "summer"
       ? on
-        ? 'bg-white/90'
-        : 'bg-[var(--color-warn)]'
+        ? "bg-white/90"
+        : "bg-[var(--color-warn)]"
       : on
-        ? 'bg-white/90'
-        : 'bg-[var(--color-info)]';
-  return <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${colour}`} />;
+        ? "bg-white/90"
+        : "bg-[var(--color-info)]";
+  return (
+    <span
+      aria-hidden="true"
+      className={`size-2 shrink-0 rounded-full ${colour}`}
+    />
+  );
 }

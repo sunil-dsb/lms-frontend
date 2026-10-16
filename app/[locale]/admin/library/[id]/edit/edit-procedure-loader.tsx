@@ -1,15 +1,18 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { backendSlug } from '@/services/categories/api';
-import { useBackendCategories, useAllSubcategories } from '@/services/categories/hooks';
-import { getCachedProcedure, getProcedureBySlug } from '@/lib/api';
-import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
-import { ProcedureEditor } from '@/components/admin/procedure-editor';
-import { EditProcedureSkeleton } from '@/components/admin/edit-procedure-skeleton';
-import type { Procedure } from '@/lib/types';
+import * as React from "react";
+import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { backendSlug } from "@/services/categories/api";
+import {
+  useBackendCategories,
+  useAllSubcategories,
+} from "@/services/categories/hooks";
+import { getCachedProcedure, getProcedureBySlug } from "@/lib/api";
+import { PROCEDURES_QUERY_KEY } from "@/services/library/hooks";
+import { ProcedureEditor } from "@/components/admin/procedure-editor";
+import { EditProcedureSkeleton } from "@/components/admin/edit-procedure-skeleton";
+import type { Procedure } from "@/lib/types";
 
 /**
  * Client data layer for the procedure editor.
@@ -37,13 +40,19 @@ export function EditProcedureLoader({
 
   const cached = React.useMemo(() => {
     if (initial) return initial;
-    const browse = queryClient.getQueryData<Procedure[]>([...PROCEDURES_QUERY_KEY, 'browse']);
-    return browse?.find((p) => p.id === id || p.slug === id) ?? getCachedProcedure(id);
+    const browse = queryClient.getQueryData<Procedure[]>([
+      ...PROCEDURES_QUERY_KEY,
+      "browse",
+    ]);
+    return (
+      browse?.find((p) => p.id === id || p.slug === id) ??
+      getCachedProcedure(id)
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial, id]);
 
   const procedureQuery = useQuery<Procedure, Error>({
-    queryKey: [...PROCEDURES_QUERY_KEY, 'edit', id],
+    queryKey: [...PROCEDURES_QUERY_KEY, "edit", id],
     queryFn: () => getProcedureBySlug(id).then((r) => r.procedure),
     initialData: cached ?? undefined,
     enabled: !initial,
@@ -87,19 +96,21 @@ export function EditProcedureLoader({
       <div className="flex min-h-[50vh] flex-col items-center justify-center p-6 text-center">
         <div className="mx-auto max-w-card space-y-4">
           <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold text-[var(--color-ink)]">
-            {locale === 'es' ? 'Este procedimiento no está disponible' : 'This procedure isn’t available'}
+            {locale === "es"
+              ? "Este procedimiento no está disponible"
+              : "This procedure isn’t available"}
           </h1>
           <p className="text-base text-[var(--color-ink-2)]">
-            {locale === 'es'
-              ? 'Puede que se haya quitado o movido.'
-              : 'It may have been removed or moved.'}
+            {locale === "es"
+              ? "Puede que se haya quitado o movido."
+              : "It may have been removed or moved."}
           </p>
           <div className="pt-4">
             <Link
               href={`/${locale}/admin/library`}
               className="inline-flex items-center gap-2 rounded-full bg-[var(--color-brand-600)] px-5 py-3 text-sm font-semibold text-white shadow-e1 hover:bg-[var(--color-brand-hover)]"
             >
-              {locale === 'es' ? 'Volver a la biblioteca' : 'Back to library'}
+              {locale === "es" ? "Volver a la biblioteca" : "Back to library"}
             </Link>
           </div>
         </div>
@@ -107,5 +118,11 @@ export function EditProcedureLoader({
     );
   }
 
-  return <ProcedureEditor locale={locale} categories={categories} initial={procedure} />;
+  return (
+    <ProcedureEditor
+      locale={locale}
+      categories={categories}
+      initial={procedure}
+    />
+  );
 }

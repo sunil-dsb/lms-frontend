@@ -1,6 +1,10 @@
-import http from '@/lib/http';
-import { LOCATIONS_ENDPOINTS } from './endpoints';
-import type { Location, CreateLocationInput, UpdateLocationInput } from './types';
+import http from "@/lib/http";
+import { LOCATIONS_ENDPOINTS } from "./endpoints";
+import type {
+  Location,
+  CreateLocationInput,
+  UpdateLocationInput,
+} from "./types";
 
 export async function fetchLocations(
   cookieHeader?: string,
@@ -8,10 +12,10 @@ export async function fetchLocations(
   const headers: Record<string, string> = {};
 
   if (cookieHeader) {
-    headers['Cookie'] = cookieHeader;
+    headers["Cookie"] = cookieHeader;
     const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
     if (tokenMatch) {
-      headers['Authorization'] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+      headers["Authorization"] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
     }
   }
 

@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 /**
  * A small inline stack of descriptive chips for "Job role", "Station", and
@@ -23,33 +23,35 @@ export function ChipStack({
    *  job roles. `tone: 'station'` uses the same ground — kept identical
    *  for now; the prop exists so future products (access tiers, protection
    *  levels) can swap palette without changing every call site. */
-  tone = 'role',
+  tone = "role",
 }: {
   items: string[];
   visibleLimit?: number;
   emptyText?: string;
   className?: string;
-  tone?: 'role' | 'station';
+  tone?: "role" | "station";
 }): React.ReactElement {
   const safe = items.filter(Boolean);
-  const visible = typeof visibleLimit === 'number' ? safe.slice(0, visibleLimit) : safe;
-  const overflow = typeof visibleLimit === 'number' ? Math.max(0, safe.length - visibleLimit) : 0;
+  const visible =
+    typeof visibleLimit === "number" ? safe.slice(0, visibleLimit) : safe;
+  const overflow =
+    typeof visibleLimit === "number"
+      ? Math.max(0, safe.length - visibleLimit)
+      : 0;
 
   if (safe.length === 0) {
     return (
-      <span
-        className={cn('text-sm text-[var(--color-ink-3)]', className)}
-      >
-        {emptyText ?? '—'}
+      <span className={cn("text-sm text-[var(--color-ink-3)]", className)}>
+        {emptyText ?? "—"}
       </span>
     );
   }
 
   return (
     <div
-      className={cn('flex flex-wrap items-center gap-2', className)}
+      className={cn("flex flex-wrap items-center gap-2", className)}
       role="list"
-      aria-label={tone === 'station' ? 'Stations' : 'Job roles'}
+      aria-label={tone === "station" ? "Stations" : "Job roles"}
     >
       {visible.map((label, i) => (
         <span

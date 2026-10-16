@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useId, useState, useRef } from 'react';
-import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
-import { useBilingualTranslation } from '@/lib/use-bilingual-translation';
+import * as React from "react";
+import { useId, useState, useRef } from "react";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/icon";
+import { useBilingualTranslation } from "@/lib/use-bilingual-translation";
 
 export interface BilingualValue {
   en: string;
@@ -23,35 +23,43 @@ export interface BilingualInputProps {
    * Optional override for the translator. Left unset, the field auto-translates
    * via the server route (see `lib/translate-api.ts`) after the user stops typing.
    */
-  translate?: (text: string, from: 'en' | 'es', to: 'en' | 'es') => string | Promise<string>;
-  defaultLang?: 'en' | 'es';
+  translate?: (
+    text: string,
+    from: "en" | "es",
+    to: "en" | "es",
+  ) => string | Promise<string>;
+  defaultLang?: "en" | "es";
   name?: string;
   className?: string;
   inputClassName?: string;
-  size?: 'default' | 'compact';
+  size?: "default" | "compact";
   onInputKeyDown?: (
     e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
-    lang: 'en' | 'es',
+    lang: "en" | "es",
   ) => void;
 }
 
-const LANGS: Array<'en' | 'es'> = ['en', 'es'];
-const LANG_NAME: Record<'en' | 'es', string> = { en: 'English', es: 'Spanish' };
-const DEFAULT_PLACEHOLDER: Record<'en' | 'es', string> = {
-  en: 'Write in English...',
-  es: 'Escribe en español...',
+const LANGS: Array<"en" | "es"> = ["en", "es"];
+const LANG_NAME: Record<"en" | "es", string> = { en: "English", es: "Spanish" };
+const DEFAULT_PLACEHOLDER: Record<"en" | "es", string> = {
+  en: "Write in English...",
+  es: "Escribe en español...",
 };
 
 /** Kept exported for backwards compatibility; no longer the default. */
-export const dummyTranslate = (text: string, _from: 'en' | 'es', _to: 'en' | 'es'): string =>
-  text;
+export const dummyTranslate = (
+  text: string,
+  _from: "en" | "es",
+  _to: "en" | "es",
+): string => text;
 
 // Self-contained strings rather than new i18n keys — the label language follows
 // the field being written, which is the only thing that can change here.
-const STATUS_TEXT: Record<'en' | 'es', { translating: string; error: string }> = {
-  en: { translating: 'Translating…', error: 'Translation failed' },
-  es: { translating: 'Traduciendo…', error: 'Error al traducir' },
-};
+const STATUS_TEXT: Record<"en" | "es", { translating: string; error: string }> =
+  {
+    en: { translating: "Translating…", error: "Translation failed" },
+    es: { translating: "Traduciendo…", error: "Error al traducir" },
+  };
 
 export function BilingualInput({
   label,
@@ -62,15 +70,15 @@ export function BilingualInput({
   maxLength,
   placeholder,
   translate,
-  defaultLang = 'en',
+  defaultLang = "en",
   name,
   className,
   inputClassName,
-  size = 'default',
+  size = "default",
   onInputKeyDown,
 }: BilingualInputProps): React.ReactElement {
   const baseId = useId();
-  const [active, setActive] = useState<'en' | 'es'>(defaultLang);
+  const [active, setActive] = useState<"en" | "es">(defaultLang);
   const controls = useRef<{
     en: HTMLInputElement | HTMLTextAreaElement | null;
     es: HTMLInputElement | HTMLTextAreaElement | null;
@@ -88,20 +96,22 @@ export function BilingualInput({
   };
 
   const { markUserEdit, status, activeTarget } = useBilingualTranslation({
-    englishValue: value?.en ?? '',
-    spanishValue: value?.es ?? '',
+    englishValue: value?.en ?? "",
+    spanishValue: value?.es ?? "",
     // `valueRef` is written before `onChange`, so a write that lands in the
     // same tick as an edit still composes from the freshest value.
-    onEnglishChange: (text) => commit({ ...(valueRef.current ?? value), en: text }),
-    onSpanishChange: (text) => commit({ ...(valueRef.current ?? value), es: text }),
+    onEnglishChange: (text) =>
+      commit({ ...(valueRef.current ?? value), en: text }),
+    onSpanishChange: (text) =>
+      commit({ ...(valueRef.current ?? value), es: text }),
     maxLength,
     translate,
   });
 
-  const handleChange = (lang: 'en' | 'es', text: string): void => {
+  const handleChange = (lang: "en" | "es", text: string): void => {
     const next: BilingualValue = {
-      en: valueRef.current?.en ?? '',
-      es: valueRef.current?.es ?? '',
+      en: valueRef.current?.en ?? "",
+      es: valueRef.current?.es ?? "",
       [lang]: text,
     };
     commit(next);
@@ -112,11 +122,11 @@ export function BilingualInput({
 
   const groupId = label ? `${baseId}-label` : undefined;
   const showStatus =
-    activeTarget !== null && (status === 'translating' || status === 'error');
+    activeTarget !== null && (status === "translating" || status === "error");
 
   return (
     <div
-      className={cn('bli', size === 'compact' && 'bli--compact', className)}
+      className={cn("bli", size === "compact" && "bli--compact", className)}
       role="group"
       aria-labelledby={groupId}
     >
@@ -125,7 +135,7 @@ export function BilingualInput({
           {label}
           {required && (
             <span className="bli__required" aria-hidden="true">
-              {' '}
+              {" "}
               *
             </span>
           )}
@@ -138,21 +148,28 @@ export function BilingualInput({
           const shared = {
             id: `${baseId}-${lang}`,
             name: name ? `${name}.${lang}` : undefined,
-            value: value?.[lang] ?? '',
+            value: value?.[lang] ?? "",
             maxLength,
             lang,
             placeholder: placeholder?.[lang] ?? DEFAULT_PLACEHOLDER[lang],
-            'aria-label': label ? `${label} (${LANG_NAME[lang]})` : (placeholder?.[lang] ?? LANG_NAME[lang]),
-            'aria-required': required || undefined,
-            className: cn('bli__control', inputClassName),
+            "aria-label": label
+              ? `${label} (${LANG_NAME[lang]})`
+              : (placeholder?.[lang] ?? LANG_NAME[lang]),
+            "aria-required": required || undefined,
+            className: cn("bli__control", inputClassName),
             onFocus: () => setActive(lang),
-            onKeyDown: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+            onKeyDown: (
+              e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+            ) => {
               onInputKeyDown?.(e, lang);
             },
-            onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-              handleChange(lang, e.target.value),
+            onChange: (
+              e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+            ) => handleChange(lang, e.target.value),
           };
-          const setRef = (el: HTMLInputElement | HTMLTextAreaElement | null): void => {
+          const setRef = (
+            el: HTMLInputElement | HTMLTextAreaElement | null,
+          ): void => {
             controls.current[lang] = el;
           };
 
@@ -160,12 +177,12 @@ export function BilingualInput({
             <div
               key={lang}
               className={[
-                'bli__field',
-                isActive ? 'is-active' : 'is-inactive',
-                multiline ? 'is-multiline' : '',
+                "bli__field",
+                isActive ? "is-active" : "is-inactive",
+                multiline ? "is-multiline" : "",
               ]
                 .filter(Boolean)
-                .join(' ')}
+                .join(" ")}
               onClick={() => controls.current[lang]?.focus()}
             >
               {multiline ? (
@@ -176,15 +193,20 @@ export function BilingualInput({
               {maxLength !== undefined && (
                 <span
                   className={cn(
-                    'bli__count',
-                    (value?.[lang] ?? '').length >= maxLength && 'text-[var(--color-bad)] font-semibold',
+                    "bli__count",
+                    (value?.[lang] ?? "").length >= maxLength &&
+                      "text-[var(--color-bad)] font-semibold",
                   )}
                   aria-hidden="true"
                 >
-                  {(value?.[lang] ?? '').length} / {maxLength}
+                  {(value?.[lang] ?? "").length} / {maxLength}
                 </span>
               )}
-              <span className="bli__tag notranslate" translate="no" aria-hidden="true">
+              <span
+                className="bli__tag notranslate"
+                translate="no"
+                aria-hidden="true"
+              >
                 {lang.toUpperCase()}
               </span>
             </div>
@@ -194,14 +216,23 @@ export function BilingualInput({
 
       {activeTarget !== null && showStatus && (
         <span
-          className={cn('bli__status', status === 'error' && 'is-error')}
+          className={cn("bli__status", status === "error" && "is-error")}
           role="status"
           aria-live="polite"
         >
-          {status === 'error' && (
-            <Icon icon="ri-error-warning-line" className="text-xs shrink-0 mr-1" />
+          {status === "error" && (
+            <Icon
+              icon="ri-error-warning-line"
+              className="text-xs shrink-0 mr-1"
+            />
           )}
-          <span>{STATUS_TEXT[activeTarget][status === 'error' ? 'error' : 'translating']}</span>
+          <span>
+            {
+              STATUS_TEXT[activeTarget][
+                status === "error" ? "error" : "translating"
+              ]
+            }
+          </span>
         </span>
       )}
     </div>

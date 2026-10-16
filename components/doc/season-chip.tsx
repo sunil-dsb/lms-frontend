@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * SeasonChip — the small pill that says which season(s) a recipe belongs to.
@@ -18,28 +18,31 @@
  * label, not its visibility.
  */
 
-import * as React from 'react';
-import { useTranslations } from 'next-intl';
-import { LuSun } from 'react-icons/lu';
-import type { ProcedureSeason } from '@/lib/types';
+import * as React from "react";
+import { useTranslations } from "next-intl";
+import { LuSun } from "react-icons/lu";
+import type { ProcedureSeason } from "@/lib/types";
 
 interface SeasonChipProps {
   seasons: ProcedureSeason[] | undefined;
   className?: string;
 }
 
-export function SeasonChip({ seasons, className }: SeasonChipProps): React.ReactElement | null {
-  const t = useTranslations('seasons');
+export function SeasonChip({
+  seasons,
+  className,
+}: SeasonChipProps): React.ReactElement | null {
+  const t = useTranslations("seasons");
   if (!seasons || seasons.length === 0) return null;
 
-  const label = seasons.length === 2 ? t('both') : t(seasons[0]);
+  const label = seasons.length === 2 ? t("both") : t(seasons[0]);
 
   return (
     <span
       className={
-        'inline-flex items-center gap-1 rounded-[var(--radius-sm)] ' +
-        'bg-[var(--color-brand-tint)] px-2 py-0.5 text-xs font-medium ' +
-        'text-[var(--color-brand-700)] ' +
+        "inline-flex items-center gap-1 rounded-[var(--radius-sm)] " +
+        "bg-[var(--color-brand-tint)] px-2 py-0.5 text-xs font-medium " +
+        "text-[var(--color-brand-700)] " +
         className
       }
       data-testid="season-chip"

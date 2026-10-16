@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Notion-style composer for procedure blocks.
@@ -13,9 +13,9 @@
  * import + a `<NotionBlockList />` render.
  */
 
-import * as React from 'react';
-import { createPortal } from 'react-dom';
-import { useTranslations } from 'next-intl';
+import * as React from "react";
+import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 import {
   DndContext,
   KeyboardSensor,
@@ -24,16 +24,16 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   SortableContext,
   arrayMove,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { BLOCK_FACTORIES, duplicateBlock } from '@/lib/procedure-blocks';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import { Icon } from '@/components/ui/icon';
+} from "@dnd-kit/sortable";
+import { BLOCK_FACTORIES, duplicateBlock } from "@/lib/procedure-blocks";
+import { classifyVideoUrl } from "@/lib/procedure-media";
+import { Icon } from "@/components/ui/icon";
 import type {
   Localised,
   LocalisedOptional,
@@ -41,14 +41,20 @@ import type {
   ProcedureBlockKind,
   ProcedureMethodStep,
   ProcedureNoteKind,
-} from '@/lib/types';
-import { IconTile } from '@/components/ui/icon-tile';
-import { IngredientsBlockBody } from './ingredients-block-body';
-import { BilingualInput } from '@/components/ui/bilingual-input';
-import { LocalisedInput } from '@/components/ui/localised-input';
-import { StepTimerEditor } from './step-timer-editor';
-import { BlockRow, InsertAfterButton } from './notion-block-rows';
-import { asLoc, asOpt, setLoc, setOpt, SLASH_BLOCK_OPTIONS } from './notion-block-shared';
+} from "@/lib/types";
+import { IconTile } from "@/components/ui/icon-tile";
+import { IngredientsBlockBody } from "./ingredients-block-body";
+import { BilingualInput } from "@/components/ui/bilingual-input";
+import { LocalisedInput } from "@/components/ui/localised-input";
+import { StepTimerEditor } from "./step-timer-editor";
+import { BlockRow, InsertAfterButton } from "./notion-block-rows";
+import {
+  asLoc,
+  asOpt,
+  setLoc,
+  setOpt,
+  SLASH_BLOCK_OPTIONS,
+} from "./notion-block-shared";
 
 interface NotionBlockListProps {
   blocks: ProcedureBlock[];
@@ -60,7 +66,11 @@ interface NotionBlockListProps {
 // Block menu — delete / duplicate / move. The drag handle lives in the gutter.
 // ---------------------------------------------------------------------------
 
-function EmptyState({ onAdd }: { onAdd: (kind: ProcedureBlockKind) => void }): React.ReactElement {
+function EmptyState({
+  onAdd,
+}: {
+  onAdd: (kind: ProcedureBlockKind) => void;
+}): React.ReactElement {
   return (
     <div className="space-y-4 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)] p-8">
       <div className="flex items-start gap-3">
@@ -77,28 +87,87 @@ function EmptyState({ onAdd }: { onAdd: (kind: ProcedureBlockKind) => void }): R
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {([
-          { kind: 'text', label: 'Text', icon: 'ri-text', hint: 'Paragraph' },
-          { kind: 'heading', label: 'Heading', icon: 'ri-h-1', hint: 'Section title' },
-          { kind: 'method', label: 'Steps', icon: 'ri-list-ordered', hint: 'Numbered list' },
-          { kind: 'checklist', label: 'Checklist', icon: 'ri-list-check', hint: 'Tick-off items' },
-          { kind: 'table', label: 'Table', icon: 'ri-table-line', hint: 'Rows + columns' },
-          { kind: 'warning', label: 'Callout', icon: 'ri-alert-line', hint: 'Warn / tip / alt' },
-          { kind: 'image', label: 'Image', icon: 'ri-image-line', hint: 'Photo + caption' },
-          { kind: 'video', label: 'Video', icon: 'ri-video-line', hint: 'Upload or link' },
-          { kind: 'attachment', label: 'Attachment', icon: 'ri-attachment-line', hint: 'Linked file' },
-          { kind: 'ingredients', label: 'Ingredients', icon: 'ri-restaurant-line', hint: 'Items + amounts' },
-        ] as { kind: ProcedureBlockKind; label: string; icon: string; hint: string }[]).map((opt) => (
+        {(
+          [
+            { kind: "text", label: "Text", icon: "ri-text", hint: "Paragraph" },
+            {
+              kind: "heading",
+              label: "Heading",
+              icon: "ri-h-1",
+              hint: "Section title",
+            },
+            {
+              kind: "method",
+              label: "Steps",
+              icon: "ri-list-ordered",
+              hint: "Numbered list",
+            },
+            {
+              kind: "checklist",
+              label: "Checklist",
+              icon: "ri-list-check",
+              hint: "Tick-off items",
+            },
+            {
+              kind: "table",
+              label: "Table",
+              icon: "ri-table-line",
+              hint: "Rows + columns",
+            },
+            {
+              kind: "warning",
+              label: "Callout",
+              icon: "ri-alert-line",
+              hint: "Warn / tip / alt",
+            },
+            {
+              kind: "image",
+              label: "Image",
+              icon: "ri-image-line",
+              hint: "Photo + caption",
+            },
+            {
+              kind: "video",
+              label: "Video",
+              icon: "ri-video-line",
+              hint: "Upload or link",
+            },
+            {
+              kind: "attachment",
+              label: "Attachment",
+              icon: "ri-attachment-line",
+              hint: "Linked file",
+            },
+            {
+              kind: "ingredients",
+              label: "Ingredients",
+              icon: "ri-restaurant-line",
+              hint: "Items + amounts",
+            },
+          ] as {
+            kind: ProcedureBlockKind;
+            label: string;
+            icon: string;
+            hint: string;
+          }[]
+        ).map((opt) => (
           <button
             key={opt.kind}
             type="button"
             onClick={() => onAdd(opt.kind)}
             className="group flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-3 text-left transition-colors hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)]"
           >
-            <Icon icon={opt.icon} className="mt-0.5 text-lg text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)]" />
+            <Icon
+              icon={opt.icon}
+              className="mt-0.5 text-lg text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)]"
+            />
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-[var(--color-ink)]">{opt.label}</span>
-              <span className="block text-sm text-[var(--color-ink-2)]">{opt.hint}</span>
+              <span className="block text-sm font-semibold text-[var(--color-ink)]">
+                {opt.label}
+              </span>
+              <span className="block text-sm text-[var(--color-ink-2)]">
+                {opt.hint}
+              </span>
             </span>
           </button>
         ))}
@@ -112,10 +181,16 @@ function EmptyState({ onAdd }: { onAdd: (kind: ProcedureBlockKind) => void }): R
 // final "+ Add block" affordance.
 // ---------------------------------------------------------------------------
 
-export function NotionBlockList({ blocks, onChange, errors }: NotionBlockListProps): React.ReactElement {
+export function NotionBlockList({
+  blocks,
+  onChange,
+  errors,
+}: NotionBlockListProps): React.ReactElement {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   function handleDragEnd(e: DragEndEvent): void {
@@ -133,17 +208,21 @@ export function NotionBlockList({ blocks, onChange, errors }: NotionBlockListPro
   function remove(id: string): void {
     onChange(blocks.filter((b) => b.id !== id));
   }
-  function move(id: string, dir: 'up' | 'down'): void {
+  function move(id: string, dir: "up" | "down"): void {
     const i = blocks.findIndex((b) => b.id === id);
     if (i === -1) return;
-    const j = dir === 'up' ? i - 1 : i + 1;
+    const j = dir === "up" ? i - 1 : i + 1;
     if (j < 0 || j >= blocks.length) return;
     onChange(arrayMove(blocks, i, j));
   }
   function duplicate(id: string): void {
     const i = blocks.findIndex((b) => b.id === id);
     if (i < -1) return;
-    onChange([...blocks.slice(0, i + 1), duplicateBlock(blocks[i]), ...blocks.slice(i + 1)]);
+    onChange([
+      ...blocks.slice(0, i + 1),
+      duplicateBlock(blocks[i]),
+      ...blocks.slice(i + 1),
+    ]);
   }
   function addAtEnd(kind: ProcedureBlockKind): void {
     onChange([...blocks, BLOCK_FACTORIES[kind]()]);
@@ -167,8 +246,15 @@ export function NotionBlockList({ blocks, onChange, errors }: NotionBlockListPro
     // No gutter on a phone: the toolbar sits inside each row there, and the
     // 32px it kept cut the image toolbar's Remove button off the edge.
     <div className="space-y-6 sm:pl-10">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={blocks.map((b) => b.id)}
+          strategy={verticalListSortingStrategy}
+        >
           {blocks.map((block, i) => (
             <BlockRow
               key={block.id}
@@ -190,7 +276,11 @@ export function NotionBlockList({ blocks, onChange, errors }: NotionBlockListPro
   );
 }
 
-function EndAddButton({ onAdd }: { onAdd: (kind: ProcedureBlockKind) => void }): React.ReactElement {
+function EndAddButton({
+  onAdd,
+}: {
+  onAdd: (kind: ProcedureBlockKind) => void;
+}): React.ReactElement {
   return (
     <div className="pt-2">
       {/* Ghost affordance — visible on hover only so it doesn't compete with slash command */}
