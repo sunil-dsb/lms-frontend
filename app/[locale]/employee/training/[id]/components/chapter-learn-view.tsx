@@ -104,8 +104,8 @@ export function ChapterLearnView({
         className="mx-auto w-full max-w-doc space-y-5 px-4 pt-5 sm:px-6 sm:pt-6"
         style={{ paddingBottom: "120px" }}
       >
-        {/* Top Back Header & Cook Mode Action */}
-        <div className="flex items-center justify-between gap-3">
+        {/* Top Back Header */}
+        <div>
           <Link
             href={`/${locale}/employee/training/${courseId}`}
             className="inline-flex min-h-tap items-center gap-1.5 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
@@ -119,17 +119,6 @@ export function ChapterLearnView({
               })}
             </span>
           </Link>
-
-          {hasCookMode && (
-            <button
-              type="button"
-              onClick={handleOpenCookMode}
-              className="inline-flex min-h-[38px] items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all"
-            >
-              <LuPlay className="fill-current text-xs" />
-              <span>{locale === "es" ? "Modo cocina" : "Start cooking"}</span>
-            </button>
-          )}
         </div>
 
         {/* 2-Segment Progress Bar (Step 1: Learn, Step 2: Quiz) */}
@@ -190,6 +179,23 @@ export function ChapterLearnView({
           </div>
         ) : blocks && blocks.length > 0 ? (
           <div className="doc py-1 space-y-4">
+            {hasCookMode && (
+              <div className="doc-sec-cta flex justify-end pb-1">
+                <button
+                  type="button"
+                  onClick={handleOpenCookMode}
+                  className="btn btn-primary cook-start inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer"
+                >
+                  <LuPlay
+                    aria-hidden="true"
+                    className="i fill-current text-xs"
+                  />
+                  <span>
+                    {locale === "es" ? "Empezar a cocinar" : "Start cooking"}
+                  </span>
+                </button>
+              </div>
+            )}
             <BlockRenderer
               blocks={blocks}
               locale={locale === "es" ? "es" : "en"}

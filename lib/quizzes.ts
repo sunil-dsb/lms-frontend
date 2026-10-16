@@ -97,6 +97,82 @@ const knifeQuizQuestions: ProcedureQuizQuestion[] = [
     ],
     correctChoiceId: "kn-q2-b",
   },
+  {
+    id: "kn-q3",
+    prompt: {
+      en: "What allergen is present in Shrimp Ceviche Verde / Roja and requires strict segregation?",
+      es: "¿Qué alérgeno está presente en el Ceviche de Camarón y requiere estricta segregación?",
+    },
+    choices: [
+      {
+        id: "kn-q3-a",
+        label: {
+          en: "Peanuts and tree nuts",
+          es: "Cacahuates y frutos secos",
+        },
+      },
+      {
+        id: "kn-q3-b",
+        label: {
+          en: "Crustaceans / Shellfish (Prepared shrimp)",
+          es: "Crustáceos / Mariscos (Camarón preparado)",
+        },
+      },
+      {
+        id: "kn-q3-c",
+        label: {
+          en: "Soy and gluten only",
+          es: "Solo soya y gluten",
+        },
+      },
+      {
+        id: "kn-q3-d",
+        label: {
+          en: "Dairy and eggs",
+          es: "Lácteos y huevos",
+        },
+      },
+    ],
+    correctChoiceId: "kn-q3-b",
+  },
+  {
+    id: "kn-q4",
+    prompt: {
+      en: "Before sending the plated ceviche to Expo, what is the mandatory check?",
+      es: "¿Antes de enviar el ceviche emplatado a Expo, cuál es la verificación obligatoria?",
+    },
+    choices: [
+      {
+        id: "kn-q4-a",
+        label: {
+          en: "Wrap it immediately in plastic wrap.",
+          es: "Envolverlo inmediatamente en plástico.",
+        },
+      },
+      {
+        id: "kn-q4-b",
+        label: {
+          en: "Taste to confirm salt/lime balance, and verify height, clean plate edge, and no pooling sauce.",
+          es: "Probar el balance de sal/lima y verificar altura, borde limpio y sin charcos.",
+        },
+      },
+      {
+        id: "kn-q4-c",
+        label: {
+          en: "Microwave for 15 seconds.",
+          es: "Calentar en microondas 15 segundos.",
+        },
+      },
+      {
+        id: "kn-q4-d",
+        label: {
+          en: "Stack multiple bowls on top.",
+          es: "Apilar varios tazones encima.",
+        },
+      },
+    ],
+    correctChoiceId: "kn-q4-b",
+  },
 ];
 
 const allergenQuizQuestions: ProcedureQuizQuestion[] = [

@@ -172,19 +172,19 @@ export function ChapterQuizView({
           </Link>
         </div>
 
-        {/* Segmented Progress Bar */}
+        {/* Segmented Progress Bar (highlighted loading for questions) */}
         <div
           role="progressbar"
           aria-label={`Question ${currentIndex + 1} of ${totalQuestions}`}
           aria-valuenow={currentIndex + 1}
           aria-valuemin={1}
           aria-valuemax={totalQuestions}
-          className="flex items-center gap-1.5 pt-1"
+          className="flex items-center gap-2 pt-1 pb-1"
         >
           {Array.from({ length: totalQuestions }).map((_, i) => (
             <div
               key={i}
-              className={`h-1.5 flex-1 rounded-full transition-all duration-[var(--dur)] ${
+              className={`h-2 flex-1 rounded-full transition-colors duration-300 ease-out ${
                 i <= currentIndex
                   ? "bg-[var(--color-brand-600)]"
                   : "bg-[var(--color-panel-2)]"
