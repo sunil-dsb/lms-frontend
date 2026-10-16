@@ -152,6 +152,161 @@ const allergenQuizQuestions: ProcedureQuizQuestion[] = [
   },
 ];
 
+const handwashingQuizQuestions: ProcedureQuizQuestion[] = [
+  {
+    id: "hw-q1",
+    prompt: {
+      en: "What is the minimum water temperature required for handwashing?",
+      es: "¿Cuál es la temperatura mínima de agua requerida para lavarse las manos?",
+    },
+    choices: [
+      {
+        id: "hw-q1-a",
+        label: {
+          en: "Cold water is acceptable",
+          es: "El agua fría es aceptable",
+        },
+      },
+      {
+        id: "hw-q1-b",
+        label: {
+          en: "Warm water, at least 100°F (38°C)",
+          es: "Agua tibia, al menos a 38°C (100°F)",
+        },
+      },
+      {
+        id: "hw-q1-c",
+        label: {
+          en: "Boiling water only",
+          es: "Solo agua hirviendo",
+        },
+      },
+      {
+        id: "hw-q1-d",
+        label: {
+          en: "Room temperature water",
+          es: "Agua a temperatura ambiente",
+        },
+      },
+    ],
+    correctChoiceId: "hw-q1-b",
+  },
+  {
+    id: "hw-q2",
+    prompt: {
+      en: "When should you wash your hands?",
+      es: "¿Cuándo debes lavarte las manos?",
+    },
+    choices: [
+      {
+        id: "hw-q2-a",
+        label: {
+          en: "Only when they look dirty",
+          es: "Solo cuando se vean sucias",
+        },
+      },
+      {
+        id: "hw-q2-b",
+        label: {
+          en: "Before starting, and after handling raw meat",
+          es: "Antes de empezar y después de manipular carne cruda",
+        },
+      },
+      {
+        id: "hw-q2-c",
+        label: {
+          en: "Once at the start of the shift",
+          es: "Una vez al inicio del turno",
+        },
+      },
+      {
+        id: "hw-q2-d",
+        label: {
+          en: "Only after using the restroom",
+          es: "Solo después de usar el sanitario",
+        },
+      },
+    ],
+    correctChoiceId: "hw-q2-b",
+  },
+  {
+    id: "hw-q3",
+    prompt: {
+      en: "How long must you scrub hands thoroughly with soap?",
+      es: "¿Cuánto tiempo debes frotarte las manos con jabón?",
+    },
+    choices: [
+      {
+        id: "hw-q3-a",
+        label: {
+          en: "At least 20 seconds",
+          es: "Al menos 20 segundos",
+        },
+      },
+      {
+        id: "hw-q3-b",
+        label: {
+          en: "5 to 10 seconds",
+          es: "5 a 10 segundos",
+        },
+      },
+      {
+        id: "hw-q3-c",
+        label: {
+          en: "1 full minute",
+          es: "1 minuto completo",
+        },
+      },
+      {
+        id: "hw-q3-d",
+        label: {
+          en: "Until bubbles disappear",
+          es: "Hasta que desaparezca la espuma",
+        },
+      },
+    ],
+    correctChoiceId: "hw-q3-a",
+  },
+  {
+    id: "hw-q4",
+    prompt: {
+      en: "What should you do if your glove tears during kitchen prep?",
+      es: "¿Qué debes hacer si se rompe tu guante durante la preparación?",
+    },
+    choices: [
+      {
+        id: "hw-q4-a",
+        label: {
+          en: "Put another glove over the torn one",
+          es: "Ponerte otro guante encima del roto",
+        },
+      },
+      {
+        id: "hw-q4-b",
+        label: {
+          en: "Wipe hands with an apron",
+          es: "Limpiarte las manos con el delantal",
+        },
+      },
+      {
+        id: "hw-q4-c",
+        label: {
+          en: "Remove glove, wash hands, and put on a fresh glove",
+          es: "Quitarte el guante, lavarte las manos y ponerte uno nuevo",
+        },
+      },
+      {
+        id: "hw-q4-d",
+        label: {
+          en: "Finish the current prep ticket first",
+          es: "Terminar la orden actual primero",
+        },
+      },
+    ],
+    correctChoiceId: "hw-q4-c",
+  },
+];
+
 /** Initial quiz entries. The cleaning SOP ships with the original
  *  three-question food-safety quiz so the read side has something to
  *  render before the wizard authors its first new quiz. The three
@@ -272,8 +427,8 @@ export const SEED_QUIZZES: Quiz[] = [
   },
   {
     id: "quiz-handwashing",
-    questions: [],
-    attached: false,
+    questions: handwashingQuizQuestions,
+    attached: true,
     createdAt: "2026-08-12T00:00:00Z",
     updatedAt: "2026-08-12T00:00:00Z",
   },

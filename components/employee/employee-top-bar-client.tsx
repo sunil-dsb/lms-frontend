@@ -38,20 +38,20 @@ export function EmployeeTopBarClient({
       <header
         aria-busy="true"
         aria-label="Loading account"
-        className="flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-surface)] px-4 sm:px-6 shrink-0"
+        className="flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-surface)] px-3 sm:px-6 shrink-0"
         style={{ height: "56px", minHeight: "56px" }}
       >
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center" style={{ gap: "8px" }}>
           <Skeleton
             className="rounded-full bg-[var(--color-panel-2)]"
-            style={{ width: "30px", height: "30px" }}
+            style={{ width: "28px", height: "28px" }}
           />
           <Skeleton
             className="h-4 rounded bg-[var(--color-panel-2)]"
-            style={{ width: "140px" }}
+            style={{ width: "120px" }}
           />
         </div>
-        <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
+        <div className="flex shrink-0 items-center" style={{ gap: "10px" }}>
           <Skeleton
             className="rounded-full bg-[var(--color-panel)]"
             style={{ width: "64px", height: "34px" }}

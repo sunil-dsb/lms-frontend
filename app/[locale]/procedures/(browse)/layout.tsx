@@ -54,10 +54,6 @@ export default async function ProceduresLayout({
   }
 
   if (effectiveRole !== "admin") {
-    // Employees (or admins masquerading as employees via ?as=employee) get the
-    // same top bar the /employee pages wear, with the per-page `TabBar` below.
-    // Without it a cook reading a procedure had no theme switch and no way to
-    // sign out, on the pages they spend the longest on.
     const t = await getTranslations("employee");
     const tCommon = await getTranslations("app");
     return (

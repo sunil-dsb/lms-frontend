@@ -9,7 +9,37 @@ import type {
 import type { Employee, EmployeeRole } from "@/lib/types";
 import { ApiException } from "@/lib/api";
 
+/** Login with one automatic retry on transient failures. The database
+ *  sleeps when idle (Neon scale-to-zero) — the first attempt can fail while
+ *  it wakes, and the immediate retry then succeeds. 4xx (wrong password,
+ *  locked) never retries. */
+const TRANSIENT_RETRY_DELAY_MS = 3000;
+
+function isTransientLoginError(err: unknown): boolean {
+  if (!(err instanceof ApiException)) return true; // network-level failure
+  if (err.status === 0) return true;
+  if (err.status >= 500) return true;
+  return err.code === "DATABASE_ERROR" || err.code === "INTERNAL_ERROR";
+}
+
 export async function login(
+  input: LoginCredentials,
+): Promise<{ employee: Employee; token: string }> {
+  let attempt = 0;
+  for (;;) {
+    try {
+      return await loginAttempt(input);
+    } catch (err) {
+      attempt += 1;
+      if (attempt > 1 || !isTransientLoginError(err)) throw err;
+      await new Promise((resolve) =>
+        setTimeout(resolve, TRANSIENT_RETRY_DELAY_MS),
+      );
+    }
+  }
+}
+
+async function loginAttempt(
   input: LoginCredentials,
 ): Promise<{ employee: Employee; token: string }> {
   const { data } = await http.post<{

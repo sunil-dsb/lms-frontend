@@ -69,7 +69,7 @@ export function TrainingFilterTabs({
           type="button"
           role="tab"
           aria-selected={activeTab === "pending"}
-          onClick={() => onChangeTab("pending")}
+          onClick={() => onChangeTab?.("pending")}
           className={`inline-flex items-center justify-center rounded-full font-semibold text-xs sm:text-sm transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer ${
             activeTab === "pending"
               ? "bg-[var(--color-brand-600)] text-white shadow-xs"
@@ -98,7 +98,7 @@ export function TrainingFilterTabs({
           type="button"
           role="tab"
           aria-selected={activeTab === "completed"}
-          onClick={() => onChangeTab("completed")}
+          onClick={() => onChangeTab?.("completed")}
           className={`inline-flex items-center justify-center rounded-full font-semibold text-xs sm:text-sm transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer ${
             activeTab === "completed"
               ? "bg-[var(--color-brand-600)] text-white shadow-xs"

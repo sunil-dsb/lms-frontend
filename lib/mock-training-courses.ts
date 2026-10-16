@@ -14,11 +14,11 @@ import {
 export const mockTrainingCourses: Procedure[] = [
   {
     id: "course-004",
-    slug: "welcome-to-alimentaria",
-    titleEn: "Welcome to Alimentaria",
-    titleEs: "Bienvenido a Alimentaria",
-    purposeEn: "Day one: how we work, the uniform, and who to ask.",
-    purposeEs: "Primer día: cómo trabajamos, el uniforme y a quién preguntar.",
+    slug: "orientation",
+    titleEn: "Orientation",
+    titleEs: "Inducción",
+    purposeEn: "Everything you need to start at Alimentaria Mexicana.",
+    purposeEs: "Todo lo que necesitas para empezar en Alimentaria Mexicana.",
     category: null,
     status: "published",
     bodyEn: welcomeBody,
@@ -30,7 +30,7 @@ export const mockTrainingCourses: Procedure[] = [
     linkedTrainingId: null,
     quizMode: "training",
     attachedToTraining: true,
-    linkedSops: [],
+    linkedSops: ["proc-handwashing"],
   },
   {
     id: "course-001",

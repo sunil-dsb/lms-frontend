@@ -124,15 +124,16 @@ export function EmployeeTopBar({
 
   return (
     <header
-      className="sticky top-0 z-40 flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-surface)] px-4 sm:px-6 shrink-0 select-none"
+      className="sticky top-0 z-40 flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-surface)] px-3 sm:px-6 shrink-0 select-none"
       style={{ height: "56px", minHeight: "56px" }}
     >
       {/* Brand: Brand logo + Alimentaria Mexicana */}
-      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+      <div className="flex min-w-0 items-center" style={{ gap: "8px" }}>
         <EmployeeTopBarBackButton label={labels.back} />
         <Link
           href={`/${locale}/employee/home`}
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-85 active:scale-98"
+          className="flex min-w-0 items-center transition-opacity hover:opacity-85 active:scale-98"
+          style={{ gap: "8px" }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -140,21 +141,30 @@ export function EmployeeTopBar({
             alt={restaurantName}
             width={30}
             height={30}
-            style={{ width: "30px", height: "30px" }}
+            style={{
+              width: "28px",
+              height: "28px",
+              minWidth: "28px",
+              minHeight: "28px",
+            }}
             className="rounded-full object-cover shrink-0"
           />
-          <span className="font-[family-name:var(--font-ui)] font-normal text-sm sm:text-base tracking-tight text-[var(--color-ink)] leading-none truncate">
+          <span className="font-[family-name:var(--font-ui)] font-normal text-[13px] sm:text-base tracking-tight text-[var(--color-ink)] leading-none truncate">
             {restaurantName}
           </span>
         </Link>
       </div>
 
       {/* Right controls: Language switcher + User avatar trigger */}
-      <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
-        <LocaleSwitch locale={locale} label={labels.langLabel ?? "Language"} />
+      <div className="flex shrink-0 items-center" style={{ gap: "10px" }}>
+        <LocaleSwitch
+          locale={locale}
+          label={labels.langLabel ?? "Language"}
+          className="shrink-0"
+        />
 
         {/* User avatar button with terracotta ring */}
-        <div className="relative flex items-center">
+        <div className="relative flex shrink-0 items-center">
           <button
             ref={triggerRef}
             type="button"
@@ -162,8 +172,8 @@ export function EmployeeTopBar({
             aria-expanded={isOpen}
             aria-label={labels.signedInAs}
             onClick={() => setIsOpen((prev) => !prev)}
-            style={{ width: "34px", height: "34px" }}
-            className="flex items-center justify-center rounded-full bg-[#1e1b18] text-white font-semibold text-xs sm:text-sm cursor-pointer transition-transform active:scale-95 ring-2 ring-[var(--color-brand-600)] ring-offset-2 ring-offset-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-ring)]"
+            style={{ width: "32px", height: "32px" }}
+            className="flex items-center justify-center rounded-full bg-[#1e1b18] text-white font-semibold text-xs sm:text-sm cursor-pointer transition-transform active:scale-95 ring-2 ring-[var(--color-brand-600)] ring-offset-2 ring-offset-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-ring)] shrink-0"
           >
             {initial}
           </button>

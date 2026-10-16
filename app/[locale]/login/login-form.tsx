@@ -60,6 +60,10 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
           if (err.code === "ACCOUNT_LOCKED") setError(t("errorLocked"));
           else if (err.code === "INVALID_CREDENTIALS")
             setError(t("errorInvalid"));
+          // Never render raw server text for 5xx — it can carry driver
+          // internals (SQL, params). Show the generic message instead.
+          else if (err.status >= 500 || err.status === 0)
+            setError(t("errorGeneric"));
           else setError(err.message);
         } else {
           setError(t("errorGeneric"));
