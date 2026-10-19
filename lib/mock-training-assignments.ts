@@ -203,18 +203,6 @@ export const mockTrainingAssignments: TrainingAssignment[] = [
     quizPassedAt: "2026-08-25T11:05:00Z",
     acknowledgedAt: "2026-08-25T11:09:00Z",
   },
-  // Ana — fifth orientation course (cleaning fundamentals) added on day two.
-  {
-    id: "ta-015",
-    courseId: "course-005",
-    employeeId: "emp-006",
-    assignedAt: "2026-09-22T08:00:00Z",
-    dueAt: "2026-10-12T08:00:00Z",
-    status: "due",
-    completedStepIds: [],
-    quizPassedAt: null,
-    acknowledgedAt: null,
-  },
 ];
 
 // ---------------------------------------------------------------------------

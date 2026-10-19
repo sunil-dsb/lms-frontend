@@ -4,50 +4,60 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
+  LuCheck,
   LuFilePen,
   LuGraduationCap,
+  LuPlus,
   LuSearch,
   LuUserPlus,
   LuX,
 } from "react-icons/lu";
-import type { TrainingCourseRow } from "@/lib/types";
+import type { Procedure, TrainingCourseRow } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterChips } from "@/components/ui/filter-chips";
-import { Icon } from "@/components/ui/icon";
 import { RowActions } from "@/components/ui/row-actions";
 import { StatusPill } from "@/components/ui/status-pill";
 import { getQuizById } from "@/lib/api";
 import { IconTile } from "@/components/ui/icon-tile";
+import { getTrainingCourseRowsForAdmin } from "@/lib/mock-training";
+import { CourseAssignmentModal } from "./components/course-assignment-modal";
 
 interface TrainingCourseExplorerProps {
   locale: string;
   rows: TrainingCourseRow[];
 }
 
-type StatusFilter = "all" | "published" | "draft";
+type AssignmentFilter = "all" | "assigned" | "unassigned";
 
-/**
- * The courses that exist for this location, and what each one is costing the
- * team in unfinished work.
- *
- * Built on the library explorer's row, because it is the same object seen from a
- * different angle — a titled thing with a state, a sentence, a meta line and one
- * action — and two list pages that read differently are two products. The
- * filters sit on the page rather than in a card: they are chrome, and the list
- * is the content.
- */
 export function TrainingCourseExplorer({
   locale,
-  rows,
+  rows: initialRows,
 }: TrainingCourseExplorerProps): React.ReactElement {
   const t = useTranslations("admin.training");
   const tCommon = useTranslations("admin");
   const router = useRouter();
   const isEs = locale === "es";
 
+  const [courseRows, setCourseRows] =
+    React.useState<TrainingCourseRow[]>(initialRows);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [status, setStatus] = React.useState<StatusFilter>("all");
+  const [filter, setFilter] = React.useState<AssignmentFilter>("all");
+  const [assigningCourse, setAssigningCourse] =
+    React.useState<Procedure | null>(null);
+  const [successToast, setSuccessToast] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setCourseRows(initialRows);
+  }, [initialRows]);
+
+  React.useEffect(() => {
+    if (!successToast) return;
+    const timer = setTimeout(() => {
+      setSuccessToast(null);
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [successToast]);
 
   const titleOf = React.useCallback(
     (row: TrainingCourseRow) =>
@@ -57,58 +67,108 @@ export function TrainingCourseExplorer({
     [isEs],
   );
 
-  const statusCounts = React.useMemo(
+  const filterCounts = React.useMemo(
     () => ({
-      all: rows.length,
-      published: rows.filter((r) => r.course.status !== "draft").length,
-      draft: rows.filter((r) => r.course.status === "draft").length,
+      all: courseRows.length,
+      assigned: courseRows.filter((r) => r.assignmentCount > 0).length,
+      unassigned: courseRows.filter((r) => r.assignmentCount === 0).length,
     }),
-    [rows],
+    [courseRows],
   );
 
   const filteredRows = React.useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return rows.filter((row) => {
-      if (status === "draft" && row.course.status !== "draft") return false;
-      if (status === "published" && row.course.status === "draft") return false;
+    return courseRows.filter((row) => {
+      if (filter === "assigned" && row.assignmentCount === 0) return false;
+      if (filter === "unassigned" && row.assignmentCount > 0) return false;
       if (!q) return true;
       return titleOf(row).toLowerCase().includes(q);
     });
-  }, [rows, searchQuery, status, titleOf]);
+  }, [courseRows, searchQuery, filter, titleOf]);
 
   function handleArchive(courseId: string): void {
-    // The real archive call is wired up once the route exists; RowActions already
-    // asks for confirmation, so this can never be one tap away.
     console.info("[training] archive course (mock)", courseId);
+  }
+
+  function handleAssigned(count: number): void {
+    // Refresh rows from store to immediately reflect the new assignment
+    const updated = getTrainingCourseRowsForAdmin();
+    setCourseRows(updated);
+
+    if (assigningCourse) {
+      const courseTitle =
+        (isEs
+          ? assigningCourse.titleEs || assigningCourse.titleEn
+          : assigningCourse.titleEn || assigningCourse.titleEs) ||
+        assigningCourse.slug;
+
+      const message = isEs
+        ? `Se asignó correctamente a ${count} ${count === 1 ? "empleado" : "empleados"} a "${courseTitle}".`
+        : `Successfully assigned ${count} ${count === 1 ? "employee" : "employees"} to "${courseTitle}".`;
+      setSuccessToast(message);
+    }
   }
 
   return (
     <div className="space-y-6">
+      {/* Toast Notification Banner */}
+      {successToast ? (
+        <div className="animate-in fade-in slide-in-from-top-2 flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+          <div className="flex items-center gap-2">
+            <span className="flex size-5 items-center justify-center rounded-full bg-emerald-600 text-white">
+              <LuCheck className="text-xs stroke-[3]" />
+            </span>
+            <p className="font-medium">{successToast}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessToast(null)}
+            className="text-emerald-700 hover:text-emerald-950 dark:text-emerald-300 dark:hover:text-white"
+          >
+            <LuX className="text-base" />
+          </button>
+        </div>
+      ) : null}
+
+      {/* Page Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="font-[family-name:var(--font-ui)] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)]">
+          {isEs ? "Cursos" : "Courses"}
+        </h1>
+        <Button
+          type="button"
+          icon={LuPlus}
+          onClick={() => router.push(`/${locale}/admin/training/new`)}
+        >
+          {t("newCourse")}
+        </Button>
+      </div>
+
+      {/* Filter Chips: Replaced Published / Draft with Assigned / Unassigned */}
       <FilterChips
-        label={isEs ? "Estado" : "Status"}
-        value={status}
-        onChange={(v) => setStatus(v as StatusFilter)}
+        label={t("filterAssignment")}
+        value={filter}
+        onChange={(v) => setFilter(v as AssignmentFilter)}
         chips={[
           {
             value: "all",
             label: tCommon("filterAll"),
-            count: statusCounts.all,
+            count: filterCounts.all,
           },
           {
-            value: "published",
-            label: t("statusPublished"),
-            count: statusCounts.published,
+            value: "assigned",
+            label: t("filterAssigned"),
+            count: filterCounts.assigned,
           },
           {
-            value: "draft",
-            label: t("statusDraft"),
-            count: statusCounts.draft,
+            value: "unassigned",
+            label: t("filterUnassigned"),
+            count: filterCounts.unassigned,
           },
         ]}
       />
 
-      {/* Chrome, on the page ground. A card around the search put the filters on
-          the same plane as the list they filter. */}
+      {/* Search Input Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="find" role="search">
           <LuSearch aria-hidden="true" className="i" />
@@ -136,13 +196,28 @@ export function TrainingCourseExplorer({
 
         <p className="text-sm leading-meta text-[var(--color-ink-2)]">
           {t("countSummary", {
-            total: rows.length,
+            total: courseRows.length,
             shown: filteredRows.length,
           })}
         </p>
       </div>
 
-      {filteredRows.length === 0 ? (
+      {/* Course List / Empty States */}
+      {courseRows.length === 0 ? (
+        <EmptyState
+          icon={LuGraduationCap}
+          title={t("emptyHeading")}
+          body={t("emptyBody")}
+          action={
+            <Button
+              icon={LuPlus}
+              onClick={() => router.push(`/${locale}/admin/training/new`)}
+            >
+              {t("newCourse")}
+            </Button>
+          }
+        />
+      ) : filteredRows.length === 0 ? (
         <EmptyState
           icon={LuSearch}
           title={t("noMatchHeading")}
@@ -152,7 +227,7 @@ export function TrainingCourseExplorer({
               variant="secondary"
               onClick={() => {
                 setSearchQuery("");
-                setStatus("all");
+                setFilter("all");
               }}
             >
               {tCommon("clearFilters")}
@@ -170,7 +245,7 @@ export function TrainingCourseExplorer({
               row.course.quizId &&
               getQuizById(row.course.quizId)?.questions?.length,
             );
-            const isDraft = row.course.status === "draft";
+            const isAssigned = row.assignmentCount > 0;
             const updated = new Date(row.course.updatedAt).toLocaleDateString(
               isEs ? "es" : "en",
               {
@@ -193,14 +268,24 @@ export function TrainingCourseExplorer({
                       <h4 className="min-w-0 truncate text-base font-semibold leading-heading text-[var(--color-ink)] transition-colors">
                         {title}
                       </h4>
-                      <StatusPill tone={isDraft ? "neutral" : "ok"} withDot>
-                        {isDraft ? t("statusDraft") : t("statusPublished")}
-                      </StatusPill>
-                      {/* Only the states worth acting on are worn. A course that
-                          has its quiz and nobody late says so by staying quiet. */}
+
+                      {/* Replaced Draft/Published badge with Assigned / Unassigned */}
+                      {isAssigned ? (
+                        <StatusPill tone="ok" withDot>
+                          {t("statusAssigned")}
+                        </StatusPill>
+                      ) : (
+                        <StatusPill tone="neutral" withDot>
+                          {t("statusUnassigned")}
+                        </StatusPill>
+                      )}
+
+                      {/* Quiz Pill */}
                       {hasQuiz ? null : (
                         <StatusPill tone="warn">{t("noQuiz")}</StatusPill>
                       )}
+
+                      {/* Overdue Pill */}
                       {row.overdueCount > 0 ? (
                         <StatusPill tone="bad" withDot>
                           {t("countOverdue", { count: row.overdueCount })}
@@ -214,21 +299,25 @@ export function TrainingCourseExplorer({
                       </p>
                     ) : null}
 
-                    {/* One meta line: how many have it, where they are with it,
-                        and when it last moved. Three pills per row said the same
-                        thing in three boxes. */}
+                    {/* Metadata line */}
                     <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-meta text-[var(--color-ink-3)]">
                       <span>
                         {t("totalAssigned", { count: row.assignmentCount })}
                       </span>
-                      <span aria-hidden="true">·</span>
-                      <span>
-                        {t("countInProgress", { count: row.inProgressCount })}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span>
-                        {t("countComplete", { count: row.completeCount })}
-                      </span>
+                      {row.assignmentCount > 0 ? (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span>
+                            {t("countInProgress", {
+                              count: row.inProgressCount,
+                            })}
+                          </span>
+                          <span aria-hidden="true">·</span>
+                          <span>
+                            {t("countComplete", { count: row.completeCount })}
+                          </span>
+                        </>
+                      ) : null}
                       <span aria-hidden="true">·</span>
                       <span>{t("updatedAgo", { when: updated })}</span>
                     </p>
@@ -236,19 +325,13 @@ export function TrainingCourseExplorer({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2 self-start md:self-center">
-                  {/* Grey, not brand-tinted. One per row times ten rows is
-                      ten brand marks on a page whose only real signal is the
-                      red "overdue" pill, and the pill loses. */}
+                  {/* Assign Button — now opens the pop-up modal directly */}
                   <Button
                     type="button"
                     variant="neutral"
                     size="sm"
                     icon={LuUserPlus}
-                    onClick={() =>
-                      router.push(
-                        `/${locale}/admin/training/${row.course.id}/assign`,
-                      )
-                    }
+                    onClick={() => setAssigningCourse(row.course)}
                   >
                     {t("assignAction")}
                   </Button>
@@ -278,6 +361,15 @@ export function TrainingCourseExplorer({
           })}
         </ul>
       )}
+
+      {/* Pop-up Assignment Modal */}
+      <CourseAssignmentModal
+        open={Boolean(assigningCourse)}
+        onClose={() => setAssigningCourse(null)}
+        locale={locale}
+        course={assigningCourse}
+        onAssigned={handleAssigned}
+      />
     </div>
   );
 }

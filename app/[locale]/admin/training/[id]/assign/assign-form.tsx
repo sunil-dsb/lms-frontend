@@ -11,7 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { FormSection } from "@/components/admin/form-section";
 import { cn } from "@/lib/utils";
 import type { TrainingAssignment, TrainingAssignmentStatus } from "@/lib/types";
-import { effectiveStatus } from "@/lib/mock-training";
+import { effectiveStatus, assignCourseToEmployees } from "@/lib/mock-training";
 import {
   LuCheck,
   LuClipboardList,
@@ -158,13 +158,17 @@ function EmployeePicker({
       <div className="relative">
         <LuSearch
           aria-hidden="true"
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-ink-3)]"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-ink-3)] pointer-events-none z-10"
         />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("searchEmployees")}
-          className="h-tap-admin pl-10 text-xs"
+          style={{
+            paddingLeft: "2.75rem",
+            paddingRight: search ? "2.5rem" : "1rem",
+          }}
+          className="!pl-11 h-tap-admin text-xs"
         />
       </div>
 
@@ -247,11 +251,7 @@ export function AssignForm({
       (id) => !existingAssignments.some((a) => a.employeeId === id),
     );
     if (newIds.length === 0) return;
-    console.info("[training] assign course (mock)", {
-      courseId,
-      employeeIds: newIds,
-      dueAt,
-    });
+    assignCourseToEmployees(courseId, newIds, dueAt);
     setSelected(new Set());
     router.push(`/${locale}/admin/training`);
   }
@@ -294,30 +294,25 @@ export function AssignForm({
             </p>
 
             {newSelections.length > 0 ? (
-              <div className="space-y-2 pt-2">
-                <p className="text-sm font-semibold text-[var(--color-ink-2)]">
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] p-3 space-y-2">
+                <p className="text-xs font-semibold text-[var(--color-ink)]">
                   {t("summary", { count: newSelections.length })}
                 </p>
-                <ul className="space-y-1">
+                <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto pr-1">
                   {newSelections.map((id) => {
                     const e = employees.find((x) => x.id === id);
                     if (!e) return null;
                     return (
-                      <li
+                      <span
                         key={id}
-                        className="flex items-center gap-2 rounded-md bg-[var(--color-wash)] px-2 py-1 text-xs"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] px-2.5 py-1 rounded-full text-[var(--color-ink)] shadow-xs"
                       >
-                        <Icon
-                          icon={LuUserPlus}
-                          className="text-xs text-[var(--color-ink-3)]"
-                        />
-                        <span className="truncate text-[var(--color-ink)]">
-                          {e.name}
-                        </span>
-                      </li>
+                        <LuUserPlus className="text-xs text-[var(--color-ink-3)] shrink-0" />
+                        <span className="truncate max-w-[130px]">{e.name}</span>
+                      </span>
                     );
                   })}
-                </ul>
+                </div>
               </div>
             ) : null}
 

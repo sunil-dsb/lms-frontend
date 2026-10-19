@@ -26,7 +26,7 @@ export const mockTrainingEmployees: MockEmployee[] = [
   { id: "emp-prep", name: "Maria Santos", station: "Prep" },
   { id: "emp-004", name: "Hiro Watanabe", station: "Grill" },
   { id: "emp-006", name: "Ana López", station: "Dishwasher" },
-  { id: "emp-admin", name: "Chef Raúl Medina", station: "Saucier" },
+  { id: "emp-admin", name: "Chef Raúl Medina", station: "Prep" },
 ];
 
 // ---------------------------------------------------------------------------

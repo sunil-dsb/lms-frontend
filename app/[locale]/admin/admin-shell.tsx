@@ -106,7 +106,12 @@ const NAV_GROUPS: NavGroup[] = [
   {
     headingKey: "groupTraining",
     items: [
-      { href: "/training", icon: LuGraduationCap, labelKey: "navTraining" },
+      { href: "/training", icon: LuGraduationCap, labelKey: "navCourses" },
+      {
+        href: "/training/progress",
+        icon: LuChartColumn,
+        labelKey: "navProgress",
+      },
     ],
   },
   {

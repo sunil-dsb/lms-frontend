@@ -48,8 +48,108 @@ export function listTrainingAssignmentsForEmployee(
   return mockTrainingAssignments.filter((a) => a.employeeId === employeeId);
 }
 
+export function assignCourseToEmployees(
+  courseId: string,
+  employeeIds: string[],
+  dueAt?: string,
+): TrainingAssignment[] {
+  const created: TrainingAssignment[] = [];
+  const safeDueDate =
+    dueAt && dueAt.trim()
+      ? new Date(dueAt).toISOString()
+      : new Date(Date.now() + 14 * 86400000).toISOString();
+
+  employeeIds.forEach((empId) => {
+    const existing = mockTrainingAssignments.find(
+      (a) => a.courseId === courseId && a.employeeId === empId,
+    );
+    if (!existing) {
+      const newAssignment: TrainingAssignment = {
+        id: `ta-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        courseId,
+        employeeId: empId,
+        assignedAt: new Date().toISOString(),
+        dueAt: safeDueDate,
+        status: "due",
+        completedStepIds: [],
+        quizPassedAt: null,
+        acknowledgedAt: null,
+      };
+      mockTrainingAssignments.push(newAssignment);
+      created.push(newAssignment);
+    }
+  });
+  return created;
+}
+
 export function getCourseById(id: string): Procedure | undefined {
   return mockTrainingCourses.find((c) => c.id === id);
+}
+
+export function createTrainingCourse(input: {
+  titleEn: string;
+  titleEs?: string;
+  purposeEn: string;
+  purposeEs?: string;
+}): Procedure {
+  const slug = input.titleEn
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const id = `course-${slug || Date.now()}`;
+
+  const newCourse: Procedure = {
+    id,
+    slug,
+    titleEn: input.titleEn,
+    titleEs: input.titleEs || input.titleEn,
+    purposeEn: input.purposeEn,
+    purposeEs: input.purposeEs || input.purposeEn,
+    category: null,
+    status: "published",
+    bodyEn: { blocks: [] },
+    bodyEs: { blocks: [] },
+    createdBy: "admin-001",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    quizId: null,
+    linkedTrainingId: null,
+    quizMode: "training",
+    attachedToTraining: true,
+    linkedSops: [],
+  };
+
+  mockTrainingCourses.unshift(newCourse);
+  return newCourse;
+}
+
+export function saveTrainingCourse(input: {
+  id?: string;
+  titleEn: string;
+  titleEs?: string;
+  purposeEn: string;
+  purposeEs?: string;
+  linkedSops?: string[];
+}): Procedure {
+  if (input.id) {
+    const existing = mockTrainingCourses.find((c) => c.id === input.id);
+    if (existing) {
+      existing.titleEn = input.titleEn;
+      existing.titleEs = input.titleEs || input.titleEn;
+      existing.purposeEn = input.purposeEn;
+      existing.purposeEs = input.purposeEs || input.purposeEn;
+      existing.updatedAt = new Date().toISOString();
+      if (input.linkedSops) existing.linkedSops = input.linkedSops;
+      return existing;
+    }
+  }
+  return createTrainingCourse({
+    titleEn: input.titleEn,
+    titleEs: input.titleEs,
+    purposeEn: input.purposeEn,
+    purposeEs: input.purposeEs,
+  });
 }
 
 export function getTrainingRowsForEmployee(
