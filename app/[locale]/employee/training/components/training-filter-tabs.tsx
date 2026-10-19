@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
+import { CapsuleTabs } from "@/components/ui/capsule-tabs";
 import type { TrainingTabFilter } from "../lib/training-view-types";
 
 interface TrainingFilterTabsProps {
@@ -38,10 +39,8 @@ export function TrainingFilterTabsSkeleton(): React.ReactElement {
 }
 
 /**
- * Filter tabs component for employee training modules.
- * Renders an outer capsule container tray enclosing the active terracotta pill
- * and inactive pill with robust inline padding to guarantee pixel-perfect styling
- * across all Tailwind v4 configurations.
+ * Filter tabs for the employee training list: the shared capsule tray
+ * (`CapsuleTabs`) carrying this surface's two views and their counts.
  */
 export function TrainingFilterTabs({
   activeTab = "pending",
@@ -58,70 +57,19 @@ export function TrainingFilterTabs({
 
   return (
     <div className="pt-1">
-      <div
-        role="tablist"
-        aria-label={t("heading")}
-        className="inline-flex items-center rounded-full bg-[var(--color-panel)] border border-[var(--color-line-2)] self-start select-none"
-        style={{ padding: "4px", gap: "4px" }}
-      >
-        {/* Pending Tab */}
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "pending"}
-          onClick={() => onChangeTab?.("pending")}
-          className={`inline-flex items-center justify-center rounded-full font-semibold text-xs sm:text-sm transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer ${
-            activeTab === "pending"
-              ? "bg-[var(--color-brand-600)] text-white shadow-xs"
-              : "bg-transparent text-[var(--color-ink)] hover:text-[var(--color-brand-600)]"
-          }`}
-          style={{
-            paddingLeft: "16px",
-            paddingRight: "16px",
-            paddingTop: "6px",
-            paddingBottom: "6px",
-            minHeight: "32px",
-            gap: "6px",
-          }}
-        >
-          <span>{t("tabPending")}</span>
-          <span aria-hidden="true" className="opacity-80">
-            ·
-          </span>
-          <span className={activeTab === "pending" ? "text-white" : ""}>
-            {pendingCount}
-          </span>
-        </button>
-
-        {/* Completed Tab */}
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "completed"}
-          onClick={() => onChangeTab?.("completed")}
-          className={`inline-flex items-center justify-center rounded-full font-semibold text-xs sm:text-sm transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer ${
-            activeTab === "completed"
-              ? "bg-[var(--color-brand-600)] text-white shadow-xs"
-              : "bg-transparent text-[var(--color-ink)] hover:text-[var(--color-brand-600)]"
-          }`}
-          style={{
-            paddingLeft: "16px",
-            paddingRight: "16px",
-            paddingTop: "6px",
-            paddingBottom: "6px",
-            minHeight: "32px",
-            gap: "6px",
-          }}
-        >
-          <span>{t("tabCompleted")}</span>
-          <span aria-hidden="true" className="opacity-80">
-            ·
-          </span>
-          <span className={activeTab === "completed" ? "text-white" : ""}>
-            {completedCount}
-          </span>
-        </button>
-      </div>
+      <CapsuleTabs
+        ariaLabel={t("heading")}
+        value={activeTab}
+        onChange={(value) => onChangeTab?.(value as TrainingTabFilter)}
+        tabs={[
+          { value: "pending", label: t("tabPending"), count: pendingCount },
+          {
+            value: "completed",
+            label: t("tabCompleted"),
+            count: completedCount,
+          },
+        ]}
+      />
     </div>
   );
 }
