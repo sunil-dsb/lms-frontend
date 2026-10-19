@@ -6,6 +6,7 @@ import type {
   ProcedureIngredient,
   ProcedureMethodStep,
   ProcedureYieldItem,
+  RichTextDocument,
 } from "./types";
 
 /** Cheap, monotonically increasing id. Doesn't need to be crypto-grade — these
@@ -30,6 +31,18 @@ const newStep = (): ProcedureMethodStep => ({
 
 export function newTextBlock(): ProcedureBlock {
   return { id: nextBlockId(), kind: "text", body: empty() };
+}
+
+export function newRichTextBlock(): ProcedureBlock {
+  const empty: RichTextDocument = {
+    type: "doc",
+    content: [{ type: "paragraph" }],
+  };
+  return {
+    id: nextBlockId(),
+    kind: "rich_text",
+    body: { en: empty, es: empty },
+  };
 }
 
 export function newHeadingBlock(): ProcedureBlock {
@@ -160,9 +173,18 @@ export function newChecklistBlock(): ProcedureBlock {
   };
 }
 
+export function newLinkedProceduresBlock(): ProcedureBlock {
+  return {
+    id: nextBlockId(),
+    kind: "linked_procedures",
+    procedureIds: [],
+  };
+}
+
 export const BLOCK_FACTORIES: Record<ProcedureBlockKind, () => ProcedureBlock> =
   {
     text: newTextBlock,
+    rich_text: newRichTextBlock,
     heading: newHeadingBlock,
     method: newMethodBlock,
     ingredients: newIngredientsBlock,
@@ -173,10 +195,12 @@ export const BLOCK_FACTORIES: Record<ProcedureBlockKind, () => ProcedureBlock> =
     attachment: newAttachmentBlock,
     table: newTableBlock,
     checklist: newChecklistBlock,
+    linked_procedures: newLinkedProceduresBlock,
   };
 
 export const BLOCK_KIND_LABELS: ProcedureBlockKind[] = [
   "text",
+  "rich_text",
   "heading",
   "method",
   "ingredients",
@@ -187,6 +211,7 @@ export const BLOCK_KIND_LABELS: ProcedureBlockKind[] = [
   "attachment",
   "table",
   "checklist",
+  "linked_procedures",
 ];
 
 /** Resize every ingredient's amounts row so its length matches the current
@@ -248,6 +273,8 @@ export function duplicateBlock(block: ProcedureBlock): ProcedureBlock {
   switch (block.kind) {
     case "text":
       return { id, kind: "text", body: cloneLocalised(block.body) };
+    case "rich_text":
+      return { id, kind: "rich_text", body: structuredClone(block.body) };
     case "heading":
       return {
         id,
@@ -336,6 +363,12 @@ export function duplicateBlock(block: ProcedureBlock): ProcedureBlock {
           id: nextChecklistItemId(),
           text: cloneLocalised(it.text),
         })),
+      };
+    case "linked_procedures":
+      return {
+        id,
+        kind: "linked_procedures",
+        procedureIds: [...block.procedureIds],
       };
   }
 }

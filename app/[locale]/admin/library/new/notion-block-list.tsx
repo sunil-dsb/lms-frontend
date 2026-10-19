@@ -31,7 +31,12 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { BLOCK_FACTORIES, duplicateBlock } from "@/lib/procedure-blocks";
+import {
+  BLOCK_FACTORIES,
+  duplicateBlock,
+  nextBlockId,
+} from "@/lib/procedure-blocks";
+import { LinkProcedureModal } from "@/components/admin/link-procedure-modal";
 import { classifyVideoUrl } from "@/lib/procedure-media";
 import { Icon } from "@/components/ui/icon";
 import type {
@@ -60,6 +65,7 @@ interface NotionBlockListProps {
   blocks: ProcedureBlock[];
   onChange: (next: ProcedureBlock[]) => void;
   errors?: Record<string, string>;
+  allowLinkProcedure?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,8 +74,10 @@ interface NotionBlockListProps {
 
 function EmptyState({
   onAdd,
+  allowLinkProcedure = false,
 }: {
   onAdd: (kind: ProcedureBlockKind) => void;
+  allowLinkProcedure?: boolean;
 }): React.ReactElement {
   return (
     <div className="space-y-4 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)] p-8">
@@ -90,6 +98,12 @@ function EmptyState({
         {(
           [
             { kind: "text", label: "Text", icon: "ri-text", hint: "Paragraph" },
+            {
+              kind: "rich_text",
+              label: "Rich text",
+              icon: "ri-edit-line",
+              hint: "Formatted text and lists",
+            },
             {
               kind: "heading",
               label: "Heading",
@@ -144,33 +158,43 @@ function EmptyState({
               icon: "ri-restaurant-line",
               hint: "Items + amounts",
             },
+            {
+              kind: "linked_procedures",
+              label: "Link procedure",
+              icon: "ri-links-line",
+              hint: "Link existing SOP",
+            },
           ] as {
             kind: ProcedureBlockKind;
             label: string;
             icon: string;
             hint: string;
           }[]
-        ).map((opt) => (
-          <button
-            key={opt.kind}
-            type="button"
-            onClick={() => onAdd(opt.kind)}
-            className="group flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-3 text-left transition-colors hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)]"
-          >
-            <Icon
-              icon={opt.icon}
-              className="mt-0.5 text-lg text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)]"
-            />
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-[var(--color-ink)]">
-                {opt.label}
+        )
+          .filter(
+            (opt) => opt.kind !== "linked_procedures" || allowLinkProcedure,
+          )
+          .map((opt) => (
+            <button
+              key={opt.kind}
+              type="button"
+              onClick={() => onAdd(opt.kind)}
+              className="group flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-3 text-left transition-colors hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)]"
+            >
+              <Icon
+                icon={opt.icon}
+                className="mt-0.5 text-lg text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)]"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-[var(--color-ink)]">
+                  {opt.label}
+                </span>
+                <span className="block text-sm text-[var(--color-ink-2)]">
+                  {opt.hint}
+                </span>
               </span>
-              <span className="block text-sm text-[var(--color-ink-2)]">
-                {opt.hint}
-              </span>
-            </span>
-          </button>
-        ))}
+            </button>
+          ))}
       </div>
     </div>
   );
@@ -185,6 +209,7 @@ export function NotionBlockList({
   blocks,
   onChange,
   errors,
+  allowLinkProcedure = false,
 }: NotionBlockListProps): React.ReactElement {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -215,6 +240,10 @@ export function NotionBlockList({
     if (j < 0 || j >= blocks.length) return;
     onChange(arrayMove(blocks, i, j));
   }
+  const [linkModalTarget, setLinkModalTarget] = React.useState<{
+    afterId?: string;
+  } | null>(null);
+
   function duplicate(id: string): void {
     const i = blocks.findIndex((b) => b.id === id);
     if (i < -1) return;
@@ -224,10 +253,20 @@ export function NotionBlockList({
       ...blocks.slice(i + 1),
     ]);
   }
+
   function addAtEnd(kind: ProcedureBlockKind): void {
+    if (kind === "linked_procedures") {
+      setLinkModalTarget({});
+      return;
+    }
     onChange([...blocks, BLOCK_FACTORIES[kind]()]);
   }
+
   function addAfter(id: string, kind: ProcedureBlockKind): void {
+    if (kind === "linked_procedures") {
+      setLinkModalTarget({ afterId: id });
+      return;
+    }
     const i = blocks.findIndex((b) => b.id === id);
     if (i === -1) {
       addAtEnd(kind);
@@ -238,8 +277,38 @@ export function NotionBlockList({
     onChange(next);
   }
 
+  function handleConfirmLinkProcedures(procedureIds: string[]) {
+    const newBlock: ProcedureBlock = {
+      id: nextBlockId(),
+      kind: "linked_procedures",
+      procedureIds,
+    };
+    if (linkModalTarget?.afterId) {
+      const i = blocks.findIndex((b) => b.id === linkModalTarget.afterId);
+      if (i === -1) {
+        onChange([...blocks, newBlock]);
+      } else {
+        const next = [...blocks];
+        next.splice(i + 1, 0, newBlock);
+        onChange(next);
+      }
+    } else {
+      onChange([...blocks, newBlock]);
+    }
+    setLinkModalTarget(null);
+  }
+
   if (blocks.length === 0) {
-    return <EmptyState onAdd={addAtEnd} />;
+    return (
+      <>
+        <EmptyState onAdd={addAtEnd} allowLinkProcedure={allowLinkProcedure} />
+        <LinkProcedureModal
+          open={Boolean(linkModalTarget)}
+          onClose={() => setLinkModalTarget(null)}
+          onConfirm={handleConfirmLinkProcedures}
+        />
+      </>
+    );
   }
 
   return (
@@ -271,20 +340,32 @@ export function NotionBlockList({
           ))}
         </SortableContext>
       </DndContext>
-      <EndAddButton onAdd={addAtEnd} />
+      <EndAddButton onAdd={addAtEnd} allowLinkProcedure={allowLinkProcedure} />
+
+      <LinkProcedureModal
+        open={Boolean(linkModalTarget)}
+        onClose={() => setLinkModalTarget(null)}
+        onConfirm={handleConfirmLinkProcedures}
+      />
     </div>
   );
 }
 
 function EndAddButton({
   onAdd,
+  allowLinkProcedure = false,
 }: {
   onAdd: (kind: ProcedureBlockKind) => void;
+  allowLinkProcedure?: boolean;
 }): React.ReactElement {
   return (
     <div className="pt-2">
       {/* Ghost affordance — visible on hover only so it doesn't compete with slash command */}
-      <InsertAfterButton onInsert={onAdd} ghost />
+      <InsertAfterButton
+        onInsert={onAdd}
+        ghost
+        allowLinkProcedure={allowLinkProcedure}
+      />
     </div>
   );
 }

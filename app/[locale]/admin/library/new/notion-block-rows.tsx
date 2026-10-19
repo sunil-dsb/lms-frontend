@@ -155,6 +155,13 @@ function getBlockDeleteInfo(block: ProcedureBlock): {
         label: "Delete section",
         description: `"Text" and its paragraph content will be permanently removed. This can't be undone.`,
       };
+    case "linked_procedures":
+      return {
+        title: "Delete this section?",
+        name: "Linked procedures",
+        label: "Delete section",
+        description: `"Linked procedures" will be removed from this content. This can't be undone.`,
+      };
     default:
       return {
         title: "Delete this section?",
@@ -482,7 +489,11 @@ export function BlockRow({
                             ? "Video"
                             : block.kind === "attachment"
                               ? "Attachment"
-                              : "Table"}
+                              : block.kind === "table"
+                                ? "Table"
+                                : block.kind === "rich_text"
+                                  ? "Rich text"
+                                  : "Link procedure"}
         </span>
 
         {/* Spacer pushes actions to the right */}
@@ -522,10 +533,12 @@ export function BlockRow({
 export function InsertAfterButton({
   onInsert,
   ghost = false,
+  allowLinkProcedure = false,
 }: {
   onInsert: (kind: ProcedureBlockKind) => void;
   /** When true, renders as a low-profile ghost affordance rather than a full button. */
   ghost?: boolean;
+  allowLinkProcedure?: boolean;
 }): React.ReactElement {
   const [open, setOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
@@ -557,6 +570,7 @@ export function InsertAfterButton({
           {(
             [
               { kind: "text", label: "Text", icon: "ri-text" },
+              { kind: "rich_text", label: "Rich text", icon: "ri-edit-line" },
               { kind: "heading", label: "Heading", icon: "ri-h-1" },
               {
                 kind: "method",
@@ -578,24 +592,33 @@ export function InsertAfterButton({
                 label: "Ingredients",
                 icon: "ri-restaurant-line",
               },
+              {
+                kind: "linked_procedures",
+                label: "Link procedure",
+                icon: "ri-links-line",
+              },
             ] as { kind: ProcedureBlockKind; label: string; icon: string }[]
-          ).map((opt) => (
-            <button
-              key={opt.kind}
-              type="button"
-              onClick={() => {
-                onInsert(opt.kind);
-                setOpen(false);
-              }}
-              className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-[var(--color-ink)] hover:bg-[var(--color-wash)] transition-colors"
-            >
-              <Icon
-                icon={opt.icon}
-                className="text-base text-[var(--color-ink-2)]"
-              />
-              <span className="font-medium">{opt.label}</span>
-            </button>
-          ))}
+          )
+            .filter(
+              (opt) => opt.kind !== "linked_procedures" || allowLinkProcedure,
+            )
+            .map((opt) => (
+              <button
+                key={opt.kind}
+                type="button"
+                onClick={() => {
+                  onInsert(opt.kind);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-[var(--color-ink)] hover:bg-[var(--color-wash)] transition-colors"
+              >
+                <Icon
+                  icon={opt.icon}
+                  className="text-base text-[var(--color-ink-2)]"
+                />
+                <span className="font-medium">{opt.label}</span>
+              </button>
+            ))}
         </div>
       </Popover>
     </>

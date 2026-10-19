@@ -11,10 +11,12 @@ import { ProcedureBlockEditor } from "./procedure-block-editor";
 import {
   LuArrowDown,
   LuArrowUp,
+  LuBookOpen,
   LuCopy,
   LuGripVertical,
   LuHeading1,
   LuImage,
+  LuFileText,
   LuListChecks,
   LuListOrdered,
   LuPaperclip,
@@ -29,6 +31,7 @@ import { Icon } from "@/components/ui/icon";
 import type { IconType } from "react-icons";
 
 const KIND_ICON: Record<ProcedureBlockKind, IconType> = {
+  rich_text: LuFileText,
   text: LuType,
   heading: LuHeading1,
   method: LuListOrdered,
@@ -40,6 +43,7 @@ const KIND_ICON: Record<ProcedureBlockKind, IconType> = {
   attachment: LuPaperclip,
   table: LuTable,
   checklist: LuListChecks,
+  linked_procedures: LuBookOpen,
 };
 
 interface BlockTheme {
@@ -53,6 +57,15 @@ interface BlockTheme {
 }
 
 const BLOCK_THEMES: Record<ProcedureBlockKind, BlockTheme> = {
+  rich_text: {
+    border: "border-l-[var(--color-brand-600)]",
+    bgHeader: "bg-[var(--color-bg-admin)]",
+    badgeBg: "bg-[var(--color-brand-tint)]",
+    badgeText: "text-[var(--color-brand-700)]",
+    badgeBorder: "border-[var(--color-brand-600)]",
+    iconColor: "text-[var(--color-brand-700)]",
+    label: "Rich Text",
+  },
   text: {
     border: "border-l-[var(--color-line-2)]",
     bgHeader: "bg-[var(--color-bg-admin)]",
@@ -151,6 +164,16 @@ const BLOCK_THEMES: Record<ProcedureBlockKind, BlockTheme> = {
     badgeBorder: "border-[var(--color-ok)]/30",
     iconColor: "text-[var(--color-ok)]",
     label: "Checklist",
+  },
+  linked_procedures: {
+    border: "border-l-[var(--color-brand-600)]",
+    bgHeader: "bg-[var(--color-bg-admin)]",
+    badgeBg: "bg-[var(--color-brand-50)] dark:bg-[var(--color-brand-950)]",
+    badgeText: "text-[var(--color-brand-600)]",
+    badgeBorder:
+      "border-[var(--color-brand-300)] dark:border-[var(--color-brand-800)]",
+    iconColor: "text-[var(--color-brand-600)]",
+    label: "Linked Procedures",
   },
 };
 

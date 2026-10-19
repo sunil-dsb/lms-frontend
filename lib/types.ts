@@ -308,8 +308,30 @@ export interface ProcedureIngredient {
 
 export type ProcedureImageHint = "photo" | "diagram";
 
+/** Supported Tiptap JSON nodes and marks saved inside a rich_text block. */
+export interface RichTextDocument {
+  type: "doc";
+  content: RichTextNode[];
+}
+
+export interface RichTextNode {
+  type: string;
+  attrs?: Record<string, string | number | boolean | null>;
+  text?: string;
+  marks?: {
+    type: string;
+    attrs?: Record<string, string | number | boolean | null>;
+  }[];
+  content?: RichTextNode[];
+}
+
 export type ProcedureBlock =
   | { id: string; kind: "text"; body: Localised }
+  | {
+      id: string;
+      kind: "rich_text";
+      body: { en: RichTextDocument; es: RichTextDocument };
+    }
   | { id: string; kind: "heading"; level: 1 | 2 | 3; text: Localised }
   | {
       id: string;
@@ -364,6 +386,11 @@ export type ProcedureBlock =
       kind: "checklist";
       title?: LocalisedOptional;
       items: { id: string; text: Localised }[];
+    }
+  | {
+      id: string;
+      kind: "linked_procedures";
+      procedureIds: string[];
     };
 
 export type ProcedureBlockKind = ProcedureBlock["kind"];
@@ -677,6 +704,69 @@ export interface TrainingAssignmentRow {
   assignment: TrainingAssignment;
   course: Procedure;
   effectiveStatus: TrainingAssignmentStatus;
+}
+
+// ============================================================================
+// Progress — the admin Progress tab (`/admin/training/progress`): the three
+// stat-card counts plus one row per person or per course. This is the shape
+// GET /training/progress will return, so the view never learns the raw
+// assignment records behind it.
+// ============================================================================
+
+/** A row's state as the Progress tab reads it: finished, going, or past its
+ *  due date. `due` and `in_progress` collapse into `in_progress` — to the
+ *  admin scanning the page both simply mean "not finished yet". */
+export type ProgressStatus = "complete" | "in_progress" | "overdue";
+
+/** A course referenced by a progress row. Carries both titles so the view
+ *  picks the reader's language the way the other training surfaces do. */
+export interface ProgressCourseRef {
+  id: string;
+  titleEn: string;
+  titleEs: string;
+}
+
+/** The three stat cards. Counts are training items (assignments), not people:
+ *  one person lands in a bucket once per assigned course. */
+export interface TrainingProgressSummary {
+  completed: number;
+  inProgress: number;
+  overdue: number;
+}
+
+/** "By employee" row — one per person with at least one assigned course. */
+export interface EmployeeProgressRow {
+  employeeId: string;
+  name: string;
+  station: string;
+  coursesDone: number;
+  coursesTotal: number;
+  /** The unfinished course due soonest — what this person should be on.
+   *  Null when every assigned course is finished. */
+  currentCourse: ProgressCourseRef | null;
+  /** 1-based chapter inside `currentCourse`; null whenever the course is. */
+  currentChapter: number | null;
+  status: ProgressStatus;
+}
+
+/** "By course" row — one per course somebody is actually taking (a course
+ *  with no assignments has no progress to report and is left to the Courses
+ *  tab). */
+export interface CourseProgressRow {
+  course: ProgressCourseRef;
+  peopleDone: number;
+  peopleTotal: number;
+  /** The chapter the unfinished readers sit on (the mode, ties to the earlier
+   *  chapter) — the group's position, not any one person's. Null when the
+   *  course is finished for everyone. */
+  currentChapter: number | null;
+  status: ProgressStatus;
+}
+
+export interface TrainingProgressData {
+  summary: TrainingProgressSummary;
+  employees: EmployeeProgressRow[];
+  courses: CourseProgressRow[];
 }
 
 // ============================================================================

@@ -64,6 +64,8 @@ function blockText(b: ProcedureBlock): string {
     case "text":
     case "warning":
       return both(b.body);
+    case "rich_text":
+      return JSON.stringify(b.body).replace(/[{}\[\]":,]/g, " ");
     case "heading":
       return both(b.text);
     case "method":

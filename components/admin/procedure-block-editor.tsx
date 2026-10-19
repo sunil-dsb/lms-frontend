@@ -15,9 +15,11 @@ import {
   LuCopy,
   LuFocus,
   LuGripVertical,
+  LuBookOpen,
   LuHeading1,
   LuHeading2,
   LuHeading3,
+  LuFileText,
   LuImage,
   LuImagePlus,
   LuLightbulb,
@@ -68,8 +70,10 @@ import {
   TableEditor,
   ChecklistEditor,
 } from "./procedure-block-editor/table-checklist-editors";
+import { BilingualRichTextEditor } from "@/components/editor/bilingual-rich-text-editor";
 
 const KIND_ICON: Record<ProcedureBlockKind, IconType> = {
+  rich_text: LuFileText,
   text: LuType,
   heading: LuHeading1,
   method: LuListOrdered,
@@ -81,6 +85,7 @@ const KIND_ICON: Record<ProcedureBlockKind, IconType> = {
   attachment: LuPaperclip,
   table: LuTable,
   checklist: LuListChecks,
+  linked_procedures: LuBookOpen,
 };
 
 export function ProcedureBlockEditor({
@@ -95,6 +100,9 @@ export function ProcedureBlockEditor({
 
   let body: React.ReactElement = <></>;
   switch (block.kind) {
+    case "rich_text":
+      body = <BilingualRichTextEditor block={block} onPatch={onChange} />;
+      break;
     case "text":
       body = <TextEditor block={block} onChange={onChange} />;
       break;

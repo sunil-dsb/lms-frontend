@@ -50,6 +50,10 @@ export function isBlockEmpty(block: ProcedureBlock): boolean {
   switch (block.kind) {
     case "text":
       return locEmpty(block.body);
+    case "rich_text":
+      return [block.body.en, block.body.es].every(
+        (doc) => !JSON.stringify(doc).includes('"text"'),
+      );
     case "heading":
       return locEmpty(block.text);
     case "warning":
@@ -98,6 +102,8 @@ export function isBlockEmpty(block: ProcedureBlock): boolean {
       return (
         locEmpty(block.title) && block.items.every((it) => locEmpty(it.text))
       );
+    case "linked_procedures":
+      return block.procedureIds.length === 0;
     default:
       return false;
   }
@@ -121,6 +127,8 @@ function backfillBlock(block: ProcedureBlock): ProcedureBlock {
   switch (block.kind) {
     case "text":
       return { ...block, body: backfill(block.body) as Localised };
+    case "rich_text":
+      return block;
     case "heading":
       return { ...block, text: backfill(block.text) as Localised };
     case "warning":

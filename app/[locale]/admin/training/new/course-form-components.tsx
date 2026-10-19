@@ -58,6 +58,7 @@ import type { IconType } from "react-icons";
 
 export const COURSE_KINDS: ProcedureBlockKind[] = [
   "text",
+  "rich_text",
   "heading",
   "method",
   "image",
@@ -73,6 +74,7 @@ export const KIND_META: Record<
   { label: string; icon: IconType }
 > = {
   text: { label: "Text", icon: LuType },
+  rich_text: { label: "Rich text", icon: LuFileText },
   heading: { label: "Heading", icon: LuHeading1 },
   method: { label: "Numbered steps", icon: LuListOrdered },
   image: { label: "Photograph", icon: LuImage },
@@ -83,6 +85,7 @@ export const KIND_META: Record<
   checklist: { label: "Checklist", icon: LuListChecks },
   ingredients: { label: "Ingredients", icon: LuListOrdered },
   recipe: { label: "Recipe", icon: LuListOrdered }, // never offered in COURSE_KINDS
+  linked_procedures: { label: "Linked Procedures", icon: LuBookOpen },
 };
 
 export type CourseLang = "en" | "es";

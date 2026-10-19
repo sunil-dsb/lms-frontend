@@ -218,6 +218,24 @@ export function normalizeBlocks(blocks: any[]): any[] {
       continue;
     }
 
+    if (block.kind === "rich_text") {
+      normalized.push({
+        id: block.id || `b-${Math.random().toString(36).slice(2, 8)}`,
+        kind: "rich_text",
+        body: {
+          en:
+            block.body?.en?.type === "doc"
+              ? block.body.en
+              : { type: "doc", content: [{ type: "paragraph" }] },
+          es:
+            block.body?.es?.type === "doc"
+              ? block.body.es
+              : { type: "doc", content: [{ type: "paragraph" }] },
+        },
+      });
+      continue;
+    }
+
     if (block.kind === "heading") {
       const level = [1, 2, 3].includes(block.level) ? block.level : 2;
       normalized.push({

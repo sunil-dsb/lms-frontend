@@ -11,6 +11,8 @@ import {
 } from "./notion-block-media";
 import { TableBody, ChecklistBody } from "./notion-block-tables";
 import { IngredientsBlockBody } from "./ingredients-block-body";
+import { LinkedProceduresBody } from "./notion-block-linked-procedures";
+import { RichTextBody } from "./notion-block-rich-text";
 import type { ProcedureBlock, ProcedureBlockKind } from "@/lib/types";
 
 export type BodyProps<T extends ProcedureBlock> = {
@@ -36,6 +38,8 @@ export function BlockBody({
           onInsertAfter={onInsertAfter}
         />
       );
+    case "rich_text":
+      return <RichTextBody block={block} onPatch={onPatch as never} />;
     case "heading":
       return <HeadingBody block={block} onPatch={onPatch as never} />;
     case "method":
@@ -61,6 +65,8 @@ export function BlockBody({
       return <TableBody block={block} onPatch={onPatch as never} />;
     case "checklist":
       return <ChecklistBody block={block} onPatch={onPatch as never} />;
+    case "linked_procedures":
+      return <LinkedProceduresBody block={block} onPatch={onPatch as never} />;
     default:
       return <></>;
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { RichTextContent } from "@/components/editor/rich-text-editor";
 import type {
   Localised,
   LocalisedOptional,
@@ -24,10 +25,18 @@ import {
   type MethodStep,
   type ChapterRow,
 } from "./index";
-import { LuCheck, LuCircle, LuDownload, LuFileText } from "react-icons/lu";
+import {
+  LuBookOpen,
+  LuCheck,
+  LuCircle,
+  LuDownload,
+  LuExternalLink,
+  LuFileText,
+} from "react-icons/lu";
 import { Icon } from "@/components/ui/icon";
 import { RecipeBody } from "./recipe-body";
 import { cn } from "@/lib/utils";
+import { getSopById } from "@/lib/mock-training";
 
 /**
  * The block stream, laid out as the templates in /sop-template.html and
@@ -430,6 +439,13 @@ export function BlockRenderer({
         add(key, lines.length > 1 ? <Triggers items={lines} /> : <p>{body}</p>);
         return;
       }
+      case "rich_text": {
+        add(
+          key,
+          <RichTextContent value={block.body[locale === "es" ? "es" : "en"]} />,
+        );
+        return;
+      }
       case "warning": {
         // A severity this build does not know about still has something to say,
         // so it is shown as a warning rather than thrown at the reader as a 500.
@@ -680,6 +696,16 @@ export function BlockRenderer({
         );
         return;
       }
+      case "linked_procedures": {
+        add(
+          key,
+          <LinkedProceduresDocBlock
+            procedureIds={block.procedureIds}
+            locale={locale}
+          />,
+        );
+        return;
+      }
     }
   });
   flush();
@@ -811,6 +837,69 @@ function ChecklistBlock({
           ? "Marca cada elemento al completarlo."
           : "Check each item as you complete it."}
       </p>
+    </div>
+  );
+}
+
+function LinkedProceduresDocBlock({
+  procedureIds,
+  locale,
+}: {
+  procedureIds: string[];
+  locale: "en" | "es";
+}): React.ReactElement | null {
+  if (!procedureIds || procedureIds.length === 0) return null;
+  const isEs = locale === "es";
+
+  return (
+    <div className="my-4 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 shadow-xs">
+      <div className="flex items-center gap-2 mb-3">
+        <LuBookOpen className="w-4 h-4 text-[var(--color-brand-600)]" />
+        <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink)]">
+          {isEs ? "Procedimientos vinculados" : "Linked procedures"}
+        </h4>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        {procedureIds.map((id) => {
+          const sop = getSopById(id);
+          if (!sop) return null;
+          const title = isEs
+            ? sop.titleEs || sop.titleEn
+            : sop.titleEn || sop.titleEs;
+          const purpose = isEs
+            ? sop.purposeEs || sop.purposeEn
+            : sop.purposeEn || sop.purposeEs;
+
+          return (
+            <a
+              key={id}
+              href={`/${locale}/admin/library/${sop.slug || sop.id}`}
+              className="group flex flex-col justify-between rounded-xl border border-[var(--color-line-2)] bg-[var(--color-wash)]/40 p-3 hover:border-[var(--color-brand-300)] hover:bg-[var(--color-wash)] transition-all"
+            >
+              <div>
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--color-brand-600)] bg-[var(--color-brand-50)] dark:bg-[var(--color-brand-950)] px-2 py-0.5 rounded-full border border-[var(--color-brand-200)] dark:border-[var(--color-brand-800)] mb-1.5">
+                  <LuBookOpen className="w-3 h-3" />
+                  SOP
+                </span>
+                <h5 className="text-xs sm:text-sm font-semibold text-[var(--color-ink)] group-hover:text-[var(--color-brand-600)] transition-colors line-clamp-1">
+                  {title}
+                </h5>
+                {purpose && (
+                  <p className="mt-1 text-[11px] text-[var(--color-ink-2)] line-clamp-2">
+                    {purpose}
+                  </p>
+                )}
+              </div>
+              <div className="mt-2.5 pt-2 border-t border-[var(--color-line-2)]/60 flex items-center justify-between text-[10px] text-[var(--color-ink-3)]">
+                <span className="font-medium text-[var(--color-brand-600)]">
+                  {isEs ? "Ver procedimiento" : "View procedure"}
+                </span>
+                <LuExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </a>
+          );
+        })}
+      </div>
     </div>
   );
 }
