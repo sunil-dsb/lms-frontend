@@ -166,7 +166,7 @@ const cachedMe = new Map<
   string,
   { data: { employee: Employee }; expiresAt: number }
 >();
-const ME_CACHE_TTL_MS = 60_000;
+const ME_CACHE_TTL_MS = 15 * 60_000; // 15 minutes sliding TTL
 
 export function clearMeCache(): void {
   cachedMe.clear();
@@ -194,10 +194,6 @@ export async function fetchMe(
 
   const mePromise = (async () => {
     try {
-      // No `Cache-Control: no-cache` / `_t` buster here: freshness is owned
-      // by the 10s in-memory TTL + in-flight dedup below. Busters force a
-      // full backend round-trip on every call and defeat the rewrite proxy
-      // cache for an idempotent session check.
       const headers: Record<string, string> = {};
 
       if (cookieHeader) {
@@ -251,6 +247,17 @@ export async function fetchMe(
         return res;
       }
     } catch (err) {
+      // If we have a previously cached session and this is a non-401 transient error,
+      // preserve the session rather than kicking the user to the login screen.
+      if (
+        cached &&
+        err instanceof ApiException &&
+        err.status !== 401 &&
+        err.status !== 403
+      ) {
+        cached.expiresAt = Date.now() + 60_000;
+        return cached.data;
+      }
       if (err instanceof ApiException) {
         throw err;
       }

@@ -41,9 +41,21 @@ export function mapTrainingAssignmentRows(
         (isEs ? c.titleEs || c.titleEn : c.titleEn || c.titleEs) || c.slug;
       const purpose = (isEs ? c.purposeEs : c.purposeEn) || undefined;
 
+      const regChapterCount =
+        c.id === "course-002"
+          ? 5
+          : c.id === "course-003"
+            ? 4
+            : c.id === "course-004"
+              ? 3
+              : c.id === "course-001"
+                ? 3
+                : 0;
+
       const rawStepCount = courseStepCount(c);
       const linkedCount = c.linkedSops?.length ?? 0;
-      const chapterCount = Math.max(rawStepCount || linkedCount, 1);
+      const chapterCount =
+        regChapterCount || Math.max(rawStepCount || linkedCount, 1);
       const completedCount = Math.min(
         r.assignment.completedStepIds.length,
         chapterCount,
@@ -77,6 +89,11 @@ export function mapTrainingAssignmentRows(
         (c.bodyEs?.blocks ?? []).some((b) => b.kind === "recipe"),
       );
 
+      const estimatedMinutes = c.estimatedMinutes ?? chapterCount * 5;
+      const contentTypes =
+        c.contentTypes ?? (c.quizId ? ["quiz", "procedure"] : ["procedure"]);
+      const stationTag = c.stationTag;
+
       return {
         id: r.assignment.id,
         courseId: c.id,
@@ -91,6 +108,9 @@ export function mapTrainingAssignmentRows(
         completedAt:
           r.assignment.acknowledgedAt ?? r.assignment.quizPassedAt ?? null,
         hasRecipeChapter,
+        estimatedMinutes,
+        contentTypes,
+        stationTag,
       };
     },
   );

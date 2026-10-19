@@ -1,11 +1,17 @@
 import type { Procedure, ProcedureBlock, TrainingAssignment } from "./types";
 
+export type CourseChapterContentType =
+  "checklist" | "quiz" | "procedure" | "video" | "file";
+
 export interface CourseChapter {
   id: string;
   number: number;
   title: string;
   subtitle: string;
   status: "complete" | "active" | "locked";
+  completedText?: string;
+  contentType?: CourseChapterContentType;
+  estimatedMinutes?: number;
 }
 
 export interface LinkedProcedureInfo {
@@ -22,6 +28,11 @@ export interface CourseChaptersViewData {
   nextChapterNumber: number | null;
   linkedProcedure: LinkedProcedureInfo | null;
   allComplete: boolean;
+  dueAt?: string;
+  completedChaptersCount: number;
+  totalChaptersCount: number;
+  estimatedMinutesLeft?: number;
+  totalEstimatedMinutes?: number;
 }
 
 // Block builders mapping 1:1 to ProcedureBlock from the procedure system
@@ -307,6 +318,8 @@ interface ChapterDefinition {
   quizPassedTextEs?: string;
   blocks?: ProcedureBlock[];
   procedureSlug?: string;
+  contentType?: CourseChapterContentType;
+  estimatedMinutes?: number;
 }
 
 const COURSE_CHAPTER_REGISTRY: Record<
@@ -468,6 +481,8 @@ const COURSE_CHAPTER_REGISTRY: Record<
           "Video, técnica, norma de seguridad y procedimiento vinculado",
         quizPassedTextEn: "Checklist completed",
         quizPassedTextEs: "Lista de verificación completada",
+        contentType: "checklist",
+        estimatedMinutes: 4,
         blocks: [
           blockText(
             "b-grip-1",
@@ -551,6 +566,8 @@ const COURSE_CHAPTER_REGISTRY: Record<
         contentEs: "Guía, reglas de seguridad y procedimiento vinculado",
         quizPassedTextEn: "Quiz passed · 2 of 2 correct",
         quizPassedTextEs: "Cuestionario aprobado · 2 de 2 correctas",
+        contentType: "quiz",
+        estimatedMinutes: 4,
         blocks: [
           blockText(
             "b-rules-1",
@@ -605,22 +622,30 @@ const COURSE_CHAPTER_REGISTRY: Record<
       {
         id: "ch-shrimp-ceviche-procedure",
         number: 3,
-        titleEn: "Procedure: Shrimp Ceviche Verde / Roja",
-        titleEs: "Procedimiento: Ceviche Verde / Roja de Camarones",
+        titleEn: "Shrimp Ceviche Verde / Roja",
+        titleEs: "Ceviche Verde / Roja de Camarones",
         contentEn:
           "Preparation and plating procedure for Shrimp Ceviche Verde / Roja",
         contentEs:
           "Procedimiento de preparación y emplatado del Ceviche de Camarón",
+        quizPassedTextEn: "Procedure read",
+        quizPassedTextEs: "Procedimiento leído",
+        contentType: "procedure",
+        estimatedMinutes: 4,
         blocks: shrimpCevicheBlocks,
         procedureSlug: "shrimp-ceviche-verde-roja-2",
       },
       {
         id: "ch-knife-maintenance",
         number: 4,
-        titleEn: "Weekly whetstone maintenance & sign-off",
+        titleEn: "Weekly whetstone maintenance and sign-off",
         titleEs: "Mantenimiento semanal en piedra y firma",
-        contentEn: "Blade angle, whetstone technique and sign-off",
-        contentEs: "Ángulo de hoja, técnica en piedra y firma",
+        contentEn: "Video, checklist · about 6 min",
+        contentEs: "Video, lista · aprox. 6 min",
+        quizPassedTextEn: "Whetstone checklist completed",
+        quizPassedTextEs: "Lista de piedra completada",
+        contentType: "video",
+        estimatedMinutes: 5,
         blocks: [
           blockText(
             "b-stone-1",
@@ -660,6 +685,18 @@ const COURSE_CHAPTER_REGISTRY: Record<
             ],
           ),
         ],
+      },
+      {
+        id: "ch-knife-final-check",
+        number: 5,
+        titleEn: "Final knife safety check",
+        titleEs: "Evaluación final de seguridad con cuchillo",
+        contentEn: "Comprehensive review, station quiz and final sign-off",
+        contentEs: "Revisión integral, cuestionario y firma final",
+        quizPassedTextEn: "Safety check passed · 5 of 5 correct",
+        quizPassedTextEs: "Verificación de seguridad aprobada",
+        contentType: "quiz",
+        estimatedMinutes: 3,
       },
     ],
     linkedProcedure: {
@@ -861,7 +898,10 @@ export function getCourseChaptersViewData(
         number: def.number,
         title: chapterTitle,
         subtitle: passedText,
+        completedText: passedText,
         status: "complete",
+        contentType: def.contentType,
+        estimatedMinutes: def.estimatedMinutes,
       };
     }
 
@@ -873,14 +913,16 @@ export function getCourseChaptersViewData(
         title: chapterTitle,
         subtitle: contentDesc,
         status: "active",
+        contentType: def.contentType,
+        estimatedMinutes: def.estimatedMinutes,
       };
     }
 
     // Locked chapter
     const prevChapterNumber = index; // 1-based previous chapter number
     const lockedText = isEs
-      ? `Bloqueado hasta aprobar el capítulo ${prevChapterNumber}`
-      : `Locked until chapter ${prevChapterNumber} is passed`;
+      ? `Bloqueado hasta completar el capítulo ${prevChapterNumber}`
+      : `Locked until chapter ${prevChapterNumber} is done`;
 
     return {
       id: def.id,
@@ -888,8 +930,21 @@ export function getCourseChaptersViewData(
       title: chapterTitle,
       subtitle: lockedText,
       status: "locked",
+      contentType: def.contentType,
+      estimatedMinutes: def.estimatedMinutes,
     };
   });
+
+  // Calculate estimated minutes remaining for unfinished chapters
+  const totalEstimatedMinutes = chapterDefs.reduce(
+    (sum, c) => sum + (c.estimatedMinutes ?? 5),
+    0,
+  );
+  const remainingChapters = chapterDefs.slice(completedCount);
+  const estimatedMinutesLeft = remainingChapters.reduce(
+    (sum, c) => sum + (c.estimatedMinutes ?? 5),
+    0,
+  );
 
   // Resolve linked procedure if available
   let linkedProcedure: LinkedProcedureInfo | null = null;
@@ -909,6 +964,11 @@ export function getCourseChaptersViewData(
     nextChapterNumber,
     linkedProcedure,
     allComplete: isComplete,
+    dueAt: assignment?.dueAt,
+    completedChaptersCount: completedCount,
+    totalChaptersCount: totalChapters,
+    estimatedMinutesLeft: isComplete ? 0 : estimatedMinutesLeft,
+    totalEstimatedMinutes,
   };
 }
 

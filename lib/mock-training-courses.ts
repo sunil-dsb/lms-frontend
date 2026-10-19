@@ -31,6 +31,8 @@ export const mockTrainingCourses: Procedure[] = [
     quizMode: "training",
     attachedToTraining: true,
     linkedSops: ["proc-handwashing"],
+    estimatedMinutes: 15,
+    contentTypes: ["video", "quiz"],
   },
   {
     id: "course-001",
@@ -55,6 +57,8 @@ export const mockTrainingCourses: Procedure[] = [
     // Library procedures, so the links open what the cook can actually read.
     linkedSops: ["proc-handwashing", "proc-cleaning"],
     acknowledgement: handwashingAck,
+    estimatedMinutes: 12,
+    contentTypes: ["checklist", "procedure", "quiz"],
   },
   {
     id: "course-002",
@@ -78,6 +82,8 @@ export const mockTrainingCourses: Procedure[] = [
     attachedToTraining: true,
     linkedSops: [],
     acknowledgement: knifeAck,
+    estimatedMinutes: 20,
+    contentTypes: ["checklist", "quiz", "procedure"],
   },
   {
     id: "course-003",
@@ -101,6 +107,9 @@ export const mockTrainingCourses: Procedure[] = [
     attachedToTraining: true,
     linkedSops: [],
     acknowledgement: allergenAck,
+    stationTag: "Front of house",
+    estimatedMinutes: 25,
+    contentTypes: ["video", "quiz", "file"],
   },
   {
     id: "course-005",

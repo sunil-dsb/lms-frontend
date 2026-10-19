@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import type { CourseChaptersViewData } from "@/lib/course-chapters-data";
 import { CourseChaptersHeader } from "./course-chapters-header";
 import { CourseChapterItem } from "./course-chapter-item";
-import { LinkedProcedureCard } from "./linked-procedure-card";
 import { StickyContinueButton } from "./sticky-continue-button";
 
 interface CourseChaptersViewProps {
@@ -14,13 +13,13 @@ interface CourseChaptersViewProps {
 }
 
 /**
- * Course chapters overview screen matching the user's reference mockup:
+ * Course chapters overview screen matching the user's reference mockup (Image 2):
  * - Back link ("< Training")
- * - Course Title & Subtitle (No "Everyone" chip)
- * - Brand terracotta Progress bar ("33% done")
- * - Chapter list with Complete, Active, and Locked items
- * - Linked procedure card (e.g. Handwashing SOP)
- * - Fixed bottom CTA ("Continue chapter 2")
+ * - Course Title & Subtitle (No "Required" or "Everyone" tags)
+ * - Metadata badges: [Due in 2 days] [⏱ About 8 min left]
+ * - Brand terracotta Progress bar ("3 of 5 · 60%")
+ * - Connected timeline of chapters with complete checkmark, active terracotta number, and locked states
+ * - Fixed bottom CTA ("Continue chapter 4")
  */
 export function CourseChaptersView({
   data,
@@ -34,8 +33,11 @@ export function CourseChaptersView({
     progressPercent,
     chapters,
     nextChapterNumber,
-    linkedProcedure,
     allComplete,
+    dueAt,
+    completedChaptersCount,
+    totalChaptersCount,
+    estimatedMinutesLeft,
   } = data;
 
   // Determine sticky button label and target href
@@ -61,21 +63,24 @@ export function CourseChaptersView({
     <div className="relative min-h-screen bg-[var(--color-bg)]">
       <main
         className="mx-auto w-full max-w-doc space-y-6 px-4 pt-5 sm:px-6 sm:pt-6"
-        style={{ paddingBottom: "120px" }}
+        style={{ paddingBottom: "140px" }}
       >
-        {/* Header */}
+        {/* Header with Title, Purpose, Badges (Due date, time left) & Progress */}
         <CourseChaptersHeader
           locale={locale}
           title={title}
           purpose={purpose}
           progressPercent={progressPercent}
+          completedChaptersCount={completedChaptersCount}
+          totalChaptersCount={totalChaptersCount}
+          dueAt={dueAt}
+          estimatedMinutesLeft={estimatedMinutesLeft}
           backLabel={t("navTraining")}
-          doneLabel={t("doneSuffix")}
         />
 
-        {/* Chapters list */}
-        <section aria-label="Course chapters" className="space-y-3 pt-1">
-          <ul className="space-y-3">
+        {/* Course Chapters Cards List */}
+        <section aria-label="Course chapters" className="pt-2">
+          <ul className="flex flex-col gap-3">
             {chapters.map((ch) => (
               <CourseChapterItem
                 key={ch.id}
@@ -88,7 +93,7 @@ export function CourseChaptersView({
         </section>
       </main>
 
-      {/* Sticky Bottom Action Button */}
+      {/* Sticky Bottom Action Button matching Image 2 */}
       <StickyContinueButton label={ctaLabel} href={ctaHref} />
     </div>
   );

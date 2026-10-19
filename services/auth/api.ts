@@ -113,7 +113,7 @@ const cachedAuthMe = new Map<
   string,
   { data: { employee: Employee }; expiresAt: number }
 >();
-const AUTH_ME_CACHE_TTL_MS = 60_000;
+const AUTH_ME_CACHE_TTL_MS = 15 * 60_000; // 15 minutes sliding TTL
 
 export function clearAuthMeCache(): void {
   cachedAuthMe.clear();
@@ -141,9 +141,6 @@ export async function fetchMe(
 
   const promise = (async () => {
     try {
-      // Freshness is owned by the 10s TTL + dedup above — no no-cache
-      // headers or `_t` buster, which would force a backend round-trip
-      // on every session check.
       const headers: Record<string, string> = {};
 
       if (cookieHeader) {
@@ -220,6 +217,19 @@ export async function fetchMe(
         "SESSION_INVALID",
         "Session expired or invalid",
       );
+    } catch (err) {
+      // If we have a previously cached session and this is a non-401 transient error (500, network, timeout),
+      // keep the session alive by extending cache rather than dropping the user.
+      if (
+        cached &&
+        err instanceof ApiException &&
+        err.status !== 401 &&
+        err.status !== 403
+      ) {
+        cached.expiresAt = Date.now() + 60_000;
+        return cached.data;
+      }
+      throw err;
     } finally {
       inFlightAuthMe.delete(cacheKey);
     }

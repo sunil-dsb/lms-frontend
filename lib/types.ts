@@ -535,6 +535,12 @@ export interface Procedure {
    *  kept until training chapters own their own acknowledgement
    *  columns in the training-module slice (stage 3). */
   acknowledgement?: ProcedureAcknowledgement | null;
+  /** Estimated completion time in minutes. */
+  estimatedMinutes?: number;
+  /** Operational station tag, e.g. "Front of house" (not required/everyone). */
+  stationTag?: string;
+  /** Content categories included in the course. */
+  contentTypes?: Array<"checklist" | "quiz" | "procedure" | "video" | "file">;
   /** Active seasons for seasonal recipes. */
   seasons?: ProcedureSeason[];
 }
