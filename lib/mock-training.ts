@@ -83,21 +83,44 @@ export function assignCourseToEmployees(
 }
 
 export function getCourseById(id: string): Procedure | undefined {
-  return mockTrainingCourses.find((c) => c.id === id);
+  if (!id) return undefined;
+  const decoded = decodeURIComponent(id);
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/^course-/, "")
+      .replace(/[^a-z0-9]/g, "");
+  const targetNorm = norm(decoded);
+
+  return (
+    mockTrainingCourses.find((c) => c.id === id) ||
+    mockTrainingCourses.find((c) => c.id === decoded) ||
+    mockTrainingCourses.find((c) => c.slug === id || c.slug === decoded) ||
+    mockTrainingCourses.find((c) => norm(c.id) === targetNorm) ||
+    mockTrainingCourses.find((c) => c.slug && norm(c.slug) === targetNorm) ||
+    mockTrainingCourses.find(
+      (c) =>
+        (c.titleEn && norm(c.titleEn) === targetNorm) ||
+        (c.titleEs && norm(c.titleEs) === targetNorm),
+    )
+  );
 }
 
 export function createTrainingCourse(input: {
+  id?: string;
   titleEn: string;
   titleEs?: string;
   purposeEn: string;
   purposeEs?: string;
+  linkedSops?: string[];
+  quizId?: string | null;
 }): Procedure {
   const slug = input.titleEn
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-  const id = `course-${slug || Date.now()}`;
+  const id = input.id || `course-${slug || Date.now()}`;
 
   const newCourse: Procedure = {
     id,
@@ -113,11 +136,11 @@ export function createTrainingCourse(input: {
     createdBy: "admin-001",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    quizId: null,
+    quizId: input.quizId ?? null,
     linkedTrainingId: null,
     quizMode: "training",
     attachedToTraining: true,
-    linkedSops: [],
+    linkedSops: input.linkedSops || [],
   };
 
   mockTrainingCourses.unshift(newCourse);
@@ -131,6 +154,7 @@ export function saveTrainingCourse(input: {
   purposeEn: string;
   purposeEs?: string;
   linkedSops?: string[];
+  quizId?: string | null;
 }): Procedure {
   if (input.id) {
     const existing = mockTrainingCourses.find((c) => c.id === input.id);
@@ -141,14 +165,18 @@ export function saveTrainingCourse(input: {
       existing.purposeEs = input.purposeEs || input.purposeEn;
       existing.updatedAt = new Date().toISOString();
       if (input.linkedSops) existing.linkedSops = input.linkedSops;
+      if (input.quizId !== undefined) existing.quizId = input.quizId;
       return existing;
     }
   }
   return createTrainingCourse({
+    id: input.id,
     titleEn: input.titleEn,
     titleEs: input.titleEs,
     purposeEn: input.purposeEn,
     purposeEs: input.purposeEs,
+    linkedSops: input.linkedSops,
+    quizId: input.quizId,
   });
 }
 

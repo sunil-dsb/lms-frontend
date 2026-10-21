@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -48,7 +49,73 @@ export function TrainingCourseExplorer({
   const [successToast, setSuccessToast] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    setCourseRows(initialRows);
+    const merged = [...initialRows];
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("lms_created_courses");
+        if (raw) {
+          const customMap = JSON.parse(raw);
+          Object.values(customMap).forEach((c: any) => {
+            if (!c || !c.id) return;
+
+            const courseHasQuiz =
+              Boolean(c.quizId) ||
+              (Array.isArray(c.chapters) &&
+                c.chapters.some(
+                  (ch: any) =>
+                    (ch.quiz?.questions?.length ?? 0) > 0 ||
+                    ch.quiz?.attached === true ||
+                    (ch.quizQuestions?.length ?? 0) > 0,
+                ));
+
+            const existingIdx = merged.findIndex((r) => r.course.id === c.id);
+            if (existingIdx !== -1) {
+              // Update existing row with quizId if present in custom authored course
+              if (courseHasQuiz && !merged[existingIdx].course.quizId) {
+                merged[existingIdx] = {
+                  ...merged[existingIdx],
+                  course: {
+                    ...merged[existingIdx].course,
+                    quizId: c.quizId || `quiz-${c.id}`,
+                  },
+                };
+              }
+            } else {
+              const localCourse: Procedure = {
+                id: c.id,
+                slug: c.id.replace(/^course-/, ""),
+                titleEn: c.name || "Untitled Course",
+                titleEs: c.name || "Curso sin título",
+                purposeEn: c.purpose || "",
+                purposeEs: c.purpose || "",
+                category: null,
+                status: "published",
+                bodyEn: { blocks: [] },
+                bodyEs: { blocks: [] },
+                createdBy: "admin-001",
+                createdAt: c.updatedAt || new Date().toISOString(),
+                updatedAt: c.updatedAt || new Date().toISOString(),
+                quizId: courseHasQuiz ? c.quizId || `quiz-${c.id}` : null,
+                linkedTrainingId: null,
+                quizMode: "training",
+                attachedToTraining: true,
+                linkedSops: c.linkedSops || [],
+              };
+              merged.unshift({
+                course: localCourse,
+                assignmentCount: 0,
+                completeCount: 0,
+                inProgressCount: 0,
+                overdueCount: 0,
+              });
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to merge custom courses from localStorage:", err);
+      }
+    }
+    setCourseRows(merged);
   }, [initialRows]);
 
   React.useEffect(() => {
@@ -241,10 +308,7 @@ export function TrainingCourseExplorer({
             const purpose = isEs
               ? row.course.purposeEs || row.course.purposeEn
               : row.course.purposeEn || row.course.purposeEs;
-            const hasQuiz = Boolean(
-              row.course.quizId &&
-              getQuizById(row.course.quizId)?.questions?.length,
-            );
+            const hasQuiz = Boolean(row.course.quizId);
             const isAssigned = row.assignmentCount > 0;
             const updated = new Date(row.course.updatedAt).toLocaleDateString(
               isEs ? "es" : "en",
@@ -254,20 +318,33 @@ export function TrainingCourseExplorer({
                 year: "numeric",
               },
             );
+            const courseDetailHref = `/${locale}/admin/training/${row.course.id}`;
 
             return (
               <li
                 key={row.course.id}
-                className="group flex flex-col justify-between gap-4 px-4 py-5 transition-colors duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-wash)] md:flex-row md:items-center"
+                onClick={() => router.push(courseDetailHref)}
+                className="group flex flex-col justify-between gap-4 px-4 py-5 transition-colors duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-wash)] md:flex-row md:items-center cursor-pointer"
               >
                 <div className="flex min-w-0 flex-1 items-start gap-4">
-                  <IconTile size="lg" icon={LuGraduationCap} />
+                  <Link
+                    href={courseDetailHref}
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0 transition-transform group-hover:scale-105 active:scale-95 text-left"
+                    title={title}
+                  >
+                    <IconTile size="lg" icon={LuGraduationCap} />
+                  </Link>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <h4 className="min-w-0 truncate text-base font-semibold leading-heading text-[var(--color-ink)] transition-colors">
+                      <Link
+                        href={courseDetailHref}
+                        onClick={(e) => e.stopPropagation()}
+                        className="min-w-0 truncate text-base font-semibold leading-heading text-[var(--color-ink)] transition-colors hover:text-[var(--color-brand-600)]"
+                      >
                         {title}
-                      </h4>
+                      </Link>
 
                       {/* Replaced Draft/Published badge with Assigned / Unassigned */}
                       {isAssigned ? (
@@ -319,12 +396,17 @@ export function TrainingCourseExplorer({
                         </>
                       ) : null}
                       <span aria-hidden="true">·</span>
-                      <span>{t("updatedAgo", { when: updated })}</span>
+                      <span suppressHydrationWarning>
+                        {t("updatedAgo", { when: updated })}
+                      </span>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2 self-start md:self-center">
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex shrink-0 items-center gap-2 self-start md:self-center"
+                >
                   {/* Assign Button — now opens the pop-up modal directly */}
                   <Button
                     type="button"
