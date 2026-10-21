@@ -6,16 +6,21 @@ import { useRouter } from "next/navigation";
 import {
   LuBookOpen,
   LuCheck,
-  LuChevronRight,
-  LuFileText,
+  LuChevronDown,
+  LuChevronUp,
+  LuEye,
   LuPencil,
   LuPlus,
-  LuSearch,
+  LuSparkles,
   LuTrash2,
-  LuX,
 } from "react-icons/lu";
-import type { Procedure } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import type { Procedure, ProcedureBlock, ProcedureQuiz } from "@/lib/types";
+import { listAvailableSops } from "@/lib/mock-training";
+import { getChapterDefinitions } from "@/lib/course-chapters-data";
+import { useProcedures } from "@/services/library/hooks";
 import { saveCourseAction } from "../actions";
+import { ChapterContentEditor } from "./chapter-content-editor";
 
 export interface EditorChapter {
   id: string;
@@ -23,42 +28,75 @@ export interface EditorChapter {
   subtitle?: string;
   procedureId?: string;
   procedureSlug?: string;
+  blocks?: ProcedureBlock[];
+  quiz?: ProcedureQuiz | null;
 }
 
 interface CourseEditorProps {
   locale: string;
+  courseId?: string;
   initialCourse?: Procedure | null;
+  initialChapters?: EditorChapter[];
   availableSops?: Procedure[];
 }
 
 export function CourseEditor({
   locale,
+  courseId: propCourseId,
   initialCourse,
+  initialChapters = [],
   availableSops = [],
 }: CourseEditorProps): React.ReactElement {
   const router = useRouter();
   const isEs = locale === "es";
 
-  // If initialCourse provided, start directly in chapters view
-  const [step, setStep] = React.useState<"details" | "chapters">(
-    initialCourse ? "chapters" : "details",
-  );
+  const effectiveInitialId = propCourseId || initialCourse?.id;
+
+  // If courseId or initialCourse provided, start directly in chapters view
+  const [step, setStep] = React.useState<
+    "details" | "chapters" | "chapter-editor"
+  >(effectiveInitialId || initialCourse ? "chapters" : "details");
+  const [editingChapter, setEditingChapter] =
+    React.useState<EditorChapter | null>(null);
 
   const [courseId, setCourseId] = React.useState<string | undefined>(
-    initialCourse?.id,
-  );
-  const [courseName, setCourseName] = React.useState(
-    (isEs
-      ? initialCourse?.titleEs || initialCourse?.titleEn
-      : initialCourse?.titleEn || initialCourse?.titleEs) || "",
-  );
-  const [coursePurpose, setCoursePurpose] = React.useState(
-    (isEs
-      ? initialCourse?.purposeEs || initialCourse?.purposeEn
-      : initialCourse?.purposeEn || initialCourse?.purposeEs) || "",
+    effectiveInitialId,
   );
 
+  const initialName =
+    (isEs
+      ? initialCourse?.titleEs || initialCourse?.titleEn
+      : initialCourse?.titleEn || initialCourse?.titleEs) || "";
+  const initialPurpose =
+    (isEs
+      ? initialCourse?.purposeEs || initialCourse?.purposeEn
+      : initialCourse?.purposeEn || initialCourse?.purposeEs) || "";
+
+  const [courseName, setCourseName] = React.useState(initialName);
+  const [coursePurpose, setCoursePurpose] = React.useState(initialPurpose);
+
   const [chapters, setChapters] = React.useState<EditorChapter[]>(() => {
+    if (initialChapters && initialChapters.length > 0) {
+      return initialChapters;
+    }
+    const targetId = effectiveInitialId;
+    if (targetId) {
+      const defs =
+        getChapterDefinitions(targetId) ||
+        getChapterDefinitions(targetId.replace(/^course-/, "")) ||
+        getChapterDefinitions(`course-${targetId}`);
+      if (defs && defs.length > 0) {
+        return defs.map((d) => ({
+          id: d.id,
+          title: isEs ? d.titleEs || d.titleEn : d.titleEn || d.titleEs,
+          subtitle: isEs
+            ? d.contentEs || d.contentEn
+            : d.contentEn || d.contentEs,
+          procedureSlug: d.procedureSlug,
+          blocks: d.blocks,
+        }));
+      }
+    }
     if (!initialCourse?.linkedSops?.length) return [];
     return initialCourse.linkedSops.map((sopId, idx) => {
       const sop = availableSops.find((s) => s.id === sopId);
@@ -80,25 +118,173 @@ export function CourseEditor({
     });
   });
 
+  const LOCAL_STORAGE_KEY = "lms_created_courses";
+
+  // Fetch real procedures from the backend library for live title resolution
+  const { data: apiProceduresData } = useProcedures({}, true);
+  const [fetchedProcedures, setFetchedProcedures] = React.useState<
+    Record<string, Procedure>
+  >({});
+
+  // Merge availableSops, apiProceduresData, and mock sops into a fast lookup map
+  const proceduresMap = React.useMemo(() => {
+    const map = new Map<string, Procedure>();
+    listAvailableSops().forEach((p) => {
+      if (p.id) map.set(p.id, p);
+      if (p.slug) map.set(p.slug, p);
+    });
+    (availableSops || []).forEach((p) => {
+      if (p.id) map.set(p.id, p);
+      if (p.slug) map.set(p.slug, p);
+    });
+    (apiProceduresData?.procedures || []).forEach((p) => {
+      if (p.id) map.set(p.id, p);
+      if (p.slug) map.set(p.slug, p);
+    });
+    Object.values(fetchedProcedures).forEach((p) => {
+      if (p.id) map.set(p.id, p);
+      if (p.slug) map.set(p.slug, p);
+    });
+    return map;
+  }, [availableSops, apiProceduresData, fetchedProcedures]);
+
+  // Fetch any missing procedure directly from library API if referenced
+  React.useEffect(() => {
+    const referencedIds = chapters.flatMap((c) => {
+      const fromCh = c.procedureId ? [c.procedureId] : [];
+      const fromBlocks = (c.blocks ?? [])
+        .filter(
+          (b): b is Extract<ProcedureBlock, { kind: "linked_procedures" }> =>
+            b.kind === "linked_procedures",
+        )
+        .flatMap((b) => b.procedureIds || []);
+      return [...fromCh, ...fromBlocks];
+    });
+
+    const missingIds = referencedIds.filter(
+      (id) => id && !proceduresMap.has(id) && !fetchedProcedures[id],
+    );
+    if (missingIds.length === 0) return;
+
+    let isMounted = true;
+    for (const id of missingIds) {
+      import("@/services/library/api")
+        .then(({ fetchProcedureById }) => fetchProcedureById(id, true))
+        .then((proc) => {
+          if (isMounted && proc) {
+            setFetchedProcedures((prev) => ({
+              ...prev,
+              [id]: proc,
+              ...(proc.slug ? { [proc.slug]: proc } : {}),
+            }));
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [chapters, proceduresMap, fetchedProcedures]);
+
+  // Hydrate custom course details and chapters from localStorage or registered course definitions
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const targetId = courseId || propCourseId || initialCourse?.id;
+      if (!targetId) return;
+
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (raw) {
+        const customMap = JSON.parse(raw);
+        const decodedId = decodeURIComponent(targetId);
+        const norm = (s: string) =>
+          s
+            .toLowerCase()
+            .replace(/^course-/, "")
+            .replace(/[^a-z0-9]/g, "");
+        const targetNorm = norm(decodedId);
+
+        let saved: any =
+          customMap[targetId] ||
+          customMap[decodedId] ||
+          customMap[`course-${targetId}`] ||
+          customMap[targetId.replace(/^course-/, "")];
+
+        if (!saved) {
+          saved = Object.values(customMap).find((c: any) => {
+            if (!c) return false;
+            if (c.id && norm(c.id) === targetNorm) return true;
+            if (c.name && norm(c.name) === targetNorm) return true;
+            return false;
+          });
+        }
+
+        if (saved) {
+          if (saved.id) setCourseId(saved.id);
+          if (saved.name) {
+            setCourseName(saved.name);
+            setEditNameDraft(saved.name);
+          }
+          if (saved.purpose) {
+            setCoursePurpose(saved.purpose);
+            setEditPurposeDraft(saved.purpose);
+          }
+          if (Array.isArray(saved.chapters) && saved.chapters.length > 0) {
+            setChapters(saved.chapters);
+          }
+          setStep("chapters");
+          return;
+        }
+      }
+
+      // If not in localStorage, check if chapters exist in registered course definitions
+      const defs =
+        getChapterDefinitions(targetId) ||
+        getChapterDefinitions(targetId.replace(/^course-/, ""));
+      if (defs && defs.length > 0) {
+        const editorChs: EditorChapter[] = defs.map((d) => ({
+          id: d.id,
+          title: isEs ? d.titleEs || d.titleEn : d.titleEn || d.titleEs,
+          subtitle: isEs
+            ? d.contentEs || d.contentEn
+            : d.contentEn || d.contentEs,
+          procedureSlug: d.procedureSlug,
+          blocks: d.blocks,
+        }));
+        setChapters(editorChs);
+        setStep("chapters");
+      }
+    } catch (e) {
+      console.warn(
+        "Failed to load course details from localStorage/registry:",
+        e,
+      );
+    }
+  }, [courseId, propCourseId, initialCourse, isEs]);
+
+  const handleMoveChapter = (index: number, direction: "up" | "down") => {
+    setChapters((prev) => {
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+      const copy = [...prev];
+      const [moved] = copy.splice(index, 1);
+      copy.splice(targetIndex, 0, moved);
+      return copy;
+    });
+  };
+
   const [isEditingDetails, setIsEditingDetails] = React.useState(false);
-  const [editNameDraft, setEditNameDraft] = React.useState("");
-  const [editPurposeDraft, setEditPurposeDraft] = React.useState("");
-
-  const [isAddChapterModalOpen, setIsAddChapterModalOpen] =
-    React.useState(false);
-  const [newChapterTitle, setNewChapterTitle] = React.useState("");
-  const [newChapterSubtitle, setNewChapterSubtitle] = React.useState("");
-
-  const [isAddProcedureModalOpen, setIsAddProcedureModalOpen] =
-    React.useState(false);
-  const [procedureSearch, setProcedureSearch] = React.useState("");
+  const [editNameDraft, setEditNameDraft] = React.useState(initialName);
+  const [editPurposeDraft, setEditPurposeDraft] =
+    React.useState(initialPurpose);
 
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   // Transition from Step 1 (Details) to Step 2 (Chapters)
-  const handleProceedToChapters = () => {
+  // Transition from Step 1 (Details) to Chapter Content Creation
+  const handleProceedToAddChapter = () => {
     if (!courseName.trim() || !coursePurpose.trim()) {
       setError(
         isEs
@@ -108,7 +294,8 @@ export function CourseEditor({
       return;
     }
     setError(null);
-    setStep("chapters");
+    setEditingChapter(null);
+    setStep("chapter-editor");
   };
 
   // Open inline edit for details
@@ -125,97 +312,113 @@ export function CourseEditor({
     setIsEditingDetails(false);
   };
 
-  // Save the entire course
-  const handleSaveCourse = async () => {
-    if (!courseName.trim() || !coursePurpose.trim()) return;
+  // Save the entire course (persisting to localStorage and server)
+  const handleSaveCourse = async (options?: {
+    redirectAfter?: boolean;
+  }): Promise<string | null> => {
+    if (!courseName.trim() || !coursePurpose.trim()) return null;
     setIsSaving(true);
     setError(null);
 
-    try {
-      const linkedSops = chapters
-        .map((c) => c.procedureId)
-        .filter((id): id is string => Boolean(id));
+    const effectiveId =
+      courseId ||
+      initialCourse?.id ||
+      `course-${
+        courseName
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || Date.now()
+      }`;
 
+    try {
+      const linkedSops = Array.from(
+        new Set(
+          chapters
+            .flatMap((c) => {
+              const fromCh = c.procedureId ? [c.procedureId] : [];
+              const fromBlocks = (c.blocks ?? [])
+                .filter(
+                  (
+                    b,
+                  ): b is Extract<
+                    ProcedureBlock,
+                    { kind: "linked_procedures" }
+                  > => b.kind === "linked_procedures",
+                )
+                .flatMap((b) => b.procedureIds);
+              return [...fromCh, ...fromBlocks];
+            })
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
+
+      // 1. Immediately persist to client localStorage
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || "{}";
+          const map = JSON.parse(raw);
+          map[effectiveId] = {
+            id: effectiveId,
+            name: courseName.trim(),
+            purpose: coursePurpose.trim(),
+            linkedSops,
+            chapters,
+            updatedAt: new Date().toISOString(),
+          };
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
+        } catch (e) {
+          console.warn("Failed to save course to localStorage:", e);
+        }
+      }
+
+      // 2. Persist to server mock & course chapters registry
       const res = await saveCourseAction({
-        id: courseId,
+        id: effectiveId,
         name: courseName.trim(),
         purpose: coursePurpose.trim(),
         linkedSops,
+        chapters,
         locale,
       });
 
       if (res.ok && res.course) {
         setCourseId(res.course.id);
         setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
+        if (options?.redirectAfter !== false) {
+          const redirectTargetId = res.course.id || effectiveId;
+          setTimeout(() => {
+            router.push(`/${locale}/admin/training/${redirectTargetId}`);
+          }, 600);
+        } else {
+          setTimeout(() => setSaveSuccess(false), 3000);
+        }
+        return res.course.id;
       }
+      return effectiveId;
     } catch (err) {
       console.error("Failed to save course:", err);
       setError(
         isEs ? "Error al guardar el curso." : "Failed to save the course.",
       );
+      return null;
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Add custom chapter
-  const handleAddCustomChapter = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newChapterTitle.trim()) return;
-
-    const newChapter: EditorChapter = {
-      id: `custom-ch-${Date.now()}`,
-      title: newChapterTitle.trim(),
-      subtitle: newChapterSubtitle.trim() || undefined,
-    };
-
-    setChapters((prev) => [...prev, newChapter]);
-    setNewChapterTitle("");
-    setNewChapterSubtitle("");
-    setIsAddChapterModalOpen(false);
-  };
-
-  // Add procedure as chapter
-  const handleAddProcedureAsChapter = (proc: Procedure) => {
-    const title = isEs
-      ? proc.titleEs || proc.titleEn
-      : proc.titleEn || proc.titleEs;
-    const subtitle = isEs
-      ? proc.purposeEs || proc.purposeEn
-      : proc.purposeEn || proc.purposeEs;
-
-    const newChapter: EditorChapter = {
-      id: `sop-${proc.id}-${Date.now()}`,
-      title,
-      subtitle: subtitle || undefined,
-      procedureId: proc.id,
-      procedureSlug: proc.slug,
-    };
-
-    setChapters((prev) => [...prev, newChapter]);
-    setIsAddProcedureModalOpen(false);
+  // Preview full course as employee in a new tab without redirecting
+  const handlePreviewCourse = async () => {
+    const savedId = await handleSaveCourse({ redirectAfter: false });
+    const finalId = savedId || courseId;
+    if (finalId) {
+      window.open(`/${locale}/employee/training/${finalId}`, "_blank");
+    }
   };
 
   const handleRemoveChapter = (id: string) => {
     setChapters((prev) => prev.filter((c) => c.id !== id));
   };
-
-  const filteredProcedures = React.useMemo(() => {
-    const q = procedureSearch.trim().toLowerCase();
-    if (!q) return availableSops;
-    return availableSops.filter((proc) => {
-      const title = (
-        isEs ? proc.titleEs || proc.titleEn : proc.titleEn || proc.titleEs
-      ).toLowerCase();
-      const purpose = (
-        isEs
-          ? proc.purposeEs || proc.purposeEn
-          : proc.purposeEn || proc.purposeEs
-      ).toLowerCase();
-      return title.includes(q) || purpose.includes(q);
-    });
-  }, [availableSops, procedureSearch, isEs]);
 
   /* =========================================================================
      STEP 1: DETAILS ONLY (Course Name & Purpose required, nothing else)
@@ -302,23 +505,61 @@ export function CourseEditor({
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-2">
-            <Link
-              href={`/${locale}/admin/training`}
-              className="rounded-xl px-5 py-2.5 text-sm font-semibold text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              {isEs ? "Cancelar" : "Cancel"}
+            <Link href={`/${locale}/admin/training`}>
+              <Button type="button" variant="ghost">
+                {isEs ? "Cancelar" : "Cancel"}
+              </Button>
             </Link>
-            <button
+            <Button
               type="button"
+              variant="primary"
               disabled={!courseName.trim() || !coursePurpose.trim()}
-              onClick={handleProceedToChapters}
-              className="rounded-2xl bg-[var(--color-brand-600)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={handleProceedToAddChapter}
             >
-              {isEs ? "Continuar" : "Continue"}
-            </button>
+              {isEs ? "Agregar capítulo" : "Add chapter"}
+            </Button>
           </div>
         </div>
       </div>
+    );
+  }
+
+  /* =========================================================================
+     CHAPTER EDITOR VIEW (Procedure content creation wizard view)
+     ========================================================================= */
+  if (step === "chapter-editor") {
+    const chapterNum = editingChapter
+      ? chapters.findIndex((c) => c.id === editingChapter.id) + 1 || 1
+      : chapters.length + 1;
+
+    return (
+      <ChapterContentEditor
+        locale={locale}
+        courseName={courseName}
+        chapterNumber={chapterNum}
+        initialChapter={editingChapter}
+        onSave={(savedChapter) => {
+          setChapters((prev) => {
+            const exists = prev.some((c) => c.id === savedChapter.id);
+            if (exists) {
+              return prev.map((c) =>
+                c.id === savedChapter.id ? savedChapter : c,
+              );
+            }
+            return [...prev, savedChapter];
+          });
+          setEditingChapter(null);
+          setStep("chapters");
+        }}
+        onCancel={() => {
+          setEditingChapter(null);
+          if (chapters.length === 0) {
+            setStep("details");
+          } else {
+            setStep("chapters");
+          }
+        }}
+      />
     );
   }
 
@@ -328,13 +569,31 @@ export function CourseEditor({
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-20 animate-in fade-in duration-200">
       {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-[var(--color-ink-2)]"
+      >
         <Link
           href={`/${locale}/admin/training`}
-          className="text-xs sm:text-sm font-medium text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors inline-block"
+          className="hover:text-[var(--color-ink)] transition-colors inline-block"
         >
-          Training / Courses
+          {isEs ? "Capacitación" : "Training"}
         </Link>
+        {(courseId || propCourseId || initialCourse?.id) && (
+          <>
+            <span>/</span>
+            <Link
+              href={`/${locale}/admin/training/${courseId || propCourseId || initialCourse?.id}`}
+              className="hover:text-[var(--color-ink)] transition-colors inline-block max-w-[200px] truncate"
+            >
+              {courseName || (isEs ? "Curso" : "Course")}
+            </Link>
+          </>
+        )}
+        <span>/</span>
+        <span className="text-[var(--color-ink)] font-semibold">
+          {isEs ? "Editar" : "Edit"}
+        </span>
       </nav>
 
       {/* Course Header Banner */}
@@ -356,69 +615,93 @@ export function CourseEditor({
                 rows={2}
                 className="w-full rounded-lg border border-[var(--color-line-2)] px-3 py-1.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-brand-600)] focus:outline-none resize-none"
               />
-              <div className="flex justify-end gap-2">
-                <button
+              <div className="flex justify-end gap-2 pt-1">
+                <Button
                   type="button"
+                  variant="neutral"
+                  size="sm"
                   onClick={() => setIsEditingDetails(false)}
-                  className="rounded-lg px-3 py-1 text-xs font-semibold text-[var(--color-ink)] hover:bg-black/5"
                 >
                   {isEs ? "Cancelar" : "Cancel"}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="primary"
+                  size="sm"
                   onClick={handleSaveDetailsEdit}
                   disabled={!editNameDraft.trim() || !editPurposeDraft.trim()}
-                  className="rounded-lg bg-[var(--color-brand-600)] px-3.5 py-1 text-xs font-semibold text-white disabled:opacity-40"
                 >
                   {isEs ? "Listo" : "Done"}
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <div className="group relative">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="font-[family-name:var(--font-ui)] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)]">
-                  {courseName}
+                  {courseName ||
+                    (isEs ? "Curso sin título" : "Untitled Course")}
                 </h1>
                 <button
                   type="button"
                   onClick={handleOpenEditDetails}
-                  title={isEs ? "Editar datos" : "Edit details"}
-                  className="rounded-lg p-1 text-[var(--color-ink-3)] opacity-70 hover:opacity-100 hover:text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+                  title={
+                    isEs
+                      ? "Editar título y propósito"
+                      : "Edit title and purpose"
+                  }
+                  className="rounded-lg px-2.5 py-1 text-[var(--color-brand-600)] bg-[var(--color-brand-600)]/10 hover:bg-[var(--color-brand-600)]/20 transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
                 >
-                  <LuPencil className="w-4 h-4" />
+                  <LuPencil className="w-3.5 h-3.5" />
+                  <span>{isEs ? "Editar título" : "Edit details"}</span>
                 </button>
               </div>
               <p className="mt-1 text-sm sm:text-base text-[var(--color-ink-2)]">
-                {coursePurpose}
+                {coursePurpose ||
+                  (isEs ? "Sin propósito asignado" : "No purpose provided")}
               </p>
             </div>
           )}
         </div>
 
-        {/* Top Right Action - ONLY SAVE (No draft/publish) */}
+        {/* Top Right Action - Preview & Save */}
         <div className="flex items-center gap-2 self-start">
-          {saveSuccess && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-              <LuCheck className="w-3.5 h-3.5" />
-              {isEs ? "Guardado" : "Saved"}
-            </span>
-          )}
-
-          <button
+          <Button
             type="button"
-            onClick={handleSaveCourse}
+            variant="surface"
+            icon={LuEye}
+            onClick={handlePreviewCourse}
             disabled={isSaving}
-            className="rounded-2xl bg-[var(--color-brand-600)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {isEs ? "Vista previa" : "Preview course"}
+          </Button>
+
+          <Button
+            type="button"
+            variant="primary"
+            icon={saveSuccess ? LuCheck : undefined}
+            onClick={() => handleSaveCourse({ redirectAfter: true })}
+            disabled={isSaving}
+            className={
+              saveSuccess
+                ? "!bg-emerald-600 !text-white !border-emerald-600 hover:!bg-emerald-600 shadow-sm transition-all duration-200 !opacity-100 font-semibold"
+                : isSaving
+                  ? "!opacity-90 font-medium"
+                  : ""
+            }
           >
             {isSaving
               ? isEs
                 ? "Guardando..."
                 : "Saving..."
-              : isEs
-                ? "Guardar"
-                : "Save"}
-          </button>
+              : saveSuccess
+                ? isEs
+                  ? "Guardado"
+                  : "Saved"
+                : isEs
+                  ? "Guardar"
+                  : "Save"}
+          </Button>
         </div>
       </div>
 
@@ -455,287 +738,245 @@ export function CourseEditor({
             </p>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <button
+              <Button
                 type="button"
-                onClick={() => setIsAddChapterModalOpen(true)}
-                className="rounded-2xl bg-[var(--color-brand-600)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                variant="primary"
+                onClick={() => {
+                  setEditingChapter(null);
+                  setStep("chapter-editor");
+                }}
               >
-                <span>{isEs ? "Agregar capítulo +" : "Add chapter +"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsAddProcedureModalOpen(true)}
-                className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--color-ink)] shadow-xs hover:bg-[var(--color-wash)] transition-all cursor-pointer flex items-center gap-2"
-              >
-                <LuBookOpen className="w-4 h-4 text-[var(--color-ink-2)]" />
-                <span>
-                  {isEs
-                    ? "Agregar desde procedimientos"
-                    : "Add from procedures"}
-                </span>
-              </button>
+                {isEs ? "Agregar capítulo +" : "Add chapter +"}
+              </Button>
             </div>
           </div>
         ) : (
           /* Populated Chapters List */
           <div>
             <ul className="divide-y divide-[var(--color-line-2)]">
-              {chapters.map((ch, idx) => (
-                <li
-                  key={ch.id}
-                  className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-[var(--color-wash)] transition-colors"
-                >
-                  <div className="flex items-start gap-4 min-w-0 flex-1">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel-2)] text-xs font-bold text-[var(--color-ink)]">
-                      {idx + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-semibold text-sm text-[var(--color-ink)] truncate">
-                          {ch.title}
-                        </h4>
-                        {ch.procedureSlug && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-brand-600)] bg-[var(--color-brand-50)] dark:bg-[var(--color-brand-950)]/40 px-2 py-0.5 rounded-full border border-[var(--color-brand-200)] dark:border-[var(--color-brand-800)]">
-                            <LuBookOpen className="w-3 h-3" />
-                            {isEs ? "Procedimiento" : "Procedure"}
-                          </span>
-                        )}
-                      </div>
-                      {ch.subtitle && (
-                        <p className="mt-0.5 text-xs text-[var(--color-ink-2)] line-clamp-1">
-                          {ch.subtitle}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+              {chapters.map((ch, idx) => {
+                // Extract linked procedures info
+                const linkedProcedures: { id: string; title: string }[] = [];
+                const seenIds = new Set<string>();
 
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveChapter(ch.id)}
-                    title={isEs ? "Eliminar capítulo" : "Remove chapter"}
-                    className="shrink-0 p-1.5 rounded-lg text-[var(--color-ink-3)] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                const resolveProcedureTitle = (id: string, slug?: string) => {
+                  const sop =
+                    proceduresMap.get(id) ||
+                    (slug ? proceduresMap.get(slug) : undefined) ||
+                    fetchedProcedures[id];
+                  if (sop) {
+                    const title = isEs
+                      ? sop.titleEs || sop.titleEn
+                      : sop.titleEn || sop.titleEs;
+                    if (title) return title;
+                  }
+                  return isEs ? "Procedimiento vinculado" : "Linked procedure";
+                };
+
+                if (ch.procedureId) {
+                  seenIds.add(ch.procedureId);
+                  linkedProcedures.push({
+                    id: ch.procedureId,
+                    title: resolveProcedureTitle(
+                      ch.procedureId,
+                      ch.procedureSlug,
+                    ),
+                  });
+                }
+
+                (ch.blocks ?? []).forEach((b) => {
+                  if (b.kind === "linked_procedures" && b.procedureIds) {
+                    b.procedureIds.forEach((pid) => {
+                      if (!seenIds.has(pid)) {
+                        seenIds.add(pid);
+                        linkedProcedures.push({
+                          id: pid,
+                          title: resolveProcedureTitle(pid),
+                        });
+                      }
+                    });
+                  }
+                });
+
+                const quizQuestionsCount = ch.quiz?.questions?.length || 0;
+                const contentBlocksCount =
+                  ch.blocks?.filter((b) => b.kind !== "linked_procedures")
+                    .length ?? 0;
+
+                return (
+                  <li
+                    key={ch.id}
+                    onClick={() => {
+                      setEditingChapter(ch);
+                      setStep("chapter-editor");
+                    }}
+                    className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-[var(--color-wash)] transition-colors cursor-pointer group"
                   >
-                    <LuTrash2 className="w-4 h-4" />
-                  </button>
-                </li>
-              ))}
+                    <div className="flex items-start gap-4 min-w-0 flex-1">
+                      {/* Chapter index number without pill badge */}
+                      <span className="w-5 shrink-0 pt-0.5 text-sm font-semibold text-[var(--color-ink-3)] font-mono select-none">
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-semibold text-sm text-[var(--color-ink)] group-hover:text-[var(--color-brand-600)] transition-colors truncate">
+                            {ch.title}
+                          </h4>
+                        </div>
+                        {ch.subtitle && (
+                          <p className="mt-0.5 text-xs text-[var(--color-ink-2)] line-clamp-1">
+                            {ch.subtitle}
+                          </p>
+                        )}
+
+                        {/* Chapter Metadata: linked procedures, quiz, blocks */}
+                        <div className="mt-1.5 flex items-center gap-3 text-xs text-[var(--color-ink-3)] flex-wrap">
+                          {linkedProcedures.length > 0 && (
+                            <span className="inline-flex items-center gap-1.5 font-medium text-[var(--color-brand-600)]">
+                              <LuBookOpen className="w-3.5 h-3.5 shrink-0" />
+                              {linkedProcedures.length === 1
+                                ? linkedProcedures[0].title
+                                : `${linkedProcedures.length} ${
+                                    isEs
+                                      ? "procedimientos vinculados"
+                                      : "linked procedures"
+                                  }`}
+                            </span>
+                          )}
+
+                          {quizQuestionsCount > 0 && (
+                            <>
+                              {linkedProcedures.length > 0 && (
+                                <span className="inline-block h-1 w-1 rounded-full bg-[var(--color-line-2)]" />
+                              )}
+                              <span className="inline-flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
+                                <LuSparkles className="w-3.5 h-3.5 shrink-0" />
+                                {quizQuestionsCount}{" "}
+                                {quizQuestionsCount === 1
+                                  ? isEs
+                                    ? "pregunta de quiz"
+                                    : "quiz question"
+                                  : isEs
+                                    ? "preguntas de quiz"
+                                    : "quiz questions"}
+                              </span>
+                            </>
+                          )}
+
+                          {contentBlocksCount > 0 && (
+                            <>
+                              <span className="inline-block h-1 w-1 rounded-full bg-[var(--color-line-2)]" />
+                              <span>
+                                {contentBlocksCount}{" "}
+                                {contentBlocksCount === 1
+                                  ? isEs
+                                    ? "bloque"
+                                    : "block"
+                                  : isEs
+                                    ? "bloques"
+                                    : "blocks"}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className="flex items-center gap-1 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() => handleMoveChapter(idx, "up")}
+                        title={isEs ? "Subir capítulo" : "Move up"}
+                        className="p-1.5 rounded-lg text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-20 disabled:pointer-events-none transition-colors"
+                      >
+                        <LuChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === chapters.length - 1}
+                        onClick={() => handleMoveChapter(idx, "down")}
+                        title={isEs ? "Bajar capítulo" : "Move down"}
+                        className="p-1.5 rounded-lg text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-20 disabled:pointer-events-none transition-colors"
+                      >
+                        <LuChevronDown className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveChapter(ch.id)}
+                        title={isEs ? "Eliminar capítulo" : "Remove chapter"}
+                        className="p-1.5 rounded-lg text-[var(--color-ink-3)] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      >
+                        <LuTrash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
 
-            {/* Bottom Add Buttons */}
-            <div className="border-t border-[var(--color-line-2)] bg-[var(--color-wash)]/40 px-6 py-4 flex flex-wrap items-center gap-3">
-              <button
+            {/* Bottom Action Bar */}
+            <div className="border-t border-[var(--color-line-2)] bg-[var(--color-wash)]/40 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+              <Button
                 type="button"
-                onClick={() => setIsAddChapterModalOpen(true)}
-                className="rounded-xl bg-[var(--color-brand-600)] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[var(--color-brand-700)] transition-all cursor-pointer flex items-center gap-1.5"
+                size="sm"
+                variant="primary"
+                icon={LuPlus}
+                onClick={() => {
+                  setEditingChapter(null);
+                  setStep("chapter-editor");
+                }}
               >
-                <LuPlus className="w-3.5 h-3.5" />
-                <span>{isEs ? "Agregar capítulo" : "Add chapter"}</span>
-              </button>
+                {isEs ? "Agregar capítulo" : "Add chapter"}
+              </Button>
 
-              <button
-                type="button"
-                onClick={() => setIsAddProcedureModalOpen(true)}
-                className="rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-[var(--color-ink)] shadow-xs hover:bg-[var(--color-wash)] transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <LuBookOpen className="w-3.5 h-3.5 text-[var(--color-ink-2)]" />
-                <span>{isEs ? "Desde procedimientos" : "From procedures"}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="surface"
+                  icon={LuEye}
+                  onClick={handlePreviewCourse}
+                  disabled={isSaving}
+                >
+                  {isEs ? "Vista previa del curso" : "Preview course"}
+                </Button>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  icon={saveSuccess ? LuCheck : undefined}
+                  onClick={() => handleSaveCourse({ redirectAfter: true })}
+                  disabled={isSaving}
+                  className={
+                    saveSuccess
+                      ? "!bg-emerald-600 !text-white !border-emerald-600 hover:!bg-emerald-600 shadow-sm transition-all duration-200 !opacity-100 font-semibold"
+                      : isSaving
+                        ? "!opacity-90 font-medium"
+                        : ""
+                  }
+                >
+                  {isSaving
+                    ? isEs
+                      ? "Guardando..."
+                      : "Saving..."
+                    : saveSuccess
+                      ? isEs
+                        ? "Guardado"
+                        : "Saved"
+                      : isEs
+                        ? "Guardar"
+                        : "Save"}
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* =====================================================================
-          MODAL: ADD CHAPTER
-          ===================================================================== */}
-      {isAddChapterModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
-        >
-          <div
-            className="fixed inset-0"
-            onClick={() => setIsAddChapterModalOpen(false)}
-          />
-          <div className="relative w-full max-w-[500px] overflow-hidden rounded-[24px] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xl p-6 sm:p-7 space-y-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-[var(--color-ink)]">
-                {isEs ? "Nuevo capítulo" : "New chapter"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsAddChapterModalOpen(false)}
-                className="text-[var(--color-ink-3)] hover:text-[var(--color-ink)]"
-              >
-                <LuX className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddCustomChapter} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-[var(--color-ink)]">
-                  {isEs ? "Título del capítulo" : "Chapter title"}
-                </label>
-                <input
-                  type="text"
-                  value={newChapterTitle}
-                  onChange={(e) => setNewChapterTitle(e.target.value)}
-                  placeholder="e.g. Station Prep & Sanitization"
-                  autoFocus
-                  required
-                  className="w-full rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-brand-600)] focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-sm font-semibold text-[var(--color-ink)]">
-                  {isEs ? "Descripción (opcional)" : "Description (optional)"}
-                </label>
-                <textarea
-                  value={newChapterSubtitle}
-                  onChange={(e) => setNewChapterSubtitle(e.target.value)}
-                  placeholder="e.g. Opening standards, safety guidelines and checklist."
-                  rows={2}
-                  className="w-full rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-2.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-brand-600)] focus:outline-none resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddChapterModalOpen(false)}
-                  className="rounded-xl px-4 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-black/5"
-                >
-                  {isEs ? "Cancelar" : "Cancel"}
-                </button>
-                <button
-                  type="submit"
-                  disabled={!newChapterTitle.trim()}
-                  className="rounded-xl bg-[var(--color-brand-600)] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] disabled:opacity-40"
-                >
-                  {isEs ? "Agregar" : "Add chapter"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* =====================================================================
-          MODAL: ADD FROM PROCEDURES
-          ===================================================================== */}
-      {isAddProcedureModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200"
-        >
-          <div
-            className="fixed inset-0"
-            onClick={() => setIsAddProcedureModalOpen(false)}
-          />
-          <div className="relative w-full max-w-[560px] max-h-[85vh] flex flex-col overflow-hidden rounded-[24px] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xl">
-            {/* Modal Header */}
-            <div className="p-6 pb-4 border-b border-[var(--color-line-2)]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold text-[var(--color-ink)]">
-                    {isEs ? "Vincular procedimiento" : "Link procedure"}
-                  </h3>
-                  <p className="mt-0.5 text-xs text-[var(--color-ink-2)]">
-                    {isEs
-                      ? "Selecciona un procedimiento para añadirlo como capítulo."
-                      : "Pick a procedure to add as a chapter lesson."}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAddProcedureModalOpen(false)}
-                  className="text-[var(--color-ink-3)] hover:text-[var(--color-ink)]"
-                >
-                  <LuX className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Search Bar */}
-              <div className="mt-4 relative">
-                <LuSearch className="absolute left-3.5 top-3 w-4 h-4 text-[var(--color-ink-3)]" />
-                <input
-                  type="search"
-                  value={procedureSearch}
-                  onChange={(e) => setProcedureSearch(e.target.value)}
-                  placeholder={
-                    isEs ? "Buscar procedimiento..." : "Search procedures..."
-                  }
-                  className="w-full rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] pl-10 pr-4 py-2 text-sm text-[var(--color-ink)] focus:border-[var(--color-brand-600)] focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 max-h-[400px]">
-              {filteredProcedures.length === 0 ? (
-                <div className="py-12 text-center text-sm text-[var(--color-ink-3)]">
-                  {isEs
-                    ? "No se encontraron procedimientos."
-                    : "No procedures found."}
-                </div>
-              ) : (
-                filteredProcedures.map((proc) => {
-                  const title = isEs
-                    ? proc.titleEs || proc.titleEn
-                    : proc.titleEn || proc.titleEs;
-                  const purpose = isEs
-                    ? proc.purposeEs || proc.purposeEn
-                    : proc.purposeEn || proc.purposeEs;
-
-                  return (
-                    <div
-                      key={proc.id}
-                      onClick={() => handleAddProcedureAsChapter(proc)}
-                      className="group flex items-start justify-between gap-3 p-3.5 rounded-xl border border-[var(--color-line-2)] hover:border-[var(--color-brand-600)] hover:bg-[var(--color-wash)] transition-all cursor-pointer"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <LuFileText className="w-4 h-4 shrink-0 text-[var(--color-brand-600)]" />
-                          <h4 className="text-sm font-semibold text-[var(--color-ink)] group-hover:text-[var(--color-brand-600)] transition-colors truncate">
-                            {title}
-                          </h4>
-                        </div>
-                        {purpose && (
-                          <p className="mt-1 text-xs text-[var(--color-ink-2)] line-clamp-2">
-                            {purpose}
-                          </p>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        className="shrink-0 rounded-lg bg-[var(--color-panel-2)] group-hover:bg-[var(--color-brand-600)] group-hover:text-white px-3 py-1.5 text-xs font-semibold text-[var(--color-ink)] transition-colors"
-                      >
-                        {isEs ? "Añadir" : "Add"}
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-[var(--color-line-2)] bg-[var(--color-wash)]/40 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIsAddProcedureModalOpen(false)}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-black/5"
-              >
-                {isEs ? "Cerrar" : "Close"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

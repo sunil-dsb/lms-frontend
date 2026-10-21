@@ -10,6 +10,7 @@ interface CourseChapterItemProps {
   chapter: CourseChapter;
   locale: string;
   courseId: string;
+  basePath?: string;
 }
 
 /**
@@ -26,6 +27,7 @@ export function CourseChapterItem({
   chapter,
   locale,
   courseId,
+  basePath,
 }: CourseChapterItemProps): React.ReactElement {
   const isEs = locale === "es";
   const isComplete = chapter.status === "complete";
@@ -166,7 +168,7 @@ export function CourseChapterItem({
   return (
     <li className="list-none">
       <Link
-        href={`/${locale}/employee/training/${courseId}?chapter=${chapter.number}`}
+        href={`${basePath ?? `/${locale}/employee/training/${courseId}`}?chapter=${chapter.number}`}
         className={`group block rounded-2xl p-3.5 sm:p-4 transition-all duration-[var(--dur)] ease-[var(--ease)] focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2 ${
           isActive
             ? "border-2 border-[var(--color-brand-600)] bg-[var(--color-surface)] shadow-xs hover:shadow-sm"

@@ -20,6 +20,10 @@ interface ChapterLearnViewProps {
   blocks?: ProcedureBlock[];
   procedure?: Procedure | null;
   employee?: Employee;
+  basePath?: string;
+  backHref?: string;
+  /** Sidebar width in px to offset the fixed sticky button (admin layout). Default 0. */
+  sidebarOffsetPx?: number;
 }
 
 /**
@@ -46,8 +50,13 @@ export function ChapterLearnView({
   blocks,
   procedure,
   employee,
+  basePath,
+  backHref,
+  sidebarOffsetPx = 0,
 }: ChapterLearnViewProps): React.ReactElement {
   const t = useTranslations("employee.training");
+  const effectiveBasePath =
+    basePath ?? `/${locale}/employee/training/${courseId}`;
 
   // Determine whether this chapter has cooking method steps / recipe
   const targetBlocks = procedure
@@ -107,7 +116,7 @@ export function ChapterLearnView({
         {/* Top Back Header */}
         <div>
           <Link
-            href={`/${locale}/employee/training/${courseId}`}
+            href={backHref ?? effectiveBasePath}
             className="inline-flex min-h-tap items-center gap-1.5 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
           >
             <LuChevronLeft className="text-lg" aria-hidden="true" />
@@ -217,13 +226,25 @@ export function ChapterLearnView({
       </main>
 
       {/* Sticky Bottom CTA Button: Continue to quiz */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 mx-auto w-full max-w-doc bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/95 to-transparent px-4 pb-6 pt-4 backdrop-blur-xs sm:px-6">
-        <Link
-          href={`/${locale}/employee/training/${courseId}?chapter=${chapterNumber}&mode=quiz`}
-          className="flex w-full min-h-[50px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
+      <div
+        className="fixed bottom-0 right-0 z-30 flex justify-center"
+        style={{ left: sidebarOffsetPx ? `${sidebarOffsetPx}px` : 0 }}
+      >
+        <div
+          className="w-full max-w-doc px-4 sm:px-6 pt-4"
+          style={{
+            paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
+            background:
+              "linear-gradient(to top, var(--color-bg) 60%, color-mix(in srgb, var(--color-bg) 95%, transparent) 80%, transparent 100%)",
+          }}
         >
-          {t("continueToQuiz")}
-        </Link>
+          <Link
+            href={`${effectiveBasePath}?chapter=${chapterNumber}&mode=quiz`}
+            className="flex w-full min-h-[52px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
+          >
+            {t("continueToQuiz")}
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -45,6 +45,8 @@ export function hasBlockContent(b: ProcedureBlock): boolean {
       );
     case "checklist":
       return b.items.some((i) => filled(i.text?.en) || filled(i.text?.es));
+    case "linked_procedures":
+      return b.procedureIds.length > 0;
     default:
       return false;
   }

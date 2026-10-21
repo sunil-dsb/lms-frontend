@@ -10,12 +10,15 @@ import { tickStep } from "../actions";
 
 interface ChapterQuizViewProps {
   courseId: string;
-  courseTitle: string;
+  courseTitle?: string;
   chapterNumber: number;
-  totalChapters: number;
+  totalChapters?: number;
   assignmentId?: string;
   locale: string;
   questions: ProcedureQuizQuestion[];
+  basePath?: string;
+  backHref?: string;
+  sidebarOffsetPx?: number;
 }
 
 /**
@@ -33,10 +36,15 @@ export function ChapterQuizView({
   assignmentId,
   locale,
   questions,
+  basePath,
+  backHref,
+  sidebarOffsetPx = 0,
 }: ChapterQuizViewProps): React.ReactElement {
   const router = useRouter();
   const t = useTranslations("employee.training");
   const isEs = locale === "es";
+  const effectiveBasePath =
+    basePath ?? `/${locale}/employee/training/${courseId}`;
 
   // Active question index
   const [currentIndex, setCurrentIndex] = React.useState(0);
@@ -134,17 +142,29 @@ export function ChapterQuizView({
           </div>
         </main>
 
-        <div className="fixed bottom-0 left-0 right-0 z-30 mx-auto w-full max-w-doc bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/95 to-transparent px-4 pb-6 pt-4 sm:px-6">
-          <button
-            type="button"
-            onClick={() => {
-              router.push(`/${locale}/employee/training/${courseId}`);
-              router.refresh();
+        <div
+          className="fixed bottom-0 right-0 z-30 flex justify-center"
+          style={{ left: sidebarOffsetPx ? `${sidebarOffsetPx}px` : 0 }}
+        >
+          <div
+            className="w-full max-w-doc px-4 sm:px-6 pt-4"
+            style={{
+              paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
+              background:
+                "linear-gradient(to top, var(--color-bg) 60%, color-mix(in srgb, var(--color-bg) 95%, transparent) 80%, transparent 100%)",
             }}
-            className="flex w-full min-h-[50px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
           >
-            {t("backToChapters")}
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                router.push(backHref ?? effectiveBasePath);
+                router.refresh();
+              }}
+              className="flex w-full min-h-[50px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+            >
+              {t("backToChapters")}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -159,7 +179,7 @@ export function ChapterQuizView({
         {/* Top Back Header */}
         <div>
           <Link
-            href={`/${locale}/employee/training/${courseId}?chapter=${chapterNumber}`}
+            href={`${effectiveBasePath}?chapter=${chapterNumber}`}
             className="inline-flex min-h-tap items-center gap-1.5 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
           >
             <LuChevronLeft className="text-lg" aria-hidden="true" />
@@ -297,39 +317,51 @@ export function ChapterQuizView({
       </main>
 
       {/* Sticky Bottom Action Button */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 mx-auto w-full max-w-doc bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/95 to-transparent px-4 pb-6 pt-4 backdrop-blur-xs sm:px-6">
-        {!isAnswerChecked ? (
-          <button
-            type="button"
-            onClick={handleCheckAnswer}
-            disabled={!selectedChoiceId}
-            className={`flex w-full min-h-[50px] items-center justify-center rounded-2xl px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] ${
-              selectedChoiceId
-                ? "bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
-                : "bg-[var(--color-panel)] text-[var(--color-ink-3)] cursor-not-allowed"
-            }`}
-          >
-            {t("checkAnswer")}
-          </button>
-        ) : isCorrect ? (
-          <button
-            type="button"
-            onClick={handleNextQuestion}
-            className="flex w-full min-h-[50px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
-          >
-            {currentIndex + 1 < totalQuestions
-              ? t("nextQuestion")
-              : t("finishQuiz")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleRetryQuestion}
-            className="flex w-full min-h-[50px] items-center justify-center rounded-2xl bg-[var(--color-panel)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-[var(--color-ink)] shadow-xs transition-all hover:bg-[var(--color-panel-2)] cursor-pointer"
-          >
-            {t("tryAgain")}
-          </button>
-        )}
+      <div
+        className="fixed bottom-0 right-0 z-30 flex justify-center"
+        style={{ left: sidebarOffsetPx ? `${sidebarOffsetPx}px` : 0 }}
+      >
+        <div
+          className="w-full max-w-doc px-4 sm:px-6 pt-4"
+          style={{
+            paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
+            background:
+              "linear-gradient(to top, var(--color-bg) 60%, color-mix(in srgb, var(--color-bg) 95%, transparent) 80%, transparent 100%)",
+          }}
+        >
+          {!isAnswerChecked ? (
+            <button
+              type="button"
+              onClick={handleCheckAnswer}
+              disabled={!selectedChoiceId}
+              className={`flex w-full min-h-[50px] items-center justify-center rounded-2xl px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] ${
+                selectedChoiceId
+                  ? "bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+                  : "bg-[var(--color-panel)] text-[var(--color-ink-3)] cursor-not-allowed"
+              }`}
+            >
+              {t("checkAnswer")}
+            </button>
+          ) : isCorrect ? (
+            <button
+              type="button"
+              onClick={handleNextQuestion}
+              className="flex w-full min-h-[50px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+            >
+              {currentIndex + 1 < totalQuestions
+                ? t("nextQuestion")
+                : t("finishQuiz")}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleRetryQuestion}
+              className="flex w-full min-h-[50px] items-center justify-center rounded-2xl bg-[var(--color-panel)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-[var(--color-ink)] shadow-xs transition-all hover:bg-[var(--color-panel-2)] cursor-pointer"
+            >
+              {t("tryAgain")}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
