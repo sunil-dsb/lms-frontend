@@ -30,28 +30,36 @@ function emptyQuestion(): ProcedureQuizQuestion {
 }
 
 interface QuizEditorProps {
-  value: ProcedureQuiz | null;
+  value?: ProcedureQuiz | null;
+  quiz?: ProcedureQuiz | null;
   onChange: (next: ProcedureQuiz | null) => void;
   isSaving?: boolean;
   hideHeader?: boolean;
+  hideAttachToggle?: boolean;
+  onDetach?: () => void;
 }
 
 export function QuizEditor({
   value,
+  quiz,
   onChange,
   isSaving,
   hideHeader,
+  hideAttachToggle = false,
+  onDetach,
 }: QuizEditorProps): React.ReactElement {
   const t = useTranslations("admin.library.new.quiz");
   const [questionLangs, setQuestionLangs] = React.useState<
     Record<string, "en" | "es">
   >({});
 
+  const initialValue = value ?? quiz ?? null;
+
   const [working, setWorking] = React.useState<ProcedureQuiz>(() => {
-    if (!value) return makeBlankQuiz();
+    if (!initialValue) return makeBlankQuiz(hideAttachToggle);
     return {
-      attached: Boolean(value.attached),
-      questions: value.questions.map((q) => ({
+      attached: hideAttachToggle ? true : Boolean(initialValue.attached),
+      questions: initialValue.questions.map((q) => ({
         id: q.id || makeId(),
         prompt: {
           en:
@@ -80,8 +88,32 @@ export function QuizEditor({
     setQuestionLangs((prev) => ({ ...prev, [qId]: l }));
 
   const update = (next: ProcedureQuiz): void => {
-    setWorking(next);
-    onChange(next);
+    const hasQuestions = next.questions?.some((q) => {
+      const p = q.prompt as unknown;
+      const promptText =
+        typeof p === "string"
+          ? p
+          : (p as { en?: string; es?: string })?.en ||
+            (p as { en?: string; es?: string })?.es ||
+            "";
+      if (promptText.trim()) return true;
+      return q.choices?.some((c) => {
+        const l = c.label as unknown;
+        const labelText =
+          typeof l === "string"
+            ? l
+            : (l as { en?: string; es?: string })?.en ||
+              (l as { en?: string; es?: string })?.es ||
+              "";
+        return Boolean(labelText.trim());
+      });
+    });
+    const enriched: ProcedureQuiz = {
+      ...next,
+      attached: hideAttachToggle ? true : hasQuestions ? true : next.attached,
+    };
+    setWorking(enriched);
+    onChange(enriched);
   };
 
   const setAttached = (next: boolean): void =>
@@ -165,28 +197,30 @@ export function QuizEditor({
         </header>
       )}
 
-      {/* Attach toggle — the admin's primary control over visibility. */}
-      <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
-        <input
-          id="quiz-attach"
-          type="checkbox"
-          checked={working.attached}
-          disabled={isSaving}
-          onChange={(e) => setAttached(e.target.checked)}
-          className="mt-1 size-5 accent-[var(--color-brand-600)]"
-        />
-        <label
-          htmlFor="quiz-attach"
-          className="flex-1 cursor-pointer space-y-0.5"
-        >
-          <span className="block text-sm font-semibold text-[var(--color-ink)]">
-            {t("attachedLabel")}
-          </span>
-          <span className="block text-sm text-[var(--color-ink-2)]">
-            {t("attachedHelp")}
-          </span>
-        </label>
-      </div>
+      {/* Attach toggle — only shown for standalone procedures, not in training */}
+      {!hideAttachToggle && (
+        <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
+          <input
+            id="quiz-attach"
+            type="checkbox"
+            checked={working.attached}
+            disabled={isSaving}
+            onChange={(e) => setAttached(e.target.checked)}
+            className="mt-1 size-5 accent-[var(--color-brand-600)]"
+          />
+          <label
+            htmlFor="quiz-attach"
+            className="flex-1 cursor-pointer space-y-0.5"
+          >
+            <span className="block text-sm font-semibold text-[var(--color-ink)]">
+              {t("attachedLabel")}
+            </span>
+            <span className="block text-sm text-[var(--color-ink-2)]">
+              {t("attachedHelp")}
+            </span>
+          </label>
+        </div>
+      )}
 
       {/* Question list — each question has the exact bilingual component effect (one gets bigger, one becomes shorter) */}
       <ol className="space-y-6">
@@ -424,8 +458,8 @@ export function QuizEditor({
   );
 }
 
-function makeBlankQuiz(): ProcedureQuiz {
-  return { questions: [emptyQuestion()], attached: false };
+function makeBlankQuiz(attached = false): ProcedureQuiz {
+  return { questions: [emptyQuestion()], attached };
 }
 
 function makeId(): string {

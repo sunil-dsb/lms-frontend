@@ -490,7 +490,10 @@ export async function fetchQuizById(id: string): Promise<Quiz | null> {
 /** Sync lookup for a single quiz by id from the cached store. */
 export function getQuizById(id: string | null): Quiz | null {
   if (!id) return null;
-  return getQuizzesStore().find((q) => q.id === id) ?? null;
+  const store = getQuizzesStore();
+  const found = store.find((q) => q.id === id);
+  if (found) return found;
+  return SEED_QUIZZES.find((q) => q.id === id) ?? null;
 }
 
 /** Backend question ids are UUIDs; the editor stamps new rows with `q-…` /

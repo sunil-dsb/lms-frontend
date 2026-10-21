@@ -3,7 +3,6 @@
 import * as React from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 import { nextStepId } from "@/lib/procedure-blocks";
-import { BilingualInput } from "@/components/ui/bilingual-input";
 import { Icon } from "@/components/ui/icon";
 import { RowActions } from "@/components/ui/row-actions";
 import type { ProcedureBlock, ProcedureMethodStep } from "@/lib/types";
@@ -38,17 +37,6 @@ export function MethodBody({
 
   return (
     <div className="space-y-3">
-      <BilingualInput
-        value={block.title ?? { en: "", es: "" }}
-        maxLength={100}
-        onChange={(title) => onPatch({ ...block, title })}
-        placeholder={{
-          en: "Section title (English), e.g. Preparation…",
-          es: "Título de sección (Español), p. ej. Preparación…",
-        }}
-        className="bli--heading"
-        inputClassName="text-base font-semibold"
-      />
       <ol className="space-y-4">
         {block.steps.map((step, i) => (
           <MethodStepRow

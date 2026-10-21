@@ -7,6 +7,7 @@ import { Popover, PopoverGroup, PopoverItem } from "@/components/ui/popover";
 import type { ProcedureBlockKind } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
+  LuBookOpen,
   LuChevronDown,
   LuHeading1,
   LuImage,
