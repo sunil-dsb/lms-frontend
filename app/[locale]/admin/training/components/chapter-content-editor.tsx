@@ -51,6 +51,12 @@ export function ChapterContentEditor({
 
   const [step, setStep] = React.useState<WizardStep>("content");
 
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [step]);
+
   const [title, setTitle] = React.useState<BilingualValue>(() => {
     if (initialChapter?.title) {
       return { en: initialChapter.title, es: initialChapter.title };
@@ -682,15 +688,28 @@ export function ChapterContentEditor({
 
         <div className="flex items-center gap-3">
           {step === "content" ? (
-            <Button
-              type="button"
-              variant="primary"
-              icon={LuChevronRight}
-              disabled={!hasTitle || !hasPurpose}
-              onClick={handleNext}
-            >
-              {isEs ? "Siguiente" : "Next"}
-            </Button>
+            <div className="flex items-center gap-2.5">
+              {initialChapter && (
+                <Button
+                  type="button"
+                  variant="surface"
+                  icon={LuCheck}
+                  disabled={!hasTitle || !hasPurpose}
+                  onClick={handleSave}
+                >
+                  {isEs ? "Guardar cambios" : "Save changes"}
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="primary"
+                icon={LuChevronRight}
+                disabled={!hasTitle || !hasPurpose}
+                onClick={handleNext}
+              >
+                {isEs ? "Siguiente" : "Next"}
+              </Button>
+            </div>
           ) : (
             <Button
               type="button"
@@ -698,7 +717,7 @@ export function ChapterContentEditor({
               icon={LuCheck}
               onClick={handleSave}
             >
-              {isEs ? "Guardar capítulo" : "Save chapter"}
+              {isEs ? "Guardar cambios" : "Save changes"}
             </Button>
           )}
         </div>

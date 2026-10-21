@@ -9,6 +9,7 @@ import {
   LuChevronDown,
   LuChevronUp,
   LuEye,
+  LuFileText,
   LuPencil,
   LuPlus,
   LuSparkles,
@@ -38,6 +39,7 @@ interface CourseEditorProps {
   initialCourse?: Procedure | null;
   initialChapters?: EditorChapter[];
   availableSops?: Procedure[];
+  mode?: "new" | "edit";
 }
 
 export function CourseEditor({
@@ -46,18 +48,26 @@ export function CourseEditor({
   initialCourse,
   initialChapters = [],
   availableSops = [],
+  mode,
 }: CourseEditorProps): React.ReactElement {
   const router = useRouter();
   const isEs = locale === "es";
 
+  const isEditMode = mode === "edit" || Boolean(propCourseId || initialCourse);
   const effectiveInitialId = propCourseId || initialCourse?.id;
 
-  // If courseId or initialCourse provided, start directly in chapters view
+  // In edit mode (or when courseId/initialCourse is provided), ALWAYS start in chapters view
   const [step, setStep] = React.useState<
     "details" | "chapters" | "chapter-editor"
-  >(effectiveInitialId || initialCourse ? "chapters" : "details");
+  >(isEditMode ? "chapters" : "details");
   const [editingChapter, setEditingChapter] =
     React.useState<EditorChapter | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [step]);
 
   const [courseId, setCourseId] = React.useState<string | undefined>(
     effectiveInitialId,
@@ -271,8 +281,10 @@ export function CourseEditor({
       copy.splice(targetIndex, 0, moved);
       return copy;
     });
+    setIsDirty(true);
   };
 
+  const [isDirty, setIsDirty] = React.useState(false);
   const [isEditingDetails, setIsEditingDetails] = React.useState(false);
   const [editNameDraft, setEditNameDraft] = React.useState(initialName);
   const [editPurposeDraft, setEditPurposeDraft] =
@@ -305,11 +317,65 @@ export function CourseEditor({
     setIsEditingDetails(true);
   };
 
-  const handleSaveDetailsEdit = () => {
+  const handleSaveDetailsEdit = async () => {
     if (!editNameDraft.trim() || !editPurposeDraft.trim()) return;
-    setCourseName(editNameDraft.trim());
-    setCoursePurpose(editPurposeDraft.trim());
+    const nextName = editNameDraft.trim();
+    const nextPurpose = editPurposeDraft.trim();
+    setCourseName(nextName);
+    setCoursePurpose(nextPurpose);
     setIsEditingDetails(false);
+
+    // Save course details directly to localStorage
+    const effectiveId =
+      courseId ||
+      initialCourse?.id ||
+      `course-${
+        nextName
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || Date.now()
+      }`;
+
+    if (typeof window !== "undefined" && effectiveId) {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || "{}";
+        const map = JSON.parse(raw);
+        map[effectiveId] = {
+          ...map[effectiveId],
+          id: effectiveId,
+          name: nextName,
+          purpose: nextPurpose,
+          chapters,
+          updatedAt: new Date().toISOString(),
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
+      } catch (e) {
+        console.warn("Failed to persist course details:", e);
+      }
+    }
+
+    // Persist to server action in background
+    try {
+      setIsSaving(true);
+      const res = await saveCourseAction({
+        id: effectiveId,
+        name: nextName,
+        purpose: nextPurpose,
+        chapters,
+        locale,
+      });
+      if (res.ok && res.course) {
+        setCourseId(res.course.id);
+        setSaveSuccess(true);
+        setIsDirty(false);
+        setTimeout(() => setSaveSuccess(false), 2500);
+      }
+    } catch (err) {
+      console.error("Failed to save course details:", err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Save the entire course (persisting to localStorage and server)
@@ -385,6 +451,7 @@ export function CourseEditor({
       if (res.ok && res.course) {
         setCourseId(res.course.id);
         setSaveSuccess(true);
+        setIsDirty(false);
         if (options?.redirectAfter !== false) {
           const redirectTargetId = res.course.id || effectiveId;
           setTimeout(() => {
@@ -417,13 +484,35 @@ export function CourseEditor({
   };
 
   const handleRemoveChapter = (id: string) => {
-    setChapters((prev) => prev.filter((c) => c.id !== id));
+    setChapters((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      const targetId = courseId || propCourseId || initialCourse?.id;
+      if (typeof window !== "undefined" && targetId) {
+        try {
+          const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || "{}";
+          const map = JSON.parse(raw);
+          map[targetId] = {
+            ...map[targetId],
+            id: targetId,
+            name: courseName.trim(),
+            purpose: coursePurpose.trim(),
+            chapters: next,
+            updatedAt: new Date().toISOString(),
+          };
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
+        } catch (e) {
+          console.warn("Failed to persist chapters after removal:", e);
+        }
+      }
+      return next;
+    });
+    setIsDirty(true);
   };
 
   /* =========================================================================
      STEP 1: DETAILS ONLY (Course Name & Purpose required, nothing else)
      ========================================================================= */
-  if (step === "details") {
+  if (step === "details" && !isEditMode) {
     return (
       <div className="mx-auto max-w-2xl space-y-6 pb-16 animate-in fade-in duration-200">
         {/* Breadcrumbs */}
@@ -541,19 +630,75 @@ export function CourseEditor({
         onSave={(savedChapter) => {
           setChapters((prev) => {
             const exists = prev.some((c) => c.id === savedChapter.id);
-            if (exists) {
-              return prev.map((c) =>
-                c.id === savedChapter.id ? savedChapter : c,
-              );
+            const next = exists
+              ? prev.map((c) => (c.id === savedChapter.id ? savedChapter : c))
+              : [...prev, savedChapter];
+
+            const effectiveId =
+              courseId ||
+              initialCourse?.id ||
+              propCourseId ||
+              `course-${
+                courseName
+                  .toLowerCase()
+                  .trim()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-|-$/g, "") || Date.now()
+              }`;
+
+            // 1. Persist immediately to localStorage
+            if (typeof window !== "undefined" && effectiveId) {
+              try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || "{}";
+                const map = JSON.parse(raw);
+                map[effectiveId] = {
+                  ...map[effectiveId],
+                  id: effectiveId,
+                  name: courseName.trim(),
+                  purpose: coursePurpose.trim(),
+                  chapters: next,
+                  updatedAt: new Date().toISOString(),
+                };
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
+              } catch (e) {
+                console.warn(
+                  "Failed to persist draft chapters to localStorage:",
+                  e,
+                );
+              }
             }
-            return [...prev, savedChapter];
+
+            // 2. Persist to server action so user does NOT have to save again
+            saveCourseAction({
+              id: effectiveId,
+              name: courseName.trim(),
+              purpose: coursePurpose.trim(),
+              chapters: next,
+              locale,
+            })
+              .then((res) => {
+                if (res.ok && res.course) {
+                  setCourseId(res.course.id);
+                  setSaveSuccess(true);
+                  setTimeout(() => setSaveSuccess(false), 2500);
+                }
+              })
+              .catch((err) => {
+                console.error(
+                  "Failed to auto-save course after chapter edit:",
+                  err,
+                );
+              });
+
+            return next;
           });
+          setIsDirty(false);
           setEditingChapter(null);
           setStep("chapters");
         }}
         onCancel={() => {
           setEditingChapter(null);
-          if (chapters.length === 0) {
+          if (!isEditMode && chapters.length === 0) {
             setStep("details");
           } else {
             setStep("chapters");
@@ -567,143 +712,227 @@ export function CourseEditor({
      STEP 2: CHAPTERS VIEW (Matching Screenshot 2 - No draft/publish buttons)
      ========================================================================= */
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-20 animate-in fade-in duration-200">
+    <div className="mx-auto max-w-4xl space-y-6 pb-16 animate-in fade-in duration-200">
       {/* Breadcrumbs */}
       <nav
         aria-label="Breadcrumb"
-        className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-[var(--color-ink-2)]"
+        className="flex items-center gap-2 text-xs sm:text-sm font-medium text-[var(--color-ink-2)]"
       >
         <Link
           href={`/${locale}/admin/training`}
-          className="hover:text-[var(--color-ink)] transition-colors inline-block"
+          className="hover:text-[var(--color-ink)] transition-colors"
         >
           {isEs ? "Capacitación" : "Training"}
         </Link>
         {(courseId || propCourseId || initialCourse?.id) && (
           <>
-            <span>/</span>
+            <span className="text-[var(--color-ink-3)] font-normal">/</span>
             <Link
               href={`/${locale}/admin/training/${courseId || propCourseId || initialCourse?.id}`}
-              className="hover:text-[var(--color-ink)] transition-colors inline-block max-w-[200px] truncate"
+              className="hover:text-[var(--color-ink)] transition-colors max-w-[220px] truncate"
             >
               {courseName || (isEs ? "Curso" : "Course")}
             </Link>
           </>
         )}
-        <span>/</span>
+        <span className="text-[var(--color-ink-3)] font-normal">/</span>
         <span className="text-[var(--color-ink)] font-semibold">
           {isEs ? "Editar" : "Edit"}
         </span>
       </nav>
 
       {/* Course Header Banner */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          {isEditingDetails ? (
-            <div className="space-y-3 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 shadow-sm">
-              <input
-                type="text"
-                value={editNameDraft}
-                onChange={(e) => setEditNameDraft(e.target.value)}
-                placeholder="Course name"
-                className="w-full rounded-lg border border-[var(--color-line-2)] px-3 py-1.5 text-lg font-bold text-[var(--color-ink)] focus:border-[var(--color-brand-600)] focus:outline-none"
-              />
-              <textarea
-                value={editPurposeDraft}
-                onChange={(e) => setEditPurposeDraft(e.target.value)}
-                placeholder="Purpose"
-                rows={2}
-                className="w-full rounded-lg border border-[var(--color-line-2)] px-3 py-1.5 text-sm text-[var(--color-ink)] focus:border-[var(--color-brand-600)] focus:outline-none resize-none"
-              />
-              <div className="flex justify-end gap-2 pt-1">
-                <Button
-                  type="button"
-                  variant="neutral"
-                  size="sm"
-                  onClick={() => setIsEditingDetails(false)}
-                >
-                  {isEs ? "Cancelar" : "Cancel"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={handleSaveDetailsEdit}
-                  disabled={!editNameDraft.trim() || !editPurposeDraft.trim()}
-                >
-                  {isEs ? "Listo" : "Done"}
-                </Button>
+      {isEditingDetails ? (
+        <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-6 shadow-xs space-y-5 animate-in fade-in duration-150">
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--color-line-2)]">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-[var(--color-brand-600)]/10 text-[var(--color-brand-600)]">
+                <LuFileText className="size-4" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base text-[var(--color-ink)]">
+                  {isEs ? "Detalles del curso" : "Course details"}
+                </h3>
+                <p className="text-xs text-[var(--color-ink-2)]">
+                  {isEs
+                    ? "Modifica el título y propósito del curso"
+                    : "Update course title and purpose"}
+                </p>
               </div>
             </div>
-          ) : (
-            <div className="group relative">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="font-[family-name:var(--font-ui)] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)]">
-                  {courseName ||
-                    (isEs ? "Curso sin título" : "Untitled Course")}
-                </h1>
-                <button
-                  type="button"
-                  onClick={handleOpenEditDetails}
-                  title={
-                    isEs
-                      ? "Editar título y propósito"
-                      : "Edit title and purpose"
-                  }
-                  className="rounded-lg px-2.5 py-1 text-[var(--color-brand-600)] bg-[var(--color-brand-600)]/10 hover:bg-[var(--color-brand-600)]/20 transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
-                >
-                  <LuPencil className="w-3.5 h-3.5" />
-                  <span>{isEs ? "Editar título" : "Edit details"}</span>
-                </button>
-              </div>
-              <p className="mt-1 text-sm sm:text-base text-[var(--color-ink-2)]">
-                {coursePurpose ||
-                  (isEs ? "Sin propósito asignado" : "No purpose provided")}
-              </p>
+          </div>
+
+          {/* Field 1: Course Name */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="edit-course-name"
+                className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-2)]"
+              >
+                {isEs ? "Nombre del curso *" : "Course name *"}
+              </label>
+              <span className="text-[11px] text-[var(--color-ink-3)] font-mono">
+                {editNameDraft.length}/100
+              </span>
             </div>
-          )}
-        </div>
+            <input
+              id="edit-course-name"
+              type="text"
+              maxLength={100}
+              value={editNameDraft}
+              onChange={(e) => setEditNameDraft(e.target.value)}
+              placeholder={
+                isEs ? "Ej. Tacos al Pastor" : "e.g. Tacos al Pastor"
+              }
+              className="w-full h-12 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)]/30 px-4 py-3 text-base sm:text-lg font-semibold text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-brand-600)] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-600)] transition-all"
+              autoFocus
+            />
+          </div>
 
-        {/* Top Right Action - Preview & Save */}
-        <div className="flex items-center gap-2 self-start">
-          <Button
-            type="button"
-            variant="surface"
-            icon={LuEye}
-            onClick={handlePreviewCourse}
-            disabled={isSaving}
-          >
-            {isEs ? "Vista previa" : "Preview course"}
-          </Button>
+          {/* Field 2: Course Purpose */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="edit-course-purpose"
+                className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-2)]"
+              >
+                {isEs ? "Para qué sirve *" : "What it is for *"}
+              </label>
+              <span className="text-[11px] text-[var(--color-ink-3)] font-mono">
+                {editPurposeDraft.length}/500
+              </span>
+            </div>
+            <textarea
+              id="edit-course-purpose"
+              rows={3}
+              maxLength={500}
+              value={editPurposeDraft}
+              onChange={(e) => setEditPurposeDraft(e.target.value)}
+              placeholder={
+                isEs
+                  ? "Describe el objetivo y lo que aprenderán los empleados..."
+                  : "Describe the objective and what employees will learn..."
+              }
+              className="w-full rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)]/30 p-3.5 sm:p-4 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-brand-600)] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-600)] transition-all resize-none leading-relaxed"
+            />
+          </div>
 
-          <Button
-            type="button"
-            variant="primary"
-            icon={saveSuccess ? LuCheck : undefined}
-            onClick={() => handleSaveCourse({ redirectAfter: true })}
-            disabled={isSaving}
-            className={
-              saveSuccess
-                ? "!bg-emerald-600 !text-white !border-emerald-600 hover:!bg-emerald-600 shadow-sm transition-all duration-200 !opacity-100 font-semibold"
-                : isSaving
-                  ? "!opacity-90 font-medium"
-                  : ""
-            }
-          >
-            {isSaving
-              ? isEs
-                ? "Guardando..."
-                : "Saving..."
-              : saveSuccess
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--color-line-2)]">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditingDetails(false)}
+            >
+              {isEs ? "Cancelar" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={handleSaveDetailsEdit}
+              disabled={
+                !editNameDraft.trim() || !editPurposeDraft.trim() || isSaving
+              }
+              className={
+                saveSuccess
+                  ? "!bg-emerald-600 !text-white !border-emerald-600 hover:!bg-emerald-600 shadow-sm transition-all duration-200 !opacity-100 font-semibold"
+                  : isSaving
+                    ? "!opacity-90 font-medium"
+                    : ""
+              }
+            >
+              {isSaving
                 ? isEs
-                  ? "Guardado"
-                  : "Saved"
+                  ? "Guardando..."
+                  : "Saving..."
                 : isEs
-                  ? "Guardar"
-                  : "Save"}
-          </Button>
+                  ? "Guardar cambios"
+                  : "Save changes"}
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-3.5">
+                  <h1 className="font-[family-name:var(--font-ui)] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)] leading-tight">
+                    {courseName ||
+                      (isEs ? "Curso sin título" : "Untitled Course")}
+                  </h1>
+                  {isDirty && (
+                    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 shrink-0 shadow-xs">
+                      <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+                      {isEs ? "Cambios sin guardar" : "Unsaved changes"}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-sm sm:text-base text-[var(--color-ink-2)] leading-relaxed max-w-2xl">
+                  {coursePurpose ||
+                    (isEs ? "Sin propósito asignado" : "No purpose provided")}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="surface"
+                size="sm"
+                icon={LuPencil}
+                onClick={handleOpenEditDetails}
+                className="shrink-0 text-xs font-semibold shadow-xs"
+              >
+                {isEs ? "Editar detalles" : "Edit details"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Top Right Action - Preview & Save */}
+          <div className="flex items-center gap-2 self-start shrink-0">
+            <Button
+              type="button"
+              variant="surface"
+              icon={LuEye}
+              onClick={handlePreviewCourse}
+              disabled={isSaving}
+            >
+              {isEs ? "Vista previa" : "Preview course"}
+            </Button>
+
+            {isDirty && (
+              <Button
+                type="button"
+                variant="primary"
+                icon={saveSuccess ? LuCheck : undefined}
+                onClick={() => handleSaveCourse({ redirectAfter: true })}
+                disabled={
+                  isSaving || !courseName.trim() || !coursePurpose.trim()
+                }
+                className={
+                  saveSuccess
+                    ? "!bg-emerald-600 !text-white !border-emerald-600 hover:!bg-emerald-600 shadow-sm transition-all duration-200 !opacity-100 font-semibold"
+                    : isSaving
+                      ? "!opacity-90 font-medium"
+                      : ""
+                }
+              >
+                {isSaving
+                  ? isEs
+                    ? "Guardando..."
+                    : "Saving..."
+                  : saveSuccess
+                    ? isEs
+                      ? "Guardado"
+                      : "Saved"
+                    : isEs
+                      ? "Guardar cambios"
+                      : "Save changes"}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Chapters Container matching Screenshot 2 */}
       <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-xs overflow-hidden">
@@ -918,8 +1147,8 @@ export function CourseEditor({
               })}
             </ul>
 
-            {/* Bottom Action Bar */}
-            <div className="border-t border-[var(--color-line-2)] bg-[var(--color-wash)]/40 px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+            {/* Bottom Action Bar inside Card */}
+            <div className="border-t border-[var(--color-line-2)] bg-[var(--color-wash)]/40 px-6 py-4 flex items-center justify-start">
               <Button
                 type="button"
                 size="sm"
@@ -932,47 +1161,6 @@ export function CourseEditor({
               >
                 {isEs ? "Agregar capítulo" : "Add chapter"}
               </Button>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="surface"
-                  icon={LuEye}
-                  onClick={handlePreviewCourse}
-                  disabled={isSaving}
-                >
-                  {isEs ? "Vista previa del curso" : "Preview course"}
-                </Button>
-
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="primary"
-                  icon={saveSuccess ? LuCheck : undefined}
-                  onClick={() => handleSaveCourse({ redirectAfter: true })}
-                  disabled={isSaving}
-                  className={
-                    saveSuccess
-                      ? "!bg-emerald-600 !text-white !border-emerald-600 hover:!bg-emerald-600 shadow-sm transition-all duration-200 !opacity-100 font-semibold"
-                      : isSaving
-                        ? "!opacity-90 font-medium"
-                        : ""
-                  }
-                >
-                  {isSaving
-                    ? isEs
-                      ? "Guardando..."
-                      : "Saving..."
-                    : saveSuccess
-                      ? isEs
-                        ? "Guardado"
-                        : "Saved"
-                      : isEs
-                        ? "Guardar"
-                        : "Save"}
-                </Button>
-              </div>
             </div>
           </div>
         )}

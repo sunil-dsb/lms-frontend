@@ -111,10 +111,22 @@ const blockIngredients = (
     allergen?: boolean;
   }[],
   allergenSummary?: { en: string; es: string },
+  yieldItems?: {
+    label: string;
+    value: string;
+    unit?: string;
+    scales?: boolean;
+  }[],
 ): ProcedureBlock => ({
   id,
   kind: "ingredients",
   factors: [1],
+  yieldItems: yieldItems ?? [
+    { label: "Batch weight", value: "350", unit: "g" },
+    { label: "Portions", value: "1", unit: "order" },
+    { label: "Portion size", value: "1", unit: "plate" },
+    { label: "Cook time", value: "15", unit: "mins" },
+  ],
   ingredients: ingredients.map((i) => ({
     name: i.name,
     amounts: i.amounts,
@@ -307,7 +319,7 @@ export const shrimpCevicheBlocks: ProcedureBlock[] = [
   ]),
 ];
 
-interface ChapterDefinition {
+export interface ChapterDefinition {
   id: string;
   number: number;
   titleEn: string;
@@ -807,6 +819,32 @@ const COURSE_CHAPTER_REGISTRY: Record<
   },
 };
 
+export function registerCourseChapters(
+  courseId: string,
+  chapters: ChapterDefinition[],
+  linkedProcedure?: {
+    titleEn: string;
+    titleEs: string;
+    hrefSlug: string;
+  },
+): void {
+  COURSE_CHAPTER_REGISTRY[courseId] = {
+    chapters,
+    linkedProcedure,
+  };
+}
+
+export function getChapterDefinitions(
+  courseId: string,
+): ChapterDefinition[] | undefined {
+  if (!courseId) return undefined;
+  return (
+    COURSE_CHAPTER_REGISTRY[courseId]?.chapters ||
+    COURSE_CHAPTER_REGISTRY[courseId.replace(/^course-/, "")]?.chapters ||
+    COURSE_CHAPTER_REGISTRY[`course-${courseId}`]?.chapters
+  );
+}
+
 /**
  * Resolves the chapters, progress and next step for an assigned course.
  * Adheres strictly to DESIGN.md tokens and clean separation of concerns.
@@ -955,21 +993,23 @@ export function getCourseChaptersViewData(
     };
   }
 
-  return {
-    courseId,
-    title,
-    purpose,
-    progressPercent,
-    chapters,
-    nextChapterNumber,
-    linkedProcedure,
-    allComplete: isComplete,
-    dueAt: assignment?.dueAt,
-    completedChaptersCount: completedCount,
-    totalChaptersCount: totalChapters,
-    estimatedMinutesLeft: isComplete ? 0 : estimatedMinutesLeft,
-    totalEstimatedMinutes,
-  };
+  return JSON.parse(
+    JSON.stringify({
+      courseId,
+      title,
+      purpose,
+      progressPercent,
+      chapters,
+      nextChapterNumber,
+      linkedProcedure,
+      allComplete: isComplete,
+      dueAt: assignment?.dueAt,
+      completedChaptersCount: completedCount,
+      totalChaptersCount: totalChapters,
+      estimatedMinutesLeft: isComplete ? 0 : estimatedMinutesLeft,
+      totalEstimatedMinutes,
+    }),
+  );
 }
 
 export function getChapterDetail(
@@ -1039,5 +1079,7 @@ export function getChapterDetail(
   ];
 
   const procedureSlug = def?.procedureSlug;
-  return { title, subtitle, totalChapters, blocks, procedureSlug };
+  return JSON.parse(
+    JSON.stringify({ title, subtitle, totalChapters, blocks, procedureSlug }),
+  );
 }
