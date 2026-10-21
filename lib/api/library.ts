@@ -29,7 +29,7 @@ function getProceduresStore(): Procedure[] {
   }
   return mockProcedures;
 }
-function getQuizzesStore(): Quiz[] {
+export function getQuizzesStore(): Quiz[] {
   if (typeof window !== "undefined")
     mockQuizzes = getStored("quizzes", SEED_QUIZZES);
   return mockQuizzes;

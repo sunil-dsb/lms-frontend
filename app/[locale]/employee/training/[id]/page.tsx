@@ -100,14 +100,22 @@ export default async function EmployeeTrainingCoursePage({
   // 1. Chapter Quiz View: matches reference Image 2
   if (chapterNumber && !isNaN(chapterNumber) && mode === "quiz") {
     const chapterDetail = getChapterDetail(id, chapterNumber, locale);
-    // Lookup quiz by course quizId or fallback to handwashing quiz bank
-    const quiz =
+    // Prefer chapter's own quiz questions if defined, otherwise course quizId or fallback
+    const chapterQuiz = chapterDetail.quiz;
+    const fallbackQuiz =
       (course.quizId ? getQuizById(course.quizId) : null) ??
       getQuizById("quiz-handwashing");
     const questions =
-      quiz?.questions && quiz.questions.length > 0
-        ? quiz.questions
-        : (getQuizById("quiz-handwashing")?.questions ?? []);
+      chapterQuiz?.questions && chapterQuiz.questions.length > 0
+        ? chapterQuiz.questions
+        : fallbackQuiz?.questions && fallbackQuiz.questions.length > 0
+          ? fallbackQuiz.questions
+          : (getQuizById("quiz-handwashing")?.questions ?? []);
+
+    const minCorrectAnswers =
+      chapterDetail.minCorrectAnswers ??
+      chapterQuiz?.minCorrectAnswers ??
+      Math.max(1, Math.ceil(questions.length * 0.7));
 
     return (
       <ChapterQuizView
@@ -118,6 +126,7 @@ export default async function EmployeeTrainingCoursePage({
         assignmentId={assignment?.id}
         locale={locale}
         questions={questions}
+        minCorrectAnswers={minCorrectAnswers}
       />
     );
   }

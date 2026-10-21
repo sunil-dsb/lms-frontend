@@ -1,4 +1,10 @@
-import type { Procedure, ProcedureBlock, TrainingAssignment } from "./types";
+import type {
+  Procedure,
+  ProcedureBlock,
+  ProcedureQuiz,
+  ProcedureQuizQuestion,
+  TrainingAssignment,
+} from "./types";
 
 export type CourseChapterContentType =
   "checklist" | "quiz" | "procedure" | "video" | "file";
@@ -332,6 +338,8 @@ export interface ChapterDefinition {
   procedureSlug?: string;
   contentType?: CourseChapterContentType;
   estimatedMinutes?: number;
+  quiz?: ProcedureQuiz | null;
+  minCorrectAnswers?: number;
 }
 
 const COURSE_CHAPTER_REGISTRY: Record<
@@ -1022,6 +1030,8 @@ export function getChapterDetail(
   totalChapters: number;
   blocks: ProcedureBlock[];
   procedureSlug?: string;
+  quiz?: ProcedureQuiz | null;
+  minCorrectAnswers?: number;
 } {
   const isEs = locale === "es";
   const reg = COURSE_CHAPTER_REGISTRY[courseId];
@@ -1079,7 +1089,18 @@ export function getChapterDetail(
   ];
 
   const procedureSlug = def?.procedureSlug;
+  const quiz = def?.quiz ?? null;
+  const minCorrectAnswers = def?.minCorrectAnswers ?? quiz?.minCorrectAnswers;
+
   return JSON.parse(
-    JSON.stringify({ title, subtitle, totalChapters, blocks, procedureSlug }),
+    JSON.stringify({
+      title,
+      subtitle,
+      totalChapters,
+      blocks,
+      procedureSlug,
+      quiz,
+      minCorrectAnswers,
+    }),
   );
 }

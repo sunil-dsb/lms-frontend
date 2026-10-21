@@ -5,7 +5,15 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { ProcedureQuiz, ProcedureQuizQuestion } from "@/lib/types";
 import { LocalisedInput } from "@/components/ui/localised-input";
-import { LuCheck, LuPlus, LuTrash2 } from "react-icons/lu";
+import {
+  LuBookOpen,
+  LuCheck,
+  LuMinus,
+  LuPlus,
+  LuSparkles,
+  LuTarget,
+  LuTrash2,
+} from "react-icons/lu";
 
 const MIN_CHOICES = 2;
 const MAX_CHOICES = 6;
@@ -36,6 +44,7 @@ interface QuizEditorProps {
   isSaving?: boolean;
   hideHeader?: boolean;
   hideAttachToggle?: boolean;
+  showPassingScore?: boolean;
   onDetach?: () => void;
 }
 
@@ -46,6 +55,7 @@ export function QuizEditor({
   isSaving,
   hideHeader,
   hideAttachToggle = false,
+  showPassingScore = false,
   onDetach,
 }: QuizEditorProps): React.ReactElement {
   const t = useTranslations("admin.library.new.quiz");
@@ -59,8 +69,14 @@ export function QuizEditor({
     if (!initialValue) return makeBlankQuiz(hideAttachToggle);
     return {
       attached: hideAttachToggle ? true : Boolean(initialValue.attached),
+      minCorrectAnswers:
+        initialValue.minCorrectAnswers ??
+        Math.max(1, Math.ceil(initialValue.questions.length * 0.7)),
+      passingScorePercent: initialValue.passingScorePercent,
       questions: initialValue.questions.map((q) => ({
         id: q.id || makeId(),
+        sourceProcedureId: q.sourceProcedureId,
+        sourceProcedureTitle: q.sourceProcedureTitle,
         prompt: {
           en:
             typeof q.prompt === "string"
@@ -82,6 +98,55 @@ export function QuizEditor({
       })),
     };
   });
+
+  // Keep in sync if parent passes new quiz questions (e.g. from linked procedure imports)
+  React.useEffect(() => {
+    if (value && value.questions) {
+      setWorking((prev) => {
+        // If question IDs are identical, avoid unnecessary re-render loop
+        const prevIds = prev.questions.map((q) => q.id).join(",");
+        const nextIds = value.questions.map((q) => q.id).join(",");
+        if (
+          prevIds === nextIds &&
+          prev.minCorrectAnswers === value.minCorrectAnswers
+        ) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          attached: value.attached ?? prev.attached,
+          minCorrectAnswers:
+            value.minCorrectAnswers ??
+            prev.minCorrectAnswers ??
+            Math.max(1, Math.ceil(value.questions.length * 0.7)),
+          questions: value.questions.map((q) => ({
+            id: q.id || makeId(),
+            sourceProcedureId: q.sourceProcedureId,
+            sourceProcedureTitle: q.sourceProcedureTitle,
+            prompt: {
+              en:
+                typeof q.prompt === "string"
+                  ? q.prompt
+                  : (q.prompt?.en ?? q.question?.en ?? ""),
+              es:
+                typeof q.prompt === "string"
+                  ? q.prompt
+                  : (q.prompt?.es ?? q.question?.es ?? ""),
+            },
+            choices: (q.choices || []).map((c) => ({
+              id: c.id || makeId(),
+              label: {
+                en: typeof c.label === "string" ? c.label : (c.label?.en ?? ""),
+                es: typeof c.label === "string" ? c.label : (c.label?.es ?? ""),
+              },
+            })),
+            correctChoiceId: q.correctChoiceId ?? "",
+          })),
+        };
+      });
+    }
+  }, [value]);
 
   const getLang = (qId: string): "en" | "es" => questionLangs[qId] ?? "en";
   const setLang = (qId: string, l: "en" | "es"): void =>
@@ -108,8 +173,15 @@ export function QuizEditor({
         return Boolean(labelText.trim());
       });
     });
+
+    const totalQ = next.questions.length;
+    const clampedMin = next.minCorrectAnswers
+      ? Math.min(Math.max(1, next.minCorrectAnswers), Math.max(1, totalQ))
+      : Math.max(1, Math.ceil(totalQ * 0.7));
+
     const enriched: ProcedureQuiz = {
       ...next,
+      minCorrectAnswers: clampedMin,
       attached: hideAttachToggle ? true : hasQuestions ? true : next.attached,
     };
     setWorking(enriched);
@@ -118,6 +190,10 @@ export function QuizEditor({
 
   const setAttached = (next: boolean): void =>
     update({ ...working, attached: next });
+
+  const setMinCorrect = (count: number): void => {
+    update({ ...working, minCorrectAnswers: count });
+  };
 
   const updateQuestion = (
     qi: number,
@@ -222,6 +298,108 @@ export function QuizEditor({
         </div>
       )}
 
+      {/* Passing requirement card — lets admin configure passing answers count (e.g. 4 of 6) */}
+      {showPassingScore && working.questions.length > 0 && (
+        <div className="rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 sm:p-5 shadow-xs space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <div className="flex size-7 items-center justify-center rounded-lg bg-[var(--color-brand-tint-2)] text-[var(--color-brand-600)] shrink-0">
+                  <LuTarget className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-bold text-[var(--color-ink)]">
+                  Passing requirement
+                </h3>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 shrink-0">
+                  {Math.round(
+                    ((working.minCorrectAnswers ??
+                      Math.max(1, Math.ceil(working.questions.length * 0.7))) /
+                      working.questions.length) *
+                      100,
+                  )}
+                  % required
+                </span>
+              </div>
+              <p className="text-xs text-[var(--color-ink-2)]">
+                Employees must answer at least{" "}
+                <strong className="text-[var(--color-ink)]">
+                  {working.minCorrectAnswers ??
+                    Math.max(1, Math.ceil(working.questions.length * 0.7))}{" "}
+                  of {working.questions.length} questions
+                </strong>{" "}
+                correctly to complete this chapter and unlock the next chapter.
+              </p>
+            </div>
+
+            {/* Stepper controls */}
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+              <div className="flex items-center rounded-xl border border-[var(--color-line-2)] bg-[var(--color-wash)] p-1">
+                <button
+                  type="button"
+                  disabled={
+                    isSaving ||
+                    (working.minCorrectAnswers ??
+                      Math.max(1, Math.ceil(working.questions.length * 0.7))) <=
+                      1
+                  }
+                  onClick={() =>
+                    setMinCorrect(
+                      Math.max(
+                        1,
+                        (working.minCorrectAnswers ??
+                          Math.max(
+                            1,
+                            Math.ceil(working.questions.length * 0.7),
+                          )) - 1,
+                      ),
+                    )
+                  }
+                  aria-label="Decrease passing score"
+                  className="flex size-8 items-center justify-center rounded-lg hover:bg-[var(--color-surface)] disabled:opacity-30 transition-colors text-[var(--color-ink)] cursor-pointer"
+                >
+                  <LuMinus className="w-3.5 h-3.5" />
+                </button>
+                <div className="px-3 text-center min-w-[72px]">
+                  <span className="text-sm font-bold text-[var(--color-ink)]">
+                    {working.minCorrectAnswers ??
+                      Math.max(1, Math.ceil(working.questions.length * 0.7))}
+                  </span>
+                  <span className="text-xs text-[var(--color-ink-2)]">
+                    {" "}
+                    / {working.questions.length}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  disabled={
+                    isSaving ||
+                    (working.minCorrectAnswers ??
+                      Math.max(1, Math.ceil(working.questions.length * 0.7))) >=
+                      working.questions.length
+                  }
+                  onClick={() =>
+                    setMinCorrect(
+                      Math.min(
+                        working.questions.length,
+                        (working.minCorrectAnswers ??
+                          Math.max(
+                            1,
+                            Math.ceil(working.questions.length * 0.7),
+                          )) + 1,
+                      ),
+                    )
+                  }
+                  aria-label="Increase passing score"
+                  className="flex size-8 items-center justify-center rounded-lg hover:bg-[var(--color-surface)] disabled:opacity-30 transition-colors text-[var(--color-ink)] cursor-pointer"
+                >
+                  <LuPlus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Question list — each question has the exact bilingual component effect (one gets bigger, one becomes shorter) */}
       <ol className="space-y-6">
         {working.questions.map((q, qi) => {
@@ -240,6 +418,16 @@ export function QuizEditor({
                   // Active card: BIGGER (100% width, height auto, full question prompt + all options)
                   return (
                     <div key={lang} className="bli-card is-active">
+                      {q.sourceProcedureTitle ? (
+                        <div className="border-b border-amber-200/80 dark:border-amber-800/40 bg-amber-50/80 dark:bg-amber-950/40 px-4 py-2 flex items-center gap-2">
+                          <span className="inline-flex size-5 items-center justify-center rounded-full bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 shrink-0">
+                            <LuBookOpen className="w-3 h-3 text-amber-700 dark:text-amber-300" />
+                          </span>
+                          <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                            From procedure: {q.sourceProcedureTitle}
+                          </span>
+                        </div>
+                      ) : null}
                       <header className="flex items-center gap-3 border-b border-[var(--color-line)] bg-[var(--color-wash)] px-4 py-3">
                         <span className="text-sm font-bold text-[var(--color-ink)] shrink-0 select-none pl-1">
                           {qi + 1}

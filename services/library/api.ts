@@ -232,6 +232,30 @@ export async function fetchProcedureById(
   cookieHeader?: string,
 ): Promise<Procedure> {
   const headers = makeHeaders(cookieHeader);
+
+  // If slugOrId is a UUID, the backend GET /api/v1/procedures/:slug endpoint matches
+  // by slug, not id. Resolve the slug from the procedure catalog first to prevent a 404 error.
+  if (isUuid(slugOrId)) {
+    const { procedures } = await fetchProcedures({}, _isAdmin, cookieHeader);
+    const match = procedures.find((p) => p.id === slugOrId);
+    if (!match) {
+      try {
+        const { listAvailableSops } = await import("@/lib/mock-training");
+        const mockMatch = listAvailableSops().find(
+          (p) => p.id === slugOrId || p.slug === slugOrId,
+        );
+        if (mockMatch) return mockMatch;
+      } catch {
+        // ignore
+      }
+      throw new Error(`Procedure not found: ${slugOrId}`);
+    }
+    if (match.slug && match.slug !== slugOrId) {
+      return fetchProcedureById(match.slug, _isAdmin, cookieHeader);
+    }
+    return match;
+  }
+
   try {
     const { data } = await http.get<{
       success: boolean;
@@ -246,26 +270,19 @@ export async function fetchProcedureById(
       return proc;
     }
   } catch (err) {
-    // Slugs go straight through; anything else falls to the id path below.
-    if (!isUuid(slugOrId)) throw err;
+    try {
+      const { listAvailableSops } = await import("@/lib/mock-training");
+      const mockMatch = listAvailableSops().find(
+        (p) => p.id === slugOrId || p.slug === slugOrId,
+      );
+      if (mockMatch) return mockMatch;
+    } catch {
+      // ignore
+    }
+    throw err;
   }
 
-  // Admin list links used to carry the row id (UUID), which never matches
-  // the backend's slug column — resolve it through the (cached) list, then
-  // fetch the whole procedure by the resolved slug so detail views always
-  // get full bodies, never a metadata row.
-  if (!isUuid(slugOrId)) {
-    throw new Error(`Procedure not found: ${slugOrId}`);
-  }
-  const { procedures } = await fetchProcedures({}, _isAdmin, cookieHeader);
-  const match = procedures.find((p) => p.id === slugOrId);
-  if (!match) {
-    throw new Error(`Procedure not found: ${slugOrId}`);
-  }
-  if (match.slug && match.slug !== slugOrId) {
-    return fetchProcedureById(match.slug, _isAdmin, cookieHeader);
-  }
-  return match;
+  throw new Error(`Procedure not found: ${slugOrId}`);
 }
 
 /** Backend PUT/POST validate against the full create schema, so every

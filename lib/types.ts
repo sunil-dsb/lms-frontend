@@ -407,6 +407,8 @@ export interface ProcedureQuizQuestion {
   question?: Localised;
   choices: { id: string; label: Localised }[];
   correctChoiceId: string;
+  sourceProcedureId?: string;
+  sourceProcedureTitle?: string;
 }
 
 /** Quiz attached to a procedure. `attached` is the manual toggle set by
@@ -415,6 +417,8 @@ export interface ProcedureQuizQuestion {
 export interface ProcedureQuiz {
   questions: ProcedureQuizQuestion[];
   attached: boolean;
+  minCorrectAnswers?: number;
+  passingScorePercent?: number;
 }
 
 /** A quiz row in the centralised `quizzes` table — the single source of

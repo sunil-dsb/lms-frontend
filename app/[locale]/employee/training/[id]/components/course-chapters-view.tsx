@@ -10,6 +10,12 @@ import { StickyContinueButton } from "./sticky-continue-button";
 interface CourseChaptersViewProps {
   data: CourseChaptersViewData;
   locale: string;
+  basePath?: string;
+  backHref?: string;
+  backLabel?: string;
+  extraHeaderActions?: React.ReactNode;
+  /** Sidebar width in px to offset the fixed sticky button (admin layout). Default 0. */
+  sidebarOffsetPx?: number;
 }
 
 /**
@@ -24,6 +30,11 @@ interface CourseChaptersViewProps {
 export function CourseChaptersView({
   data,
   locale,
+  basePath,
+  backHref,
+  backLabel,
+  extraHeaderActions,
+  sidebarOffsetPx = 0,
 }: CourseChaptersViewProps): React.ReactElement {
   const t = useTranslations("employee.training");
   const {
@@ -40,23 +51,91 @@ export function CourseChaptersView({
     estimatedMinutesLeft,
   } = data;
 
+  const effectiveBasePath =
+    basePath ?? `/${locale}/employee/training/${courseId}`;
+
+  // Read locally recorded completed chapters for real-time unlock feedback
+  const [completedList, setCompletedList] = React.useState<number[]>([]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(
+          `lms_completed_chapters_${courseId}`,
+        );
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setCompletedList(parsed);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [courseId]);
+
+  // Compute effective chapters with unlocked states
+  const effectiveChapters = React.useMemo(() => {
+    if (completedList.length === 0) return chapters;
+    const mapped = chapters.map((ch, idx) => {
+      const isCompleteLocally =
+        completedList.includes(ch.number) || completedList.includes(idx + 1);
+      if (isCompleteLocally || ch.status === "complete") {
+        return {
+          ...ch,
+          status: "complete" as const,
+          subtitle:
+            ch.subtitle || (locale === "es" ? "Completado" : "Completed"),
+        };
+      }
+      return ch;
+    });
+
+    // Second pass to ensure chronological unlock
+    return mapped.map((ch, idx, arr) => {
+      if (ch.status === "complete") return ch;
+      const prevComplete = idx === 0 || arr[idx - 1].status === "complete";
+      return {
+        ...ch,
+        status: prevComplete ? ("active" as const) : ("locked" as const),
+      };
+    });
+  }, [chapters, completedList, locale]);
+
+  const effectiveCompletedCount = effectiveChapters.filter(
+    (c) => c.status === "complete",
+  ).length;
+  const effectiveAllComplete =
+    effectiveChapters.length > 0 &&
+    effectiveCompletedCount === effectiveChapters.length;
+  const effectiveProgressPercent =
+    effectiveChapters.length > 0
+      ? Math.round((effectiveCompletedCount / effectiveChapters.length) * 100)
+      : progressPercent;
+
+  const nextActive = effectiveChapters.find((c) => c.status === "active");
+  const effectiveNextNumber = effectiveAllComplete
+    ? null
+    : (nextActive?.number ?? nextChapterNumber);
+
   // Determine sticky button label and target href
   let ctaLabel: string;
   let ctaHref: string;
 
-  if (allComplete) {
+  if (effectiveAllComplete) {
     ctaLabel = t("reviewCourse");
-    ctaHref = `/${locale}/employee/training/${courseId}?chapter=1`;
-  } else if (nextChapterNumber) {
-    if (progressPercent > 0) {
-      ctaLabel = t("continueChapterN", { n: nextChapterNumber });
+    ctaHref = `${effectiveBasePath}?chapter=1`;
+  } else if (effectiveNextNumber) {
+    if (effectiveProgressPercent > 0) {
+      ctaLabel = t("continueChapterN", { n: effectiveNextNumber });
     } else {
-      ctaLabel = t("startChapterN", { n: nextChapterNumber });
+      ctaLabel = t("startChapterN", { n: effectiveNextNumber });
     }
-    ctaHref = `/${locale}/employee/training/${courseId}?chapter=${nextChapterNumber}`;
+    ctaHref = `${effectiveBasePath}?chapter=${effectiveNextNumber}`;
   } else {
     ctaLabel = t("startChapterN", { n: 1 });
-    ctaHref = `/${locale}/employee/training/${courseId}?chapter=1`;
+    ctaHref = `${effectiveBasePath}?chapter=1`;
   }
 
   return (
@@ -70,23 +149,26 @@ export function CourseChaptersView({
           locale={locale}
           title={title}
           purpose={purpose}
-          progressPercent={progressPercent}
-          completedChaptersCount={completedChaptersCount}
+          progressPercent={effectiveProgressPercent}
+          completedChaptersCount={effectiveCompletedCount}
           totalChaptersCount={totalChaptersCount}
           dueAt={dueAt}
           estimatedMinutesLeft={estimatedMinutesLeft}
-          backLabel={t("navTraining")}
+          backLabel={backLabel ?? t("navTraining")}
+          backHref={backHref}
+          extraActions={extraHeaderActions}
         />
 
         {/* Course Chapters Cards List */}
         <section aria-label="Course chapters" className="pt-2">
           <ul className="flex flex-col gap-3">
-            {chapters.map((ch) => (
+            {effectiveChapters.map((ch) => (
               <CourseChapterItem
                 key={ch.id}
                 chapter={ch}
                 locale={locale}
                 courseId={courseId}
+                basePath={effectiveBasePath}
               />
             ))}
           </ul>
@@ -94,7 +176,11 @@ export function CourseChaptersView({
       </main>
 
       {/* Sticky Bottom Action Button matching Image 2 */}
-      <StickyContinueButton label={ctaLabel} href={ctaHref} />
+      <StickyContinueButton
+        label={ctaLabel}
+        href={ctaHref}
+        sidebarOffsetPx={sidebarOffsetPx}
+      />
     </div>
   );
 }

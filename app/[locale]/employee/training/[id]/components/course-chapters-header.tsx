@@ -15,6 +15,8 @@ interface CourseChaptersHeaderProps {
   dueAt?: string;
   estimatedMinutesLeft?: number;
   backLabel: string;
+  backHref?: string;
+  extraActions?: React.ReactNode;
 }
 
 /**
@@ -35,6 +37,8 @@ export function CourseChaptersHeader({
   dueAt,
   estimatedMinutesLeft,
   backLabel,
+  backHref,
+  extraActions,
 }: CourseChaptersHeaderProps): React.ReactElement {
   const isEs = locale === "es";
 
@@ -48,15 +52,16 @@ export function CourseChaptersHeader({
 
   return (
     <header className="space-y-4">
-      {/* Top navigation link */}
-      <div>
+      {/* Top navigation link & optional actions */}
+      <div className="flex items-center justify-between gap-3">
         <Link
-          href={`/${locale}/employee/training`}
+          href={backHref ?? `/${locale}/employee/training`}
           className="inline-flex min-h-tap items-center gap-1 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
         >
           <LuChevronLeft className="text-lg" aria-hidden="true" />
           <span>{backLabel}</span>
         </Link>
+        {extraActions}
       </div>
 
       {/* Course Title & Purpose */}

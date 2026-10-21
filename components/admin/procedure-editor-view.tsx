@@ -365,6 +365,7 @@ export function ProcedureEditorView({
             <QuizEditor
               value={quiz}
               hideHeader
+              showPassingScore={false}
               onChange={(next) => {
                 if (!quiz) setQuiz(next);
                 else edit(setQuiz)(next);

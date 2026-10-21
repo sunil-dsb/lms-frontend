@@ -15,13 +15,18 @@ export interface SaveCourseChapterInput {
   blocks?: ProcedureBlock[];
   procedureSlug?: string;
   procedureId?: string;
+  minCorrectAnswers?: number;
   quiz?: {
     attached?: boolean;
+    minCorrectAnswers?: number;
+    passingScorePercent?: number;
     questions?: {
       id: string;
       prompt: { en: string; es: string };
       choices: { id: string; label: { en: string; es: string } }[];
       correctChoiceId: string;
+      sourceProcedureId?: string;
+      sourceProcedureTitle?: string;
     }[];
   } | null;
   quizQuestions?: {
@@ -29,6 +34,8 @@ export interface SaveCourseChapterInput {
     prompt: { en: string; es: string };
     choices: { id: string; label: { en: string; es: string } }[];
     correctChoiceId: string;
+    sourceProcedureId?: string;
+    sourceProcedureTitle?: string;
   }[];
 }
 
@@ -96,16 +103,32 @@ export async function saveCourseAction({
   const course: Procedure = JSON.parse(JSON.stringify(rawCourse));
 
   if (cleanChapters.length > 0) {
-    const chapterDefs: ChapterDefinition[] = cleanChapters.map((ch, idx) => ({
-      id: ch.id || `${course.id}-ch-${idx + 1}`,
-      number: idx + 1,
-      titleEn: ch.title,
-      titleEs: ch.title,
-      contentEn: ch.subtitle || "",
-      contentEs: ch.subtitle || "",
-      blocks: ch.blocks ?? [],
-      procedureSlug: ch.procedureSlug,
-    }));
+    const chapterDefs: ChapterDefinition[] = cleanChapters.map((ch, idx) => {
+      const questions = (ch.quiz?.questions ?? ch.quizQuestions ?? []) as any[];
+      const quizObj =
+        questions.length > 0
+          ? {
+              attached: true,
+              questions,
+              minCorrectAnswers:
+                ch.quiz?.minCorrectAnswers ?? ch.minCorrectAnswers,
+              passingScorePercent: ch.quiz?.passingScorePercent,
+            }
+          : null;
+
+      return {
+        id: ch.id || `${course.id}-ch-${idx + 1}`,
+        number: idx + 1,
+        titleEn: ch.title,
+        titleEs: ch.title,
+        contentEn: ch.subtitle || "",
+        contentEs: ch.subtitle || "",
+        blocks: ch.blocks ?? [],
+        procedureSlug: ch.procedureSlug,
+        quiz: quizObj,
+        minCorrectAnswers: ch.quiz?.minCorrectAnswers ?? ch.minCorrectAnswers,
+      };
+    });
 
     registerCourseChapters(course.id, chapterDefs);
   }

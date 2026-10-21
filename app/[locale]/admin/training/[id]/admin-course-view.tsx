@@ -194,16 +194,24 @@ export function AdminCourseView({
   // 1. Chapter Quiz View (Admin Preview)
   if (chapterNumber && !isNaN(chapterNumber) && mode === "quiz") {
     const chapterDetail = getChapterDetail(courseId, chapterNumber, locale);
-    const quiz =
+    const chapterQuiz = chapterDetail.quiz;
+    const fallbackQuiz =
       (activeCourse.quizId ? getQuizById(activeCourse.quizId) : null) ??
       getQuizById("quiz-handwashing");
 
     const questions: ProcedureQuizQuestion[] =
       localQuizQuestions && localQuizQuestions.length > 0
         ? localQuizQuestions
-        : quiz?.questions && quiz.questions.length > 0
-          ? quiz.questions
-          : (getQuizById("quiz-handwashing")?.questions ?? []);
+        : chapterQuiz?.questions && chapterQuiz.questions.length > 0
+          ? chapterQuiz.questions
+          : fallbackQuiz?.questions && fallbackQuiz.questions.length > 0
+            ? fallbackQuiz.questions
+            : (getQuizById("quiz-handwashing")?.questions ?? []);
+
+    const minCorrectAnswers =
+      chapterDetail.minCorrectAnswers ??
+      chapterQuiz?.minCorrectAnswers ??
+      Math.max(1, Math.ceil(questions.length * 0.7));
 
     return (
       <div className="pt-12 lg:pt-0">
@@ -214,6 +222,7 @@ export function AdminCourseView({
           totalChapters={chapterDetail.totalChapters}
           locale={locale}
           questions={questions}
+          minCorrectAnswers={minCorrectAnswers}
           basePath={basePath}
           backHref={basePath}
           sidebarOffsetPx={280}

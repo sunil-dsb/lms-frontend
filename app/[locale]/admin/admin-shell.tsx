@@ -243,6 +243,25 @@ export function AdminShell({
     return false;
   }, [pathname]);
 
+  // Training course detail pages (/admin/training/[id]) render a full-bleed
+  // course view that manages its own layout and has a fixed sticky button.
+  // Strip the shell padding so it can fill the available column correctly.
+  const isTrainingCoursePage = React.useMemo(() => {
+    const parts = pathname.split("/").filter(Boolean);
+    const adminIdx = parts.indexOf("admin");
+    if (
+      adminIdx !== -1 &&
+      parts[adminIdx + 1] === "training" &&
+      parts[adminIdx + 2] &&
+      parts[adminIdx + 2] !== "new"
+    ) {
+      // /admin/training/[id] and /admin/training/[id]?chapter=N — fullbleed
+      // But NOT /admin/training/[id]/edit (the wizard keeps shell padding)
+      return parts[adminIdx + 3] !== "edit";
+    }
+    return false;
+  }, [pathname]);
+
   return (
     <div
       className={cn(
@@ -369,13 +388,22 @@ export function AdminShell({
 
         <main
           className={cn(
-            "min-w-0 flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8",
+            "min-w-0 flex-1",
+            isTrainingCoursePage
+              ? "p-0"
+              : "px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8",
             isProcedureDetailPage && "bg-[var(--color-bg)]",
           )}
         >
           {/* Keyed by locale, so the fade runs when the language changes rather
               than on every render. */}
-          <div key={locale} className="content-in pt-10 lg:pt-0">
+          <div
+            key={locale}
+            className={cn(
+              "content-in",
+              isTrainingCoursePage ? "" : "pt-10 lg:pt-0",
+            )}
+          >
             {children}
           </div>
         </main>
