@@ -117,9 +117,7 @@ export function WizardStepper({
             );
 
    
-            const labelVisibility = isActive
-              ? 'inline-block'
-              : 'hidden sm:inline-block';
+            const labelVisibility = 'hidden sm:inline-block';
 
             return (
               <React.Fragment key={step.id}>
@@ -129,7 +127,7 @@ export function WizardStepper({
                     onClick={() => onSelect?.(step.id)}
                     aria-current={isActive ? 'step' : undefined}
                     aria-label={`${step.label}, ${percent}% complete`}
-                    className="group flex items-center gap-3 focus-visible:outline-none"
+                    className="group flex items-center sm:gap-3 focus-visible:outline-none cursor-pointer"
                   >
                     <span
                       className={circleClass}
@@ -153,7 +151,7 @@ export function WizardStepper({
 
                 {idx < steps.length - 1 && (
                   <div
-                    className="mx-2 h-0.5 min-w-5 flex-1 overflow-hidden rounded-full bg-[var(--color-line-2)] sm:mx-3 sm:min-w-8"
+                    className="mx-1.5 sm:mx-3 h-0.5 min-w-3 sm:min-w-8 flex-1 overflow-hidden rounded-full bg-[var(--color-line-2)]"
                     aria-hidden="true"
                   >
                     <div
@@ -169,6 +167,18 @@ export function WizardStepper({
             );
           })}
         </ol>
+
+        {/* On mobile screens (< 640px), show clean step indicator below the balanced row */}
+        {steps[activeIdx] && (
+          <div className="mt-2.5 flex items-center justify-between px-1 text-xs sm:hidden">
+            <span className="font-semibold text-[var(--color-brand-700)]">
+              {activeIdx + 1} / {steps.length} · {steps[activeIdx].label}
+            </span>
+            <span className="text-[11px] font-medium text-[var(--color-ink-3)]">
+              {Math.round(steps[activeIdx].progress * 100)}%
+            </span>
+          </div>
+        )}
       </div>
     </nav>
   );

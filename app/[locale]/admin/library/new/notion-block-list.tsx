@@ -62,21 +62,21 @@ interface NotionBlockListProps {
 
 function EmptyState({ onAdd }: { onAdd: (kind: ProcedureBlockKind) => void }): React.ReactElement {
   return (
-    <div className="space-y-4 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)] p-8">
+    <div className="space-y-4 rounded-[var(--radius-lg)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 sm:p-6 lg:p-8">
       <div className="flex items-start gap-3">
         <IconTile size="md" icon="ri-file-text-line" />
-        <div>
+        <div className="min-w-0">
           <h3 className="font-[family-name:var(--font-ui)] text-md font-semibold text-[var(--color-ink)]">
             Start writing
           </h3>
-          <p className="mt-0.5 text-sm text-[var(--color-ink-2)]">
+          <p className="mt-1 text-xs sm:text-sm text-[var(--color-ink-2)] leading-relaxed">
             Pick a starting block. You can move, copy or remove any block later
             from its menu.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
         {([
           { kind: 'text', label: 'Text', icon: 'ri-text', hint: 'Paragraph' },
           { kind: 'heading', label: 'Heading', icon: 'ri-h-1', hint: 'Section title' },
@@ -93,12 +93,12 @@ function EmptyState({ onAdd }: { onAdd: (kind: ProcedureBlockKind) => void }): R
             key={opt.kind}
             type="button"
             onClick={() => onAdd(opt.kind)}
-            className="group flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-3 text-left transition-colors hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)]"
+            className="group flex items-center gap-4 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 sm:px-5 sm:py-3 text-left transition-colors hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)] cursor-pointer"
           >
-            <Icon icon={opt.icon} className="mt-0.5 text-lg text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)]" />
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-[var(--color-ink)]">{opt.label}</span>
-              <span className="block text-sm text-[var(--color-ink-2)]">{opt.hint}</span>
+            <Icon icon={opt.icon} className="size-5 text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)] shrink-0" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs sm:text-sm font-semibold text-[var(--color-ink)] truncate">{opt.label}</span>
+              <span className="block text-[11px] sm:text-xs text-[var(--color-ink-2)] mt-0.5 line-clamp-1 leading-tight">{opt.hint}</span>
             </span>
           </button>
         ))}

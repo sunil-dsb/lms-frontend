@@ -176,118 +176,191 @@ export function EmployeesClientTable({
             {labels.empty}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="atable">
-              {/* Column order, from left to right: identity (avatar + name
-                  + email), job role(s), station(s), training count, status,
-                  actions. Code / location / raw tier-as-text are gone —
-                  the code is duplicated by the email, the location is
-                  implicit in the stations, and the tier badge didn't fit
-                  at this density. Job roles and stations render as plain
-                  text (comma-separated when multiple) rather than chips —
-                  chips added visual weight that the eye scans as
-                  decoration, not data; text reads as data. */}
-              <thead>
-                <tr>
-                  <th>{labels.thEmployee}</th>
-                  <th>{labels.thJobRole}</th>
-                  <th>{labels.thStation}</th>
-                  <th>{labels.thTraining}</th>
-                  <th>{labels.thStatus}</th>
-                  <th>
-                    <span className="sr-only">{labels.thActions}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map((e) => {
-                  const tone: StatusTone =
-                    e.status === 'active'
-                      ? 'ok'
-                      : e.status === 'pending'
-                        ? 'warn'
-                        : 'bad';
+          <>
+            {/* Mobile Card List (< md) */}
+            <div className="divide-y divide-[var(--color-line)] md:hidden">
+              {visible.map((e) => {
+                const tone: StatusTone =
+                  e.status === 'active'
+                    ? 'ok'
+                    : e.status === 'pending'
+                      ? 'warn'
+                      : 'bad';
 
-                  // Role / station labels, in the order the employee has
-                  // them. Unknown ids are dropped (a station could be
-                  // archived out from under a row). Multiple values join
-                  // with ", " — chips would add a `--panel-2` ground that
-                  // competes with the avatar's ground at this density.
-                  const roleLabels = Array.isArray(e.jobs) && e.jobs.length
-                    ? e.jobs.map((job) => job.name)
-                    : (e.roleIds ?? (e as any).jobIds ?? [])
-                        .map((id: string) => roleLabel.get(id))
-                        .filter((s: string | undefined): s is string => Boolean(s));
-                  const stationLabels = Array.isArray(e.stations) && e.stations.length
-                    ? e.stations.map((station) => station.name)
-                    : (e.stationIds ?? [])
-                        .map((id: string) => stationLabel.get(id))
-                        .filter((s: string | undefined): s is string => Boolean(s));
+                const roleLabels = Array.isArray(e.jobs) && e.jobs.length
+                  ? e.jobs.map((job) => job.name)
+                  : (e.roleIds ?? (e as any).jobIds ?? [])
+                      .map((id: string) => roleLabel.get(id))
+                      .filter((s: string | undefined): s is string => Boolean(s));
+                const stationLabels = Array.isArray(e.stations) && e.stations.length
+                  ? e.stations.map((station) => station.name)
+                  : (e.stationIds ?? [])
+                      .map((id: string) => stationLabel.get(id))
+                      .filter((s: string | undefined): s is string => Boolean(s));
 
-                  // Training rows for this employee. `getTrainingRowsForEmployee`
-                  // is a pure selector over the mock training store; calling
-                  // it on every render is fine for 19 rows.
-                  const trainingRows: TrainingAssignmentRow[] =
-                    getTrainingRowsForEmployee(e.id);
+                const trainingRows: TrainingAssignmentRow[] =
+                  getTrainingRowsForEmployee(e.id);
 
-                  return (
-                    <tr
-                      key={e.id}
-                      role="link"
-                      tabIndex={0}
-                      aria-label={e.name}
-                      onClick={() => openRow(e.id)}
-                      onKeyDown={(ev) => {
-                        // Skip when the user pressed Enter/Space inside an
-                        // interactive element inside the row — e.g. the
-                        // kebab trigger — so its native activation wins.
-                        const target = ev.target as HTMLElement | null;
-                        if (target?.closest('button, a, input, select, textarea')) return;
-                        if (ev.key === 'Enter' || ev.key === ' ') {
-                          ev.preventDefault();
-                          openRow(e.id);
-                        }
-                      }}
-                      className="cursor-pointer transition-colors hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-600)]"
-                    >
-                      <td>
-                        <div className="flex items-center gap-3">
-                          <Avatar initials={initials(e.name)} size="sm" />
-                          <div className="min-w-0">
-                            <div className="truncate font-medium text-[var(--color-ink)]">
-                              {e.name}
-                            </div>
-                            <div className="truncate text-sm text-[var(--color-ink-3)]">
-                              {e.email || '—'}
-                            </div>
+                return (
+                  <div
+                    key={`mobile-${e.id}`}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={e.name}
+                    onClick={() => openRow(e.id)}
+                    className="p-4 transition-colors hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-600)] cursor-pointer"
+                  >
+                    {/* Top: Avatar + Name/Email + Actions */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar initials={initials(e.name)} size="sm" />
+                        <div className="min-w-0">
+                          <div className="truncate font-medium text-[var(--color-ink)]">
+                            {e.name}
+                          </div>
+                          <div className="truncate text-sm text-[var(--color-ink-3)]">
+                            {e.email || '—'}
                           </div>
                         </div>
-                      </td>
-                      <td className="text-sm text-[var(--color-ink-2)]">
-                        {roleLabels.length > 0 ? roleLabels.join(', ') : '—'}
-                      </td>
-                      <td className="text-sm text-[var(--color-ink-2)]">
-                        {stationLabels.length > 0 ? stationLabels.join(', ') : '—'}
-                      </td>
-                      <td>
-                        <TrainingSummary rows={trainingRows} />
-                      </td>
-                      <td>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0" onClick={(ev) => ev.stopPropagation()}>
                         <StatusPill tone={tone}>{statusBadge(e.status)}</StatusPill>
-                      </td>
-                      <td onClick={(ev) => ev.stopPropagation()}>
                         <EmployeeRowActions
                           locale={locale}
                           employee={e}
                           onEdit={() => void openEdit(e)}
                         />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
+
+                    {/* Metadata: Roles & Stations */}
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm border-t border-[var(--color-line-2)] pt-3">
+                      <div>
+                        <span className="text-xs font-semibold text-[var(--color-ink-3)] block uppercase tracking-wider mb-1">
+                          {labels.thJobRole}
+                        </span>
+                        <span className="text-[var(--color-ink-2)] line-clamp-1">
+                          {roleLabels.length > 0 ? roleLabels.join(', ') : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold text-[var(--color-ink-3)] block uppercase tracking-wider mb-1">
+                          {labels.thStation}
+                        </span>
+                        <span className="text-[var(--color-ink-2)] line-clamp-1">
+                          {stationLabels.length > 0 ? stationLabels.join(', ') : '—'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Training row */}
+                    {trainingRows.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-[var(--color-line-2)] flex items-center justify-between">
+                        <span className="text-xs font-semibold text-[var(--color-ink-3)] uppercase tracking-wider">
+                          {labels.thTraining}
+                        </span>
+                        <TrainingSummary rows={trainingRows} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop Table (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="atable min-w-[640px]">
+                <thead>
+                  <tr>
+                    <th>{labels.thEmployee}</th>
+                    <th>{labels.thJobRole}</th>
+                    <th>{labels.thStation}</th>
+                    <th>{labels.thTraining}</th>
+                    <th>{labels.thStatus}</th>
+                    <th>
+                      <span className="sr-only">{labels.thActions}</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((e) => {
+                    const tone: StatusTone =
+                      e.status === 'active'
+                        ? 'ok'
+                        : e.status === 'pending'
+                          ? 'warn'
+                          : 'bad';
+
+                    const roleLabels = Array.isArray(e.jobs) && e.jobs.length
+                      ? e.jobs.map((job) => job.name)
+                      : (e.roleIds ?? (e as any).jobIds ?? [])
+                          .map((id: string) => roleLabel.get(id))
+                          .filter((s: string | undefined): s is string => Boolean(s));
+                    const stationLabels = Array.isArray(e.stations) && e.stations.length
+                      ? e.stations.map((station) => station.name)
+                      : (e.stationIds ?? [])
+                          .map((id: string) => stationLabel.get(id))
+                          .filter((s: string | undefined): s is string => Boolean(s));
+
+                    const trainingRows: TrainingAssignmentRow[] =
+                      getTrainingRowsForEmployee(e.id);
+
+                    return (
+                      <tr
+                        key={e.id}
+                        role="link"
+                        tabIndex={0}
+                        aria-label={e.name}
+                        onClick={() => openRow(e.id)}
+                        onKeyDown={(ev) => {
+                          const target = ev.target as HTMLElement | null;
+                          if (target?.closest('button, a, input, select, textarea')) return;
+                          if (ev.key === 'Enter' || ev.key === ' ') {
+                            ev.preventDefault();
+                            openRow(e.id);
+                          }
+                        }}
+                        className="cursor-pointer transition-colors hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-600)]"
+                      >
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <Avatar initials={initials(e.name)} size="sm" />
+                            <div className="min-w-0">
+                              <div className="truncate font-medium text-[var(--color-ink)]">
+                                {e.name}
+                              </div>
+                              <div className="truncate text-sm text-[var(--color-ink-3)]">
+                                {e.email || '—'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-sm text-[var(--color-ink-2)]">
+                          {roleLabels.length > 0 ? roleLabels.join(', ') : '—'}
+                        </td>
+                        <td className="text-sm text-[var(--color-ink-2)]">
+                          {stationLabels.length > 0 ? stationLabels.join(', ') : '—'}
+                        </td>
+                        <td>
+                          <TrainingSummary rows={trainingRows} />
+                        </td>
+                        <td>
+                          <StatusPill tone={tone}>{statusBadge(e.status)}</StatusPill>
+                        </td>
+                        <td onClick={(ev) => ev.stopPropagation()}>
+                          <EmployeeRowActions
+                            locale={locale}
+                            employee={e}
+                            onEdit={() => void openEdit(e)}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

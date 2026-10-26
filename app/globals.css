@@ -317,3 +317,8 @@
   @keyframes proc-shimmer { 100% { transform: none; } }
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+

@@ -84,12 +84,12 @@ export function CookBarAction({
   return (
     <button
       type="button"
-      className={`btn ${allDone ? 'btn-secondary' : 'btn-primary'} cook-bar-btn`}
+      className={`btn ${allDone ? 'btn-secondary' : 'btn-primary'} cook-bar-btn max-w-full text-xs sm:text-sm py-1 sm:py-2 px-2.5 sm:px-4 shrink-0`}
       onClick={onClick}
       aria-label={ctaLabel}
     >
-      {allDone ? null : <LuPlay aria-hidden="true" className="i" />}
-      {ctaLabel}
+      {allDone ? null : <LuPlay aria-hidden="true" className="i shrink-0" />}
+      <span className="truncate">{ctaLabel}</span>
     </button>
   );
 }

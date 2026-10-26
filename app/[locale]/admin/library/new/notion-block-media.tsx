@@ -442,7 +442,7 @@ export function AttachmentBody({ block, onPatch }: BodyProps<Extract<ProcedureBl
   return (
     <div className="space-y-2.5 pt-0.5">
       {/* URL input row with upload button outside */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
@@ -450,7 +450,7 @@ export function AttachmentBody({ block, onPatch }: BodyProps<Extract<ProcedureBl
             const f = e.dataTransfer.files?.[0];
             if (f) void startUpload(f);
           }}
-          className="flex flex-1 items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-2 min-h-9 focus-within:border-[var(--color-ring)] focus-within:bg-[var(--color-surface)] transition-all"
+          className="flex flex-1 items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-2 min-h-9 focus-within:border-[var(--color-ring)] focus-within:bg-[var(--color-surface)] transition-all min-w-0"
         >
           <Icon
             icon={block.href ? metaInfo.icon : 'ri-attachment-line'}
@@ -498,7 +498,7 @@ export function AttachmentBody({ block, onPatch }: BodyProps<Extract<ProcedureBl
           size="sm"
           disabled={upload.state === 'uploading'}
           onClick={() => fileRef.current?.click()}
-          className="h-9 shrink-0 gap-2 px-5 text-xs font-semibold whitespace-nowrap"
+          className="h-9 shrink-0 gap-2 px-4 text-xs font-semibold whitespace-nowrap justify-center w-full sm:w-auto"
         >
           {upload.state === 'uploading' ? (
             <>
