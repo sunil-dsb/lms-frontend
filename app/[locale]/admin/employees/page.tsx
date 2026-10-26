@@ -68,7 +68,7 @@ export default async function AdminEmployeesPage({
   };
 
   return (
-    <div className="mx-auto max-w-page space-y-6 pb-12">
+    <div className="mx-auto w-full max-w-page space-y-6 pb-12">
       <PageHeader
         title={t("listHeading")}
         subtitle={t("peopleSubtitle")}

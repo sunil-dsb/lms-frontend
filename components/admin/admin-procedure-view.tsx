@@ -184,10 +184,10 @@ export function AdminProcedureView({
   }, [proc]);
 
   return (
-    <div className="mx-auto w-full max-w-doc space-y-6">
+    <div className="mx-auto w-full max-w-doc space-y-4 sm:space-y-6 overflow-hidden">
       {/* Top chrome bar: back arrow + breadcrumb on the left, Edit + kebab on the right */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -198,12 +198,12 @@ export function AdminProcedureView({
           </Button>
           <Link
             href={`/${locale}/admin/library`}
-            className="text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
+            className="hidden sm:inline text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
           >
             {t("eyebrow")}
           </Link>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
           {cookBlockId ? (
             <CookBarAction
               procedureId={proc.id}
@@ -211,26 +211,28 @@ export function AdminProcedureView({
               locale={locale === "es" ? "es" : "en"}
             />
           ) : null}
-          <Button
-            variant="secondary"
-            icon={LuPencil}
-            onClick={() => {
-              window.scrollTo({
-                top: 0,
-                left: 0,
-                behavior: "instant" as ScrollBehavior,
-              });
-              router.push(
-                `/${locale}/admin/library/${proc.slug || proc.id}/edit`,
-              );
-            }}
-          >
-            {t("actionsEdit")}
-          </Button>
-          <RowActions
-            triggerLabel={tRow("rowActionsLabel")}
-            items={actionItems}
-          />
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <Button
+              variant="secondary"
+              icon={LuPencil}
+              onClick={() => {
+                window.scrollTo({
+                  top: 0,
+                  left: 0,
+                  behavior: "instant" as ScrollBehavior,
+                });
+                router.push(
+                  `/${locale}/admin/library/${proc.slug || proc.id}/edit`,
+                );
+              }}
+            >
+              <span className="hidden sm:inline">{t("actionsEdit")}</span>
+            </Button>
+            <RowActions
+              triggerLabel={tRow("rowActionsLabel")}
+              items={actionItems}
+            />
+          </div>
         </div>
       </div>
 

@@ -71,8 +71,8 @@ export function ThemeToggle({
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex size-tap-admin shrink-0 items-center justify-center rounded-full",
-        "text-[var(--color-ink-2)]",
+        "inline-flex size-8 sm:size-tap-admin shrink-0 items-center justify-center rounded-full",
+        "text-[var(--color-ink-2)] cursor-pointer",
         "transition-[background-color,color,transform] duration-[var(--dur-press)] ease-[var(--ease)]",
         "active:scale-[var(--press)]",
         "hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]",
@@ -83,16 +83,16 @@ export function ThemeToggle({
       {/* One box, two marks, stacked: the button's width never moves, and the
           mark that is leaving turns out while the one arriving turns in. Until
           the browser has told us which theme is on, neither is drawn. */}
-      <span className="relative block size-6" aria-hidden="true">
+      <span className="relative block size-5 sm:size-6" aria-hidden="true">
         <LuMoon
           className={cn(
-            "absolute inset-0 size-6 transition-[opacity,transform] duration-[var(--dur)] ease-[var(--ease)]",
+            "absolute inset-0 size-5 sm:size-6 transition-[opacity,transform] duration-[var(--dur)] ease-[var(--ease)]",
             dark === false ? "rotate-0 opacity-100" : "-rotate-90 opacity-0",
           )}
         />
         <LuSun
           className={cn(
-            "absolute inset-0 size-6 transition-[opacity,transform] duration-[var(--dur)] ease-[var(--ease)]",
+            "absolute inset-0 size-5 sm:size-6 transition-[opacity,transform] duration-[var(--dur)] ease-[var(--ease)]",
             dark ? "rotate-0 opacity-100" : "rotate-90 opacity-0",
           )}
         />

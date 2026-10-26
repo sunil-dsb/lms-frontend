@@ -30,7 +30,7 @@ export function FormSection({
   return (
     <section
       id={id}
-      className="scroll-mt-6 space-y-4 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-6"
+      className="scroll-mt-6 space-y-4 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4 sm:p-6"
     >
       {/* Wraps on a phone. The header's action is a search field and two arrows
           at their natural width; beside a title at 390px they pushed the section

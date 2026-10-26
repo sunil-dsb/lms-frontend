@@ -240,7 +240,13 @@
 }
 
 .doc-head {
-  padding: 0 var(--s-5) var(--s-4);
+   padding: 0 var(--s-4) var(--s-3);
+}
+
+@media (min-width: 480px) {
+   .doc-head {
+      padding: 0 var(--s-5) var(--s-4);
+   }
 }
 
 .doc-crumb {
@@ -250,8 +256,9 @@
 }
 
 .doc-title {
-  font-size: var(--t-xl);
-  margin-bottom: var(--s-3);
+   font-size: clamp(1.375rem, 5.5vw, var(--t-xl));
+   line-height: 1.2;
+   margin-bottom: var(--s-3);
 }
 
 @media (min-width: 600px) {
@@ -317,9 +324,15 @@
 /* One sentence. EPA's own example is eight words. It is the lede, so it is set
    above body size, below a heading: the one line that says why the document exists. */
 .doc-purpose {
-  padding: 0 var(--s-5);
-  font-size: var(--t-md);
-  line-height: var(--lh-body);
+   padding: 0 var(--s-4);
+   font-size: clamp(0.9375rem, 3.5vw, var(--t-md));
+   line-height: var(--lh-body);
+}
+
+@media (min-width: 480px) {
+   .doc-purpose {
+      padding: 0 var(--s-5);
+   }
 }
 
 /* READOUT

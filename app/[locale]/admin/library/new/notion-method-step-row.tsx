@@ -231,7 +231,7 @@ export function MethodStepRow({
         {String(index + 1).padStart(2, "0")}
       </span>
 
-      <div className="flex-1 space-y-3">
+      <div className="flex-1 min-w-0 w-full space-y-3">
         {/* Step description input */}
         <BilingualInput
           value={step.body}
@@ -244,15 +244,15 @@ export function MethodStepRow({
           }}
         />
 
-        {/* Step action chips toolbar — consistent 32-36px height, 8px gap between chips, px-4 padding and gap-2 icon spacing */}
-        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+        {/* Step action chips toolbar — consistent min-height, generous pill padding and gap */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           {/* Critical Step toggle */}
           <button
             type="button"
             aria-pressed={step.critical}
             onClick={() => onUpdate({ ...step, critical: !step.critical })}
             className={cn(
-              "inline-flex h-8 sm:h-9 items-center gap-2 rounded-full px-4 text-xs font-medium transition-all shadow-2xs cursor-pointer border",
+              "inline-flex min-h-[32px] sm:min-h-[34px] items-center gap-2 rounded-full px-4 sm:px-5 py-2 text-xs font-medium transition-all shadow-2xs cursor-pointer border",
               step.critical
                 ? "border-[var(--color-bad)]/40 bg-[var(--color-bad-tint)] text-[var(--color-bad)] font-semibold"
                 : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)]",
@@ -286,7 +286,7 @@ export function MethodStepRow({
               }
             }}
             className={cn(
-              "inline-flex h-8 sm:h-9 items-center gap-2 rounded-full px-4 text-xs font-medium transition-all shadow-2xs cursor-pointer border",
+              "inline-flex min-h-[32px] sm:min-h-[34px] items-center gap-2 rounded-full px-4 sm:px-5 py-2 text-xs font-medium transition-all shadow-2xs cursor-pointer border",
               step.note
                 ? "border-[var(--color-line-3)] bg-[var(--color-wash)] text-[var(--color-ink)] font-semibold ring-1 ring-[var(--color-line-3)]"
                 : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)]",
@@ -309,7 +309,7 @@ export function MethodStepRow({
             aria-pressed={images.length > 0}
             onClick={() => triggerImageUpload(null)}
             className={cn(
-              "inline-flex h-8 sm:h-9 items-center gap-2 rounded-full px-4 text-xs font-medium transition-all shadow-2xs border",
+              "inline-flex min-h-[32px] sm:min-h-[34px] items-center gap-2 rounded-full px-4 sm:px-5 py-2 text-xs font-medium transition-all shadow-2xs border",
               images.length >= MAX_STEP_IMAGES
                 ? "border-[var(--color-line-2)] bg-[var(--color-wash)] text-[var(--color-ink-3)] opacity-60 cursor-not-allowed"
                 : images.length > 0
@@ -338,7 +338,7 @@ export function MethodStepRow({
             aria-pressed={hasVideo}
             onClick={() => videoFileRef.current?.click()}
             className={cn(
-              "inline-flex h-8 sm:h-9 items-center gap-2 rounded-full px-4 text-xs font-medium transition-all shadow-2xs cursor-pointer border",
+              "inline-flex min-h-[32px] sm:min-h-[34px] items-center gap-2 rounded-full px-4 sm:px-5 py-2 text-xs font-medium transition-all shadow-2xs cursor-pointer border",
               hasVideo
                 ? "border-[var(--color-line-3)] bg-[var(--color-wash)] text-[var(--color-ink)] font-semibold"
                 : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)]",
@@ -361,7 +361,7 @@ export function MethodStepRow({
               onUpdate({ ...step, timer: { label: "", seconds: 60 } });
             }}
             className={cn(
-              "inline-flex h-8 sm:h-9 items-center gap-2 rounded-full px-4 text-xs font-medium transition-all shadow-2xs border",
+              "inline-flex min-h-[32px] sm:min-h-[34px] items-center gap-2 rounded-full px-4 sm:px-5 py-2 text-xs font-medium transition-all shadow-2xs border",
               step.timer
                 ? "border-[var(--color-line-2)] bg-[var(--color-wash)] text-[var(--color-ink-3)] opacity-60 cursor-not-allowed"
                 : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] cursor-pointer",
@@ -419,11 +419,11 @@ export function MethodStepRow({
             return (
               <div
                 style={{ backgroundColor: currentTone.tintBg }}
-                className="rounded-[var(--radius-md)] p-4 space-y-4 text-xs transition-colors"
+                className="w-full min-w-0 rounded-[var(--radius-md)] p-3 sm:p-4 space-y-3 sm:space-y-4 text-xs transition-colors"
               >
-                <div className="flex items-center justify-between gap-3 pb-3 border-b border-[var(--color-line-2)]/50">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="font-semibold text-[var(--color-ink)] flex items-center gap-1.5 text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 sm:pb-3 border-b border-[var(--color-line-2)]/50">
+                  <div className="flex items-center justify-between w-full sm:w-auto">
+                    <span className="font-semibold text-[var(--color-ink)] flex items-center gap-2 text-xs shrink-0 whitespace-nowrap">
                       <span
                         style={{ color: currentTone.iconColor }}
                         className="inline-flex"
@@ -432,57 +432,71 @@ export function MethodStepRow({
                       </span>
                       Callout tone:
                     </span>
-                    <div className="flex items-center gap-2">
-                      {(
-                        [
-                          "warn",
-                          "tip",
-                          "allergen",
-                          "equip",
-                        ] as ProcedureNoteKind[]
-                      ).map((kind) => {
-                        const active = step.note?.severity === kind;
-                        const cfg = STEP_TONE_CONFIGS[kind];
-                        return (
-                          <button
-                            key={kind}
-                            type="button"
-                            onClick={() =>
-                              onUpdate({
-                                ...step,
-                                note: { ...step.note!, severity: kind },
-                              })
-                            }
-                            style={
-                              active
-                                ? {
-                                    backgroundColor: cfg.activeBg,
-                                    color: cfg.activeColor,
-                                  }
-                                : {
-                                    backgroundColor: "var(--color-surface)",
-                                    color: "var(--color-ink-2)",
-                                  }
-                            }
-                            className={cn(
-                              "inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer shadow-2xs",
-                              active
-                                ? "ring-1 ring-black/10"
-                                : "hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)]",
-                            )}
-                          >
-                            {cfg.label}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onUpdate({ ...step, note: undefined })}
+                      aria-label="Remove callout note"
+                      title="Remove callout note"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-ink-3)] hover:bg-[var(--color-bad-tint)] hover:text-[var(--color-bad)] transition-colors cursor-pointer sm:hidden"
+                    >
+                      <LuX
+                        className="size-4 shrink-0 text-current"
+                        strokeWidth={1.75}
+                      />
+                    </button>
                   </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {(
+                      [
+                        "warn",
+                        "tip",
+                        "allergen",
+                        "equip",
+                      ] as ProcedureNoteKind[]
+                    ).map((kind) => {
+                      const active = step.note?.severity === kind;
+                      const cfg = STEP_TONE_CONFIGS[kind];
+                      return (
+                        <button
+                          key={kind}
+                          type="button"
+                          onClick={() =>
+                            onUpdate({
+                              ...step,
+                              note: { ...step.note!, severity: kind },
+                            })
+                          }
+                          style={
+                            active
+                              ? {
+                                  backgroundColor: cfg.activeBg,
+                                  color: cfg.activeColor,
+                                }
+                              : {
+                                  backgroundColor: "var(--color-surface)",
+                                  color: "var(--color-ink-2)",
+                                }
+                          }
+                          className={cn(
+                            "inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer shadow-2xs whitespace-nowrap shrink-0 border",
+                            active
+                              ? "border-transparent ring-1 ring-black/10"
+                              : "border-[var(--color-line-2)]/60 hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)]",
+                          )}
+                        >
+                          {cfg.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => onUpdate({ ...step, note: undefined })}
                     aria-label="Remove callout note"
                     title="Remove callout note"
-                    className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-ink-3)] hover:bg-[var(--color-bad-tint)] hover:text-[var(--color-bad)] transition-colors cursor-pointer"
+                    className="hidden sm:flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-ink-3)] hover:bg-[var(--color-bad-tint)] hover:text-[var(--color-bad)] transition-colors cursor-pointer"
                   >
                     <LuX
                       className="size-4 shrink-0 text-current"
@@ -565,36 +579,66 @@ export function MethodStepRow({
                     return (
                       <div
                         key={idx}
-                        className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-2.5 shadow-2xs"
+                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-2.5 shadow-2xs"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <div className="relative size-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-panel)]">
-                          <img
-                            src={img.src}
-                            alt={img.alt.en ?? ""}
-                            className="size-full object-cover"
-                          />
-                          {step.compareImages && images.length === 2 && (
-                            <span
-                              className={cn(
-                                "absolute bottom-0 inset-x-0 text-center text-[9px] font-bold text-white py-0.5",
-                                idx === 0
-                                  ? "bg-[var(--color-ok-fill)]"
-                                  : "bg-[var(--color-bad-fill)]",
-                              )}
-                            >
-                              {idx === 0 ? "OK" : "NO"}
-                            </span>
-                          )}
-                          {isUploading && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
+                        <div className="flex items-center justify-between gap-2.5 sm:justify-start">
+                          {}
+                          <div className="relative size-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-panel)]">
+                            <img
+                              src={img.src}
+                              alt={img.alt.en ?? ""}
+                              className="size-full object-cover"
+                            />
+                            {step.compareImages && images.length === 2 && (
                               <span
-                                className="spinner text-white"
-                                aria-hidden="true"
+                                className={cn(
+                                  "absolute bottom-0 inset-x-0 text-center text-[9px] font-bold text-white py-0.5",
+                                  idx === 0
+                                    ? "bg-[var(--color-ok-fill)]"
+                                    : "bg-[var(--color-bad-fill)]",
+                                )}
+                              >
+                                {idx === 0 ? "OK" : "NO"}
+                              </span>
+                            )}
+                            {isUploading && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
+                                <span
+                                  className="spinner text-white"
+                                  aria-hidden="true"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex sm:hidden shrink-0 items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => triggerImageUpload(idx)}
+                              title="Replace photo"
+                              aria-label="Replace photo"
+                              className="inline-flex size-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
+                            >
+                              <Icon
+                                icon="ri-upload-2-line"
+                                className="text-base"
                               />
-                            </div>
-                          )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(idx)}
+                              title="Remove photo"
+                              aria-label="Remove photo"
+                              className="inline-flex size-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--color-bad)] hover:bg-[var(--color-bad-tint)] transition-colors cursor-pointer"
+                            >
+                              <Icon
+                                icon="ri-delete-bin-line"
+                                className="text-base"
+                              />
+                            </button>
+                          </div>
                         </div>
+
                         <div className="min-w-0 flex-1">
                           <BilingualInput
                             value={img.alt ?? { en: "", es: "" }}
@@ -617,7 +661,8 @@ export function MethodStepRow({
                             }}
                           />
                         </div>
-                        <div className="flex shrink-0 items-center gap-1">
+
+                        <div className="hidden sm:flex shrink-0 items-center gap-1">
                           <button
                             type="button"
                             onClick={() => triggerImageUpload(idx)}

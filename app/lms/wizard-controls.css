@@ -527,8 +527,21 @@
     transform var(--dur-press) var(--ease);
 }
 
-.segbar > *:active {
-  transform: scale(var(--press));
+@media (max-width: 480px) {
+   .segbar {
+      gap: 2px !important;
+      padding: 2px !important;
+   }
+   .segbar>* {
+      min-height: 28px !important;
+      padding: 0 8px !important;
+      font-size: 11px !important;
+      line-height: 28px !important;
+   }
+}
+
+.segbar>*:active {
+   transform: scale(var(--press));
 }
 
 @media (hover: hover) and (pointer: fine) {

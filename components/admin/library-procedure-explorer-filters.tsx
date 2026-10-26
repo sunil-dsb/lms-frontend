@@ -63,7 +63,7 @@ export function ProcedureExplorerFilters({
           ]}
         />
 
-        <div className="w-field-md shrink-0">
+        <div className="w-full sm:w-field-md sm:shrink-0">
           <CustomSelect
             value={selectedCategorySlug}
             onChange={onCategoryChange}
@@ -72,7 +72,7 @@ export function ProcedureExplorerFilters({
             className="h-tap-admin text-sm"
           />
         </div>
-        <div className="w-field-md shrink-0">
+        <div className="w-full sm:w-field-md sm:shrink-0">
           <CustomSelect
             value={selectedSubcategoryId}
             onChange={onSubcategoryChange}
@@ -82,7 +82,7 @@ export function ProcedureExplorerFilters({
           />
         </div>
         {stationOptions.length > 1 ? (
-          <div className="w-field-sm shrink-0">
+          <div className="w-full sm:w-field-sm sm:shrink-0">
             <CustomSelect
               value={stationFilter}
               onChange={onStationChange}
@@ -92,7 +92,7 @@ export function ProcedureExplorerFilters({
             />
           </div>
         ) : null}
-        <div className="w-field-sm shrink-0">
+        <div className="w-full sm:w-field-sm sm:shrink-0">
           <CustomSelect
             value={statusFilter}
             onChange={onStatusChange}
@@ -102,7 +102,7 @@ export function ProcedureExplorerFilters({
           />
         </div>
 
-        <div className="find min-w-52 flex-1" role="search">
+        <div className="find w-full sm:min-w-0 sm:flex-1" role="search">
           <LuSearch aria-hidden="true" className="i" />
           <label className="sr-only" htmlFor="library-search">
             {isEs ? "Buscar en la biblioteca" : "Search the library"}

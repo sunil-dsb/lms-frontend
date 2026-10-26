@@ -43,7 +43,7 @@ export function PageHeader({
             )}
           </p>
         ) : null}
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold leading-display tracking-tight text-[var(--color-ink)]">
+        <h1 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold leading-snug sm:leading-display tracking-tight text-[var(--color-ink)]">
           {title}
         </h1>
         {subtitle ? (

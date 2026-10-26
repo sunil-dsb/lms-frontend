@@ -277,19 +277,20 @@ export function AssignBlock({
   return (
     <div className="space-y-4">
       {/* Top bar — title + count + search */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           <IconTile size="xs" icon={LuUsers} />
           <h3 className="text-sm font-semibold text-[var(--color-ink)]">
             {t("assignTitle")}
           </h3>
           {selected.length > 0 ? (
-            <span className="text-sm font-normal text-[var(--color-ink-3)] whitespace-nowrap">
+            <span className="text-xs sm:text-sm font-normal text-[var(--color-ink-3)] whitespace-nowrap">
               {t("assignPicked", { count: selected.length })}
             </span>
           ) : null}
         </div>
-        <div className="relative ml-auto flex w-[380px] max-w-full shrink-0 items-center rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 transition-colors focus-within:border-[var(--color-brand)]">
+
+        <div className="relative flex w-full sm:w-[280px] md:w-[340px] items-center rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-1.5 sm:py-2 transition-colors focus-within:border-[var(--color-brand)]">
           <LuSearch
             aria-hidden="true"
             className="mr-2 size-4 shrink-0 text-[var(--color-ink-3)]"
@@ -303,25 +304,25 @@ export function AssignBlock({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("assignSearchPlaceholder")}
-            className="w-full min-w-0 bg-transparent text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none"
+            className="w-full min-w-0 bg-transparent text-xs sm:text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none"
           />
           {search ? (
             <button
               type="button"
               aria-label={t("assignClear")}
               onClick={() => setSearch("")}
-              className="ml-1 shrink-0 text-[var(--color-ink-3)] hover:text-[var(--color-ink)]"
+              className="ml-1 shrink-0 text-[var(--color-ink-3)] hover:text-[var(--color-ink)] cursor-pointer"
             >
               <LuX aria-hidden="true" className="size-3.5" />
             </button>
           ) : null}
         </div>
-        {filterStationIds && filterStationIds.length > 0 ? (
-          <p className="-mt-2 text-xs leading-meta text-[var(--color-ink-3)]">
-            {t("assignSubtitle")}
-          </p>
-        ) : null}
       </div>
+      {filterStationIds && filterStationIds.length > 0 ? (
+        <p className="-mt-1 text-xs leading-meta text-[var(--color-ink-3)]">
+          {t("assignSubtitle")}
+        </p>
+      ) : null}
 
       {/* Employee cards — three columns, generous tap targets. */}
       {filtered.length === 0 ? (

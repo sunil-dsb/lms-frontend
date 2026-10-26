@@ -84,132 +84,109 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
       <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
 
       <form onSubmit={handleLogin} noValidate className="flex-1 flex flex-col">
-        <div className="w-full">
-          <CardHeader className="text-center pt-6 pb-2 px-5 sm:px-8 sm:mt-12">
-            {/* Mobile-only logo and restaurant name inside login form */}
-            <div className="flex sm:hidden items-center justify-center gap-2 mb-3.5">
-              <div
-                className="flex items-center justify-center rounded-full bg-white shadow-sm border border-[var(--color-line-2)] p-1 shrink-0"
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  minWidth: "32px",
-                  minHeight: "32px",
-                }}
-              >
-                <img
-                  src="/brand-mark.png"
-                  alt="Alimentaria Mexicana"
-                  className="object-contain rounded-full w-full h-full"
-                />
-              </div>
-              <span className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-[var(--color-ink)] leading-tight">
-                Alimentaria Mexicana
-              </span>
-            </div>
+        <CardHeader className="text-center pt-6 pb-2 px-4 sm:px-8 sm:mt-12">
+          <CardTitle
+            className="font-[family-name:var(--font-display)] text-xl sm:text-[26px] tracking-tight text-[var(--color-ink)] leading-tight"
+            style={{ fontWeight: 500 }}
+          >
+            {t("heading")}
+          </CardTitle>
+        </CardHeader>
 
-            <CardTitle
-              className="font-[family-name:var(--font-display)] text-xl sm:text-[26px] tracking-tight text-[var(--color-ink)] leading-tight"
-              style={{ fontWeight: 500 }}
+        <CardContent className="flex flex-col gap-4 px-4 sm:px-8 pt-2 pb-4">
+          {error ? (
+            <div
+              role="alert"
+              className="flex items-center gap-2 rounded-xl bg-[var(--color-bad-tint)]/70 border border-[var(--color-bad)]/30 px-3 py-2 text-xs font-medium text-[var(--color-bad-hover)] animate-in fade-in duration-150"
             >
-              {t("heading")}
-            </CardTitle>
-          </CardHeader>
+              <LuCircleAlert className="shrink-0 text-sm text-[var(--color-bad)]" />
+              <span>{error}</span>
+            </div>
+          ) : null}
 
-          <CardContent className="flex flex-col gap-4 px-5 sm:px-8 pt-2 pb-4">
-            {error ? (
-              <div
-                role="alert"
-                className="flex items-center gap-2 rounded-xl bg-[var(--color-bad-tint)]/70 border border-[var(--color-bad)]/30 px-3 py-2 text-xs font-medium text-[var(--color-bad-hover)] animate-in fade-in duration-150"
-              >
-                <LuCircleAlert className="shrink-0 text-sm text-[var(--color-bad)]" />
-                <span>{error}</span>
-              </div>
-            ) : null}
+          {/* Email field */}
+          <div className="grid gap-1.5">
+            <Label
+              htmlFor="email"
+              className="text-sm font-medium text-[var(--color-ink)]"
+            >
+              {t("emailLabel")}
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder={t("emailPlaceholder")}
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isPending}
+              className="h-12 w-full rounded-xl sm:rounded-2xl border-[var(--color-line-2)] bg-[var(--color-field)] text-sm sm:text-base focus:border-[var(--color-brand-600)] transition-all"
+              style={{ paddingLeft: "16px", paddingRight: "16px" }}
+            />
+          </div>
 
-            {/* Email field */}
-            <div className="grid gap-1.5">
+          {/* Password field */}
+          <div className="grid gap-1.5">
+            <div className="flex items-center justify-between">
               <Label
-                htmlFor="email"
+                htmlFor="password"
                 className="text-sm font-medium text-[var(--color-ink)]"
               >
-                {t("emailLabel")}
+                {t("passwordLabel")}
               </Label>
+              <Link
+                href={`/${locale}/forgot-password`}
+                className="text-sm font-semibold text-[var(--color-brand-600)] hover:text-[var(--color-brand-700)] hover:underline focus-visible:outline-none transition-colors"
+              >
+                {t("forgotPassword")}
+              </Link>
+            </div>
+
+            <div className="relative w-full flex items-center">
               <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder={t("emailPlaceholder")}
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder={t("passwordPlaceholder")}
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={isPending}
                 className="h-12 w-full rounded-xl sm:rounded-2xl border-[var(--color-line-2)] bg-[var(--color-field)] text-sm sm:text-base focus:border-[var(--color-brand-600)] transition-all"
-                style={{ paddingLeft: "16px", paddingRight: "16px" }}
+                style={{ paddingLeft: "16px", paddingRight: "48px" }}
               />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="text-[var(--color-ink-3)] hover:text-[var(--color-ink)] transition-colors focus:outline-none cursor-pointer"
+                style={{
+                  position: "absolute",
+                  right: "14px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "4px",
+                  zIndex: 10,
+                }}
+              >
+                {showPassword ? (
+                  <LuEyeOff style={{ width: "20px", height: "20px" }} />
+                ) : (
+                  <LuEye style={{ width: "20px", height: "20px" }} />
+                )}
+              </button>
             </div>
+          </div>
 
-            {/* Password field */}
-            <div className="grid gap-1.5">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="password"
-                  className="text-sm font-medium text-[var(--color-ink)]"
-                >
-                  {t("passwordLabel")}
-                </Label>
-                <Link
-                  href={`/${locale}/forgot-password`}
-                  className="text-sm font-semibold text-[var(--color-brand-600)] hover:text-[var(--color-brand-700)] hover:underline focus-visible:outline-none transition-colors"
-                >
-                  {t("forgotPassword")}
-                </Link>
-              </div>
-
-              <div className="relative w-full flex items-center">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  placeholder={t("passwordPlaceholder")}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isPending}
-                  className="h-12 w-full rounded-xl sm:rounded-2xl border-[var(--color-line-2)] bg-[var(--color-field)] text-sm sm:text-base focus:border-[var(--color-brand-600)] transition-all"
-                  style={{ paddingLeft: "16px", paddingRight: "48px" }}
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="text-[var(--color-ink-3)] hover:text-[var(--color-ink)] transition-colors focus:outline-none cursor-pointer"
-                  style={{
-                    position: "absolute",
-                    right: "14px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "4px",
-                    zIndex: 10,
-                  }}
-                >
-                  {showPassword ? (
-                    <LuEyeOff style={{ width: "20px", height: "20px" }} />
-                  ) : (
-                    <LuEye style={{ width: "20px", height: "20px" }} />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Hide native browser password reveal icon in Edge/IE */}
-            <style>{`
+          {/* Hide native browser password reveal icon in Edge/IE */}
+          <style>{`
               input[type="password"]::-ms-reveal,
               input[type="password"]::-ms-clear {
                 display: none !important;
@@ -218,49 +195,48 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
               }
             `}</style>
 
-            {/* Remember me checkbox */}
-            <div className="flex items-center gap-2 pt-0.5">
-              <input
-                id="remember"
-                name="remember"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                disabled={isPending}
-                className="h-4 w-4 rounded border-[var(--color-line-3)] accent-[var(--color-brand-600)] text-[var(--color-brand-600)] focus:ring-[var(--color-brand-600)] cursor-pointer"
-              />
-              <label
-                htmlFor="remember"
-                className="text-sm text-[var(--color-ink-2)] select-none cursor-pointer"
-              >
-                {t("rememberMe")}
-              </label>
-            </div>
+          {/* Remember me checkbox */}
+          <div className="flex items-center gap-2 pt-0.5">
+            <input
+              id="remember"
+              name="remember"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              disabled={isPending}
+              className="h-4 w-4 rounded border-[var(--color-line-3)] accent-[var(--color-brand-600)] text-[var(--color-brand-600)] focus:ring-[var(--color-brand-600)] cursor-pointer"
+            />
+            <label
+              htmlFor="remember"
+              className="text-sm text-[var(--color-ink-2)] select-none cursor-pointer"
+            >
+              {t("rememberMe")}
+            </label>
+          </div>
 
-            {/* Submit Button - Positioned ergonomically below Remember me */}
-            <div className="pt-2 sm:pt-3">
-              <Button
-                type="submit"
-                className="w-full h-12 rounded-full font-semibold text-base bg-[var(--color-brand-600)] hover:bg-[var(--color-brand-700)] text-white shadow-md shadow-[var(--color-brand-600)]/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <>
-                    <LuLoader className="animate-spin text-base" />
-                    <span>{t("submitting")}</span>
-                  </>
-                ) : (
-                  <span>{t("submit")}</span>
-                )}
-              </Button>
-            </div>
+          {/* Submit Button - Positioned ergonomically below Remember me */}
+          <div className="pt-2 sm:pt-3">
+            <Button
+              type="submit"
+              className="w-full h-12 rounded-full font-semibold text-base bg-[var(--color-brand-600)] hover:bg-[var(--color-brand-700)] text-white shadow-md shadow-[var(--color-brand-600)]/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <LuLoader className="animate-spin text-base" />
+                  <span>{t("submitting")}</span>
+                </>
+              ) : (
+                <span>{t("submit")}</span>
+              )}
+            </Button>
+          </div>
 
-            {/* Assistance note */}
-            <p className="text-xs text-center text-[var(--color-ink-3)] leading-relaxed max-w-xs mx-auto pt-1">
-              {t("helpNotice")}
-            </p>
-          </CardContent>
-        </div>
+          {/* Assistance note */}
+          <p className="text-xs text-center text-[var(--color-ink-3)] leading-relaxed max-w-xs mx-auto pt-1">
+            {t("helpNotice")}
+          </p>
+        </CardContent>
 
         {/* Footer with copyright at bottom of card */}
         <CardFooter className="mt-auto px-6 sm:px-8 pb-5 pt-3 text-center shrink-0">
