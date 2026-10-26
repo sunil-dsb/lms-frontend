@@ -81,25 +81,7 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
       <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
 
       <form onSubmit={handleLogin} noValidate className="flex-1 flex flex-col">
-        <div className="w-full">
-          <CardHeader className="text-center pt-6 pb-2 px-5 sm:px-8 sm:mt-12">
-            {/* Mobile-only logo and restaurant name inside login form */}
-            <div className="flex sm:hidden items-center justify-center gap-2 mb-3.5">
-              <div
-                className="flex items-center justify-center rounded-full bg-white shadow-sm border border-[var(--color-line-2)] p-1 shrink-0"
-                style={{ width: '32px', height: '32px', minWidth: '32px', minHeight: '32px' }}
-              >
-                <img
-                  src="/brand-mark.png"
-                  alt="Alimentaria Mexicana"
-                  className="object-contain rounded-full w-full h-full"
-                />
-              </div>
-              <span className="font-[family-name:var(--font-display)] text-base font-bold tracking-tight text-[var(--color-ink)] leading-tight">
-                Alimentaria Mexicana
-              </span>
-            </div>
-
+          <CardHeader className="text-center pt-6 pb-2 px-4 sm:px-8 sm:mt-12">
             <CardTitle
               className="font-[family-name:var(--font-display)] text-xl sm:text-[26px] tracking-tight text-[var(--color-ink)] leading-tight"
               style={{ fontWeight: 500 }}
@@ -108,7 +90,7 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="flex flex-col gap-4 px-5 sm:px-8 pt-2 pb-4">
+          <CardContent className="flex flex-col gap-4 px-4 sm:px-8 pt-2 pb-4">
             {error ? (
               <div
                 role="alert"
@@ -246,7 +228,6 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
               {t('helpNotice')}
             </p>
           </CardContent>
-        </div>
 
         {/* Footer with copyright at bottom of card */}
         <CardFooter className="mt-auto px-6 sm:px-8 pb-5 pt-3 text-center shrink-0">

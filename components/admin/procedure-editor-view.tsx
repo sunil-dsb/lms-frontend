@@ -191,7 +191,7 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
       </div>
 
       {!showEntryCards && creationMode !== 'upload' ? (
-        <div className="sticky top-[56px] z-10 -mx-4 bg-[var(--color-bg-admin)]/95 px-4 py-2.5 backdrop-blur-md transition-all sm:-mx-6 sm:px-6 lg:top-[75px] lg:-mx-10 lg:px-10">
+        <div className="sticky top-[56px] z-10 -mx-3 bg-[var(--color-bg-admin)]/95 px-3 py-2 backdrop-blur-md transition-all sm:-mx-6 sm:px-6 lg:top-[75px] lg:-mx-10 lg:px-10">
           <div className="mx-auto max-w-page">
             <WizardStepper
               className="my-0"
@@ -210,7 +210,7 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
 
 
       {!showEntryCards && !importing && !importLoadingId && creationMode !== 'upload' ? (
-        <div className="pointer-events-none fixed bottom-[90px] right-5 z-30 lg:right-6">
+        <div className="hidden sm:block pointer-events-none fixed bottom-[76px] right-5 z-30 lg:right-6">
           <Button
             type="button"
             variant="surface"
@@ -223,7 +223,7 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-page mt-4 space-y-4 pb-20">
+      <div className="mx-auto max-w-page mt-4 space-y-4 pb-28 sm:pb-24">
                 <ProcedureEditorImportPanel model={model} />
 
 {/* ── Step 1 form — only rendered once a method is chosen ─────── */}
@@ -471,28 +471,43 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
 {/* ── Sticky wizard footer (hidden on the choose screen and while a
           document is being drafted: there is nothing to save or move on to) ── */}
       {!showEntryCards && creationMode !== 'upload' ? (
-        <div className="fixed bottom-0 left-0 right-0 z-sticky flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3 shadow-e2 sm:px-6">
-          <p className="flex items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)]">
-            <StatusPill tone={published ? "ok" : "neutral"} withDot>
-              {published ? t("statusPublished") : t("statusDraft")}
-            </StatusPill>
-            {dirty ? (
-              <span className="text-[var(--color-warn-ink)]">{t("unsaved")}</span>
-            ) : null}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="fixed bottom-0 left-0 right-0 z-sticky flex flex-col sm:flex-row sm:items-center justify-between gap-x-3 gap-y-2.5 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2.5 sm:px-6 sm:py-3 shadow-e2">
+          {/* Top row on mobile, Left col on desktop: Status + Mobile Preview */}
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <p className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--color-ink-2)] min-w-0 truncate">
+              <StatusPill tone={published ? "ok" : "neutral"} withDot>
+                {published ? t("statusPublished") : t("statusDraft")}
+              </StatusPill>
+              {dirty ? (
+                <span className="text-xs text-[var(--color-warn-ink)] font-semibold truncate">{t("unsaved")}</span>
+              ) : null}
+            </p>
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="sm:hidden inline-flex items-center gap-2 rounded-full border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-[var(--color-ink)] shadow-2xs hover:bg-[var(--color-panel)] hover:border-[var(--color-line-3)] transition-all shrink-0 cursor-pointer min-h-[32px]"
+            >
+              <LuEye className="size-3.5 text-[var(--color-ink-2)]" />
+              <span>{t("preview")}</span>
+            </button>
+          </div>
+
+          {/* Bottom row on mobile, Right col on desktop: Actions */}
+          <div className="flex items-center justify-end gap-2 flex-wrap sm:flex-nowrap">
             {!isFirstStep ? (
               <Button
                 type="button"
                 variant="neutral"
                 icon={LuArrowLeft}
                 onClick={() => setStep(STEPS[stepIdx - 1].id)}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-9"
               >
                 {t("wizardBack")}
               </Button>
             ) : (
               <Link href={`/${locale}/admin/library`}>
-                <Button type="button" variant="ghost">
+                <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm h-8 sm:h-9">
                   {t("cancel")}
                 </Button>
               </Link>
@@ -505,6 +520,8 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
                 variant="surface"
                 disabled={pending || translating}
                 onClick={() => save("published")}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-9"
               >
                 {t("saveChanges")}
               </Button>
@@ -514,6 +531,8 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
                 variant="surface"
                 disabled={pending || translating}
                 onClick={() => save("draft")}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-9"
               >
                 {t("saveDraft")}
               </Button>
@@ -524,6 +543,8 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
                 type="button"
                 disabled={pending || translating}
                 onClick={() => save("published")}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-9"
               >
                 {published ? t("saveChanges") : t("publishNow")}
               </Button>
@@ -531,6 +552,8 @@ export function ProcedureEditorView({ model }: { model: ProcedureEditorModel }):
               <Button
                 type="button"
                 onClick={handleNext}
+                size="sm"
+                className="text-xs sm:text-sm h-8 sm:h-9"
               >
                 {step === "quiz" && !hasQuizContent
                   ? t("wizardSkip")

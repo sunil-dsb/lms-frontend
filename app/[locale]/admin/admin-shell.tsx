@@ -191,6 +191,9 @@ export function AdminShell({
     backToAppLabel: t('backToApp'),
     titleLabel: tShell('title'),
     soonLabel: tShell('soon'),
+    langLabel: tShell('langLabel'),
+    themeToDarkLabel: tApp('themeToDark'),
+    themeToLightLabel: tApp('themeToLight'),
     signOutAction,
   };
 
@@ -212,7 +215,7 @@ export function AdminShell({
   return (
     <div
       className={cn(
-        'flex min-h-screen',
+        'flex min-h-screen w-full',
         isProcedureDetailPage ? 'bg-[var(--color-bg)]' : 'bg-[var(--color-bg-admin)]',
       )}
     >
@@ -220,24 +223,27 @@ export function AdminShell({
       <Sidebar {...sidebarProps} className="hidden lg:flex" />
 
       {/* Mobile top bar — visible below 900 px. */}
-      <header className="fixed inset-x-0 top-0 z-sticky flex h-bar items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-surface)] px-4 lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-sticky flex h-bar items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-surface)] px-2 sm:px-3 lg:hidden">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
           aria-label={tShell('openNav')}
           className={cn(
-            'inline-flex h-12 w-12 items-center justify-center rounded-[var(--radius-md)]',
-            'text-[var(--color-ink)] transition-colors duration-[var(--dur)] ease-[var(--ease)]',
+            'inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-[var(--radius-md)] shrink-0',
+            'text-[var(--color-ink)] transition-colors duration-[var(--dur)] ease-[var(--ease)] cursor-pointer',
             'hover:bg-[var(--color-panel)] active:translate-y-px',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2',
           )}
         >
           <LuMenu aria-hidden="true" className="text-lg" />
         </button>
-        <span className="font-[family-name:var(--font-ui)] text-md font-semibold tracking-tight text-[var(--color-ink)]">
+        <span className="font-[family-name:var(--font-ui)] text-sm sm:text-md font-semibold tracking-tight text-[var(--color-ink)] shrink-0">
           {tShell('title')}
         </span>
-        <span className="w-12" aria-hidden="true" />
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <ThemeToggle labels={{ toDark: tApp('themeToDark'), toLight: tApp('themeToLight') }} />
+          <LocaleSwitch locale={locale} label={tShell('langLabel')} />
+        </div>
       </header>
 
       {/* Mobile drawer — slide-in from the left, full-height, dark backdrop. */}
@@ -281,7 +287,7 @@ export function AdminShell({
       ) : null}
 
       {/* Main column. Pad-top accounts for the fixed mobile header. */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 max-w-full flex-1 flex-col overflow-x-hidden">
         {/* The desktop bar. It holds the two things that belong to the whole admin
             area rather than to one page: find anything, and which language you are
             reading it in. The page's own title stays on the page — repeating it
@@ -323,13 +329,13 @@ export function AdminShell({
 
         <main
           className={cn(
-            'min-w-0 flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8',
+            'min-w-0 max-w-full flex-1 px-3 sm:px-6 lg:px-10 pb-12 pt-6 lg:pb-12 lg:pt-8 overflow-x-hidden',
             isProcedureDetailPage && 'bg-[var(--color-bg)]',
           )}
         >
           {/* Keyed by locale, so the fade runs when the language changes rather
               than on every render. */}
-          <div key={locale} className="content-in pt-10 lg:pt-0">
+          <div key={locale} className="content-in pt-10 lg:pt-0 max-w-full overflow-x-hidden">
             {children}
           </div>
         </main>
@@ -351,6 +357,9 @@ interface SidebarProps {
   backToAppLabel: string;
   titleLabel: string;
   soonLabel: string;
+  langLabel: string;
+  themeToDarkLabel: string;
+  themeToLightLabel: string;
   signOutAction: () => Promise<void>;
   className?: string;
 }
@@ -368,6 +377,9 @@ function Sidebar({
   backToAppLabel,
   titleLabel,
   soonLabel,
+  langLabel,
+  themeToDarkLabel,
+  themeToLightLabel,
   signOutAction,
   className,
 }: SidebarProps): React.ReactElement {
@@ -466,6 +478,10 @@ function Sidebar({
           <LuArrowLeft aria-hidden="true" className="text-md" />
           <span className="flex-1 truncate">{backToAppLabel}</span>
         </Link>
+        <div className="mt-2 flex items-center justify-between border-t border-[var(--color-line)] pt-3 px-1 lg:hidden">
+          <LocaleSwitch locale={locale} label={langLabel} />
+          <ThemeToggle labels={{ toDark: themeToDarkLabel, toLight: themeToLightLabel }} />
+        </div>
         {/* Sign out is hidden in the sidebar for now — UI only. The action and its
             label are still wired, so putting this row back is uncommenting it.
             Signing out is still reachable from the employee bar via "Back to app".

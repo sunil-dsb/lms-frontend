@@ -58,7 +58,7 @@ export function Pagination({
       {totalPages > 1 ? (
         <nav
           aria-label={isEs ? 'Paginación' : 'Pagination'}
-          className="flex items-center gap-1"
+          className="flex flex-wrap items-center justify-center gap-1 max-w-full"
         >
           <Button
             type="button"

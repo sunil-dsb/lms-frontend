@@ -48,14 +48,9 @@ export function AuthShell({ locale, children }: AuthShellProps): React.ReactElem
         />
       </div>
 
-      {/* Language + theme — fixed top-right, sit above the ambient lighting
-          (z-20 vs the lights at z-0). Pinned here rather than inside the
-          form so they are reachable on mobile where the brand moves into the
-          card. The segbar styling already keeps the hit area at 36 px; the
-          theme toggle is the same size. Order matches the admin / employee
-          top bar so the right edge of every screen looks the same. */}
+      {/* Desktop floating language + theme controls */}
       {locale ? (
-        <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-2 sm:gap-3">
+        <div className="hidden sm:flex fixed top-4 right-4 z-20 items-center gap-3">
           <ThemeToggle
             labels={{ toDark: t('themeToDark'), toLight: t('themeToLight') }}
           />
@@ -63,9 +58,36 @@ export function AuthShell({ locale, children }: AuthShellProps): React.ReactElem
         </div>
       ) : null}
 
-      {/* Full-Length Mobile Container */}
-      <div className="relative z-10 w-full max-w-[480px] mx-auto min-h-[100dvh] flex flex-col pt-3 sm:pt-0">
-        {/* Top Restaurant Logo & Name Header - Shown on desktop; on mobile it is moved inside the form */}
+      {/* Full-Length Mobile & Desktop Container */}
+      <div className="relative z-10 w-full max-w-[480px] mx-auto min-h-[100dvh] flex flex-col">
+        {/* Mobile top bar: Brand on left, controls on right */}
+        <header className="flex sm:hidden items-center justify-between px-3 py-2 w-full z-20 shrink-0">
+          <div className="flex items-center gap-2 min-w-0 pr-2">
+            <div
+              className="flex items-center justify-center rounded-full bg-white shadow-xs border border-[var(--color-line-2)] p-0.5 shrink-0"
+              style={{ width: '28px', height: '28px', minWidth: '28px', minHeight: '28px' }}
+            >
+              <img
+                src="/brand-mark.png"
+                alt="Alimentaria Mexicana"
+                className="object-contain rounded-full w-full h-full"
+              />
+            </div>
+            <span className="font-[family-name:var(--font-display)] text-xs font-bold tracking-tight text-[var(--color-ink)] truncate">
+              Alimentaria Mexicana
+            </span>
+          </div>
+          {locale ? (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <ThemeToggle
+                labels={{ toDark: t('themeToDark'), toLight: t('themeToLight') }}
+              />
+              <LocaleSwitch locale={locale} label={t('langLabel')} />
+            </div>
+          ) : null}
+        </header>
+
+        {/* Top Restaurant Logo & Name Header - Shown on desktop */}
         <div className="hidden sm:flex flex-col items-center justify-center text-center gap-2 pt-6 pb-4 shrink-0 px-4">
           {/* Circular Restaurant Logo */}
           <div
