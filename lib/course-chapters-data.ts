@@ -335,9 +335,11 @@ export interface ChapterDefinition {
   quizPassedTextEn?: string;
   quizPassedTextEs?: string;
   blocks?: ProcedureBlock[];
+  procedureId?: string;
   procedureSlug?: string;
   contentType?: CourseChapterContentType;
   estimatedMinutes?: number;
+  quizId?: string;
   quiz?: ProcedureQuiz | null;
   minCorrectAnswers?: number;
 }
@@ -1029,7 +1031,9 @@ export function getChapterDetail(
   subtitle: string;
   totalChapters: number;
   blocks: ProcedureBlock[];
+  procedureId?: string;
   procedureSlug?: string;
+  quizId?: string;
   quiz?: ProcedureQuiz | null;
   minCorrectAnswers?: number;
 } {
@@ -1088,7 +1092,9 @@ export function getChapterDetail(
     ),
   ];
 
+  const procedureId = def?.procedureId;
   const procedureSlug = def?.procedureSlug;
+  const quizId = def?.quizId;
   const quiz = def?.quiz ?? null;
   const minCorrectAnswers = def?.minCorrectAnswers ?? quiz?.minCorrectAnswers;
 
@@ -1098,7 +1104,9 @@ export function getChapterDetail(
       subtitle,
       totalChapters,
       blocks,
+      procedureId,
       procedureSlug,
+      quizId,
       quiz,
       minCorrectAnswers,
     }),

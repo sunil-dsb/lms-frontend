@@ -17,11 +17,18 @@ import {
 } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import type { Procedure, ProcedureBlock, ProcedureQuiz } from "@/lib/types";
-import { listAvailableSops } from "@/lib/mock-training";
-import { getChapterDefinitions } from "@/lib/course-chapters-data";
+import {
+  getChapterDefinitions,
+  registerCourseChapters,
+  type ChapterDefinition,
+} from "@/lib/course-chapters-data";
 import { useProcedures } from "@/services/library/hooks";
-import { saveCourseAction } from "../actions";
+import { useSaveCourse } from "@/services/courses/hooks";
 import { ChapterContentEditor } from "./chapter-content-editor";
+import {
+  BilingualInput,
+  type BilingualValue,
+} from "@/components/ui/bilingual-input";
 
 export interface EditorChapter {
   id: string;
@@ -29,6 +36,7 @@ export interface EditorChapter {
   subtitle?: string;
   procedureId?: string;
   procedureSlug?: string;
+  quizId?: string;
   blocks?: ProcedureBlock[];
   quiz?: ProcedureQuiz | null;
 }
@@ -55,6 +63,7 @@ export function CourseEditor({
 
   const isEditMode = mode === "edit" || Boolean(propCourseId || initialCourse);
   const effectiveInitialId = propCourseId || initialCourse?.id;
+  const saveCourseMutation = useSaveCourse();
 
   // In edit mode (or when courseId/initialCourse is provided), ALWAYS start in chapters view
   const [step, setStep] = React.useState<
@@ -73,62 +82,30 @@ export function CourseEditor({
     effectiveInitialId,
   );
 
-  const initialName =
-    (isEs
-      ? initialCourse?.titleEs || initialCourse?.titleEn
-      : initialCourse?.titleEn || initialCourse?.titleEs) || "";
-  const initialPurpose =
-    (isEs
-      ? initialCourse?.purposeEs || initialCourse?.purposeEn
-      : initialCourse?.purposeEn || initialCourse?.purposeEs) || "";
+  const [courseTitle, setCourseTitle] = React.useState<BilingualValue>({
+    en: initialCourse?.titleEn || initialCourse?.titleEs || "",
+    es: initialCourse?.titleEs || initialCourse?.titleEn || "",
+  });
+  const [coursePurpose, setCoursePurpose] = React.useState<BilingualValue>({
+    en: initialCourse?.purposeEn || initialCourse?.purposeEs || "",
+    es: initialCourse?.purposeEs || initialCourse?.purposeEn || "",
+  });
 
-  const [courseName, setCourseName] = React.useState(initialName);
-  const [coursePurpose, setCoursePurpose] = React.useState(initialPurpose);
+  const courseName =
+    (isEs
+      ? courseTitle.es || courseTitle.en
+      : courseTitle.en || courseTitle.es) || "";
+  const coursePurposeText =
+    (isEs
+      ? coursePurpose.es || coursePurpose.en
+      : coursePurpose.en || coursePurpose.es) || "";
 
   const [chapters, setChapters] = React.useState<EditorChapter[]>(() => {
     if (initialChapters && initialChapters.length > 0) {
       return initialChapters;
     }
-    const targetId = effectiveInitialId;
-    if (targetId) {
-      const defs =
-        getChapterDefinitions(targetId) ||
-        getChapterDefinitions(targetId.replace(/^course-/, "")) ||
-        getChapterDefinitions(`course-${targetId}`);
-      if (defs && defs.length > 0) {
-        return defs.map((d) => ({
-          id: d.id,
-          title: isEs ? d.titleEs || d.titleEn : d.titleEn || d.titleEs,
-          subtitle: isEs
-            ? d.contentEs || d.contentEn
-            : d.contentEn || d.contentEs,
-          procedureSlug: d.procedureSlug,
-          blocks: d.blocks,
-        }));
-      }
-    }
-    if (!initialCourse?.linkedSops?.length) return [];
-    return initialCourse.linkedSops.map((sopId, idx) => {
-      const sop = availableSops.find((s) => s.id === sopId);
-      return {
-        id: `sop-${sopId}-${idx}`,
-        title: sop
-          ? isEs
-            ? sop.titleEs || sop.titleEn
-            : sop.titleEn || sop.titleEs
-          : `Procedure ${idx + 1}`,
-        subtitle: sop
-          ? isEs
-            ? sop.purposeEs || sop.purposeEn
-            : sop.purposeEn || sop.purposeEs
-          : "",
-        procedureId: sopId,
-        procedureSlug: sop?.slug,
-      };
-    });
+    return [];
   });
-
-  const LOCAL_STORAGE_KEY = "lms_created_courses";
 
   // Fetch real procedures from the backend library for live title resolution
   const { data: apiProceduresData } = useProcedures({}, true);
@@ -136,13 +113,9 @@ export function CourseEditor({
     Record<string, Procedure>
   >({});
 
-  // Merge availableSops, apiProceduresData, and mock sops into a fast lookup map
+  // Merge availableSops, apiProceduresData, and fetched procedures into a fast lookup map
   const proceduresMap = React.useMemo(() => {
     const map = new Map<string, Procedure>();
-    listAvailableSops().forEach((p) => {
-      if (p.id) map.set(p.id, p);
-      if (p.slug) map.set(p.slug, p);
-    });
     (availableSops || []).forEach((p) => {
       if (p.id) map.set(p.id, p);
       if (p.slug) map.set(p.slug, p);
@@ -196,82 +169,6 @@ export function CourseEditor({
     };
   }, [chapters, proceduresMap, fetchedProcedures]);
 
-  // Hydrate custom course details and chapters from localStorage or registered course definitions
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const targetId = courseId || propCourseId || initialCourse?.id;
-      if (!targetId) return;
-
-      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (raw) {
-        const customMap = JSON.parse(raw);
-        const decodedId = decodeURIComponent(targetId);
-        const norm = (s: string) =>
-          s
-            .toLowerCase()
-            .replace(/^course-/, "")
-            .replace(/[^a-z0-9]/g, "");
-        const targetNorm = norm(decodedId);
-
-        let saved: any =
-          customMap[targetId] ||
-          customMap[decodedId] ||
-          customMap[`course-${targetId}`] ||
-          customMap[targetId.replace(/^course-/, "")];
-
-        if (!saved) {
-          saved = Object.values(customMap).find((c: any) => {
-            if (!c) return false;
-            if (c.id && norm(c.id) === targetNorm) return true;
-            if (c.name && norm(c.name) === targetNorm) return true;
-            return false;
-          });
-        }
-
-        if (saved) {
-          if (saved.id) setCourseId(saved.id);
-          if (saved.name) {
-            setCourseName(saved.name);
-            setEditNameDraft(saved.name);
-          }
-          if (saved.purpose) {
-            setCoursePurpose(saved.purpose);
-            setEditPurposeDraft(saved.purpose);
-          }
-          if (Array.isArray(saved.chapters) && saved.chapters.length > 0) {
-            setChapters(saved.chapters);
-          }
-          setStep("chapters");
-          return;
-        }
-      }
-
-      // If not in localStorage, check if chapters exist in registered course definitions
-      const defs =
-        getChapterDefinitions(targetId) ||
-        getChapterDefinitions(targetId.replace(/^course-/, ""));
-      if (defs && defs.length > 0) {
-        const editorChs: EditorChapter[] = defs.map((d) => ({
-          id: d.id,
-          title: isEs ? d.titleEs || d.titleEn : d.titleEn || d.titleEs,
-          subtitle: isEs
-            ? d.contentEs || d.contentEn
-            : d.contentEn || d.contentEs,
-          procedureSlug: d.procedureSlug,
-          blocks: d.blocks,
-        }));
-        setChapters(editorChs);
-        setStep("chapters");
-      }
-    } catch (e) {
-      console.warn(
-        "Failed to load course details from localStorage/registry:",
-        e,
-      );
-    }
-  }, [courseId, propCourseId, initialCourse, isEs]);
-
   const handleMoveChapter = (index: number, direction: "up" | "down") => {
     setChapters((prev) => {
       const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -286,18 +183,22 @@ export function CourseEditor({
 
   const [isDirty, setIsDirty] = React.useState(false);
   const [isEditingDetails, setIsEditingDetails] = React.useState(false);
-  const [editNameDraft, setEditNameDraft] = React.useState(initialName);
+  const [editTitleDraft, setEditTitleDraft] =
+    React.useState<BilingualValue>(courseTitle);
   const [editPurposeDraft, setEditPurposeDraft] =
-    React.useState(initialPurpose);
+    React.useState<BilingualValue>(coursePurpose);
 
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Transition from Step 1 (Details) to Step 2 (Chapters)
   // Transition from Step 1 (Details) to Chapter Content Creation
   const handleProceedToAddChapter = () => {
-    if (!courseName.trim() || !coursePurpose.trim()) {
+    const hasTitle = Boolean(courseTitle.en.trim() || courseTitle.es.trim());
+    const hasPurpose = Boolean(
+      coursePurpose.en.trim() || coursePurpose.es.trim(),
+    );
+    if (!hasTitle || !hasPurpose) {
       setError(
         isEs
           ? "El nombre y el propósito son obligatorios."
@@ -312,61 +213,48 @@ export function CourseEditor({
 
   // Open inline edit for details
   const handleOpenEditDetails = () => {
-    setEditNameDraft(courseName);
-    setEditPurposeDraft(coursePurpose);
+    setEditTitleDraft({ ...courseTitle });
+    setEditPurposeDraft({ ...coursePurpose });
     setIsEditingDetails(true);
   };
 
   const handleSaveDetailsEdit = async () => {
-    if (!editNameDraft.trim() || !editPurposeDraft.trim()) return;
-    const nextName = editNameDraft.trim();
-    const nextPurpose = editPurposeDraft.trim();
-    setCourseName(nextName);
-    setCoursePurpose(nextPurpose);
+    const nextTitleEn = editTitleDraft.en.trim() || editTitleDraft.es.trim();
+    const nextTitleEs = editTitleDraft.es.trim() || editTitleDraft.en.trim();
+    const nextPurposeEn =
+      editPurposeDraft.en.trim() || editPurposeDraft.es.trim();
+    const nextPurposeEs =
+      editPurposeDraft.es.trim() || editPurposeDraft.en.trim();
+    if (!nextTitleEn || !nextPurposeEn) return;
+
+    setCourseTitle({ en: nextTitleEn, es: nextTitleEs });
+    setCoursePurpose({ en: nextPurposeEn, es: nextPurposeEs });
     setIsEditingDetails(false);
 
-    // Save course details directly to localStorage
     const effectiveId =
       courseId ||
       initialCourse?.id ||
       `course-${
-        nextName
+        nextTitleEn
           .toLowerCase()
           .trim()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "") || Date.now()
       }`;
 
-    if (typeof window !== "undefined" && effectiveId) {
-      try {
-        const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || "{}";
-        const map = JSON.parse(raw);
-        map[effectiveId] = {
-          ...map[effectiveId],
-          id: effectiveId,
-          name: nextName,
-          purpose: nextPurpose,
-          chapters,
-          updatedAt: new Date().toISOString(),
-        };
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
-      } catch (e) {
-        console.warn("Failed to persist course details:", e);
-      }
-    }
-
-    // Persist to server action in background
+    // Persist to backend in background
     try {
       setIsSaving(true);
-      const res = await saveCourseAction({
+      const savedCourse = await saveCourseMutation.mutateAsync({
         id: effectiveId,
-        name: nextName,
-        purpose: nextPurpose,
+        titleEn: nextTitleEn,
+        titleEs: nextTitleEs,
+        purposeEn: nextPurposeEn,
+        purposeEs: nextPurposeEs,
         chapters,
-        locale,
       });
-      if (res.ok && res.course) {
-        setCourseId(res.course.id);
+      if (savedCourse?.id) {
+        setCourseId(savedCourse.id);
         setSaveSuccess(true);
         setIsDirty(false);
         setTimeout(() => setSaveSuccess(false), 2500);
@@ -378,11 +266,18 @@ export function CourseEditor({
     }
   };
 
-  // Save the entire course (persisting to localStorage and server)
+  // Save the entire course (persisting to server)
   const handleSaveCourse = async (options?: {
     redirectAfter?: boolean;
   }): Promise<string | null> => {
-    if (!courseName.trim() || !coursePurpose.trim()) return null;
+    const effectiveTitleEn = courseTitle.en.trim() || courseTitle.es.trim();
+    const effectiveTitleEs = courseTitle.es.trim() || courseTitle.en.trim();
+    const effectivePurposeEn =
+      coursePurpose.en.trim() || coursePurpose.es.trim();
+    const effectivePurposeEs =
+      coursePurpose.es.trim() || coursePurpose.en.trim();
+    if (!effectiveTitleEn || !effectivePurposeEn) return null;
+
     setIsSaving(true);
     setError(null);
 
@@ -390,7 +285,7 @@ export function CourseEditor({
       courseId ||
       initialCourse?.id ||
       `course-${
-        courseName
+        effectiveTitleEn
           .toLowerCase()
           .trim()
           .replace(/[^a-z0-9]+/g, "-")
@@ -419,48 +314,48 @@ export function CourseEditor({
         ),
       );
 
-      // 1. Immediately persist to client localStorage
-      if (typeof window !== "undefined") {
-        try {
-          const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || "{}";
-          const map = JSON.parse(raw);
-          map[effectiveId] = {
-            id: effectiveId,
-            name: courseName.trim(),
-            purpose: coursePurpose.trim(),
-            linkedSops,
-            chapters,
-            updatedAt: new Date().toISOString(),
-          };
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
-        } catch (e) {
-          console.warn("Failed to save course to localStorage:", e);
-        }
-      }
-
-      // 2. Persist to server mock & course chapters registry
-      const res = await saveCourseAction({
+      // Persist to backend & course chapters registry
+      const savedCourse = await saveCourseMutation.mutateAsync({
         id: effectiveId,
-        name: courseName.trim(),
-        purpose: coursePurpose.trim(),
+        titleEn: effectiveTitleEn,
+        titleEs: effectiveTitleEs,
+        purposeEn: effectivePurposeEn,
+        purposeEs: effectivePurposeEs,
         linkedSops,
         chapters,
-        locale,
       });
 
-      if (res.ok && res.course) {
-        setCourseId(res.course.id);
+      if (savedCourse?.id) {
+        setCourseId(savedCourse.id);
+        if (chapters.length > 0) {
+          const chapterDefs: ChapterDefinition[] = chapters.map((ch, idx) => ({
+            id: ch.id || `${savedCourse.id}-ch-${idx + 1}`,
+            number: idx + 1,
+            titleEn: ch.title,
+            titleEs: ch.title,
+            contentEn: ch.subtitle || "",
+            contentEs: ch.subtitle || "",
+            blocks: ch.blocks ?? [],
+            procedureSlug: ch.procedureSlug,
+            procedureId: ch.procedureId,
+            quizId: ch.quizId,
+            quiz: ch.quiz as any,
+            minCorrectAnswers: (ch.quiz as any)?.minCorrectAnswers ?? null,
+          }));
+          registerCourseChapters(savedCourse.id, chapterDefs);
+        }
+
         setSaveSuccess(true);
         setIsDirty(false);
         if (options?.redirectAfter !== false) {
-          const redirectTargetId = res.course.id || effectiveId;
+          const redirectTargetId = savedCourse.id || effectiveId;
           setTimeout(() => {
             router.push(`/${locale}/admin/training/${redirectTargetId}`);
           }, 600);
         } else {
           setTimeout(() => setSaveSuccess(false), 3000);
         }
-        return res.course.id;
+        return savedCourse.id;
       }
       return effectiveId;
     } catch (err) {
@@ -486,24 +381,6 @@ export function CourseEditor({
   const handleRemoveChapter = (id: string) => {
     setChapters((prev) => {
       const next = prev.filter((c) => c.id !== id);
-      const targetId = courseId || propCourseId || initialCourse?.id;
-      if (typeof window !== "undefined" && targetId) {
-        try {
-          const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || "{}";
-          const map = JSON.parse(raw);
-          map[targetId] = {
-            ...map[targetId],
-            id: targetId,
-            name: courseName.trim(),
-            purpose: coursePurpose.trim(),
-            chapters: next,
-            updatedAt: new Date().toISOString(),
-          };
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
-        } catch (e) {
-          console.warn("Failed to persist chapters after removal:", e);
-        }
-      }
       return next;
     });
     setIsDirty(true);
@@ -548,49 +425,37 @@ export function CourseEditor({
         {/* Input Card */}
         <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-6 sm:p-8 shadow-xs space-y-6">
           {/* Field 1: Course Name */}
-          <div className="space-y-1.5">
-            <label
-              htmlFor="step1-course-name"
-              className="block text-sm font-semibold text-[var(--color-ink)]"
-            >
-              {isEs ? "Nombre del curso" : "Course name"}
-            </label>
-            <input
-              id="step1-course-name"
-              type="text"
-              value={courseName}
-              onChange={(e) => {
-                setCourseName(e.target.value);
-                if (error) setError(null);
-              }}
-              placeholder="Tacos al Pastor"
-              autoFocus
-              required
-              className="w-full rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-brand-600)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-600)] transition-colors"
-            />
-          </div>
+          <BilingualInput
+            label={isEs ? "Nombre del curso" : "Course name"}
+            value={courseTitle}
+            onChange={(val) => {
+              setCourseTitle(val);
+              if (error) setError(null);
+            }}
+            defaultLang={isEs ? "es" : "en"}
+            required
+            placeholder={{
+              en: "e.g. Tacos al Pastor",
+              es: "ej. Tacos al Pastor",
+            }}
+          />
 
           {/* Field 2: Purpose */}
-          <div className="space-y-1.5">
-            <label
-              htmlFor="step1-course-purpose"
-              className="block text-sm font-semibold text-[var(--color-ink)]"
-            >
-              {isEs ? "Propósito" : "Purpose"}
-            </label>
-            <textarea
-              id="step1-course-purpose"
-              value={coursePurpose}
-              onChange={(e) => {
-                setCoursePurpose(e.target.value);
-                if (error) setError(null);
-              }}
-              placeholder="How we make tacos al pastor, from marinade to plating."
-              rows={3}
-              required
-              className="w-full rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-brand-600)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-600)] transition-colors resize-none min-h-[96px]"
-            />
-          </div>
+          <BilingualInput
+            label={isEs ? "Propósito" : "Purpose"}
+            value={coursePurpose}
+            onChange={(val) => {
+              setCoursePurpose(val);
+              if (error) setError(null);
+            }}
+            defaultLang={isEs ? "es" : "en"}
+            multiline
+            required
+            placeholder={{
+              en: "How we make tacos al pastor, from marinade to plating.",
+              es: "Cómo preparamos tacos al pastor, desde el marinado hasta el emplatado.",
+            }}
+          />
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-2">
@@ -602,7 +467,10 @@ export function CourseEditor({
             <Button
               type="button"
               variant="primary"
-              disabled={!courseName.trim() || !coursePurpose.trim()}
+              disabled={
+                !(courseTitle.en.trim() || courseTitle.es.trim()) ||
+                !(coursePurpose.en.trim() || coursePurpose.es.trim())
+              }
               onClick={handleProceedToAddChapter}
             >
               {isEs ? "Agregar capítulo" : "Add chapter"}
@@ -634,51 +502,40 @@ export function CourseEditor({
               ? prev.map((c) => (c.id === savedChapter.id ? savedChapter : c))
               : [...prev, savedChapter];
 
+            const effectiveTitleEn =
+              courseTitle.en.trim() || courseTitle.es.trim();
+            const effectiveTitleEs =
+              courseTitle.es.trim() || courseTitle.en.trim();
+            const effectivePurposeEn =
+              coursePurpose.en.trim() || coursePurpose.es.trim();
+            const effectivePurposeEs =
+              coursePurpose.es.trim() || coursePurpose.en.trim();
+
             const effectiveId =
               courseId ||
               initialCourse?.id ||
               propCourseId ||
               `course-${
-                courseName
+                effectiveTitleEn
                   .toLowerCase()
                   .trim()
                   .replace(/[^a-z0-9]+/g, "-")
                   .replace(/^-|-$/g, "") || Date.now()
               }`;
 
-            // 1. Persist immediately to localStorage
-            if (typeof window !== "undefined" && effectiveId) {
-              try {
-                const raw = localStorage.getItem(LOCAL_STORAGE_KEY) || "{}";
-                const map = JSON.parse(raw);
-                map[effectiveId] = {
-                  ...map[effectiveId],
-                  id: effectiveId,
-                  name: courseName.trim(),
-                  purpose: coursePurpose.trim(),
-                  chapters: next,
-                  updatedAt: new Date().toISOString(),
-                };
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
-              } catch (e) {
-                console.warn(
-                  "Failed to persist draft chapters to localStorage:",
-                  e,
-                );
-              }
-            }
-
-            // 2. Persist to server action so user does NOT have to save again
-            saveCourseAction({
-              id: effectiveId,
-              name: courseName.trim(),
-              purpose: coursePurpose.trim(),
-              chapters: next,
-              locale,
-            })
-              .then((res) => {
-                if (res.ok && res.course) {
-                  setCourseId(res.course.id);
+            // Persist to backend so user does NOT have to save again
+            saveCourseMutation
+              .mutateAsync({
+                id: effectiveId,
+                titleEn: effectiveTitleEn,
+                titleEs: effectiveTitleEs,
+                purposeEn: effectivePurposeEn,
+                purposeEs: effectivePurposeEs,
+                chapters: next,
+              })
+              .then((savedCourse) => {
+                if (savedCourse?.id) {
+                  setCourseId(savedCourse.id);
                   setSaveSuccess(true);
                   setTimeout(() => setSaveSuccess(false), 2500);
                 }
@@ -763,59 +620,31 @@ export function CourseEditor({
           </div>
 
           {/* Field 1: Course Name */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="edit-course-name"
-                className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-2)]"
-              >
-                {isEs ? "Nombre del curso *" : "Course name *"}
-              </label>
-              <span className="text-[11px] text-[var(--color-ink-3)] font-mono">
-                {editNameDraft.length}/100
-              </span>
-            </div>
-            <input
-              id="edit-course-name"
-              type="text"
-              maxLength={100}
-              value={editNameDraft}
-              onChange={(e) => setEditNameDraft(e.target.value)}
-              placeholder={
-                isEs ? "Ej. Tacos al Pastor" : "e.g. Tacos al Pastor"
-              }
-              className="w-full h-12 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)]/30 px-4 py-3 text-base sm:text-lg font-semibold text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-brand-600)] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-600)] transition-all"
-              autoFocus
-            />
-          </div>
+          <BilingualInput
+            label={isEs ? "Nombre del curso *" : "Course name *"}
+            value={editTitleDraft}
+            onChange={setEditTitleDraft}
+            defaultLang={isEs ? "es" : "en"}
+            required
+            placeholder={{
+              en: "e.g. Tacos al Pastor",
+              es: "ej. Tacos al Pastor",
+            }}
+          />
 
           {/* Field 2: Course Purpose */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="edit-course-purpose"
-                className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-2)]"
-              >
-                {isEs ? "Para qué sirve *" : "What it is for *"}
-              </label>
-              <span className="text-[11px] text-[var(--color-ink-3)] font-mono">
-                {editPurposeDraft.length}/500
-              </span>
-            </div>
-            <textarea
-              id="edit-course-purpose"
-              rows={3}
-              maxLength={500}
-              value={editPurposeDraft}
-              onChange={(e) => setEditPurposeDraft(e.target.value)}
-              placeholder={
-                isEs
-                  ? "Describe el objetivo y lo que aprenderán los empleados..."
-                  : "Describe the objective and what employees will learn..."
-              }
-              className="w-full rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)]/30 p-3.5 sm:p-4 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-brand-600)] focus:bg-[var(--color-surface)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-600)] transition-all resize-none leading-relaxed"
-            />
-          </div>
+          <BilingualInput
+            label={isEs ? "Para qué sirve *" : "What it is for *"}
+            value={editPurposeDraft}
+            onChange={setEditPurposeDraft}
+            defaultLang={isEs ? "es" : "en"}
+            multiline
+            required
+            placeholder={{
+              en: "Describe the objective and what employees will learn...",
+              es: "Describe el objetivo y lo que aprenderán los empleados...",
+            }}
+          />
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--color-line-2)]">
@@ -833,7 +662,9 @@ export function CourseEditor({
               size="sm"
               onClick={handleSaveDetailsEdit}
               disabled={
-                !editNameDraft.trim() || !editPurposeDraft.trim() || isSaving
+                !(editTitleDraft.en.trim() || editTitleDraft.es.trim()) ||
+                !(editPurposeDraft.en.trim() || editPurposeDraft.es.trim()) ||
+                isSaving
               }
               className={
                 saveSuccess
@@ -871,7 +702,7 @@ export function CourseEditor({
                   )}
                 </div>
                 <p className="mt-1.5 text-sm sm:text-base text-[var(--color-ink-2)] leading-relaxed max-w-2xl">
-                  {coursePurpose ||
+                  {coursePurposeText ||
                     (isEs ? "Sin propósito asignado" : "No purpose provided")}
                 </p>
               </div>
@@ -907,8 +738,9 @@ export function CourseEditor({
                 icon={saveSuccess ? LuCheck : undefined}
                 onClick={() => handleSaveCourse({ redirectAfter: true })}
                 disabled={
-                  isSaving || !courseName.trim() || !coursePurpose.trim()
+                  isSaving || !courseName.trim() || !coursePurposeText.trim()
                 }
+
                 className={
                   saveSuccess
                     ? "!bg-emerald-600 !text-white !border-emerald-600 hover:!bg-emerald-600 shadow-sm transition-all duration-200 !opacity-100 font-semibold"

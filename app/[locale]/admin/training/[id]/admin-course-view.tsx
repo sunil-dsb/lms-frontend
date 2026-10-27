@@ -49,90 +49,40 @@ export function AdminCourseView({
   }, []);
 
   React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem("lms_created_courses");
-      if (raw) {
-        const customMap = JSON.parse(raw);
-        const decodedId = decodeURIComponent(courseId);
-        const norm = (s: string) =>
-          s
-            .toLowerCase()
-            .replace(/^course-/, "")
-            .replace(/[^a-z0-9]/g, "");
-        const targetNorm = norm(decodedId);
+    if (chapterNumber && mode === "quiz") {
+      const chapterDetail = getChapterDetail(courseId, chapterNumber, locale);
+      if (!chapterDetail?.quiz?.questions?.length) {
+        const procId =
+          chapterDetail?.procedureId ||
+          chapterDetail?.procedureSlug ||
+          chapterDetail?.blocks
+            ?.filter(
+              (
+                b,
+              ): b is Extract<
+                import("@/lib/types").ProcedureBlock,
+                { kind: "linked_procedures" }
+              > => b.kind === "linked_procedures",
+            )
+            ?.flatMap((b) => b.procedureIds || [])[0];
 
-        let saved: any =
-          customMap[courseId] ||
-          customMap[decodedId] ||
-          customMap[`course-${courseId}`] ||
-          customMap[courseId.replace(/^course-/, "")];
-
-        if (!saved) {
-          saved = Object.values(customMap).find((c: any) => {
-            if (!c) return false;
-            if (c.id && norm(c.id) === targetNorm) return true;
-            if (c.name && norm(c.name) === targetNorm) return true;
-            return false;
-          });
-        }
-
-        if (saved) {
-          const registeredCourse: Procedure = {
-            id: saved.id || courseId,
-            slug: (saved.id || courseId).replace(/^course-/, ""),
-            titleEn: saved.name || "Untitled Course",
-            titleEs: saved.name || "Curso sin título",
-            purposeEn: saved.purpose || "",
-            purposeEs: saved.purpose || "",
-            category: null,
-            status: "published",
-            bodyEn: { blocks: [] },
-            bodyEs: { blocks: [] },
-            createdBy: "admin-001",
-            createdAt: saved.updatedAt || new Date().toISOString(),
-            updatedAt: saved.updatedAt || new Date().toISOString(),
-            quizId: saved.quizId || `quiz-${saved.id || courseId}`,
-            linkedTrainingId: null,
-            quizMode: "training",
-            attachedToTraining: true,
-            linkedSops: saved.linkedSops || [],
-          };
-
-          if (Array.isArray(saved.chapters) && saved.chapters.length > 0) {
-            const defs: ChapterDefinition[] = saved.chapters.map(
-              (ch: any, idx: number) => ({
-                id: ch.id || `${saved.id || courseId}-ch-${idx + 1}`,
-                number: idx + 1,
-                titleEn: ch.title,
-                titleEs: ch.title,
-                contentEn: ch.subtitle || "",
-                contentEs: ch.subtitle || "",
-                blocks: ch.blocks ?? [],
-                procedureSlug: ch.procedureSlug,
-              }),
-            );
-            registerCourseChapters(saved.id || courseId, defs);
-            if (saved.id && saved.id !== courseId) {
-              registerCourseChapters(courseId, defs);
-            }
-
-            // Collect authored quiz questions
-            const questions = saved.chapters.flatMap(
-              (ch: any) => ch.quiz?.questions || ch.quizQuestions || [],
-            );
-            if (questions.length > 0) {
-              setLocalQuizQuestions(questions);
-            }
-          }
-
-          setCourse(registeredCourse);
+        if (procId) {
+          import("@/services/library/api")
+            .then(({ fetchProcedureById }) => fetchProcedureById(procId, true))
+            .then(async (proc) => {
+              if (proc?.quizId) {
+                const { fetchQuizById } = await import("@/lib/api/library");
+                const loadedQuiz = await fetchQuizById(proc.quizId);
+                if (loadedQuiz?.questions?.length) {
+                  setLocalQuizQuestions(loadedQuiz.questions);
+                }
+              }
+            })
+            .catch(() => {});
         }
       }
-    } catch (e) {
-      console.warn("Failed to read course from localStorage:", e);
     }
-  }, [courseId]);
+  }, [chapterNumber, mode, courseId, locale]);
 
   const activeCourse = course ?? {
     id: courseId,

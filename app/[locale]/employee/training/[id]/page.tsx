@@ -8,16 +8,23 @@ import {
   getQuizById,
   getProcedureBySlug,
 } from "@/lib/api";
+import { fetchCourseById } from "@/services/courses/api";
 import {
   getCourseById,
   listTrainingAssignments,
   listTrainingAssignmentsForEmployee,
   mockTrainingEmployees,
 } from "@/lib/mock-training";
-import type { TrainingAssignment } from "@/lib/types";
+import type {
+  Procedure,
+  ProcedureBlock,
+  TrainingAssignment,
+} from "@/lib/types";
 import {
   getCourseChaptersViewData,
   getChapterDetail,
+  registerCourseChapters,
+  type ChapterDefinition,
 } from "@/lib/course-chapters-data";
 import { CourseChaptersView } from "./components/course-chapters-view";
 import { ChapterLearnView } from "./components/chapter-learn-view";
@@ -30,6 +37,13 @@ interface PageProps {
 
 export const dynamic = "force-dynamic";
 
+function isUuid(val: string | null | undefined): boolean {
+  if (!val) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    val,
+  );
+}
+
 export default async function EmployeeTrainingCoursePage({
   params,
   searchParams,
@@ -38,7 +52,54 @@ export default async function EmployeeTrainingCoursePage({
   const { chapter, mode } = await searchParams;
   setRequestLocale(locale);
 
-  const course = getCourseById(id);
+  let course: Procedure | null = null;
+
+  if (isUuid(id)) {
+    try {
+      const backendCourse = await fetchCourseById(id);
+      if (backendCourse) {
+        course = {
+          id: backendCourse.id,
+          slug: backendCourse.id,
+          titleEn: backendCourse.titleEn,
+          titleEs: backendCourse.titleEs,
+          purposeEn: backendCourse.purposeEn,
+          purposeEs: backendCourse.purposeEs,
+          status: backendCourse.status as any,
+          createdAt: backendCourse.createdAt,
+          updatedAt: backendCourse.updatedAt,
+          attachedToTraining: true,
+          chapterCount: backendCourse.chapters?.length ?? 0,
+        } as unknown as Procedure;
+
+        if (backendCourse.chapters && backendCourse.chapters.length > 0) {
+          const chapterDefs: ChapterDefinition[] = backendCourse.chapters.map(
+            (ch) => ({
+              id: ch.id,
+              number: ch.number,
+              titleEn: ch.titleEn,
+              titleEs: ch.titleEs,
+              contentEn: ch.subtitleEn || "",
+              contentEs: ch.subtitleEs || "",
+              blocks: (ch.blocks as any[]) || [],
+              procedureId: ch.procedureId ?? undefined,
+              quizId: ch.quizId ?? undefined,
+              quiz: (ch.quiz as any) ?? null,
+              minCorrectAnswers: ch.minCorrectAnswers ?? undefined,
+            }),
+          );
+          registerCourseChapters(backendCourse.id, chapterDefs);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch course from backend for employee:", err);
+    }
+  }
+
+  if (!course) {
+    course = getCourseById(id) ?? null;
+  }
+
   if (!course) notFound();
 
   const cookieStore = await cookies();
@@ -100,8 +161,44 @@ export default async function EmployeeTrainingCoursePage({
   // 1. Chapter Quiz View: matches reference Image 2
   if (chapterNumber && !isNaN(chapterNumber) && mode === "quiz") {
     const chapterDetail = getChapterDetail(id, chapterNumber, locale);
-    // Prefer chapter's own quiz questions if defined, otherwise course quizId or fallback
-    const chapterQuiz = chapterDetail.quiz;
+    let chapterQuiz = chapterDetail.quiz;
+
+    // If chapter doesn't have an inline quiz, resolve from linked procedure
+    if ((!chapterQuiz || !chapterQuiz.questions?.length) && chapterDetail) {
+      const procId =
+        chapterDetail.procedureId ||
+        chapterDetail.procedureSlug ||
+        chapterDetail.blocks
+          ?.filter(
+            (b): b is Extract<ProcedureBlock, { kind: "linked_procedures" }> =>
+              b.kind === "linked_procedures",
+          )
+          ?.flatMap((b) => b.procedureIds || [])[0];
+
+      if (procId) {
+        try {
+          const { fetchProcedureById } = await import("@/services/library/api");
+          const proc = await fetchProcedureById(procId, true);
+          if (proc?.quizId) {
+            const { fetchQuizById } = await import("@/lib/api/library");
+            const loadedQuiz = await fetchQuizById(proc.quizId);
+            if (loadedQuiz?.questions?.length) {
+              chapterQuiz = {
+                attached: true,
+                questions: loadedQuiz.questions,
+                minCorrectAnswers:
+                  chapterDetail.minCorrectAnswers ??
+                  Math.max(1, Math.ceil(loadedQuiz.questions.length * 0.7)),
+              };
+            }
+          }
+        } catch {
+          // fallback
+        }
+      }
+    }
+
+    // Prefer chapter/linked procedure quiz questions, otherwise course quizId or fallback
     const fallbackQuiz =
       (course.quizId ? getQuizById(course.quizId) : null) ??
       getQuizById("quiz-handwashing");

@@ -79,18 +79,21 @@ export async function fetchAssignableEmployees(): Promise<TrainingEmployeesRespo
   };
 }
 
+import { assignCourseApi } from "@/services/courses/api";
+
 /**
  * Assign a course to employees with due date.
  */
 export async function assignCourse(
   payload: AssignCoursePayload,
 ): Promise<AssignCourseResponse> {
-  // When backend endpoint is active:
-  // const { data } = await http.post<AssignCourseResponse>(TRAINING_ENDPOINTS.ASSIGN, payload);
-  // return data;
-
-  // Simulated latency for realistic async interaction
-  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (payload.courseId) {
+    try {
+      await assignCourseApi(payload.courseId, payload.employeeIds, "add");
+    } catch (err) {
+      console.warn("Backend course assignment notice:", err);
+    }
+  }
 
   const created = assignCourseToEmployees(
     payload.courseId,
