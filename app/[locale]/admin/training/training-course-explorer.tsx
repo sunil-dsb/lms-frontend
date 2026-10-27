@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
+  LuArchive,
   LuCheck,
   LuFilePen,
   LuGraduationCap,
   LuPlus,
+  LuRotateCcw,
   LuSearch,
+  LuTrash2,
   LuUserPlus,
   LuX,
 } from "react-icons/lu";
@@ -21,102 +24,70 @@ import { RowActions } from "@/components/ui/row-actions";
 import { StatusPill } from "@/components/ui/status-pill";
 import { getQuizById } from "@/lib/api";
 import { IconTile } from "@/components/ui/icon-tile";
-import { getTrainingCourseRowsForAdmin } from "@/lib/mock-training";
+import { TrainingCoursesListSkeleton } from "@/components/admin/training-courses-skeleton";
+import { cn } from "@/lib/utils";
+
 import { CourseAssignmentModal } from "./components/course-assignment-modal";
+import {
+  useCourses,
+  useArchiveCourse,
+  useUnarchiveCourse,
+  useDeleteCourse,
+} from "@/services/courses/hooks";
 
 interface TrainingCourseExplorerProps {
   locale: string;
-  rows: TrainingCourseRow[];
 }
 
-type AssignmentFilter = "all" | "assigned" | "unassigned";
+type AssignmentFilter = "all" | "assigned" | "unassigned" | "archived";
 
 export function TrainingCourseExplorer({
   locale,
-  rows: initialRows,
 }: TrainingCourseExplorerProps): React.ReactElement {
   const t = useTranslations("admin.training");
   const tCommon = useTranslations("admin");
   const router = useRouter();
   const isEs = locale === "es";
 
-  const [courseRows, setCourseRows] =
-    React.useState<TrainingCourseRow[]>(initialRows);
+  const { data: coursesData, isLoading, refetch } = useCourses({ limit: 100 });
+  const archiveMutation = useArchiveCourse();
+  const unarchiveMutation = useUnarchiveCourse();
+  const deleteMutation = useDeleteCourse();
+
   const [searchQuery, setSearchQuery] = React.useState("");
   const [filter, setFilter] = React.useState<AssignmentFilter>("all");
   const [assigningCourse, setAssigningCourse] =
     React.useState<Procedure | null>(null);
   const [successToast, setSuccessToast] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    const merged = [...initialRows];
-    if (typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem("lms_created_courses");
-        if (raw) {
-          const customMap = JSON.parse(raw);
-          Object.values(customMap).forEach((c: any) => {
-            if (!c || !c.id) return;
-
-            const courseHasQuiz =
-              Boolean(c.quizId) ||
-              (Array.isArray(c.chapters) &&
-                c.chapters.some(
-                  (ch: any) =>
-                    (ch.quiz?.questions?.length ?? 0) > 0 ||
-                    ch.quiz?.attached === true ||
-                    (ch.quizQuestions?.length ?? 0) > 0,
-                ));
-
-            const existingIdx = merged.findIndex((r) => r.course.id === c.id);
-            if (existingIdx !== -1) {
-              // Update existing row with quizId if present in custom authored course
-              if (courseHasQuiz && !merged[existingIdx].course.quizId) {
-                merged[existingIdx] = {
-                  ...merged[existingIdx],
-                  course: {
-                    ...merged[existingIdx].course,
-                    quizId: c.quizId || `quiz-${c.id}`,
-                  },
-                };
-              }
-            } else {
-              const localCourse: Procedure = {
-                id: c.id,
-                slug: c.id.replace(/^course-/, ""),
-                titleEn: c.name || "Untitled Course",
-                titleEs: c.name || "Curso sin título",
-                purposeEn: c.purpose || "",
-                purposeEs: c.purpose || "",
-                category: null,
-                status: "published",
-                bodyEn: { blocks: [] },
-                bodyEs: { blocks: [] },
-                createdBy: "admin-001",
-                createdAt: c.updatedAt || new Date().toISOString(),
-                updatedAt: c.updatedAt || new Date().toISOString(),
-                quizId: courseHasQuiz ? c.quizId || `quiz-${c.id}` : null,
-                linkedTrainingId: null,
-                quizMode: "training",
-                attachedToTraining: true,
-                linkedSops: c.linkedSops || [],
-              };
-              merged.unshift({
-                course: localCourse,
-                assignmentCount: 0,
-                completeCount: 0,
-                inProgressCount: 0,
-                overdueCount: 0,
-              });
-            }
-          });
-        }
-      } catch (err) {
-        console.warn("Failed to merge custom courses from localStorage:", err);
-      }
-    }
-    setCourseRows(merged);
-  }, [initialRows]);
+  const courseRows = React.useMemo<TrainingCourseRow[]>(() => {
+    if (!coursesData?.items) return [];
+    return coursesData.items.map((bc) => {
+      const assignCount = Array.isArray(bc.assignUsers)
+        ? bc.assignUsers.length
+        : (bc.assignedCount ?? 0);
+      return {
+        course: {
+          id: bc.id,
+          slug: bc.id,
+          titleEn: bc.titleEn,
+          titleEs: bc.titleEs,
+          purposeEn: bc.purposeEn,
+          purposeEs: bc.purposeEs,
+          status: "published",
+          isArchived: bc.status === "archived",
+          createdAt: bc.createdAt,
+          updatedAt: bc.updatedAt,
+          attachedToTraining: true,
+          chapterCount: bc.chapterCount ?? 0,
+        } as unknown as Procedure,
+        assignmentCount: assignCount,
+        completeCount: 0,
+        inProgressCount: 0,
+        overdueCount: 0,
+      };
+    });
+  }, [coursesData?.items]);
 
   React.useEffect(() => {
     if (!successToast) return;
@@ -134,33 +105,75 @@ export function TrainingCourseExplorer({
     [isEs],
   );
 
-  const filterCounts = React.useMemo(
-    () => ({
-      all: courseRows.length,
-      assigned: courseRows.filter((r) => r.assignmentCount > 0).length,
-      unassigned: courseRows.filter((r) => r.assignmentCount === 0).length,
-    }),
-    [courseRows],
-  );
+  const filterCounts = React.useMemo(() => {
+    const active = courseRows.filter((r) => !r.course.isArchived);
+    const archived = courseRows.filter((r) => Boolean(r.course.isArchived));
+    return {
+      all: active.length,
+      assigned: active.filter((r) => r.assignmentCount > 0).length,
+      unassigned: active.filter((r) => r.assignmentCount === 0).length,
+      archived: archived.length,
+    };
+  }, [courseRows]);
 
   const filteredRows = React.useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return courseRows.filter((row) => {
-      if (filter === "assigned" && row.assignmentCount === 0) return false;
-      if (filter === "unassigned" && row.assignmentCount > 0) return false;
+      const isArchived = Boolean(row.course.isArchived);
+      if (filter === "archived") {
+        if (!isArchived) return false;
+      } else {
+        if (isArchived) return false;
+        if (filter === "assigned" && row.assignmentCount === 0) return false;
+        if (filter === "unassigned" && row.assignmentCount > 0) return false;
+      }
+
       if (!q) return true;
       return titleOf(row).toLowerCase().includes(q);
     });
   }, [courseRows, searchQuery, filter, titleOf]);
 
-  function handleArchive(courseId: string): void {
-    console.info("[training] archive course (mock)", courseId);
+  async function handleArchive(courseId: string): Promise<void> {
+    try {
+      await archiveMutation.mutateAsync(courseId);
+      setSuccessToast(
+        isEs
+          ? "El curso ha sido archivado correctamente."
+          : "Course has been archived successfully.",
+      );
+    } catch (err) {
+      console.error("Failed to archive course:", err);
+    }
+  }
+
+  async function handleUnarchive(courseId: string): Promise<void> {
+    try {
+      await unarchiveMutation.mutateAsync(courseId);
+      setSuccessToast(
+        isEs
+          ? "El curso ha sido restaurado correctamente."
+          : "Course has been restored successfully.",
+      );
+    } catch (err) {
+      console.error("Failed to unarchive course:", err);
+    }
+  }
+
+  async function handleDelete(courseId: string): Promise<void> {
+    try {
+      await deleteMutation.mutateAsync(courseId);
+      setSuccessToast(
+        isEs
+          ? "El curso ha sido eliminado permanentemente."
+          : "Course has been permanently deleted.",
+      );
+    } catch (err) {
+      console.error("Failed to delete course:", err);
+    }
   }
 
   function handleAssigned(count: number): void {
-    // Refresh rows from store to immediately reflect the new assignment
-    const updated = getTrainingCourseRowsForAdmin();
-    setCourseRows(updated);
+    void refetch();
 
     if (assigningCourse) {
       const courseTitle =
@@ -211,7 +224,7 @@ export function TrainingCourseExplorer({
         </Button>
       </div>
 
-      {/* Filter Chips: Replaced Published / Draft with Assigned / Unassigned */}
+      {/* Filter Chips: All / Assigned / Unassigned / Archived */}
       <FilterChips
         label={t("filterAssignment")}
         value={filter}
@@ -224,13 +237,18 @@ export function TrainingCourseExplorer({
           },
           {
             value: "assigned",
-            label: t("filterAssigned"),
+            label: isEs ? "Asignados" : "Assigned",
             count: filterCounts.assigned,
           },
           {
             value: "unassigned",
-            label: t("filterUnassigned"),
+            label: isEs ? "No asignados" : "Unassigned",
             count: filterCounts.unassigned,
+          },
+          {
+            value: "archived",
+            label: isEs ? "Archivados" : "Archived",
+            count: filterCounts.archived,
           },
         ]}
       />
@@ -270,7 +288,9 @@ export function TrainingCourseExplorer({
       </div>
 
       {/* Course List / Empty States */}
-      {courseRows.length === 0 ? (
+      {isLoading ? (
+        <TrainingCoursesListSkeleton count={5} />
+      ) : courseRows.length === 0 ? (
         <EmptyState
           icon={LuGraduationCap}
           title={t("emptyHeading")}
@@ -285,22 +305,45 @@ export function TrainingCourseExplorer({
           }
         />
       ) : filteredRows.length === 0 ? (
-        <EmptyState
-          icon={LuSearch}
-          title={t("noMatchHeading")}
-          body={t("noMatchBody")}
-          action={
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setSearchQuery("");
-                setFilter("all");
-              }}
-            >
-              {tCommon("clearFilters")}
-            </Button>
-          }
-        />
+        filter === "archived" ? (
+          <EmptyState
+            icon={LuArchive}
+            title={isEs ? "No hay cursos archivados" : "No archived courses"}
+            body={
+              isEs
+                ? "Los cursos que archives aparecerán aquí para restaurarlos o eliminarlos."
+                : "Courses you archive will appear here where you can restore or delete them."
+            }
+            action={
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilter("all");
+                }}
+              >
+                {tCommon("clearFilters")}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={LuSearch}
+            title={t("noMatchHeading")}
+            body={t("noMatchBody")}
+            action={
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilter("all");
+                }}
+              >
+                {tCommon("clearFilters")}
+              </Button>
+            }
+          />
+        )
       ) : (
         <ul className="divide-y divide-[var(--color-line)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)]">
           {filteredRows.map((row) => {
@@ -310,6 +353,8 @@ export function TrainingCourseExplorer({
               : row.course.purposeEn || row.course.purposeEs;
             const hasQuiz = Boolean(row.course.quizId);
             const isAssigned = row.assignmentCount > 0;
+            const isArchived = Boolean(row.course.isArchived);
+
             const updated = new Date(row.course.updatedAt).toLocaleDateString(
               isEs ? "es" : "en",
               {
@@ -324,7 +369,11 @@ export function TrainingCourseExplorer({
               <li
                 key={row.course.id}
                 onClick={() => router.push(courseDetailHref)}
-                className="group flex flex-col justify-between gap-4 px-4 py-5 transition-colors duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-wash)] md:flex-row md:items-center cursor-pointer"
+                className={cn(
+                  "group flex flex-col justify-between gap-4 px-4 py-5 transition-colors duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-wash)] md:flex-row md:items-center cursor-pointer",
+                  isArchived &&
+                    "bg-[var(--color-wash)]/40 opacity-80 hover:opacity-100",
+                )}
               >
                 <div className="flex min-w-0 flex-1 items-start gap-4">
                   <Link
@@ -346,8 +395,12 @@ export function TrainingCourseExplorer({
                         {title}
                       </Link>
 
-                      {/* Replaced Draft/Published badge with Assigned / Unassigned */}
-                      {isAssigned ? (
+                      {/* Status pill: Archived / Assigned / Unassigned */}
+                      {isArchived ? (
+                        <StatusPill tone="neutral" withDot>
+                          {isEs ? "Archivado" : "Archived"}
+                        </StatusPill>
+                      ) : isAssigned ? (
                         <StatusPill tone="ok" withDot>
                           {t("statusAssigned")}
                         </StatusPill>
@@ -407,35 +460,61 @@ export function TrainingCourseExplorer({
                   onClick={(e) => e.stopPropagation()}
                   className="flex shrink-0 items-center gap-2 self-start md:self-center"
                 >
-                  {/* Assign Button — now opens the pop-up modal directly */}
-                  <Button
-                    type="button"
-                    variant="neutral"
-                    size="sm"
-                    icon={LuUserPlus}
-                    onClick={() => setAssigningCourse(row.course)}
-                  >
-                    {t("assignAction")}
-                  </Button>
+                  {/* Assign Button — only for active courses */}
+                  {!isArchived ? (
+                    <Button
+                      type="button"
+                      variant="neutral"
+                      size="sm"
+                      icon={LuUserPlus}
+                      onClick={() => setAssigningCourse(row.course)}
+                    >
+                      {t("assignAction")}
+                    </Button>
+                  ) : null}
 
                   <RowActions
                     triggerLabel={t("rowActionsLabel", { title })}
-                    items={[
-                      {
-                        label: t("rowEdit"),
-                        icon: LuFilePen,
-                        onSelect: () =>
-                          router.push(
-                            `/${locale}/admin/training/${row.course.id}/edit`,
-                          ),
-                      },
-                      {
-                        label: t("rowArchive"),
-                        destructive: true,
-                        confirmLabel: t("rowArchiveConfirm"),
-                        onSelect: () => handleArchive(row.course.id),
-                      },
-                    ]}
+                    items={
+                      isArchived
+                        ? [
+                            {
+                              label: isEs
+                                ? "Restaurar curso"
+                                : "Restore course",
+                              icon: LuRotateCcw,
+                              onSelect: () => handleUnarchive(row.course.id),
+                            },
+                            {
+                              label: isEs
+                                ? "Eliminar permanentemente"
+                                : "Delete permanently",
+                              icon: LuTrash2,
+                              destructive: true,
+                              confirmLabel: isEs
+                                ? "¿Eliminar este curso permanentemente?"
+                                : "Permanently delete this course?",
+                              onSelect: () => handleDelete(row.course.id),
+                            },
+                          ]
+                        : [
+                            {
+                              label: t("rowEdit"),
+                              icon: LuFilePen,
+                              onSelect: () =>
+                                router.push(
+                                  `/${locale}/admin/training/${row.course.id}/edit`,
+                                ),
+                            },
+                            {
+                              label: t("rowArchive"),
+                              icon: LuArchive,
+                              destructive: true,
+                              confirmLabel: t("rowArchiveConfirm"),
+                              onSelect: () => handleArchive(row.course.id),
+                            },
+                          ]
+                    }
                   />
                 </div>
               </li>

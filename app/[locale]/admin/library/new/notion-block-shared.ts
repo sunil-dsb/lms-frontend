@@ -95,6 +95,7 @@ export const SLASH_BLOCK_OPTIONS: Array<{
   icon: string;
 }> = [
   { kind: "text", label: "Text", icon: "ri-text" },
+  { kind: "rich_text", label: "Rich text", icon: "ri-edit-line" },
   { kind: "heading", label: "Heading", icon: "ri-h-1" },
   { kind: "method", label: "Steps", icon: "ri-list-ordered" },
   { kind: "checklist", label: "Checklist", icon: "ri-list-check" },

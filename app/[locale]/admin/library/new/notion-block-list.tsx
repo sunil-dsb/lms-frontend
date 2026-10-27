@@ -99,6 +99,12 @@ function EmptyState({
           [
             { kind: "text", label: "Text", icon: "ri-text", hint: "Paragraph" },
             {
+              kind: "rich_text",
+              label: "Rich text",
+              icon: "ri-edit-line",
+              hint: "Formatted editor",
+            },
+            {
               kind: "heading",
               label: "Heading",
               icon: "ri-h-1",
@@ -152,33 +158,43 @@ function EmptyState({
               icon: "ri-restaurant-line",
               hint: "Items + amounts",
             },
+            {
+              kind: "linked_procedures",
+              label: "Link procedure",
+              icon: "ri-links-line",
+              hint: "Connect procedure",
+            },
           ] as {
             kind: ProcedureBlockKind;
             label: string;
             icon: string;
             hint: string;
           }[]
-        ).map((opt) => (
-          <button
-            key={opt.kind}
-            type="button"
-            onClick={() => onAdd(opt.kind)}
-            className="group flex items-center gap-4 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 sm:px-5 sm:py-3 text-left transition-colors hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)] cursor-pointer"
-          >
-            <Icon
-              icon={opt.icon}
-              className="size-5 text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)] shrink-0"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-semibold text-[var(--color-ink)] truncate">
-                {opt.label}
+        )
+          .filter(
+            (opt) => opt.kind !== "linked_procedures" || allowLinkProcedure,
+          )
+          .map((opt) => (
+            <button
+              key={opt.kind}
+              type="button"
+              onClick={() => onAdd(opt.kind)}
+              className="group flex items-center gap-4 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 sm:px-5 sm:py-3 text-left transition-colors hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)] cursor-pointer"
+            >
+              <Icon
+                icon={opt.icon}
+                className="size-5 text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)] shrink-0"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs sm:text-sm font-semibold text-[var(--color-ink)] truncate">
+                  {opt.label}
+                </span>
+                <span className="block text-[11px] sm:text-xs text-[var(--color-ink-2)] mt-0.5 line-clamp-1 leading-tight">
+                  {opt.hint}
+                </span>
               </span>
-              <span className="block text-[11px] sm:text-xs text-[var(--color-ink-2)] mt-0.5 line-clamp-1 leading-tight">
-                {opt.hint}
-              </span>
-            </span>
-          </button>
-        ))}
+            </button>
+          ))}
       </div>
     </div>
   );

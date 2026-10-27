@@ -111,9 +111,15 @@ export function ChapterContentEditor({
     Record<string, LinkedProcedure>
   >({});
 
-  // Collect all procedureIds linked in chapter blocks
+  // Collect all procedureIds linked in chapter blocks or initialChapter
   const linkedProcedureIds = React.useMemo(() => {
     const ids: string[] = [];
+    if (
+      initialChapter?.procedureId &&
+      !ids.includes(initialChapter.procedureId)
+    ) {
+      ids.push(initialChapter.procedureId);
+    }
     for (const b of blocks) {
       if (b.kind === "linked_procedures" && Array.isArray(b.procedureIds)) {
         for (const id of b.procedureIds) {
@@ -122,11 +128,15 @@ export function ChapterContentEditor({
       }
     }
     return ids;
-  }, [blocks]);
+  }, [blocks, initialChapter]);
 
   // Fetch full details for any linked procedures not yet in linkedProceduresMap
   React.useEffect(() => {
-    const missing = linkedProcedureIds.filter((id) => !linkedProceduresMap[id]);
+    const missing = linkedProcedureIds.filter(
+      (id) =>
+        !linkedProceduresMap[id] ||
+        (linkedProceduresMap[id].quizId && !linkedProceduresMap[id].quiz),
+    );
     if (missing.length === 0) return;
 
     let isMounted = true;
@@ -156,28 +166,44 @@ export function ChapterContentEditor({
             }
           }
 
+          // If still no quiz, check if any quiz in the library references this procedure
+          if (!fullProc.quiz) {
+            try {
+              const { listQuizzes } = await import("@/lib/api/library");
+              const res = await listQuizzes();
+              const matched = (res.quizzes || []).find(
+                (q: any) =>
+                  (proc.quizId && q.id === proc.quizId) ||
+                  (q.procedureId &&
+                    (q.procedureId === proc.id ||
+                      q.procedureId === proc.slug)) ||
+                  (proc.titleEn &&
+                    q.nameEn &&
+                    q.nameEn.toLowerCase() === proc.titleEn.toLowerCase()),
+              );
+              if (matched?.questions?.length) {
+                fullProc = {
+                  ...proc,
+                  quizId: matched.id,
+                  quiz: {
+                    attached: matched.attached ?? true,
+                    questions: matched.questions,
+                  },
+                };
+              }
+            } catch {
+              // ignore
+            }
+          }
+
           setLinkedProceduresMap((prev) => ({
             ...prev,
             [id]: fullProc,
             ...(fullProc.slug ? { [fullProc.slug]: fullProc } : {}),
           }));
         })
-        .catch(async () => {
-          try {
-            const { listAvailableSops } = await import("@/lib/mock-training");
-            const match = listAvailableSops().find(
-              (p) => p.id === id || p.slug === id,
-            );
-            if (isMounted && match) {
-              setLinkedProceduresMap((prev) => ({
-                ...prev,
-                [id]: match,
-                ...(match.slug ? { [match.slug]: match } : {}),
-              }));
-            }
-          } catch {
-            // ignore
-          }
+        .catch(() => {
+          // Procedure not found or offline
         });
     }
     return () => {
@@ -325,38 +351,75 @@ export function ChapterContentEditor({
     [],
   );
 
-  // Auto-prefill linked procedure questions into the chapter quiz if not authored yet
+  // Auto-prefill linked procedure questions into the chapter quiz
   React.useEffect(() => {
     if (availableLinkedQuestions.length > 0) {
       setQuiz((prev) => {
-        // If the chapter quiz already has authored questions, preserve them
-        if (hasAuthoredQuestions(prev)) return prev;
+        const existingQuestions = prev?.questions ?? [];
+        const existingSourceProcIds = new Set(
+          existingQuestions.map((q) => q.sourceProcedureId).filter(Boolean),
+        );
 
-        const importedQuestions: ProcedureQuizQuestion[] = [];
-        availableLinkedQuestions.forEach(({ procedure, questions }) => {
-          const procTitle = isEs
-            ? procedure.titleEs || procedure.titleEn
-            : procedure.titleEn || procedure.titleEs;
-          questions.forEach((q) => {
-            importedQuestions.push({
-              ...q,
-              id:
-                q.id ||
-                `q-imp-${procedure.id}-${Math.random().toString(36).slice(2, 8)}`,
-              sourceProcedureId: procedure.id,
-              sourceProcedureTitle: procTitle,
+        // If quiz has no authored questions yet, populate all linked questions
+        if (!hasAuthoredQuestions(prev)) {
+          const importedQuestions: ProcedureQuizQuestion[] = [];
+          availableLinkedQuestions.forEach(({ procedure, questions }) => {
+            const procTitle = isEs
+              ? procedure.titleEs || procedure.titleEn
+              : procedure.titleEn || procedure.titleEs;
+            questions.forEach((q) => {
+              importedQuestions.push({
+                ...q,
+                id:
+                  q.id ||
+                  `q-imp-${procedure.id}-${Math.random().toString(36).slice(2, 8)}`,
+                sourceProcedureId: procedure.id,
+                sourceProcedureTitle: procTitle,
+              });
             });
           });
+
+          if (importedQuestions.length === 0) return prev;
+
+          return {
+            attached: true,
+            questions: importedQuestions,
+            minCorrectAnswers: Math.max(
+              1,
+              Math.ceil(importedQuestions.length * 0.7),
+            ),
+          };
+        }
+
+        // If quiz already has authored questions, add questions from newly linked procedures
+        const toAdd: ProcedureQuizQuestion[] = [];
+        availableLinkedQuestions.forEach(({ procedure, questions }) => {
+          if (!existingSourceProcIds.has(procedure.id)) {
+            const procTitle = isEs
+              ? procedure.titleEs || procedure.titleEn
+              : procedure.titleEn || procedure.titleEs;
+            questions.forEach((q) => {
+              toAdd.push({
+                ...q,
+                id:
+                  q.id ||
+                  `q-imp-${procedure.id}-${Math.random().toString(36).slice(2, 8)}`,
+                sourceProcedureId: procedure.id,
+                sourceProcedureTitle: procTitle,
+              });
+            });
+          }
         });
 
-        if (importedQuestions.length === 0) return prev;
+        if (toAdd.length === 0) return prev;
 
+        const merged = [...existingQuestions, ...toAdd];
         return {
           attached: true,
-          questions: importedQuestions,
+          questions: merged,
           minCorrectAnswers: Math.max(
-            1,
-            Math.ceil(importedQuestions.length * 0.7),
+            prev?.minCorrectAnswers || 1,
+            Math.ceil(merged.length * 0.7),
           ),
         };
       });
@@ -579,10 +642,24 @@ export function ChapterContentEditor({
       quiz.questions.some(isQuizQuestionAuthored),
     );
 
+    const primaryProcId =
+      linkedProcedureIds[0] || initialChapter?.procedureId || undefined;
+    const primaryProc = primaryProcId
+      ? linkedProceduresMap[primaryProcId]
+      : undefined;
+
     const saved: EditorChapter = {
       id: initialChapter?.id || `chapter-${Date.now()}`,
       title: resolvedTitle,
       subtitle: resolvedSubtitle || undefined,
+      procedureId: primaryProcId,
+      procedureSlug:
+        primaryProc?.slug || initialChapter?.procedureSlug || undefined,
+      quizId:
+        (quiz as any)?.id ||
+        primaryProc?.quizId ||
+        initialChapter?.quizId ||
+        undefined,
       blocks,
       quiz:
         hasQuestions && quiz
@@ -765,8 +842,11 @@ export function ChapterContentEditor({
               </div>
 
               {/* Passing requirement badge */}
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 shrink-0 shadow-2xs">
-                <LuTarget className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span
+                className="inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-ok-tint)] text-[var(--color-ok-700)] border border-[var(--color-ok)]/40 shrink-0 shadow-xs"
+                style={{ padding: "6px 14px", gap: "8px" }}
+              >
+                <LuTarget className="w-4 h-4 text-[var(--color-ok-700)] shrink-0" />
                 <span>
                   {quiz.minCorrectAnswers ??
                     Math.max(1, Math.ceil(quiz.questions.length * 0.7))}{" "}
@@ -787,12 +867,16 @@ export function ChapterContentEditor({
                 return (
                   <div
                     key={q.id || qIdx}
-                    className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-6 shadow-xs space-y-4"
+                    className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-xs space-y-4"
+                    style={{ padding: "20px 24px" }}
                   >
                     {/* Linked procedure badge */}
                     {q.sourceProcedureTitle ? (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200 border border-amber-300/80 dark:border-amber-700/60 shadow-2xs">
-                        <LuBookOpen className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <div
+                        className="inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn)]/40 shadow-xs"
+                        style={{ padding: "6px 14px", gap: "8px" }}
+                      >
+                        <LuBookOpen className="w-4 h-4 text-[var(--color-warn-ink)] shrink-0" />
                         <span>
                           {previewLang === "es"
                             ? "Del procedimiento:"
@@ -818,7 +902,7 @@ export function ChapterContentEditor({
                     </div>
 
                     {/* Choices vertical list */}
-                    <div className="flex flex-col gap-3.5 pt-2">
+                    <div className="flex flex-col space-y-3 pt-2">
                       {q.choices.map((c, cIdx) => {
                         const label =
                           typeof c.label === "string"
@@ -833,18 +917,19 @@ export function ChapterContentEditor({
                           <div
                             key={c.id || cIdx}
                             className={cn(
-                              "flex items-center justify-between gap-3.5 rounded-xl border p-4 transition-all",
+                              "flex items-center justify-between rounded-xl border transition-all",
                               isCorrect
-                                ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 text-[var(--color-ink)] shadow-2xs"
+                                ? "border-[var(--color-ok)] bg-[var(--color-ok-tint)] text-[var(--color-ink)] shadow-xs"
                                 : "border-[var(--color-line-2)] bg-[var(--color-wash)]/40 text-[var(--color-ink)]",
                             )}
+                            style={{ padding: "14px 18px", gap: "12px" }}
                           >
-                            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className="flex items-center min-w-0 flex-1">
                               <span
                                 className={cn(
-                                  "flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold",
+                                  "flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold mr-3",
                                   isCorrect
-                                    ? "bg-emerald-600 text-white shadow-2xs"
+                                    ? "bg-[var(--color-ok)] text-white shadow-xs"
                                     : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] border border-[var(--color-line-2)]",
                                 )}
                               >
@@ -859,11 +944,16 @@ export function ChapterContentEditor({
                             </div>
 
                             {isCorrect && (
-                              <span className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-200 bg-emerald-100/80 dark:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 px-3 py-1 rounded-full shadow-2xs">
-                                <LuCheck className="w-3.5 h-3.5 stroke-[2.5]" />
-                                {previewLang === "es"
-                                  ? "Respuesta correcta"
-                                  : "Correct answer"}
+                              <span
+                                className="shrink-0 inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-surface)] text-[var(--color-ok-700)] border border-[var(--color-ok)]/40 shadow-xs"
+                                style={{ padding: "4px 12px", gap: "6px" }}
+                              >
+                                <LuCheck className="w-4 h-4 stroke-[2.5] text-[var(--color-ok-700)]" />
+                                <span>
+                                  {previewLang === "es"
+                                    ? "Respuesta correcta"
+                                    : "Correct answer"}
+                                </span>
                               </span>
                             )}
                           </div>
@@ -890,9 +980,7 @@ export function ChapterContentEditor({
           className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
         >
           <LuArrowLeft className="w-4 h-4" />
-          <span>
-            {isEs ? "Volver al curso" : "Back to course"} ({courseName})
-          </span>
+          <span>{isEs ? "Volver al curso" : "Back to course"}</span>
         </button>
 
         <div className="mt-2 flex items-center justify-between gap-4">
@@ -1040,14 +1128,17 @@ export function ChapterContentEditor({
         >
           {/* Linked procedures with existing quiz banner */}
           {availableLinkedQuestions.length > 0 && (
-            <div className="rounded-xl border border-amber-300/70 bg-amber-50/60 dark:bg-amber-950/20 dark:border-amber-800/40 p-4 mb-6 shadow-2xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div
+              className="rounded-xl border border-[var(--color-warn)]/40 bg-[var(--color-warn-tint)] mb-6 shadow-xs"
+              style={{ padding: "16px 20px" }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-2xs">
-                    <LuBookOpen className="w-4 h-4" />
+                  <div className="flex w-9 h-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-warn)] text-white shadow-xs">
+                    <LuBookOpen className="w-5 h-5 p-1" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-[var(--color-ink)]">
+                    <h4 className="text-sm font-bold text-[var(--color-warn-ink)]">
                       {isEs
                         ? "Preguntas de procedimientos vinculados incluidas"
                         : "Linked procedure questions included"}
@@ -1073,18 +1164,22 @@ export function ChapterContentEditor({
                     return (
                       <span
                         key={procedure.id}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white dark:bg-[var(--color-surface)] border border-amber-300/80 text-[var(--color-ink)] shadow-2xs"
+                        className="inline-flex items-center rounded-full text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-warn)]/50 text-[var(--color-ink)] shadow-xs"
+                        style={{ padding: "6px 14px", gap: "8px" }}
                       >
-                        <LuBookOpen className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <LuBookOpen className="w-4 h-4 text-[var(--color-warn-ink)] shrink-0" />
                         <span className="font-semibold">{title}</span>
                         <span className="text-[11px] text-[var(--color-ink-2)]">
                           ({questions.length}{" "}
                           {questions.length === 1 ? "question" : "questions"})
                         </span>
                         {countInQuiz > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full ml-1">
-                            <LuCheck className="w-3 h-3 stroke-[2.5]" />
-                            {countInQuiz} in quiz
+                          <span
+                            className="inline-flex items-center font-bold text-[var(--color-ok-700)] bg-[var(--color-ok-tint)] border border-[var(--color-ok)]/30 rounded-full text-[11px] ml-1"
+                            style={{ padding: "2px 8px", gap: "4px" }}
+                          >
+                            <LuCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+                            <span>{countInQuiz} in quiz</span>
                           </span>
                         )}
                       </span>

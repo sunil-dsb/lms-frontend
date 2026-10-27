@@ -419,11 +419,14 @@ export function QuizEditor({
                   return (
                     <div key={lang} className="bli-card is-active">
                       {q.sourceProcedureTitle ? (
-                        <div className="border-b border-amber-200/80 dark:border-amber-800/40 bg-amber-50/80 dark:bg-amber-950/40 px-4 py-2 flex items-center gap-2">
-                          <span className="inline-flex size-5 items-center justify-center rounded-full bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 shrink-0">
-                            <LuBookOpen className="w-3 h-3 text-amber-700 dark:text-amber-300" />
+                        <div
+                          className="border-b border-[var(--color-warn)]/30 bg-[var(--color-warn-tint)] flex items-center"
+                          style={{ padding: "8px 16px", gap: "8px" }}
+                        >
+                          <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-[var(--color-warn)] text-white shrink-0">
+                            <LuBookOpen className="w-3 h-3 text-white" />
                           </span>
-                          <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                          <span className="text-xs font-semibold text-[var(--color-warn-ink)]">
                             From procedure: {q.sourceProcedureTitle}
                           </span>
                         </div>

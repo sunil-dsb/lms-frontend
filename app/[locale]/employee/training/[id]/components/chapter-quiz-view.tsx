@@ -439,8 +439,11 @@ export function ChapterQuizView({
         {/* Question Eyebrow & Prompt */}
         <div className="space-y-2 pt-2">
           {currentQuestion?.sourceProcedureTitle ? (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--color-brand-tint-2)]/50 text-[var(--color-brand-700)] dark:text-[var(--color-brand-300)] border border-[var(--color-brand-600)]/20">
-              <LuBookOpen className="w-3.5 h-3.5 text-[var(--color-brand-600)]" />
+            <div
+              className="inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-brand-tint-2)]/50 text-[var(--color-brand-700)] dark:text-[var(--color-brand-300)] border border-[var(--color-brand-600)]/20"
+              style={{ padding: "6px 14px", gap: "8px" }}
+            >
+              <LuBookOpen className="w-4 h-4 text-[var(--color-brand-600)] shrink-0" />
               <span>
                 {isEs
                   ? "Relacionado al procedimiento:"
@@ -473,8 +476,8 @@ export function ChapterQuizView({
               <label
                 key={choice.id || cIdx}
                 onClick={() => handleSelectOption(choice.id)}
-                style={{ gap: "14px" }}
-                className={`group flex items-center rounded-2xl p-4 transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer select-none ${
+                style={{ gap: "14px", padding: "14px 18px" }}
+                className={`group flex items-center rounded-2xl transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer select-none ${
                   isSelected
                     ? "border-2 border-[var(--color-brand-600)] bg-[var(--color-brand-tint-2)]/30 shadow-xs"
                     : "border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line)] hover:shadow-xs"
@@ -491,9 +494,10 @@ export function ChapterQuizView({
                 {/* Option letter chip */}
                 <span
                   aria-hidden="true"
-                  className={`flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
+                  style={{ marginRight: "12px" }}
+                  className={`flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
                     isSelected
-                      ? "bg-[var(--color-brand-600)] text-white"
+                      ? "bg-[var(--color-brand-600)] text-white shadow-xs"
                       : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] group-hover:bg-[var(--color-panel)]"
                   }`}
                 >
