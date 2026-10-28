@@ -142,7 +142,8 @@ export function useProcedureEditorModel({
   React.useEffect(() => {
     if (initial?.quizId && !savedQuiz) {
       fetchQuizById(initial.quizId).then((loaded) => {
-        if (loaded) {
+        // Only load into the procedure editor if the quiz belongs to a procedure
+        if (loaded && (!loaded.quizType || loaded.quizType === "procedure")) {
           setQuiz({
             questions: loaded.questions,
             attached: loaded.attached ?? true,

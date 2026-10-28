@@ -19,10 +19,20 @@ export const PROCEDURES_QUERY_KEY = ["procedures"] as const;
 export function useProcedures(
   options: ProcedureFilterOptions = {},
   isAdmin = false,
+  enabled = true,
 ) {
   return useQuery({
-    queryKey: [...PROCEDURES_QUERY_KEY, options, { isAdmin }],
+    queryKey: [
+      ...PROCEDURES_QUERY_KEY,
+      options.search || "",
+      options.status || "",
+      options.page || 1,
+      options.limit || 200,
+      { isAdmin },
+    ],
     queryFn: () => fetchProcedures(options, isAdmin),
+    enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -31,6 +41,7 @@ export function useProcedure(id: string, isAdmin = false) {
     queryKey: [...PROCEDURES_QUERY_KEY, id, { isAdmin }],
     queryFn: () => fetchProcedureById(id, isAdmin),
     enabled: Boolean(id),
+    staleTime: 5 * 60 * 1000,
   });
 }
 

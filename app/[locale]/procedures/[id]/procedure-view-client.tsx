@@ -102,13 +102,17 @@ export function ProcedureViewClient({
       return getCachedProcedure(slugOrId);
     },
     // Only the first paint matters — the mount refetch below takes over.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [initialProcedure, slugOrId, queryClient],
+  );
+  const cachedHasBlocks = Boolean(
+    (cached?.bodyEn?.blocks?.length ?? 0) > 0 ||
+    (cached?.bodyEs?.blocks?.length ?? 0) > 0,
   );
   const [proc, setProc] = React.useState<Procedure | null>(() =>
     cached && canRead(cached, employee) ? cached : null,
   );
-  const [isLoading, setIsLoading] = React.useState(!proc);
+  const [isLoading, setIsLoading] = React.useState(!proc || !cachedHasBlocks);
   const [notFoundState, setNotFoundState] = React.useState(false);
 
   const [bannerDismissed, setBannerDismissed] = React.useState(false);

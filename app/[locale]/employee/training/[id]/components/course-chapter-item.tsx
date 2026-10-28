@@ -2,7 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { LuCheck, LuChevronRight, LuLock } from "react-icons/lu";
+import {
+  LuBookOpen,
+  LuCheck,
+  LuChevronRight,
+  LuLock,
+  LuSparkles,
+} from "react-icons/lu";
 import type { CourseChapter } from "@/lib/course-chapters-data";
 import { ChapterStatusIndicator } from "./chapter-status-indicator";
 
@@ -33,6 +39,68 @@ export function CourseChapterItem({
   const isComplete = chapter.status === "complete";
   const isActive = chapter.status === "active";
   const isLocked = chapter.status === "locked";
+
+  // Single linked procedure title resolution
+  const [singleProcTitle, setSingleProcTitle] = React.useState<string | null>(
+    null,
+  );
+
+  React.useEffect(() => {
+    const isSingle =
+      chapter.linkedProceduresCount === 1 ||
+      (!chapter.linkedProceduresCount && chapter.hasProcedure);
+
+    if (isSingle) {
+      const procId =
+        chapter.procedureId ||
+        chapter.procedureSlug ||
+        (
+          chapter.blocks?.find(
+            (b: any) =>
+              b.kind === "linked_procedures" &&
+              Array.isArray(b.procedureIds) &&
+              b.procedureIds.length > 0,
+          ) as any
+        )?.procedureIds?.[0];
+
+      if (procId) {
+        import("@/services/library/api")
+          .then(({ getCachedProcedure, fetchProcedureById }) => {
+            const cached = getCachedProcedure(procId);
+            if (cached) {
+              const title = isEs
+                ? cached.titleEs || cached.titleEn
+                : cached.titleEn || cached.titleEs;
+              if (title) setSingleProcTitle(title);
+            } else {
+              fetchProcedureById(procId, true)
+                .then((p) => {
+                  if (p) {
+                    const title = isEs
+                      ? p.titleEs || p.titleEn
+                      : p.titleEn || p.titleEs;
+                    if (title) setSingleProcTitle(title);
+                  }
+                })
+                .catch(() => {});
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [chapter, isEs]);
+
+  const linkedProcedureLabel = React.useMemo(() => {
+    if (chapter.linkedProceduresCount && chapter.linkedProceduresCount > 1) {
+      return `${chapter.linkedProceduresCount} ${
+        isEs ? "procedimientos vinculados" : "linked procedures"
+      }`;
+    }
+    if (singleProcTitle) {
+      return singleProcTitle;
+    }
+    return isEs ? "Procedimiento vinculado" : "Linked procedure";
+  }, [chapter.linkedProceduresCount, singleProcTitle, isEs]);
 
   const content = (
     <div className="flex items-center justify-between" style={{ gap: "14px" }}>
@@ -93,13 +161,13 @@ export function CourseChapterItem({
       <div className="min-w-0 flex-1">
         {/* Uppercase CHAPTER N line + Up next badge */}
         <div className="flex items-center gap-2">
-          <span className="font-[family-name:var(--font-ui)] text-[11px] font-bold tracking-wider uppercase text-[var(--color-ink-3)]">
+          <span className="text-[11px] font-medium tracking-wider uppercase text-[var(--color-ink-3)]">
             {isEs ? `CAPÍTULO ${chapter.number}` : `CHAPTER ${chapter.number}`}
           </span>
 
           {isActive && (
             <span
-              className="inline-flex items-center rounded-full font-semibold select-none"
+              className="inline-flex items-center rounded-full font-medium select-none"
               style={{
                 backgroundColor: "var(--brand-tint, #FCE8D4)",
                 color: "var(--brand-700, #A8371F)",
@@ -115,7 +183,7 @@ export function CourseChapterItem({
 
         {/* Chapter Title */}
         <h2
-          className={`mt-0.5 font-[family-name:var(--font-ui)] text-base leading-snug font-bold ${
+          className={`mt-0.5 text-[15px] font-medium leading-snug ${
             isLocked ? "text-[var(--color-ink-2)]" : "text-[var(--color-ink)]"
           }`}
         >
@@ -129,6 +197,45 @@ export function CourseChapterItem({
           subtitle={chapter.subtitle}
           className="mt-1"
         />
+
+        {/* Chapter Metadata: Linked Procedure & Quiz Questions Count */}
+        <div
+          className="mt-2.5 flex flex-wrap items-center gap-2.5 text-xs text-[var(--color-ink-2)]"
+          style={{ gap: "10px" }}
+        >
+          {chapter.hasProcedure && (
+            <span
+              style={{ padding: "5px 12px", gap: "6px" }}
+              className="inline-flex items-center font-medium text-[var(--color-brand-600)] bg-[var(--color-brand-50)] dark:bg-[var(--color-brand-950)] rounded-lg border border-[var(--color-brand-200)] dark:border-[var(--color-brand-800)] text-xs shrink-0 shadow-2xs"
+            >
+              <LuBookOpen className="w-3.5 h-3.5 shrink-0" />
+              <span>{linkedProcedureLabel}</span>
+            </span>
+          )}
+          {typeof chapter.quizQuestionsCount === "number" &&
+          chapter.quizQuestionsCount > 0 ? (
+            <span
+              style={{ padding: "5px 12px", gap: "6px" }}
+              className="inline-flex items-center font-medium text-[var(--color-ink-2)] bg-[var(--color-wash)] rounded-lg border border-[var(--color-line-2)] text-xs shrink-0 shadow-2xs"
+            >
+              <LuSparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>
+                {chapter.quizQuestionsCount}{" "}
+                {chapter.quizQuestionsCount === 1
+                  ? isEs
+                    ? "pregunta de cuestionario"
+                    : "quiz question"
+                  : isEs
+                    ? "preguntas de cuestionario"
+                    : "quiz questions"}
+              </span>
+            </span>
+          ) : (
+            <span className="text-xs text-[var(--color-ink-3)]">
+              {isEs ? "Sin cuestionario" : "No quiz"}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Trailing chevron or status glyph */}

@@ -159,13 +159,14 @@ export function ChapterLearnView({
         </div>
 
         {/* If a real procedure is linked, render it in full detailed view with CookMode */}
-        {procedure && employee ? (
+        {procedure ? (
           <div className="pt-2">
             <ProcedureArticleBody
               proc={procedure}
               employee={employee}
               effectiveRole="employee"
               locale={locale}
+              hideQuiz={true}
               docBar={
                 hasCookMode ? (
                   <div className="flex items-center justify-end pb-3">

@@ -460,31 +460,57 @@ export async function listQuizzes(): Promise<{ quizzes: Quiz[] }> {
   return { quizzes: [...getQuizzesStore()] };
 }
 
+const quizCache = new Map<string, Quiz>();
+const quizInFlight = new Map<string, Promise<Quiz | null>>();
+
+export function invalidateQuizCache(id?: string): void {
+  if (id) quizCache.delete(id);
+  else quizCache.clear();
+}
+
 /** Fetch a single quiz from GET /api/v1/quizzes/:id and cache it locally. */
 export async function fetchQuizById(id: string): Promise<Quiz | null> {
   if (!id) return null;
-  try {
-    const res = await http.get<any>(`/api/v1/quizzes/${id}`);
-    const raw = res.data?.data?.quiz ?? res.data?.data ?? res.data;
-    if (raw && (raw.id || raw.questions)) {
-      const q = normalizeQuiz(raw);
-      const store = getQuizzesStore();
-      const idx = store.findIndex((s) => s.id === q.id);
-      if (idx !== -1) {
-        store[idx] = q;
-      } else {
-        store.unshift(q);
-      }
-      setStored("quizzes", store);
-      return q;
-    }
-  } catch (err) {
-    console.warn(
-      `fetchQuizById(${id}) API call failed, using cached fallback:`,
-      err,
-    );
+  if (quizCache.has(id)) {
+    return quizCache.get(id)!;
   }
-  return getQuizById(id);
+  if (quizInFlight.has(id)) {
+    return quizInFlight.get(id)!;
+  }
+
+  const promise = (async () => {
+    try {
+      const res = await http.get<any>(`/api/v1/quizzes/${id}`);
+      const raw = res.data?.data?.quiz ?? res.data?.data ?? res.data;
+      if (raw && (raw.id || raw.questions)) {
+        const q = normalizeQuiz(raw);
+        const store = getQuizzesStore();
+        const idx = store.findIndex((s) => s.id === q.id);
+        if (idx !== -1) {
+          store[idx] = q;
+        } else {
+          store.unshift(q);
+        }
+        setStored("quizzes", store);
+        quizCache.set(id, q);
+        if (q.id) quizCache.set(q.id, q);
+        return q;
+      }
+    } catch (err) {
+      console.warn(
+        `fetchQuizById(${id}) API call failed, using cached fallback:`,
+        err,
+      );
+    } finally {
+      quizInFlight.delete(id);
+    }
+    const fallback = getQuizById(id);
+    if (fallback) quizCache.set(id, fallback);
+    return fallback;
+  })();
+
+  quizInFlight.set(id, promise);
+  return promise;
 }
 
 /** Sync lookup for a single quiz by id from the cached store. */
@@ -609,7 +635,7 @@ export async function updateQuiz(
     if (patch.questions) {
       putPayload.questions = mapQuestionsForBackend(patch.questions);
     }
-    const res = await http.put<any>(`/api/v1/quizzes/${id}`, putPayload);
+    const res = await http.patch<any>(`/api/v1/quizzes/${id}`, putPayload);
     const raw = res.data?.data?.quiz ?? res.data?.data ?? res.data;
     if (raw && (raw.id || raw.questions)) {
       const updated = normalizeQuiz({

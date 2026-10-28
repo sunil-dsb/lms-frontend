@@ -165,15 +165,7 @@ export default async function EmployeeTrainingCoursePage({
 
     // If chapter doesn't have an inline quiz, resolve from linked procedure
     if ((!chapterQuiz || !chapterQuiz.questions?.length) && chapterDetail) {
-      const procId =
-        chapterDetail.procedureId ||
-        chapterDetail.procedureSlug ||
-        chapterDetail.blocks
-          ?.filter(
-            (b): b is Extract<ProcedureBlock, { kind: "linked_procedures" }> =>
-              b.kind === "linked_procedures",
-          )
-          ?.flatMap((b) => b.procedureIds || [])[0];
+      const procId = chapterDetail.procedureId || chapterDetail.procedureSlug;
 
       if (procId) {
         try {

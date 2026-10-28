@@ -16,6 +16,7 @@ interface CourseChaptersViewProps {
   extraHeaderActions?: React.ReactNode;
   /** Sidebar width in px to offset the fixed sticky button (admin layout). Default 0. */
   sidebarOffsetPx?: number;
+  showProgress?: boolean;
 }
 
 /**
@@ -35,6 +36,7 @@ export function CourseChaptersView({
   backLabel,
   extraHeaderActions,
   sidebarOffsetPx = 0,
+  showProgress = true,
 }: CourseChaptersViewProps): React.ReactElement {
   const t = useTranslations("employee.training");
   const {
@@ -157,6 +159,7 @@ export function CourseChaptersView({
           backLabel={backLabel ?? t("navTraining")}
           backHref={backHref}
           extraActions={extraHeaderActions}
+          showProgress={showProgress}
         />
 
         {/* Course Chapters Cards List */}

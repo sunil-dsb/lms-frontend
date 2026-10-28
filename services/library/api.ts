@@ -125,12 +125,7 @@ export async function fetchProcedures(
   return { procedures, total };
 }
 
-/** Backend procedures carry `subcategory: { id, categoryId, … }` but no
- *  category object, so every backend row reads as "General" and no category
- *  filter can match it. This resolves each row's category from the backend
- *  category list (one batched call, in parallel-safe position) and folds the
- *  in-use subcategories into their categories for the dropdowns. Failures
- *  keep the old behavior (null category) — the list still renders. */
+/** Resolves each row's category from backend category list. */
 async function resolveBackendCategories(
   procedures: Procedure[],
   cookieHeader?: string,
@@ -174,9 +169,7 @@ async function resolveBackendCategories(
         ];
       }
     }
-  } catch {
-    // Backend categories unavailable — rows keep category: null (General).
-  }
+  } catch {}
 }
 
 export async function fetchAssignedProcedures(
@@ -226,19 +219,68 @@ export async function fetchAssignedProcedures(
   return { procedures, total, meta: data.data?.meta };
 }
 
+const procedureCache = new Map<string, Procedure>();
+const procedureInFlight = new Map<string, Promise<Procedure>>();
+
+export function invalidateProcedureCache(idOrSlug?: string): void {
+  if (idOrSlug) procedureCache.delete(idOrSlug);
+  else procedureCache.clear();
+}
+
+export function getCachedProcedure(idOrSlug: string): Procedure | undefined {
+  if (!idOrSlug) return undefined;
+  return procedureCache.get(idOrSlug);
+}
+
+function hasProcedureBlocks(proc: Procedure | null | undefined): boolean {
+  if (!proc) return false;
+  return (
+    (proc as any)._isDetail === true ||
+    (proc.bodyEn?.blocks?.length ?? 0) > 0 ||
+    (proc.bodyEs?.blocks?.length ?? 0) > 0
+  );
+}
+
 export async function fetchProcedureById(
   slugOrId: string,
   _isAdmin = false,
   cookieHeader?: string,
 ): Promise<Procedure> {
-  const headers = makeHeaders(cookieHeader);
+  if (!slugOrId) throw new Error("Missing procedure id or slug");
+  if (!cookieHeader && procedureCache.has(slugOrId)) {
+    const cached = procedureCache.get(slugOrId)!;
+    if (hasProcedureBlocks(cached)) {
+      return cached;
+    }
+    // Evict shallow procedure that lacks body blocks
+    procedureCache.delete(slugOrId);
+  }
+  if (!cookieHeader && procedureInFlight.has(slugOrId)) {
+    return procedureInFlight.get(slugOrId)!;
+  }
 
-  // If slugOrId is a UUID, the backend GET /api/v1/procedures/:slug endpoint matches
-  // by slug, not id. Resolve the slug from the procedure catalog first to prevent a 404 error.
-  if (isUuid(slugOrId)) {
-    const { procedures } = await fetchProcedures({}, _isAdmin, cookieHeader);
-    const match = procedures.find((p) => p.id === slugOrId);
-    if (!match) {
+  const promise = (async () => {
+    const headers = makeHeaders(cookieHeader);
+    try {
+      const { data } = await http.get<{
+        success: boolean;
+        data: { procedure: Procedure };
+      }>(LIBRARY_ENDPOINTS.GET(slugOrId), {
+        headers: Object.keys(headers).length ? headers : undefined,
+      });
+
+      if (data.data?.procedure) {
+        const proc = normalizeBackendProcedure(data.data.procedure);
+        (proc as any)._isDetail = true;
+        await resolveBackendCategories([proc], cookieHeader);
+        if (!cookieHeader) {
+          if (proc.id) procedureCache.set(proc.id, proc);
+          if (proc.slug) procedureCache.set(proc.slug, proc);
+          procedureCache.set(slugOrId, proc);
+        }
+        return proc;
+      }
+    } catch (err) {
       try {
         const { listAvailableSops } = await import("@/lib/mock-training");
         const mockMatch = listAvailableSops().find(
@@ -248,41 +290,15 @@ export async function fetchProcedureById(
       } catch {
         // ignore
       }
-      throw new Error(`Procedure not found: ${slugOrId}`);
+      throw err;
+    } finally {
+      if (!cookieHeader) procedureInFlight.delete(slugOrId);
     }
-    if (match.slug && match.slug !== slugOrId) {
-      return fetchProcedureById(match.slug, _isAdmin, cookieHeader);
-    }
-    return match;
-  }
+    throw new Error(`Procedure not found: ${slugOrId}`);
+  })();
 
-  try {
-    const { data } = await http.get<{
-      success: boolean;
-      data: { procedure: Procedure };
-    }>(LIBRARY_ENDPOINTS.GET(slugOrId), {
-      headers: Object.keys(headers).length ? headers : undefined,
-    });
-
-    if (data.data?.procedure) {
-      const proc = normalizeBackendProcedure(data.data.procedure);
-      await resolveBackendCategories([proc], cookieHeader);
-      return proc;
-    }
-  } catch (err) {
-    try {
-      const { listAvailableSops } = await import("@/lib/mock-training");
-      const mockMatch = listAvailableSops().find(
-        (p) => p.id === slugOrId || p.slug === slugOrId,
-      );
-      if (mockMatch) return mockMatch;
-    } catch {
-      // ignore
-    }
-    throw err;
-  }
-
-  throw new Error(`Procedure not found: ${slugOrId}`);
+  if (!cookieHeader) procedureInFlight.set(slugOrId, promise);
+  return promise;
 }
 
 /** Backend PUT/POST validate against the full create schema, so every
@@ -461,7 +477,7 @@ export async function updateProcedure(
   const payload = buildProcedurePayload(input);
   const headers = makeHeaders(cookieHeader);
 
-  const { data } = await http.put<{
+  const { data } = await http.patch<{
     success: boolean;
     message: string;
     data: { procedure: Procedure };

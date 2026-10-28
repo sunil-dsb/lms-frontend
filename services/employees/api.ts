@@ -229,7 +229,7 @@ export async function updateEmployee(
   employeeId: string,
   input: UpdateEmployeeRequest,
 ): Promise<{ employee: AdminEmployee; inviteUrl?: string }> {
-  const { data } = await http.put<{
+  const { data } = await http.patch<{
     success: boolean;
     data: {
       employee: AdminEmployee;

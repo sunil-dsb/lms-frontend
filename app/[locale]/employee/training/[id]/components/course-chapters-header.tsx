@@ -17,6 +17,7 @@ interface CourseChaptersHeaderProps {
   backLabel: string;
   backHref?: string;
   extraActions?: React.ReactNode;
+  showProgress?: boolean;
 }
 
 /**
@@ -25,7 +26,7 @@ interface CourseChaptersHeaderProps {
  * - Course Title & Purpose
  * - Metadata badges row: [Due in 2 days] [⏱ About 8 min left]
  *   (Strictly NO Required / Everyone tags per user instruction)
- * - Progress bar row: terracotta fill + "3 of 5 · 60%"
+ * - Progress bar row: terracotta fill + "3 of 5 · 60%" (hidden in admin view)
  */
 export function CourseChaptersHeader({
   locale,
@@ -39,6 +40,7 @@ export function CourseChaptersHeader({
   backLabel,
   backHref,
   extraActions,
+  showProgress = true,
 }: CourseChaptersHeaderProps): React.ReactElement {
   const isEs = locale === "es";
 
@@ -46,9 +48,13 @@ export function CourseChaptersHeader({
     ? `${completedChaptersCount} de ${totalChaptersCount} · ${progressPercent}%`
     : `${completedChaptersCount} of ${totalChaptersCount} · ${progressPercent}%`;
 
-  const timeLeftText = isEs
-    ? `Aprox. ${estimatedMinutesLeft ?? 8} min restantes`
-    : `About ${estimatedMinutesLeft ?? 8} min left`;
+  const timeLeftText = showProgress
+    ? isEs
+      ? `Aprox. ${estimatedMinutesLeft ?? 0} min restantes`
+      : `About ${estimatedMinutesLeft ?? 0} min left`
+    : isEs
+      ? `Aprox. ${estimatedMinutesLeft ?? 0} min`
+      : `About ${estimatedMinutesLeft ?? 0} min`;
 
   return (
     <header className="space-y-4">
@@ -66,11 +72,11 @@ export function CourseChaptersHeader({
 
       {/* Course Title & Purpose */}
       <div className="space-y-1.5">
-        <h1 className="font-[family-name:var(--font-ui)] text-xl sm:text-2xl font-semibold tracking-tight text-[var(--color-ink)]">
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--color-ink)]">
           {title}
         </h1>
         {purpose ? (
-          <p className="text-sm sm:text-base font-normal text-[var(--color-ink-2)] leading-relaxed">
+          <p className="text-sm sm:text-base font-normal leading-relaxed text-[var(--color-ink-2)]">
             {purpose}
           </p>
         ) : null}
@@ -103,25 +109,27 @@ export function CourseChaptersHeader({
         )}
       </div>
 
-      {/* Progress Bar Row */}
-      <div className="pt-2 flex items-center gap-3">
-        <div
-          role="progressbar"
-          aria-valuenow={progressPercent}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`${title} progress`}
-          className="h-2 flex-1 rounded-full bg-[var(--color-panel-2)] overflow-hidden"
-        >
+      {/* Progress Bar Row - Hidden in Admin View */}
+      {showProgress && (
+        <div className="pt-2 flex items-center gap-3">
           <div
-            className="h-full rounded-full bg-[var(--color-brand-600)] transition-all duration-[var(--dur)] ease-[var(--ease)]"
-            style={{ width: `${progressPercent}%` }}
-          />
+            role="progressbar"
+            aria-valuenow={progressPercent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${title} progress`}
+            className="h-2 flex-1 rounded-full bg-[var(--color-panel-2)] overflow-hidden"
+          >
+            <div
+              className="h-full rounded-full bg-[var(--color-brand-600)] transition-all duration-[var(--dur)] ease-[var(--ease)]"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <span className="shrink-0 text-right font-[family-name:var(--font-ui)] text-xs sm:text-sm font-bold text-[var(--color-ink)] min-w-[70px]">
+            {progressLabel}
+          </span>
         </div>
-        <span className="shrink-0 text-right font-[family-name:var(--font-ui)] text-xs sm:text-sm font-bold text-[var(--color-ink)] min-w-[70px]">
-          {progressLabel}
-        </span>
-      </div>
+      )}
     </header>
   );
 }

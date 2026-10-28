@@ -4,8 +4,6 @@ import * as React from "react";
 import { LuBookOpen } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import type { Procedure, ProcedureBlock } from "@/lib/types";
-import { listAvailableSops } from "@/lib/mock-training";
-import { useProcedures } from "@/services/library/hooks";
 import { LinkProcedureModal } from "@/components/admin/link-procedure-modal";
 
 interface LinkedProceduresBodyProps {
@@ -28,57 +26,78 @@ export function LinkedProceduresBody({
   const [fetchedProcedures, setFetchedProcedures] = React.useState<
     Record<string, Procedure>
   >({});
+  const fetchedRef = React.useRef<Record<string, Procedure>>({});
+  fetchedRef.current = fetchedProcedures;
 
-  const { data: apiData } = useProcedures({}, true);
-
-  const availableSops = React.useMemo(() => {
-    if (apiData?.procedures && apiData.procedures.length > 0) {
-      return apiData.procedures;
-    }
-    return listAvailableSops();
-  }, [apiData]);
-
-  const byId = React.useMemo(() => {
-    const map = new Map<string, Procedure>();
-    for (const p of availableSops) {
-      map.set(p.id, p);
-      if (p.slug) map.set(p.slug, p);
-    }
-    return map;
-  }, [availableSops]);
-
-  // Fetch any missing procedure directly from the library API by slug/id
+  const fetchingRef = React.useRef<Set<string>>(new Set());
+  const isMountedRef = React.useRef(true);
   React.useEffect(() => {
-    const missingIds = block.procedureIds.filter(
-      (id) => !byId.has(id) && !fetchedProcedures[id],
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Fetch only procedures currently linked to this block by ID/slug
+  React.useEffect(() => {
+    const ids = block.procedureIds || [];
+    const uniqueIds = Array.from(new Set(ids));
+    const missingIds = uniqueIds.filter(
+      (id) =>
+        id &&
+        !fetchedRef.current[id] &&
+        !Object.values(fetchedRef.current).some(
+          (p) => p.id === id || p.slug === id,
+        ) &&
+        !fetchingRef.current.has(id),
     );
     if (missingIds.length === 0) return;
 
-    let isMounted = true;
     for (const id of missingIds) {
+      fetchingRef.current.add(id);
       import("@/services/library/api")
-        .then(({ fetchProcedureById }) => fetchProcedureById(id, true))
+        .then(({ fetchProcedureById, getCachedProcedure }) => {
+          const cached = getCachedProcedure(id);
+          if (cached && isMountedRef.current) {
+            setFetchedProcedures((prev) => ({
+              ...prev,
+              [id]: cached,
+              ...(cached.id ? { [cached.id]: cached } : {}),
+              ...(cached.slug ? { [cached.slug]: cached } : {}),
+            }));
+          }
+          return fetchProcedureById(id, true);
+        })
         .then((proc) => {
-          if (isMounted && proc) {
+          if (isMountedRef.current && proc) {
             setFetchedProcedures((prev) => ({
               ...prev,
               [id]: proc,
+              ...(proc.id ? { [proc.id]: proc } : {}),
               ...(proc.slug ? { [proc.slug]: proc } : {}),
             }));
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          // ignore
+        })
+        .finally(() => {
+          fetchingRef.current.delete(id);
+        });
     }
-    return () => {
-      isMounted = false;
-    };
-  }, [block.procedureIds, byId, fetchedProcedures]);
+  }, [block.procedureIds]);
 
   const selectedProcedures = React.useMemo(() => {
-    return block.procedureIds
-      .map((id) => byId.get(id) || fetchedProcedures[id])
+    return (block.procedureIds || [])
+      .map(
+        (id) =>
+          fetchedProcedures[id] ||
+          Object.values(fetchedProcedures).find(
+            (p) => p.id === id || p.slug === id,
+          ),
+      )
       .filter((p): p is Procedure => Boolean(p));
-  }, [block.procedureIds, byId, fetchedProcedures]);
+  }, [block.procedureIds, fetchedProcedures]);
 
   const handleConfirm = (procedureIds: string[]) => {
     onPatch({

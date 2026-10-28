@@ -23,7 +23,7 @@ export function DocBehaviour({
   /** Off for a page that marks the current step itself: /demo2 reads it from a
    *  line under its photo stage, not from the middle of the screen. */
   markCurrent?: boolean;
-} = {}): React.ReactElement {
+} = {}): React.ReactElement | null {
   React.useEffect(() => {
     const doc = document.querySelector<HTMLElement>(".doc");
     if (!doc) return;
@@ -78,5 +78,6 @@ export function DocBehaviour({
     return () => cleanups.forEach((fn) => fn());
   }, [markCurrent]);
 
-  return <ProximityRail />;
+  // Side navigation rail removed as requested
+  return null;
 }

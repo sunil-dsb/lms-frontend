@@ -76,9 +76,17 @@ export function ChapterQuizView({
 
   const currentQuestion = questions[currentIndex] || questions[0];
 
-  const questionPrompt = isEs
-    ? currentQuestion?.prompt?.es || currentQuestion?.prompt?.en
-    : currentQuestion?.prompt?.en || currentQuestion?.prompt?.es;
+  const rawPrompt =
+    (currentQuestion as any)?.prompt ??
+    (currentQuestion as any)?.question ??
+    (currentQuestion as any)?.title;
+
+  const questionPrompt =
+    typeof rawPrompt === "string"
+      ? rawPrompt
+      : isEs
+        ? rawPrompt?.es || rawPrompt?.en || ""
+        : rawPrompt?.en || rawPrompt?.es || "";
 
   const choices = currentQuestion?.choices ?? [];
   const selectedChoiceId = answers[currentIndex] ?? null;
@@ -395,9 +403,12 @@ export function ChapterQuizView({
           </Link>
 
           {/* Passing requirement pill */}
-          <span className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--color-wash)] border border-[var(--color-line-2)] text-[var(--color-ink-2)]">
-            <LuTarget className="w-3.5 h-3.5 text-[var(--color-brand-600)]" />
-            <span>
+          <span
+            className="hidden sm:inline-flex items-center gap-2 text-xs font-semibold rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] shadow-2xs"
+            style={{ padding: "8px 16px", gap: "8px" }}
+          >
+            <LuTarget className="w-4 h-4 text-[var(--color-brand-600)] shrink-0" />
+            <span className="leading-none">
               {isEs
                 ? `${passingRequirement} de ${totalQuestions} para aprobar`
                 : `${passingRequirement} of ${totalQuestions} to pass`}
@@ -405,39 +416,43 @@ export function ChapterQuizView({
           </span>
         </div>
 
-        {/* Segmented Progress Bar */}
-        <div
-          role="progressbar"
-          aria-label={`Question ${currentIndex + 1} of ${totalQuestions}`}
-          aria-valuenow={currentIndex + 1}
-          aria-valuemin={1}
-          aria-valuemax={totalQuestions}
-          className="flex items-center gap-2 pt-1 pb-1"
-        >
-          {Array.from({ length: totalQuestions }).map((_, i) => {
-            const answered = Boolean(answers[i]);
-            const isCurrent = i === currentIndex;
+        {/* Multi-question Segmented Progress Bar (only shown when there are 2 or more questions) */}
+        {totalQuestions > 1 ? (
+          <div
+            role="progressbar"
+            aria-label={`Question ${currentIndex + 1} of ${totalQuestions}`}
+            aria-valuenow={currentIndex + 1}
+            aria-valuemin={1}
+            aria-valuemax={totalQuestions}
+            className="flex items-center gap-2 pt-1 pb-1"
+          >
+            {Array.from({ length: totalQuestions }).map((_, i) => {
+              const answered = Boolean(answers[i]);
+              const isCurrent = i === currentIndex;
 
-            return (
-              <button
-                type="button"
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                aria-label={`Go to question ${i + 1}`}
-                className={`h-2.5 flex-1 rounded-full transition-all duration-300 cursor-pointer ${
-                  isCurrent
-                    ? "bg-[var(--color-brand-600)] ring-2 ring-[var(--color-brand-tint)]"
-                    : answered
-                      ? "bg-[var(--color-brand-600)]/70"
-                      : "bg-[var(--color-panel-2)]"
-                }`}
-              />
-            );
-          })}
-        </div>
+              return (
+                <button
+                  type="button"
+                  key={i}
+                  onClick={() => setCurrentIndex(i)}
+                  aria-label={`Go to question ${i + 1}`}
+                  className={`h-1.5 flex-1 rounded-full transition-all duration-300 cursor-pointer border-0 p-0 ${
+                    isCurrent
+                      ? "bg-[var(--color-brand-600)]"
+                      : answered
+                        ? "bg-[var(--color-brand-600)]/75"
+                        : "bg-[var(--color-line-2)] dark:bg-neutral-700 hover:bg-[var(--color-line-hover)]"
+                  }`}
+                />
+              );
+            })}
+          </div>
+        ) : null}
 
         {/* Question Eyebrow & Prompt */}
-        <div className="space-y-2 pt-2">
+        <div
+          className={`space-y-2.5 ${totalQuestions > 1 ? "pt-2" : "pt-4 sm:pt-6"}`}
+        >
           {currentQuestion?.sourceProcedureTitle ? (
             <div
               className="inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-brand-tint-2)]/50 text-[var(--color-brand-700)] dark:text-[var(--color-brand-300)] border border-[var(--color-brand-600)]/20"
@@ -448,7 +463,15 @@ export function ChapterQuizView({
                 {isEs
                   ? "Relacionado al procedimiento:"
                   : "Related to procedure:"}{" "}
-                <strong>{currentQuestion.sourceProcedureTitle}</strong>
+                <strong>
+                  {typeof currentQuestion.sourceProcedureTitle === "string"
+                    ? currentQuestion.sourceProcedureTitle
+                    : isEs
+                      ? (currentQuestion.sourceProcedureTitle as any)?.es ||
+                        (currentQuestion.sourceProcedureTitle as any)?.en
+                      : (currentQuestion.sourceProcedureTitle as any)?.en ||
+                        (currentQuestion.sourceProcedureTitle as any)?.es}
+                </strong>
               </span>
             </div>
           ) : (
@@ -468,9 +491,16 @@ export function ChapterQuizView({
           {choices.map((choice, cIdx) => {
             const isSelected = selectedChoiceId === choice.id;
             const letter = String.fromCharCode(65 + cIdx); // A, B, C, D
-            const choiceLabel = isEs
-              ? choice.label?.es || choice.label?.en
-              : choice.label?.en || choice.label?.es;
+            const rawLabel =
+              (choice as any)?.label ??
+              (choice as any)?.text ??
+              (choice as any)?.title;
+            const choiceLabel =
+              typeof rawLabel === "string"
+                ? rawLabel
+                : isEs
+                  ? rawLabel?.es || rawLabel?.en || ""
+                  : rawLabel?.en || rawLabel?.es || "";
 
             return (
               <label

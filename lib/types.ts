@@ -419,6 +419,9 @@ export interface ProcedureQuiz {
   attached: boolean;
   minCorrectAnswers?: number;
   passingScorePercent?: number;
+  quizType?: string;
+  nameEn?: string;
+  nameEs?: string;
 }
 
 /** A quiz row in the centralised `quizzes` table — the single source of
@@ -568,6 +571,8 @@ export interface Procedure {
   acknowledgement?: ProcedureAcknowledgement | null;
   /** Estimated completion time in minutes. */
   estimatedMinutes?: number;
+  /** Number of chapters in a training course. */
+  chapterCount?: number;
   /** Operational station tag, e.g. "Front of house" (not required/everyone). */
   stationTag?: string;
   /** Content categories included in the course. */
@@ -696,6 +701,7 @@ export interface CreateTrainingAssignmentInput {
  *  every render and pins the date math to server load. */
 export interface TrainingCourseRow {
   course: Procedure;
+  chapterCount?: number;
   assignmentCount: number;
   completeCount: number;
   inProgressCount: number;

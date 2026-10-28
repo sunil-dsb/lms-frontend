@@ -20,9 +20,10 @@ import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
 
 interface ProcedureArticleBodyProps {
   proc: Procedure;
-  employee: Employee;
+  employee?: Employee;
   effectiveRole: "admin" | "employee";
   locale: string;
+  hideQuiz?: boolean;
   /** Admin-only: wires the QuizAttachBanner attach button. */
   onAttachQuiz?: () => void;
   isAttaching?: boolean;
@@ -62,6 +63,7 @@ export function ProcedureArticleBody({
   employee,
   effectiveRole,
   locale,
+  hideQuiz,
   onAttachQuiz,
   isAttaching,
   bannerDismissed,
@@ -157,7 +159,12 @@ export function ProcedureArticleBody({
   // render. We gate this on `mounted` so SSR and initial client hydration
   // match identically, preventing hydration mismatch when quiz is stored in
   // client-only localStorage.
-  const quiz = mounted && proc.quizId ? getQuizById(proc.quizId) : null;
+  const rawQuiz = mounted && proc.quizId ? getQuizById(proc.quizId) : null;
+  // A procedure page must ONLY render quizzes whose type is 'procedure' (never 'course' quizzes)
+  const quiz =
+    rawQuiz && (!rawQuiz.quizType || rawQuiz.quizType === "procedure")
+      ? rawQuiz
+      : null;
   const quizExists = Boolean(quiz && quiz.questions.length > 0);
   const quizVisible = Boolean(
     quiz && (quiz.attached || proc.attachedToTraining),
@@ -168,7 +175,7 @@ export function ProcedureArticleBody({
       <DocBehaviour />
       {docBar}
       {proc.protection === "confidential" || proc.protection === "master" ? (
-        <Watermark name={employee.name} locale={locale} />
+        <Watermark name={employee?.name || "Staff"} locale={locale} />
       ) : null}
       {showAttachBanner && !bannerDismissed ? (
         <div className="mx-auto w-full max-w-doc px-4 pt-6 sm:px-6">
@@ -289,8 +296,8 @@ export function ProcedureArticleBody({
       />
 
       {/* Quiz: visible when manually attached OR when the procedure is part of
-       *  training. Admin-only banner when authored but neither flag is on. */}
-      {quiz && (quiz.attached || proc.attachedToTraining) ? (
+       *  training, unless hideQuiz is set (e.g. inside course chapter learn view). */}
+      {!hideQuiz && quiz && (quiz.attached || proc.attachedToTraining) ? (
         <QuizReader quiz={quiz} locale={isEs ? "es" : "en"} />
       ) : null}
     </article>

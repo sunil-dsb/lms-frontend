@@ -247,6 +247,10 @@
   --z-index-modal: var(--z-modal);
   --z-index-toast: var(--z-toast);
   --z-index-tooltip: var(--z-tooltip);
+
+  /* Fonts */
+  --font-ui: var(--font-ui);
+  --font-display: var(--font-display);
 }
 
 /* ============================================================

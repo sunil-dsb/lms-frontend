@@ -5,6 +5,7 @@ import { RichTextContent } from "@/components/editor/rich-text-editor";
 import type {
   Localised,
   LocalisedOptional,
+  Procedure,
   ProcedureBlock,
   ProcedureMethodStep,
   ProcedureNoteKind,
@@ -841,6 +842,98 @@ function ChecklistBlock({
   );
 }
 
+function LinkedProcedureDocItem({
+  id,
+  locale,
+}: {
+  id: string;
+  locale: "en" | "es";
+}): React.ReactElement | null {
+  const isEs = locale === "es";
+  const [sop, setSop] = React.useState<Procedure | null>(
+    () => getSopById(id) ?? null,
+  );
+  const [loading, setLoading] = React.useState(!sop);
+
+  React.useEffect(() => {
+    if (!sop && id) {
+      setLoading(true);
+      import("@/services/library/api")
+        .then(({ fetchProcedureById }) => fetchProcedureById(id, true))
+        .then((p) => {
+          if (p) setSop(p);
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [id, sop]);
+
+  if (loading && !sop) {
+    return (
+      <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-6 animate-pulse space-y-4">
+        <div className="h-4 bg-[var(--color-panel-2)] rounded w-1/4" />
+        <div className="h-6 bg-[var(--color-panel-2)] rounded w-1/2" />
+        <div className="h-4 bg-[var(--color-panel-2)] rounded w-3/4" />
+      </div>
+    );
+  }
+
+  if (!sop) return null;
+
+  const title = isEs ? sop.titleEs || sop.titleEn : sop.titleEn || sop.titleEs;
+  const purpose = isEs
+    ? sop.purposeEs || sop.purposeEn
+    : sop.purposeEn || sop.purposeEs;
+  const categoryLabel = sop.category
+    ? isEs
+      ? sop.category.nameEs || sop.category.nameEn
+      : sop.category.nameEn || sop.category.nameEs
+    : "SOP";
+
+  const rawBlocks =
+    (isEs ? sop.bodyEs?.blocks : sop.bodyEn?.blocks) ||
+    sop.bodyEn?.blocks ||
+    [];
+
+  // Filter out any nested linked_procedures to avoid recursion, and any heading level 1 matching title
+  const procBlocks = rawBlocks.filter((b, bIdx) => {
+    if (b.kind === "linked_procedures") return false;
+    if (bIdx === 0 && b.kind === "heading" && b.level === 1) return false;
+    return true;
+  });
+
+  return (
+    <div
+      key={id}
+      id={`linked-proc-${sop.id}`}
+      className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-7 shadow-xs space-y-5"
+    >
+      <div className="space-y-1.5 border-b border-[var(--color-line-2)]/60 pb-4">
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-brand-600)] bg-[var(--color-brand-50)] dark:bg-[var(--color-brand-950)] px-2.5 py-0.5 rounded-full border border-[var(--color-brand-200)] dark:border-[var(--color-brand-800)]">
+          <LuBookOpen className="w-3.5 h-3.5" />
+          {categoryLabel}
+        </span>
+        <h3 className="text-lg sm:text-xl font-bold text-[var(--color-ink)]">
+          {title}
+        </h3>
+        {purpose && (
+          <p className="text-sm text-[var(--color-ink-2)] leading-relaxed">
+            {purpose}
+          </p>
+        )}
+      </div>
+
+      {procBlocks.length > 0 ? (
+        <BlockRenderer blocks={procBlocks} locale={locale} />
+      ) : (
+        <p className="py-2 text-xs text-[var(--color-ink-3)]">
+          {isEs ? "Sin contenido de procedimiento." : "No procedure content."}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function LinkedProceduresDocBlock({
   procedureIds,
   locale,
@@ -849,57 +942,12 @@ function LinkedProceduresDocBlock({
   locale: "en" | "es";
 }): React.ReactElement | null {
   if (!procedureIds || procedureIds.length === 0) return null;
-  const isEs = locale === "es";
 
   return (
-    <div className="my-4 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 shadow-xs">
-      <div className="flex items-center gap-2 mb-3">
-        <LuBookOpen className="w-4 h-4 text-[var(--color-brand-600)]" />
-        <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink)]">
-          {isEs ? "Procedimientos vinculados" : "Linked procedures"}
-        </h4>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-        {procedureIds.map((id) => {
-          const sop = getSopById(id);
-          if (!sop) return null;
-          const title = isEs
-            ? sop.titleEs || sop.titleEn
-            : sop.titleEn || sop.titleEs;
-          const purpose = isEs
-            ? sop.purposeEs || sop.purposeEn
-            : sop.purposeEn || sop.purposeEs;
-
-          return (
-            <a
-              key={id}
-              href={`/${locale}/admin/library/${sop.slug || sop.id}`}
-              className="group flex flex-col justify-between rounded-xl border border-[var(--color-line-2)] bg-[var(--color-wash)]/40 p-3 hover:border-[var(--color-brand-300)] hover:bg-[var(--color-wash)] transition-all"
-            >
-              <div>
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--color-brand-600)] bg-[var(--color-brand-50)] dark:bg-[var(--color-brand-950)] px-2 py-0.5 rounded-full border border-[var(--color-brand-200)] dark:border-[var(--color-brand-800)] mb-1.5">
-                  <LuBookOpen className="w-3 h-3" />
-                  SOP
-                </span>
-                <h5 className="text-xs sm:text-sm font-semibold text-[var(--color-ink)] group-hover:text-[var(--color-brand-600)] transition-colors line-clamp-1">
-                  {title}
-                </h5>
-                {purpose && (
-                  <p className="mt-1 text-[11px] text-[var(--color-ink-2)] line-clamp-2">
-                    {purpose}
-                  </p>
-                )}
-              </div>
-              <div className="mt-2.5 pt-2 border-t border-[var(--color-line-2)]/60 flex items-center justify-between text-[10px] text-[var(--color-ink-3)]">
-                <span className="font-medium text-[var(--color-brand-600)]">
-                  {isEs ? "Ver procedimiento" : "View procedure"}
-                </span>
-                <LuExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </a>
-          );
-        })}
-      </div>
+    <div className="my-6 space-y-6">
+      {procedureIds.map((id) => (
+        <LinkedProcedureDocItem key={id} id={id} locale={locale} />
+      ))}
     </div>
   );
 }
