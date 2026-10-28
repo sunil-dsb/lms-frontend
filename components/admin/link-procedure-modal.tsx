@@ -28,10 +28,10 @@ export function LinkProcedureModal({
 }: LinkProcedureModalProps): React.ReactElement | null {
   const isEs = locale === "es";
 
-  // Fetch real procedures from the backend library
-  const { data: apiData, isLoading } = useProcedures({}, true);
+  // Fetch real procedures from the backend library only when modal is open
+  const { data: apiData, isLoading } = useProcedures({}, true, open);
 
-  // Resolve available procedures (live API first, with fallback to props / seeds)
+  // Resolve available procedures (live API first, with fallback to props)
   const allProcedures = React.useMemo(() => {
     if (availableProcedures && availableProcedures.length > 0) {
       return availableProcedures;
@@ -39,7 +39,7 @@ export function LinkProcedureModal({
     if (apiData?.procedures && apiData.procedures.length > 0) {
       return apiData.procedures;
     }
-    return listAvailableSops();
+    return [];
   }, [availableProcedures, apiData]);
 
   const [selectedIds, setSelectedIds] =
@@ -192,7 +192,14 @@ export function LinkProcedureModal({
 
         {/* Procedures List */}
         <div className="flex-1 overflow-y-auto px-6 pt-3 pb-6 divide-y divide-[var(--color-line-2)] min-h-[220px]">
-          {filteredProcedures.length === 0 ? (
+          {isLoading ? (
+            <div className="py-16 flex flex-col items-center justify-center gap-2.5 text-center text-xs text-[var(--color-ink-3)]">
+              <LuLoader className="w-6 h-6 animate-spin text-[var(--color-brand-600)]" />
+              <span>
+                {isEs ? "Cargando procedimientos..." : "Loading procedures..."}
+              </span>
+            </div>
+          ) : filteredProcedures.length === 0 ? (
             <div className="py-12 text-center text-xs text-[var(--color-ink-2)]">
               {isEs
                 ? "No se encontraron procedimientos."

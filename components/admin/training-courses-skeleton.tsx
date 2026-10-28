@@ -156,3 +156,88 @@ export function TrainingCoursesPageSkeleton(): React.ReactElement {
     </div>
   );
 }
+
+/**
+ * Skeleton for the course detail page (/admin/training/[id] or /employee/training/[id]).
+ * Mirrors the real loaded page (back button, edit button, title, purpose, badges, progress bar, chapter cards timeline, sticky continue button).
+ */
+export function CourseDetailSkeleton({
+  sidebarOffsetPx = 0,
+}: {
+  sidebarOffsetPx?: number;
+}): React.ReactElement {
+  return (
+    <div
+      className="relative min-h-screen bg-[var(--color-bg)]"
+      aria-busy="true"
+      aria-label="Loading course details"
+    >
+      <main
+        className="mx-auto w-full max-w-doc space-y-6 px-4 pt-5 sm:px-6 sm:pt-6"
+        style={{ paddingBottom: "140px" }}
+      >
+        {/* Header row: Back link + Edit button */}
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-5 w-24 rounded-md" />
+          <Skeleton className="h-8 w-28 rounded-md" />
+        </div>
+
+        {/* Title + Purpose */}
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-3/4 max-w-md rounded-md" />
+          <Skeleton className="h-4 w-full max-w-lg rounded-md" />
+        </div>
+
+        {/* Badges row */}
+        <div className="flex items-center gap-2 pt-1">
+          <Skeleton className="h-6 w-32 rounded-full" />
+        </div>
+
+        {/* Progress bar row */}
+        <div className="pt-2 flex items-center gap-3">
+          <Skeleton className="h-2 flex-1 rounded-full" />
+          <Skeleton className="h-4 w-16 rounded-md" />
+        </div>
+
+        {/* Chapter cards list */}
+        <div className="pt-2 flex flex-col gap-3">
+          {[1, 2].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-3.5 sm:p-4 flex items-center gap-3.5 sm:gap-4 shadow-2xs"
+            >
+              {/* Circle badge */}
+              <Skeleton className="w-9 h-9 rounded-full shrink-0" />
+
+              {/* Text content */}
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-3 w-20 rounded-sm" />
+                  {i === 1 && <Skeleton className="h-4 w-14 rounded-full" />}
+                </div>
+                <Skeleton className="h-5 w-48 rounded-md" />
+                <Skeleton className="h-3.5 w-32 rounded-sm" />
+              </div>
+
+              {/* Right chevron */}
+              <Skeleton className="w-5 h-5 rounded-md shrink-0" />
+            </div>
+          ))}
+        </div>
+      </main>
+
+      {/* Sticky bottom button matching StickyContinueButton */}
+      <div
+        className="fixed bottom-0 z-40 w-full border-t border-[var(--color-line-2)]/80 bg-[var(--color-bg)]/95 backdrop-blur-md transition-all duration-[var(--dur)] ease-[var(--ease)] pointer-events-none"
+        style={{
+          left: `${sidebarOffsetPx}px`,
+          width: `calc(100% - ${sidebarOffsetPx}px)`,
+        }}
+      >
+        <div className="mx-auto w-full max-w-doc px-4 py-3 sm:px-6 sm:py-3.5">
+          <Skeleton className="h-12 w-full rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}

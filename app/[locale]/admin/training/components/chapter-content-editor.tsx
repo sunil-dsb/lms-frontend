@@ -55,6 +55,26 @@ interface ChapterContentEditorProps {
 type WizardStep = "content" | "quiz";
 type LinkedProcedure = Procedure & { quiz?: ProcedureQuiz };
 
+function getQuestionNormalizedPrompt(q: any): { en: string; es: string } {
+  if (!q) return { en: "", es: "" };
+  const en = (
+    typeof q.prompt === "string"
+      ? q.prompt
+      : q.prompt?.en || q.question?.en || ""
+  ).trim();
+  const es = (
+    typeof q.prompt === "string"
+      ? q.prompt
+      : q.prompt?.es || q.question?.es || ""
+  ).trim();
+  return { en, es };
+}
+
+function getQuestionComparableKey(q: any): string {
+  const { en, es } = getQuestionNormalizedPrompt(q);
+  return (en || es).toLowerCase();
+}
+
 export function ChapterContentEditor({
   locale,
   courseName,
@@ -93,14 +113,26 @@ export function ChapterContentEditor({
   const [titleError, setTitleError] = React.useState<string | null>(null);
   const [purposeError, setPurposeError] = React.useState<string | null>(null);
   const [quizError, setQuizError] = React.useState<string | null>(null);
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const [blocks, setBlocks] = React.useState<ProcedureBlock[]>(
     () => initialChapter?.blocks ?? [],
   );
 
-  const [quiz, setQuiz] = React.useState<ProcedureQuiz | null>(
-    () => initialChapter?.quiz ?? null,
-  );
+  const [quiz, setQuiz] = React.useState<ProcedureQuiz | null>(() => {
+    if (!initialChapter?.quiz) return null;
+    return {
+      ...initialChapter.quiz,
+      questions: (initialChapter.quiz.questions || []).map((q: any) => {
+        const { en, es } = getQuestionNormalizedPrompt(q);
+        return {
+          ...q,
+          prompt: { en, es },
+          question: { en, es },
+        };
+      }),
+    };
+  });
 
   // Preview state
   const [previewOpen, setPreviewOpen] = React.useState(false);
@@ -130,24 +162,52 @@ export function ChapterContentEditor({
     return ids;
   }, [blocks, initialChapter]);
 
+  const isMountedRef = React.useRef(true);
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const fetchingIdsRef = React.useRef<Set<string>>(new Set());
+  const linkedProceduresMapRef = React.useRef(linkedProceduresMap);
+  linkedProceduresMapRef.current = linkedProceduresMap;
+
   // Fetch full details for any linked procedures not yet in linkedProceduresMap
   React.useEffect(() => {
-    const missing = linkedProcedureIds.filter(
+    const uniqueIds = Array.from(new Set(linkedProcedureIds));
+    const missing = uniqueIds.filter(
       (id) =>
-        !linkedProceduresMap[id] ||
-        (linkedProceduresMap[id].quizId && !linkedProceduresMap[id].quiz),
+        id &&
+        !linkedProceduresMapRef.current[id] &&
+        !Object.values(linkedProceduresMapRef.current).some(
+          (p) => p.id === id || p.slug === id,
+        ) &&
+        !fetchingIdsRef.current.has(id),
     );
     if (missing.length === 0) return;
 
-    let isMounted = true;
     for (const id of missing) {
+      fetchingIdsRef.current.add(id);
       import("@/services/library/api")
-        .then(({ fetchProcedureById }) => fetchProcedureById(id, true))
+        .then(({ fetchProcedureById, getCachedProcedure }) => {
+          const cached = getCachedProcedure(id);
+          if (cached && isMountedRef.current) {
+            setLinkedProceduresMap((prev) => ({
+              ...prev,
+              [id]: cached,
+              ...(cached.id ? { [cached.id]: cached } : {}),
+              ...(cached.slug ? { [cached.slug]: cached } : {}),
+            }));
+          }
+          return fetchProcedureById(id, true);
+        })
         .then(async (proc) => {
-          if (!isMounted || !proc) return;
+          if (!isMountedRef.current || !proc) return;
 
           let fullProc: LinkedProcedure = proc;
-          // If the procedure has a quizId but no inline quiz, fetch the quiz too
+          // If the procedure has a quizId, fetch the quiz
           if (proc.quizId && !fullProc.quiz) {
             try {
               const { fetchQuizById } = await import("@/lib/api/library");
@@ -166,50 +226,22 @@ export function ChapterContentEditor({
             }
           }
 
-          // If still no quiz, check if any quiz in the library references this procedure
-          if (!fullProc.quiz) {
-            try {
-              const { listQuizzes } = await import("@/lib/api/library");
-              const res = await listQuizzes();
-              const matched = (res.quizzes || []).find(
-                (q: any) =>
-                  (proc.quizId && q.id === proc.quizId) ||
-                  (q.procedureId &&
-                    (q.procedureId === proc.id ||
-                      q.procedureId === proc.slug)) ||
-                  (proc.titleEn &&
-                    q.nameEn &&
-                    q.nameEn.toLowerCase() === proc.titleEn.toLowerCase()),
-              );
-              if (matched?.questions?.length) {
-                fullProc = {
-                  ...proc,
-                  quizId: matched.id,
-                  quiz: {
-                    attached: matched.attached ?? true,
-                    questions: matched.questions,
-                  },
-                };
-              }
-            } catch {
-              // ignore
-            }
-          }
-
+          if (!isMountedRef.current) return;
           setLinkedProceduresMap((prev) => ({
             ...prev,
             [id]: fullProc,
+            ...(fullProc.id ? { [fullProc.id]: fullProc } : {}),
             ...(fullProc.slug ? { [fullProc.slug]: fullProc } : {}),
           }));
         })
         .catch(() => {
-          // Procedure not found or offline
+          // ignore
+        })
+        .finally(() => {
+          fetchingIdsRef.current.delete(id);
         });
     }
-    return () => {
-      isMounted = false;
-    };
-  }, [linkedProcedureIds, linkedProceduresMap]);
+  }, [linkedProcedureIds]);
 
   // Helper to extract quiz questions from a procedure
   const getProcedureQuizQuestions = React.useCallback(
@@ -330,7 +362,11 @@ export function ChapterContentEditor({
     const visited = new Set<string>();
 
     for (const id of linkedProcedureIds) {
-      const proc = linkedProceduresMap[id];
+      const proc =
+        linkedProceduresMap[id] ||
+        Object.values(linkedProceduresMap).find(
+          (p) => p.id === id || p.slug === id,
+        );
       if (proc && !visited.has(proc.id)) {
         visited.add(proc.id);
         const qs = getProcedureQuizQuestions(proc);
@@ -356,23 +392,29 @@ export function ChapterContentEditor({
     if (availableLinkedQuestions.length > 0) {
       setQuiz((prev) => {
         const existingQuestions = prev?.questions ?? [];
-        const existingSourceProcIds = new Set(
-          existingQuestions.map((q) => q.sourceProcedureId).filter(Boolean),
-        );
 
         // If quiz has no authored questions yet, populate all linked questions
         if (!hasAuthoredQuestions(prev)) {
           const importedQuestions: ProcedureQuizQuestion[] = [];
+          const seenPrompts = new Set<string>();
+
           availableLinkedQuestions.forEach(({ procedure, questions }) => {
             const procTitle = isEs
               ? procedure.titleEs || procedure.titleEn
               : procedure.titleEn || procedure.titleEs;
             questions.forEach((q) => {
+              const key = getQuestionComparableKey(q);
+              if (key && seenPrompts.has(key)) return;
+              if (key) seenPrompts.add(key);
+
+              const { en, es } = getQuestionNormalizedPrompt(q);
               importedQuestions.push({
                 ...q,
                 id:
                   q.id ||
                   `q-imp-${procedure.id}-${Math.random().toString(36).slice(2, 8)}`,
+                prompt: { en, es },
+                question: { en, es },
                 sourceProcedureId: procedure.id,
                 sourceProcedureTitle: procTitle,
               });
@@ -391,29 +433,98 @@ export function ChapterContentEditor({
           };
         }
 
-        // If quiz already has authored questions, add questions from newly linked procedures
-        const toAdd: ProcedureQuizQuestion[] = [];
-        availableLinkedQuestions.forEach(({ procedure, questions }) => {
-          if (!existingSourceProcIds.has(procedure.id)) {
-            const procTitle = isEs
-              ? procedure.titleEs || procedure.titleEn
-              : procedure.titleEn || procedure.titleEs;
-            questions.forEach((q) => {
-              toAdd.push({
-                ...q,
-                id:
-                  q.id ||
-                  `q-imp-${procedure.id}-${Math.random().toString(36).slice(2, 8)}`,
-                sourceProcedureId: procedure.id,
-                sourceProcedureTitle: procTitle,
-              });
-            });
-          }
+        // If quiz already has authored questions:
+        // 1. Tag matching existing questions with sourceProcedure info if missing
+        // 2. Add brand-new questions from linked procedures that aren't in quiz yet
+        const existingPrompts = new Set<string>();
+        const existingIds = new Set<string>();
+
+        existingQuestions.forEach((q) => {
+          if (q.id) existingIds.add(q.id);
+          const key = getQuestionComparableKey(q);
+          if (key) existingPrompts.add(key);
         });
 
-        if (toAdd.length === 0) return prev;
+        let updatedExisting = false;
+        const normalizedExisting = existingQuestions.map((q) => {
+          const qKey = getQuestionComparableKey(q);
+          const { en, es } = getQuestionNormalizedPrompt(q);
 
-        const merged = [...existingQuestions, ...toAdd];
+          // Check if matches any available linked procedure question
+          for (const { procedure, questions } of availableLinkedQuestions) {
+            const matchedProcQ = questions.find(
+              (pq) =>
+                pq.id === q.id ||
+                (qKey && getQuestionComparableKey(pq) === qKey),
+            );
+            if (matchedProcQ) {
+              const procTitle = isEs
+                ? procedure.titleEs || procedure.titleEn
+                : procedure.titleEn || procedure.titleEs;
+              if (
+                q.sourceProcedureId !== procedure.id ||
+                q.sourceProcedureTitle !== procTitle ||
+                !q.prompt?.en ||
+                !q.question?.en
+              ) {
+                updatedExisting = true;
+                return {
+                  ...q,
+                  prompt: { en, es },
+                  question: { en, es },
+                  sourceProcedureId: procedure.id,
+                  sourceProcedureTitle: procTitle,
+                };
+              }
+            }
+          }
+
+          if (!q.prompt?.en && en) {
+            updatedExisting = true;
+            return {
+              ...q,
+              prompt: { en, es },
+              question: { en, es },
+            };
+          }
+
+          return q;
+        });
+
+        const toAdd: ProcedureQuizQuestion[] = [];
+        availableLinkedQuestions.forEach(({ procedure, questions }) => {
+          const procTitle = isEs
+            ? procedure.titleEs || procedure.titleEn
+            : procedure.titleEn || procedure.titleEs;
+          questions.forEach((q) => {
+            const key = getQuestionComparableKey(q);
+            if (
+              (q.id && existingIds.has(q.id)) ||
+              (key && existingPrompts.has(key))
+            ) {
+              return; // Already present, do not duplicate!
+            }
+
+            const { en, es } = getQuestionNormalizedPrompt(q);
+            toAdd.push({
+              ...q,
+              id:
+                q.id ||
+                `q-imp-${procedure.id}-${Math.random().toString(36).slice(2, 8)}`,
+              prompt: { en, es },
+              question: { en, es },
+              sourceProcedureId: procedure.id,
+              sourceProcedureTitle: procTitle,
+            });
+
+            if (q.id) existingIds.add(q.id);
+            if (key) existingPrompts.add(key);
+          });
+        });
+
+        if (toAdd.length === 0 && !updatedExisting) return prev;
+
+        const merged = [...normalizedExisting, ...toAdd];
         return {
           attached: true,
           questions: merged,
@@ -431,14 +542,11 @@ export function ChapterContentEditor({
     const existingPrompts = new Set(
       (quiz?.questions ?? [])
         .filter(isQuizQuestionAuthored)
-        .map((q) =>
-          (typeof q.prompt === "string"
-            ? q.prompt
-            : q.prompt?.en || q.prompt?.es || ""
-          )
-            .trim()
-            .toLowerCase(),
-        ),
+        .map(getQuestionComparableKey)
+        .filter(Boolean),
+    );
+    const existingIds = new Set(
+      (quiz?.questions ?? []).map((q) => q.id).filter(Boolean),
     );
 
     const toAdd: ProcedureQuizQuestion[] = [];
@@ -447,24 +555,27 @@ export function ChapterContentEditor({
         ? procedure.titleEs || procedure.titleEn
         : procedure.titleEn || procedure.titleEs;
       questions.forEach((q) => {
-        const promptKey = (
-          typeof q.prompt === "string"
-            ? q.prompt
-            : q.prompt?.en || q.prompt?.es || ""
-        )
-          .trim()
-          .toLowerCase();
-        if (!existingPrompts.has(promptKey)) {
-          toAdd.push({
-            ...q,
-            id:
-              q.id ||
-              `q-imp-${procedure.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            sourceProcedureId: procedure.id,
-            sourceProcedureTitle: procTitle,
-          });
-          existingPrompts.add(promptKey);
+        const promptKey = getQuestionComparableKey(q);
+        if (
+          (q.id && existingIds.has(q.id)) ||
+          (promptKey && existingPrompts.has(promptKey))
+        ) {
+          return;
         }
+
+        const { en, es } = getQuestionNormalizedPrompt(q);
+        toAdd.push({
+          ...q,
+          id:
+            q.id ||
+            `q-imp-${procedure.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          prompt: { en, es },
+          question: { en, es },
+          sourceProcedureId: procedure.id,
+          sourceProcedureTitle: procTitle,
+        });
+        if (q.id) existingIds.add(q.id);
+        if (promptKey) existingPrompts.add(promptKey);
       });
     });
 
@@ -537,6 +648,7 @@ export function ChapterContentEditor({
   };
 
   const handleSave = () => {
+    if (isSaving) return;
     let valid = true;
     if (!hasTitle) {
       setTitleError(isEs ? "El título es obligatorio." : "Title is required.");
@@ -561,12 +673,7 @@ export function ChapterContentEditor({
 
         // If authored or if there are multiple questions configured
         if (isAuthored || quiz.questions.length > 1) {
-          const promptEn = (
-            typeof q.prompt === "string" ? q.prompt : q.prompt?.en || ""
-          ).trim();
-          const promptEs = (
-            typeof q.prompt === "string" ? q.prompt : q.prompt?.es || ""
-          ).trim();
+          const { en: promptEn, es: promptEs } = getQuestionNormalizedPrompt(q);
 
           if (!promptEn && !promptEs) {
             const msg = isEs
@@ -645,7 +752,10 @@ export function ChapterContentEditor({
     const primaryProcId =
       linkedProcedureIds[0] || initialChapter?.procedureId || undefined;
     const primaryProc = primaryProcId
-      ? linkedProceduresMap[primaryProcId]
+      ? linkedProceduresMap[primaryProcId] ||
+        Object.values(linkedProceduresMap).find(
+          (p) => p.id === primaryProcId || p.slug === primaryProcId,
+        )
       : undefined;
 
     const saved: EditorChapter = {
@@ -655,17 +765,31 @@ export function ChapterContentEditor({
       procedureId: primaryProcId,
       procedureSlug:
         primaryProc?.slug || initialChapter?.procedureSlug || undefined,
+      // A chapter quiz must be independent from any linked procedure's quiz!
       quizId:
-        (quiz as any)?.id ||
-        primaryProc?.quizId ||
-        initialChapter?.quizId ||
-        undefined,
+        (quiz as any)?.id && (quiz as any)?.id !== primaryProc?.quizId
+          ? (quiz as any).id
+          : initialChapter?.quizId &&
+              initialChapter?.quizId !== primaryProc?.quizId
+            ? initialChapter.quizId
+            : undefined,
       blocks,
       quiz:
         hasQuestions && quiz
           ? {
               ...quiz,
+              quizType: "course",
               attached: true,
+              questions: quiz.questions
+                .filter(isQuizQuestionAuthored)
+                .map((q) => {
+                  const { en: pEn, es: pEs } = getQuestionNormalizedPrompt(q);
+                  return {
+                    ...q,
+                    prompt: { en: pEn, es: pEs },
+                    question: { en: pEn, es: pEs },
+                  };
+                }),
               minCorrectAnswers:
                 quiz.minCorrectAnswers ??
                 Math.max(1, Math.ceil(quiz.questions.length * 0.7)),
@@ -673,6 +797,7 @@ export function ChapterContentEditor({
           : null,
     };
 
+    setIsSaving(true);
     onSave(saved);
   };
 
@@ -727,7 +852,11 @@ export function ChapterContentEditor({
                 return (
                   <div key={block.id || idx} className="space-y-6 my-4">
                     {block.procedureIds.map((procId) => {
-                      const proc = linkedProceduresMap[procId];
+                      const proc =
+                        linkedProceduresMap[procId] ||
+                        Object.values(linkedProceduresMap).find(
+                          (p) => p.id === procId || p.slug === procId,
+                        );
                       if (!proc) {
                         return (
                           <div
@@ -903,62 +1032,64 @@ export function ChapterContentEditor({
 
                     {/* Choices vertical list */}
                     <div className="flex flex-col space-y-3 pt-2">
-                      {q.choices.map((c, cIdx) => {
-                        const label =
-                          typeof c.label === "string"
-                            ? c.label
-                            : (previewLang === "es"
-                                ? c.label?.es || c.label?.en
-                                : c.label?.en || c.label?.es) || "";
-                        const isCorrect = c.id === q.correctChoiceId;
-                        const letter = String.fromCharCode(65 + cIdx); // A, B, C, D
+                      {(q.choices || (q as any).options || []).map(
+                        (c: any, cIdx: number) => {
+                          const label =
+                            typeof c.label === "string"
+                              ? c.label
+                              : (previewLang === "es"
+                                  ? c.label?.es || c.label?.en
+                                  : c.label?.en || c.label?.es) || "";
+                          const isCorrect = c.id === q.correctChoiceId;
+                          const letter = String.fromCharCode(65 + cIdx); // A, B, C, D
 
-                        return (
-                          <div
-                            key={c.id || cIdx}
-                            className={cn(
-                              "flex items-center justify-between rounded-xl border transition-all",
-                              isCorrect
-                                ? "border-[var(--color-ok)] bg-[var(--color-ok-tint)] text-[var(--color-ink)] shadow-xs"
-                                : "border-[var(--color-line-2)] bg-[var(--color-wash)]/40 text-[var(--color-ink)]",
-                            )}
-                            style={{ padding: "14px 18px", gap: "12px" }}
-                          >
-                            <div className="flex items-center min-w-0 flex-1">
-                              <span
-                                className={cn(
-                                  "flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold mr-3",
-                                  isCorrect
-                                    ? "bg-[var(--color-ok)] text-white shadow-xs"
-                                    : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] border border-[var(--color-line-2)]",
-                                )}
-                              >
-                                {letter}
-                              </span>
-                              <span className="text-sm font-medium text-[var(--color-ink)] leading-snug break-words">
-                                {label ||
-                                  (previewLang === "es"
-                                    ? `Opción ${letter}`
-                                    : `Option ${letter}`)}
-                              </span>
-                            </div>
-
-                            {isCorrect && (
-                              <span
-                                className="shrink-0 inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-surface)] text-[var(--color-ok-700)] border border-[var(--color-ok)]/40 shadow-xs"
-                                style={{ padding: "4px 12px", gap: "6px" }}
-                              >
-                                <LuCheck className="w-4 h-4 stroke-[2.5] text-[var(--color-ok-700)]" />
-                                <span>
-                                  {previewLang === "es"
-                                    ? "Respuesta correcta"
-                                    : "Correct answer"}
+                          return (
+                            <div
+                              key={c.id || cIdx}
+                              className={cn(
+                                "flex items-center justify-between rounded-xl border transition-all",
+                                isCorrect
+                                  ? "border-[var(--color-ok)] bg-[var(--color-ok-tint)] text-[var(--color-ink)] shadow-xs"
+                                  : "border-[var(--color-line-2)] bg-[var(--color-wash)]/40 text-[var(--color-ink)]",
+                              )}
+                              style={{ padding: "14px 18px", gap: "12px" }}
+                            >
+                              <div className="flex items-center min-w-0 flex-1">
+                                <span
+                                  className={cn(
+                                    "flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold mr-3",
+                                    isCorrect
+                                      ? "bg-[var(--color-ok)] text-white shadow-xs"
+                                      : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] border border-[var(--color-line-2)]",
+                                  )}
+                                >
+                                  {letter}
                                 </span>
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
+                                <span className="text-sm font-medium text-[var(--color-ink)] leading-snug break-words">
+                                  {label ||
+                                    (previewLang === "es"
+                                      ? `Opción ${letter}`
+                                      : `Option ${letter}`)}
+                                </span>
+                              </div>
+
+                              {isCorrect && (
+                                <span
+                                  className="shrink-0 inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-surface)] text-[var(--color-ok-700)] border border-[var(--color-ok)]/40 shadow-xs"
+                                  style={{ padding: "4px 12px", gap: "6px" }}
+                                >
+                                  <LuCheck className="w-4 h-4 stroke-[2.5] text-[var(--color-ok-700)]" />
+                                  <span>
+                                    {previewLang === "es"
+                                      ? "Respuesta correcta"
+                                      : "Correct answer"}
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+                          );
+                        },
+                      )}
                     </div>
                   </div>
                 );
@@ -1249,28 +1380,35 @@ export function ChapterContentEditor({
                   type="button"
                   variant="surface"
                   icon={LuCheck}
-                  disabled={!hasTitle || !hasPurpose}
+                  disabled={isSaving || !hasTitle || !hasPurpose}
                   onClick={handleSave}
                 >
-                  {isEs ? "Guardar cambios" : "Save changes"}
+                  {isSaving
+                    ? isEs
+                      ? "Guardando..."
+                      : "Saving..."
+                    : isEs
+                      ? "Guardar cambios"
+                      : "Save changes"}
                 </Button>
               )}
               <Button
                 type="button"
                 variant="primary"
                 icon={LuChevronRight}
-                disabled={!hasTitle || !hasPurpose}
+                disabled={isSaving || !hasTitle || !hasPurpose}
                 onClick={handleNext}
               >
                 {isEs ? "Siguiente" : "Next"}
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-4 sm:gap-6">
               <Button
                 type="button"
                 variant="surface"
                 icon={LuArrowLeft}
+                disabled={isSaving}
                 onClick={() => setStep("content")}
               >
                 {isEs ? "Anterior" : "Back"}
@@ -1279,9 +1417,16 @@ export function ChapterContentEditor({
                 type="button"
                 variant="primary"
                 icon={LuCheck}
+                disabled={isSaving}
                 onClick={handleSave}
               >
-                {isEs ? "Guardar cambios" : "Save changes"}
+                {isSaving
+                  ? isEs
+                    ? "Guardando..."
+                    : "Saving..."
+                  : isEs
+                    ? "Guardar cambios"
+                    : "Save changes"}
               </Button>
             </div>
           )}

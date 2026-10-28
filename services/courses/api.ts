@@ -37,17 +37,66 @@ export async function fetchCourses(
   return data.data;
 }
 
+// In-memory course cache and in-flight request deduplication to prevent duplicate API hits
+const courseCache = new Map<
+  string,
+  { data: BackendCourse; timestamp: number }
+>();
+const courseInFlight = new Map<string, Promise<BackendCourse>>();
+
+export function setCachedCourse(course: BackendCourse): void {
+  if (!course?.id) return;
+  courseCache.set(course.id, { data: course, timestamp: Date.now() });
+}
+
+export function clearCourseCache(id?: string): void {
+  if (id) {
+    courseCache.delete(id);
+    courseInFlight.delete(id);
+  } else {
+    courseCache.clear();
+    courseInFlight.clear();
+  }
+}
+
 /**
  * GET /api/v1/courses/:id — Fetches a course by UUID along with its ordered chapters
  */
-export async function fetchCourseById(id: string): Promise<BackendCourse> {
-  const { data } = await http.get<{
-    success: boolean;
-    message: string;
-    data: { course: BackendCourse };
-  }>(COURSES_ENDPOINTS.GET(id));
+export async function fetchCourseById(
+  id: string,
+  bypassCache = false,
+): Promise<BackendCourse> {
+  if (!id) throw new Error("Course ID is required");
 
-  return data.data.course;
+  if (!bypassCache) {
+    const cached = courseCache.get(id);
+    if (cached && Date.now() - cached.timestamp < 10000) {
+      return cached.data;
+    }
+    const inFlight = courseInFlight.get(id);
+    if (inFlight) {
+      return inFlight;
+    }
+  }
+
+  const promise = (async () => {
+    try {
+      const { data } = await http.get<{
+        success: boolean;
+        message: string;
+        data: { course: BackendCourse };
+      }>(COURSES_ENDPOINTS.GET(id));
+
+      const course = data.data.course;
+      courseCache.set(id, { data: course, timestamp: Date.now() });
+      return course;
+    } finally {
+      courseInFlight.delete(id);
+    }
+  })();
+
+  courseInFlight.set(id, promise);
+  return promise;
 }
 
 /**
@@ -62,23 +111,27 @@ export async function createCourse(
     data: { course: BackendCourse };
   }>(COURSES_ENDPOINTS.CREATE, input);
 
-  return data.data.course;
+  const course = data.data.course;
+  setCachedCourse(course);
+  return course;
 }
 
 /**
- * PUT /api/v1/courses/:id — Updates a course and optionally replaces chapter set
+ * PATCH /api/v1/courses/:id — Updates a course and optionally replaces chapter set
  */
 export async function updateCourse(
   id: string,
   input: UpdateCourseInput,
 ): Promise<BackendCourse> {
-  const { data } = await http.put<{
+  const { data } = await http.patch<{
     success: boolean;
     message: string;
     data: { course: BackendCourse };
   }>(COURSES_ENDPOINTS.UPDATE(id), input);
 
-  return data.data.course;
+  const course = data.data.course;
+  setCachedCourse(course);
+  return course;
 }
 
 /**
@@ -170,6 +223,61 @@ export async function saveCourse(
   const cleanChapters = input.chapters
     ? JSON.parse(JSON.stringify(input.chapters))
     : [];
+
+  // Persist any inline chapter quizzes so quiz questions are saved to the quiz API with quizType: 'course'
+  for (const ch of cleanChapters) {
+    if (ch.quiz?.questions && ch.quiz.questions.length > 0) {
+      let targetQuizId = ch.quizId && isUuid(ch.quizId) ? ch.quizId : null;
+
+      // Verify that targetQuizId does not belong to a procedure quiz
+      if (targetQuizId) {
+        try {
+          const { getQuizById, fetchQuizById } =
+            await import("@/lib/api/library");
+          let existingQ = getQuizById(targetQuizId);
+          if (!existingQ) {
+            existingQ = await fetchQuizById(targetQuizId);
+          }
+          if (existingQ && existingQ.quizType === "procedure") {
+            // NEVER overwrite a procedure quiz! Force new course quiz creation
+            targetQuizId = null;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!targetQuizId) {
+        try {
+          const { createQuiz } = await import("@/lib/api/library");
+          const { quiz: created } = await createQuiz({
+            nameEn: `${ch.title || "Chapter"} Quiz`,
+            nameEs: `${ch.title || "Capítulo"} Quiz`,
+            quizType: "course",
+            questions: ch.quiz.questions,
+          });
+          if (created?.id && isUuid(created.id)) {
+            ch.quizId = created.id;
+            if (ch.quiz) ch.quiz.id = created.id;
+          }
+        } catch (err) {
+          console.warn("Failed to create inline chapter quiz:", err);
+        }
+      } else {
+        try {
+          const { updateQuiz } = await import("@/lib/api/library");
+          await updateQuiz(targetQuizId, {
+            nameEn: `${ch.title || "Chapter"} Quiz`,
+            nameEs: `${ch.title || "Capítulo"} Quiz`,
+            quizType: "course",
+            questions: ch.quiz.questions,
+          });
+        } catch (err) {
+          console.warn("Failed to update chapter quiz:", err);
+        }
+      }
+    }
+  }
 
   const backendChapters = cleanChapters.map((ch: any, idx: number) => ({
     ...(ch.id && isUuid(ch.id) ? { id: ch.id } : {}),

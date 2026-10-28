@@ -80,7 +80,12 @@ export function TrainingCourseExplorer({
           updatedAt: bc.updatedAt,
           attachedToTraining: true,
           chapterCount: bc.chapterCount ?? 0,
+          quizId:
+            bc.hasQuiz || (bc.quizCount && bc.quizCount > 0)
+              ? "attached-quiz"
+              : null,
         } as unknown as Procedure,
+        chapterCount: bc.chapterCount ?? 0,
         assignmentCount: assignCount,
         completeCount: 0,
         inProgressCount: 0,
@@ -212,7 +217,7 @@ export function TrainingCourseExplorer({
 
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="font-[family-name:var(--font-ui)] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)]">
+        <h1 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold leading-snug sm:leading-display tracking-tight text-[var(--color-ink)]">
           {isEs ? "Cursos" : "Courses"}
         </h1>
         <Button
@@ -449,6 +454,12 @@ export function TrainingCourseExplorer({
                         </>
                       ) : null}
                       <span aria-hidden="true">·</span>
+                      <span>
+                        {isEs
+                          ? `${row.course.chapterCount ?? 0} ${(row.course.chapterCount ?? 0) === 1 ? "capítulo" : "capítulos"}`
+                          : `${row.course.chapterCount ?? 0} ${(row.course.chapterCount ?? 0) === 1 ? "chapter" : "chapters"}`}
+                      </span>
+                      <span aria-hidden="true">·</span>
                       <span suppressHydrationWarning>
                         {t("updatedAgo", { when: updated })}
                       </span>
@@ -491,9 +502,13 @@ export function TrainingCourseExplorer({
                                 : "Delete permanently",
                               icon: LuTrash2,
                               destructive: true,
-                              confirmLabel: isEs
-                                ? "¿Eliminar este curso permanentemente?"
-                                : "Permanently delete this course?",
+                              confirmTitle: isEs
+                                ? "Eliminar curso"
+                                : "Delete course",
+                              confirmDescription: isEs
+                                ? `"${title}" y su contenido se eliminarán permanentemente. Esto no se puede deshacer.`
+                                : `"${title}" and its contents will be permanently removed. This can't be undone.`,
+                              confirmLabel: isEs ? "Eliminar" : "Delete",
                               onSelect: () => handleDelete(row.course.id),
                             },
                           ]
@@ -510,7 +525,13 @@ export function TrainingCourseExplorer({
                               label: t("rowArchive"),
                               icon: LuArchive,
                               destructive: true,
-                              confirmLabel: t("rowArchiveConfirm"),
+                              confirmTitle: isEs
+                                ? "Archivar curso"
+                                : "Archive course",
+                              confirmDescription: isEs
+                                ? `"${title}" se archivará. Las personas asignadas ya no lo verán.`
+                                : `"${title}" will be archived. Anyone assigned will see it as gone.`,
+                              confirmLabel: isEs ? "Archivar" : "Archive",
                               onSelect: () => handleArchive(row.course.id),
                             },
                           ]

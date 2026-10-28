@@ -30,6 +30,8 @@ export interface BackendCourse {
   createdAt: string;
   updatedAt: string;
   chapterCount?: number;
+  quizCount?: number;
+  hasQuiz?: boolean;
   chapters?: BackendChapter[];
 }
 

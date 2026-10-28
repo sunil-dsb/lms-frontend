@@ -18,6 +18,12 @@ export interface CourseChapter {
   completedText?: string;
   contentType?: CourseChapterContentType;
   estimatedMinutes?: number;
+  hasProcedure?: boolean;
+  linkedProceduresCount?: number;
+  procedureId?: string;
+  procedureSlug?: string;
+  blocks?: ProcedureBlock[];
+  quizQuestionsCount?: number;
 }
 
 export interface LinkedProcedureInfo {
@@ -39,6 +45,104 @@ export interface CourseChaptersViewData {
   totalChaptersCount: number;
   estimatedMinutesLeft?: number;
   totalEstimatedMinutes?: number;
+}
+
+/**
+ * Dynamic formula to calculate estimated completion time for a chapter in minutes:
+ * - Text/content: ~180 words/min reading speed
+ * - Standard steps / procedure blocks: ~1 minute per step
+ * - Video blocks: ~3 minutes per video
+ * - Quiz questions: ~1.5 minutes per question (read prompt, review choices, select answer)
+ * - Linked procedure review: ~2 minutes
+ * - Minimum fallback: 2 minutes for any chapter with content
+ */
+export function calculateChapterEstimatedMinutes(chapter: {
+  blocks?: unknown[] | null;
+  quiz?: { questions?: unknown[] } | null;
+  procedureId?: string | null;
+  estimatedMinutes?: number | null;
+}): number {
+  if (
+    typeof chapter.estimatedMinutes === "number" &&
+    chapter.estimatedMinutes > 0
+  ) {
+    return chapter.estimatedMinutes;
+  }
+
+  let totalMinutes = 0;
+
+  // 1. Blocks calculation
+  const blocks = Array.isArray(chapter.blocks) ? chapter.blocks : [];
+  if (blocks.length > 0) {
+    let wordCount = 0;
+    let blockWeight = 0;
+
+    for (const b of blocks as any[]) {
+      if (!b) continue;
+
+      const text = [
+        b.body?.en,
+        b.body?.es,
+        b.textEn,
+        b.textEs,
+        b.contentEn,
+        b.contentEs,
+        b.title?.en,
+        b.title?.es,
+        b.titleEn,
+        b.titleEs,
+        b.descriptionEn,
+        b.descriptionEs,
+      ]
+        .filter((val): val is string => typeof val === "string")
+        .join(" ");
+
+      const words = text.trim().split(/\s+/).filter(Boolean).length;
+      wordCount += words;
+
+      if (b.kind === "video") {
+        blockWeight += 3;
+      } else if (b.kind === "linked_procedures" || b.procedureIds?.length) {
+        blockWeight += 2;
+      } else if (b.kind === "step" || b.kind === "checklist") {
+        blockWeight += 1;
+      } else if (b.kind === "quiz") {
+        const qCount = Array.isArray(b.questions) ? b.questions.length : 1;
+        blockWeight += Math.ceil(qCount * 1.5);
+      } else {
+        blockWeight += 0.5;
+      }
+    }
+
+    const readingMinutes = wordCount > 0 ? Math.ceil(wordCount / 180) : 0;
+    totalMinutes += Math.max(1, readingMinutes + Math.round(blockWeight));
+  }
+
+  // 2. Direct Quiz questions on chapter
+  const quizQuestions = Array.isArray(chapter.quiz?.questions)
+    ? chapter.quiz.questions
+    : [];
+  if (quizQuestions.length > 0) {
+    totalMinutes += Math.max(1, Math.ceil(quizQuestions.length * 1.5));
+  }
+
+  // 3. Standalone linked procedure
+  if (
+    chapter.procedureId &&
+    blocks.length === 0 &&
+    quizQuestions.length === 0
+  ) {
+    totalMinutes += 3;
+  }
+
+  // Floor: at least 2 minutes per chapter (or 1 if completely empty)
+  if (totalMinutes === 0) {
+    return blocks.length > 0 || quizQuestions.length > 0 || chapter.procedureId
+      ? 2
+      : 1;
+  }
+
+  return Math.max(2, totalMinutes);
 }
 
 // Block builders mapping 1:1 to ProcedureBlock from the procedure system
@@ -936,6 +1040,27 @@ export function getCourseChaptersViewData(
 
   const chapters: CourseChapter[] = chapterDefs.map((def, index) => {
     const chapterTitle = isEs ? def.titleEs : def.titleEn;
+    // Collect unique linked procedure IDs
+    const linkedProcIds: string[] = [];
+    if (def.procedureId && !linkedProcIds.includes(def.procedureId)) {
+      linkedProcIds.push(def.procedureId);
+    }
+    if (def.procedureSlug && !linkedProcIds.includes(def.procedureSlug)) {
+      linkedProcIds.push(def.procedureSlug);
+    }
+    (def.blocks ?? []).forEach((b: any) => {
+      if (b.kind === "linked_procedures" && Array.isArray(b.procedureIds)) {
+        b.procedureIds.forEach((pid: string) => {
+          if (pid && !linkedProcIds.includes(pid)) {
+            linkedProcIds.push(pid);
+          }
+        });
+      }
+    });
+
+    const linkedProceduresCount = linkedProcIds.length;
+    const hasProcedure = linkedProceduresCount > 0;
+    const quizCount = def.quiz?.questions?.length ?? (def.quizId ? 1 : 0);
 
     if (isComplete || index < completedCount) {
       const passedText = isEs
@@ -950,6 +1075,12 @@ export function getCourseChaptersViewData(
         status: "complete",
         contentType: def.contentType,
         estimatedMinutes: def.estimatedMinutes,
+        hasProcedure,
+        linkedProceduresCount,
+        procedureId: def.procedureId,
+        procedureSlug: def.procedureSlug,
+        blocks: def.blocks,
+        quizQuestionsCount: quizCount,
       };
     }
 
@@ -963,6 +1094,12 @@ export function getCourseChaptersViewData(
         status: "active",
         contentType: def.contentType,
         estimatedMinutes: def.estimatedMinutes,
+        hasProcedure,
+        linkedProceduresCount,
+        procedureId: def.procedureId,
+        procedureSlug: def.procedureSlug,
+        blocks: def.blocks,
+        quizQuestionsCount: quizCount,
       };
     }
 
@@ -980,17 +1117,25 @@ export function getCourseChaptersViewData(
       status: "locked",
       contentType: def.contentType,
       estimatedMinutes: def.estimatedMinutes,
+      hasProcedure,
+      linkedProceduresCount,
+      procedureId: def.procedureId,
+      procedureSlug: def.procedureSlug,
+      blocks: def.blocks,
+      quizQuestionsCount: quizCount,
     };
   });
 
-  // Calculate estimated minutes remaining for unfinished chapters
+  // Calculate estimated minutes remaining for unfinished chapters using content formula
   const totalEstimatedMinutes = chapterDefs.reduce(
-    (sum, c) => sum + (c.estimatedMinutes ?? 5),
+    (sum, c) =>
+      sum + (c.estimatedMinutes ?? calculateChapterEstimatedMinutes(c)),
     0,
   );
   const remainingChapters = chapterDefs.slice(completedCount);
   const estimatedMinutesLeft = remainingChapters.reduce(
-    (sum, c) => sum + (c.estimatedMinutes ?? 5),
+    (sum, c) =>
+      sum + (c.estimatedMinutes ?? calculateChapterEstimatedMinutes(c)),
     0,
   );
 

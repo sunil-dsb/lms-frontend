@@ -31,6 +31,8 @@ export function useCourse(id: string) {
     queryKey: [...COURSES_QUERY_KEY, id],
     queryFn: () => fetchCourseById(id),
     enabled: Boolean(id),
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -39,11 +41,14 @@ export function useCreateCourse() {
 
   return useMutation({
     mutationFn: (input: CreateCourseInput) => createCourse(input),
-    onSuccess: () => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({
         queryKey: COURSES_QUERY_KEY,
-        refetchType: "all",
+        exact: true,
       });
+      if (created?.id) {
+        queryClient.setQueryData([...COURSES_QUERY_KEY, created.id], created);
+      }
     },
   });
 }
@@ -54,14 +59,15 @@ export function useUpdateCourse() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateCourseInput }) =>
       updateCourse(id, input),
-    onSuccess: (_, variables) => {
+    onSuccess: (updated, variables) => {
       queryClient.invalidateQueries({
         queryKey: COURSES_QUERY_KEY,
-        refetchType: "all",
+        exact: true,
       });
-      queryClient.invalidateQueries({
-        queryKey: [...COURSES_QUERY_KEY, variables.id],
-      });
+      const effectiveId = updated?.id || variables.id;
+      if (effectiveId && updated) {
+        queryClient.setQueryData([...COURSES_QUERY_KEY, effectiveId], updated);
+      }
     },
   });
 }
@@ -74,7 +80,6 @@ export function useArchiveCourse() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: COURSES_QUERY_KEY,
-        refetchType: "all",
       });
     },
   });
@@ -88,7 +93,6 @@ export function useUnarchiveCourse() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: COURSES_QUERY_KEY,
-        refetchType: "all",
       });
     },
   });
@@ -102,7 +106,6 @@ export function useDeleteCourse() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: COURSES_QUERY_KEY,
-        refetchType: "all",
       });
     },
   });
@@ -124,7 +127,6 @@ export function useAssignCourse() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: COURSES_QUERY_KEY,
-        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: [...COURSES_QUERY_KEY, variables.courseId],
@@ -141,12 +143,10 @@ export function useSaveCourse() {
     onSuccess: (saved) => {
       queryClient.invalidateQueries({
         queryKey: COURSES_QUERY_KEY,
-        refetchType: "all",
+        exact: true,
       });
       if (saved?.id) {
-        queryClient.invalidateQueries({
-          queryKey: [...COURSES_QUERY_KEY, saved.id],
-        });
+        queryClient.setQueryData([...COURSES_QUERY_KEY, saved.id], saved);
       }
     },
   });
