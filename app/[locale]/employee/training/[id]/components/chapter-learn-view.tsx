@@ -80,15 +80,45 @@ export function ChapterLearnView({
 
   const hasCookMode = recipeBlocks.length > 0 || methodBlocks.length > 0;
 
+  // The chapter's synthetic steps block id has to match what the launcher
+  // computes (block.id ?? `recipe-${factors.length}`) so a scoped open event
+  // hits only this chapter's modal.
+  const cookModeBlockId = React.useMemo(() => {
+    if (recipeBlocks.length > 0) {
+      const b = recipeBlocks[0];
+      return b.id ?? `recipe-${b.factors?.length ?? 0}`;
+    }
+    if (methodBlocks.length > 0) return `steps-${courseId}-${chapterNumber}`;
+    return null;
+  }, [recipeBlocks, methodBlocks, courseId, chapterNumber]);
+
+  // Scoped open: the doc-bar / top CTA carries procedureId + recipeBlockId so
+  // launchers that don't belong to this surface (e.g. one per linked-procedure
+  // card further down the page) ignore the event instead of all opening at
+  // once.
   const handleOpenCookMode = React.useCallback(() => {
-    if (typeof window !== "undefined") {
+    if (procedure) {
+      const firstRecipe = recipeBlocks[0];
+      const recipeBlockId = firstRecipe
+        ? (firstRecipe.id ?? `recipe-${firstRecipe.factors?.length ?? 0}`)
+        : `steps-${procedure.id}`;
       window.dispatchEvent(
         new CustomEvent("cook-mode:open", {
-          detail: { at: 1 },
+          detail: { procedureId: procedure.id, recipeBlockId, at: 1 },
+        }),
+      );
+    } else if (cookModeBlockId) {
+      window.dispatchEvent(
+        new CustomEvent("cook-mode:open", {
+          detail: {
+            procedureId: courseId,
+            recipeBlockId: cookModeBlockId,
+            at: 1,
+          },
         }),
       );
     }
-  }, []);
+  }, [procedure, recipeBlocks, courseId, cookModeBlockId]);
 
   const cookModeBlock = React.useMemo(() => {
     if (recipeBlocks.length > 0) {

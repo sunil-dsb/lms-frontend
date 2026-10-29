@@ -27,7 +27,6 @@ import {
   type ChapterRow,
 } from "./index";
 import {
-  LuBookOpen,
   LuCheck,
   LuCircle,
   LuDownload,
@@ -36,6 +35,7 @@ import {
 } from "react-icons/lu";
 import { Icon } from "@/components/ui/icon";
 import { RecipeBody } from "./recipe-body";
+import { CookModeLauncher } from "./cook-mode-launcher";
 import { cn } from "@/lib/utils";
 import { getSopById } from "@/lib/mock-training";
 
@@ -884,11 +884,6 @@ function LinkedProcedureDocItem({
   const purpose = isEs
     ? sop.purposeEs || sop.purposeEn
     : sop.purposeEn || sop.purposeEs;
-  const categoryLabel = sop.category
-    ? isEs
-      ? sop.category.nameEs || sop.category.nameEn
-      : sop.category.nameEn || sop.category.nameEs
-    : "SOP";
 
   const rawBlocks =
     (isEs ? sop.bodyEs?.blocks : sop.bodyEn?.blocks) ||
@@ -902,25 +897,69 @@ function LinkedProcedureDocItem({
     return true;
   });
 
+  // This card's own cook-mode surface: recipes / method steps in the linked
+  // procedure merge into one synthetic steps block, so every card carries its
+  // own "Start cooking" (and its own CookMode modal) — a chapter with steps of
+  // its own plus linked procedures gets one button per section, not one global
+  // button that would open every modal on the page at once.
+  const ingBlock = procBlocks.find(
+    (b): b is Extract<ProcedureBlock, { kind: "ingredients" }> =>
+      b.kind === "ingredients",
+  );
+  const stepBlocks = procBlocks.filter(
+    (b): b is Extract<ProcedureBlock, { kind: "recipe" | "method" }> =>
+      b.kind === "recipe" || b.kind === "method",
+  );
+  const stepsBlock =
+    stepBlocks.length === 0
+      ? null
+      : {
+          id: `steps-${sop.id}`,
+          factors: ingBlock?.factors ?? [1],
+          yieldItems: ingBlock?.yieldItems ?? [],
+          ingredients: ingBlock?.ingredients ?? [],
+          steps: stepBlocks.flatMap((b) => b.steps ?? []),
+          allergen: ingBlock?.allergen,
+        };
+  const openCookMode = (): void => {
+    window.dispatchEvent(
+      new CustomEvent("cook-mode:open", {
+        detail: {
+          procedureId: sop.id,
+          recipeBlockId: `steps-${sop.id}`,
+          at: 1,
+        },
+      }),
+    );
+  };
+
   return (
     <div
       key={id}
       id={`linked-proc-${sop.id}`}
       className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-7 shadow-xs space-y-5"
     >
-      <div className="space-y-1.5 border-b border-[var(--color-line-2)]/60 pb-4">
-        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-brand-600)] bg-[var(--color-brand-50)] dark:bg-[var(--color-brand-950)] px-2.5 py-0.5 rounded-full border border-[var(--color-brand-200)] dark:border-[var(--color-brand-800)]">
-          <LuBookOpen className="w-3.5 h-3.5" />
-          {categoryLabel}
-        </span>
-        <h3 className="text-lg sm:text-xl font-bold text-[var(--color-ink)]">
-          {title}
-        </h3>
-        {purpose && (
-          <p className="text-sm text-[var(--color-ink-2)] leading-relaxed">
-            {purpose}
-          </p>
-        )}
+      <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line-2)]/60 pb-4">
+        <div className="min-w-0 space-y-1.5">
+          <h3 className="text-lg sm:text-xl font-bold text-[var(--color-ink)]">
+            {title}
+          </h3>
+          {purpose && (
+            <p className="text-sm text-[var(--color-ink-2)] leading-relaxed">
+              {purpose}
+            </p>
+          )}
+        </div>
+        {stepsBlock ? (
+          <button
+            type="button"
+            onClick={openCookMode}
+            className="inline-flex shrink-0 min-h-[40px] items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all"
+          >
+            <span aria-hidden="true">▶</span>
+            <span>{isEs ? "Empezar a cocinar" : "Start cooking"}</span>
+          </button>
+        ) : null}
       </div>
 
       {procBlocks.length > 0 ? (
@@ -930,6 +969,19 @@ function LinkedProcedureDocItem({
           {isEs ? "Sin contenido de procedimiento." : "No procedure content."}
         </p>
       )}
+
+      {/* The card's cook-mode modal: opened by this card's button only
+          (title/tags carry procedureId + recipeBlockId, so sibling cards'
+          launchers ignore someone else's open event). */}
+      {stepsBlock ? (
+        <CookModeLauncher
+          block={stepsBlock}
+          procedureId={sop.id}
+          procedureTitle={title}
+          locale={locale}
+          modalOnly
+        />
+      ) : null}
     </div>
   );
 }
