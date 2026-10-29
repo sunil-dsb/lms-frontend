@@ -471,7 +471,7 @@ export function AssignMainModalView({
       </div>
 
       {/* Pinned Footer Actions */}
-      <div className="shrink-0 flex items-center justify-between border-t border-[var(--color-line)] bg-[var(--color-wash)]/80 px-6 py-4 rounded-b-[var(--radius-xl)]">
+      <div className="shrink-0 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-line)] bg-[var(--color-wash)]/80 px-4 sm:px-6 py-3 sm:py-4 rounded-b-[var(--radius-xl)]">
         <Button
           type="button"
           variant="surface"
@@ -479,13 +479,13 @@ export function AssignMainModalView({
           onClick={() =>
             router.push(`/${locale}/employee/training/${course.id}`)
           }
-          className="text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] rounded-full px-4 py-2 shadow-2xs hover:bg-[var(--color-wash)] cursor-pointer"
+          className="text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] rounded-full px-4 py-2 shadow-2xs hover:bg-[var(--color-wash)] cursor-pointer justify-center"
         >
           <LuEye className="mr-1.5 text-sm" />
           {isEs ? "Vista previa" : "Preview as employee"}
         </Button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-3">
           <Button
             type="button"
             variant="ghost"
@@ -502,7 +502,7 @@ export function AssignMainModalView({
             size="sm"
             disabled={!canAssign}
             onClick={onExecuteAssign}
-            className="text-sm font-semibold px-5 py-2 rounded-full shadow-xs cursor-pointer"
+            className="text-sm font-semibold px-5 py-2 rounded-full shadow-xs cursor-pointer flex-1 sm:flex-none justify-center"
           >
             {isSubmitting
               ? isEs

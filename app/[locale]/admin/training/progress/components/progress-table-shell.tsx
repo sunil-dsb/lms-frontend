@@ -23,7 +23,7 @@ export function ProgressTableShell({
     <Card>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="atable" aria-label={label}>
+          <table className="atable min-w-[640px] w-full" aria-label={label}>
             <thead>
               <tr>
                 {columns.map((column, index) => (

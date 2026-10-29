@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { Button } from "@/components/ui/button";
 import { CapsuleTabs } from "@/components/ui/capsule-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
+import { cn } from "@/lib/utils";
 import type { TrainingProgressData } from "@/lib/types";
 import { CourseProgressTable } from "./course-progress-table";
 import { EmployeeProgressTable } from "./employee-progress-table";
@@ -21,10 +22,9 @@ interface ProgressOverviewProps {
 /**
  * The admin Progress tab: who has finished their training and who is behind.
  *
- * `data` arrives from `fetchTrainingProgress()` on the server — mock for now,
- * the backend response shape for good. Everything that reacts to a tap lives
- * client-side here: the by-employee / by-course grouping and the
- * overdue-only filter.
+ * `data` arrives from `fetchTrainingProgress()` on the server.
+ * Fully responsive: adapts segmented tabs and table/card presentation
+ * seamlessly across mobile, tablet, and desktop viewports.
  */
 export function ProgressOverview({
   locale,
@@ -54,7 +54,7 @@ export function ProgressOverview({
         subtitle={t("subtitle")}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <CapsuleTabs
           ariaLabel={t("groupBy")}
           value={groupBy}
@@ -75,11 +75,12 @@ export function ProgressOverview({
           size="sm"
           aria-pressed={overdueOnly}
           onClick={() => setOverdueOnly((value) => !value)}
-          className={
+          className={cn(
+            "self-start sm:self-auto cursor-pointer",
             overdueOnly
-              ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]"
-              : undefined
-          }
+              ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border-[var(--color-brand-600)]/30 font-semibold"
+              : undefined,
+          )}
         >
           {t("overdueOnly")}
         </Button>

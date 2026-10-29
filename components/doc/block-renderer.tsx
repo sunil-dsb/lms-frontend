@@ -939,7 +939,7 @@ function LinkedProcedureDocItem({
       id={`linked-proc-${sop.id}`}
       className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-7 shadow-xs space-y-5"
     >
-      <div className="flex items-start justify-between gap-4 border-b border-[var(--color-line-2)]/60 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 border-b border-[var(--color-line-2)]/60 pb-4">
         <div className="min-w-0 space-y-1.5">
           <h3 className="text-lg sm:text-xl font-bold text-[var(--color-ink)]">
             {title}
@@ -954,7 +954,7 @@ function LinkedProcedureDocItem({
           <button
             type="button"
             onClick={openCookMode}
-            className="inline-flex shrink-0 min-h-[40px] items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all"
+            className="inline-flex shrink-0 min-h-[40px] items-center justify-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all self-start sm:self-auto cursor-pointer"
           >
             <span aria-hidden="true">▶</span>
             <span>{isEs ? "Empezar a cocinar" : "Start cooking"}</span>

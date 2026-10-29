@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 /**
  * Skeleton for the courses explorer list.
@@ -228,14 +229,13 @@ export function CourseDetailSkeleton({
 
       {/* Sticky bottom button matching StickyContinueButton */}
       <div
-        className="fixed bottom-0 z-40 w-full border-t border-[var(--color-line-2)]/80 bg-[var(--color-bg)]/95 backdrop-blur-md transition-all duration-[var(--dur)] ease-[var(--ease)] pointer-events-none"
-        style={{
-          left: `${sidebarOffsetPx}px`,
-          width: `calc(100% - ${sidebarOffsetPx}px)`,
-        }}
+        className={cn(
+          "fixed bottom-0 right-0 z-40 flex justify-center left-0 pointer-events-none",
+          sidebarOffsetPx > 0 && "lg:left-[280px]",
+        )}
       >
-        <div className="mx-auto w-full max-w-doc px-4 py-3 sm:px-6 sm:py-3.5">
-          <Skeleton className="h-12 w-full rounded-full" />
+        <div className="w-full max-w-doc px-4 py-3 sm:px-6 sm:py-3.5">
+          <Skeleton className="h-12 w-full rounded-2xl" />
         </div>
       </div>
     </div>

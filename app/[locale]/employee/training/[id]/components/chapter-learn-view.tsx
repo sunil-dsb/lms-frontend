@@ -7,6 +7,7 @@ import { LuChevronLeft, LuPlay } from "react-icons/lu";
 import { BlockRenderer } from "@/components/doc/block-renderer";
 import { ProcedureArticleBody } from "@/components/doc/procedure-article-body";
 import { CookModeLauncher } from "@/components/doc/cook-mode-launcher";
+import { cn } from "@/lib/utils";
 import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
 
 interface ChapterLearnViewProps {
@@ -258,8 +259,10 @@ export function ChapterLearnView({
 
       {/* Sticky Bottom CTA Button: Continue to quiz */}
       <div
-        className="fixed bottom-0 right-0 z-30 flex justify-center"
-        style={{ left: sidebarOffsetPx ? `${sidebarOffsetPx}px` : 0 }}
+        className={cn(
+          "fixed bottom-0 right-0 z-30 flex justify-center left-0",
+          sidebarOffsetPx > 0 && "lg:left-[280px]",
+        )}
       >
         <div
           className="w-full max-w-doc px-4 sm:px-6 pt-4"

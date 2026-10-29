@@ -401,7 +401,7 @@ export function AssignPeopleModalView({
       </div>
 
       {/* Pinned Bottom Bar matching Main view footer (no !dueAt blocker) */}
-      <div className="shrink-0 flex items-center justify-between border-t border-[var(--color-line)] bg-[var(--color-wash)]/80 px-6 py-4 rounded-b-[var(--radius-xl)]">
+      <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-line)] bg-[var(--color-wash)]/80 px-4 sm:px-6 py-3 sm:py-4 rounded-b-[var(--radius-xl)]">
         <div className="flex items-center gap-2 text-sm">
           <span className="font-semibold text-[var(--color-ink)]">
             {selectedPeopleIds.size} {isEs ? "seleccionados" : "selected"}
@@ -420,7 +420,7 @@ export function AssignPeopleModalView({
           ) : null}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-3">
           <Button
             type="button"
             variant="ghost"

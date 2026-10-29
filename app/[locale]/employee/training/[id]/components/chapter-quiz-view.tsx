@@ -19,6 +19,7 @@ import {
 import type { ProcedureQuizQuestion } from "@/lib/types";
 import { completeMyTrainingChapter } from "@/services/courses/api";
 import { MY_TRAINING_QUERY_KEY } from "@/services/courses/hooks";
+import { cn } from "@/lib/utils";
 
 interface ChapterQuizViewProps {
   courseId: string;
@@ -386,7 +387,7 @@ export function ChapterQuizView({
           </p>
         ) : null}
         {/* Top Back Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Link
             href={`${effectiveBasePath}?chapter=${chapterNumber}`}
             className="inline-flex min-h-tap items-center gap-1.5 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
@@ -400,10 +401,7 @@ export function ChapterQuizView({
           </Link>
 
           {/* Passing requirement pill */}
-          <span
-            className="hidden sm:inline-flex items-center gap-2 text-xs font-semibold rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] shadow-2xs"
-            style={{ padding: "8px 16px", gap: "8px" }}
-          >
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-3 py-1.5 shadow-2xs">
             <LuTarget className="w-4 h-4 text-[var(--color-brand-600)] shrink-0" />
             <span className="leading-none">
               {isEs
@@ -549,8 +547,10 @@ export function ChapterQuizView({
 
       {/* Sticky Bottom Navigation Footer */}
       <div
-        className="fixed bottom-0 right-0 z-30 flex justify-center"
-        style={{ left: sidebarOffsetPx ? `${sidebarOffsetPx}px` : 0 }}
+        className={cn(
+          "fixed bottom-0 right-0 z-30 flex justify-center left-0",
+          sidebarOffsetPx > 0 && "lg:left-[280px]",
+        )}
       >
         <div
           className="w-full max-w-doc px-4 sm:px-6 pt-4 flex items-center gap-3"

@@ -475,7 +475,7 @@ export function TrainingCourseExplorer({
 
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="flex shrink-0 items-center gap-2 self-start md:self-center"
+                  className="flex shrink-0 items-center justify-between border-t border-[var(--color-line-2)]/60 pt-3 md:border-t-0 md:pt-0 w-full md:w-auto gap-2 md:justify-end"
                 >
                   {/* Assign Button — only for active courses */}
                   {!isArchived ? (
@@ -560,17 +560,17 @@ export function TrainingCourseExplorer({
               total: totalPages,
             })}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               aria-label={isEs ? "Página anterior" : "Previous page"}
               type="button"
               disabled={(coursesData?.meta.page ?? 1) <= 1 || isFetching}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-2 py-0.5 rounded border border-[var(--color-line-2)] disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-[var(--color-panel)] text-xs"
+              className="min-h-[32px] min-w-[32px] flex items-center justify-center rounded border border-[var(--color-line-2)] disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-[var(--color-panel)] text-xs cursor-pointer"
             >
               <LuChevronLeft aria-hidden="true" />
             </button>
-            <span className="px-2 py-0.5 rounded bg-[var(--color-panel)] font-bold text-[var(--color-ink)] text-xs tabular-nums">
+            <span className="min-h-[32px] min-w-[32px] flex items-center justify-center px-2 rounded bg-[var(--color-panel)] font-bold text-[var(--color-ink)] text-xs tabular-nums">
               {coursesData?.meta.page ?? 1}
             </span>
             <button
@@ -580,7 +580,7 @@ export function TrainingCourseExplorer({
                 (coursesData?.meta.page ?? 1) >= totalPages || isFetching
               }
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="px-2 py-0.5 rounded border border-[var(--color-line-2)] disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-[var(--color-panel)] text-xs"
+              className="min-h-[32px] min-w-[32px] flex items-center justify-center rounded border border-[var(--color-line-2)] disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-[var(--color-panel)] text-xs cursor-pointer"
             >
               <LuChevronRight aria-hidden="true" />
             </button>

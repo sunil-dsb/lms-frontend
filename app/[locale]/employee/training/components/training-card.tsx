@@ -18,7 +18,7 @@ interface TrainingCardProps {
  * - Title and metadata line ("X chapters · about Y min") on left.
  * - Circular percentage progress ring on top-right where due date was.
  * - Warm amber Due Date badge placed below metadata where badges were.
- * - Completely removes content type badges and bottom line progress bar.
+ * - Responsive padding and gap: p-4 on mobile (< sm) for max horizontal room, p-6 on desktop.
  */
 export function TrainingCard({
   item,
@@ -41,7 +41,7 @@ export function TrainingCard({
     <li className="list-none">
       <Link
         href={`/${locale}/employee/training/${item.courseId}`}
-        className="group block rounded-[24px] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-6 transition-all duration-[var(--dur)] ease-[var(--ease)] hover:border-[var(--color-brand-tint)] hover:shadow-sm focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
+        className="group block rounded-[24px] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 sm:p-6 transition-all duration-[var(--dur)] ease-[var(--ease)] hover:border-[var(--color-brand-tint)] hover:shadow-sm focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
       >
         {/* Station tag if any */}
         {item.stationTag ? (
@@ -53,7 +53,7 @@ export function TrainingCard({
         ) : null}
 
         {/* Content row: Title + Meta on left, Circular percentage on right */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="font-[family-name:var(--font-ui)] text-base sm:text-lg font-bold leading-snug text-[var(--color-ink)] group-hover:text-[var(--color-brand-700)] transition-colors duration-[var(--dur)]">
               {item.title}
