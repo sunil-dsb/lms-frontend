@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchProcedures,
   fetchAssignedProcedures,
@@ -6,16 +6,33 @@ import {
   createProcedure,
   updateProcedure,
   archiveProcedure,
-} from './api';
-import { listProcedures } from '@/lib/api';
-import type { CreateProcedureInput, ProcedureFilterOptions, AssignedProceduresFilterOptions } from './types';
+} from "./api";
+import { listProcedures } from "@/lib/api";
+import type {
+  CreateProcedureInput,
+  ProcedureFilterOptions,
+  AssignedProceduresFilterOptions,
+} from "./types";
 
-export const PROCEDURES_QUERY_KEY = ['procedures'] as const;
+export const PROCEDURES_QUERY_KEY = ["procedures"] as const;
 
-export function useProcedures(options: ProcedureFilterOptions = {}, isAdmin = false) {
+export function useProcedures(
+  options: ProcedureFilterOptions = {},
+  isAdmin = false,
+  enabled = true,
+) {
   return useQuery({
-    queryKey: [...PROCEDURES_QUERY_KEY, options, { isAdmin }],
+    queryKey: [
+      ...PROCEDURES_QUERY_KEY,
+      options.search || "",
+      options.status || "",
+      options.page || 1,
+      options.limit || 200,
+      { isAdmin },
+    ],
     queryFn: () => fetchProcedures(options, isAdmin),
+    enabled,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -24,6 +41,7 @@ export function useProcedure(id: string, isAdmin = false) {
     queryKey: [...PROCEDURES_QUERY_KEY, id, { isAdmin }],
     queryFn: () => fetchProcedureById(id, isAdmin),
     enabled: Boolean(id),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -33,7 +51,10 @@ export function useCreateProcedure() {
   return useMutation({
     mutationFn: (input: CreateProcedureInput) => createProcedure(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY, refetchType: 'all' });
+      queryClient.invalidateQueries({
+        queryKey: PROCEDURES_QUERY_KEY,
+        refetchType: "all",
+      });
       queryClient.removeQueries({ queryKey: PROCEDURES_QUERY_KEY });
     },
   });
@@ -43,10 +64,18 @@ export function useUpdateProcedure() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<CreateProcedureInput> }) =>
-      updateProcedure(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: Partial<CreateProcedureInput>;
+    }) => updateProcedure(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY, refetchType: 'all' });
+      queryClient.invalidateQueries({
+        queryKey: PROCEDURES_QUERY_KEY,
+        refetchType: "all",
+      });
       queryClient.removeQueries({ queryKey: PROCEDURES_QUERY_KEY });
     },
   });
@@ -58,7 +87,10 @@ export function useArchiveProcedure() {
   return useMutation({
     mutationFn: (id: string) => archiveProcedure(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY, refetchType: 'all' });
+      queryClient.invalidateQueries({
+        queryKey: PROCEDURES_QUERY_KEY,
+        refetchType: "all",
+      });
       queryClient.removeQueries({ queryKey: PROCEDURES_QUERY_KEY });
     },
   });
@@ -70,18 +102,22 @@ export function useArchiveProcedure() {
  *  instead of erroring the screen. */
 export function useBrowseProcedures() {
   return useQuery({
-    queryKey: [...PROCEDURES_QUERY_KEY, 'browse'],
+    queryKey: [...PROCEDURES_QUERY_KEY, "browse"],
     queryFn: () => listProcedures({}).then((r) => r.procedures),
   });
 }
 
-export const ASSIGNED_PROCEDURES_QUERY_KEY = ['procedures', 'assigned'] as const;
+export const ASSIGNED_PROCEDURES_QUERY_KEY = [
+  "procedures",
+  "assigned",
+] as const;
 
 /** Employee-facing assigned procedures (GET /api/v1/procedures/assigned). */
-export function useAssignedProcedures(options: AssignedProceduresFilterOptions = {}) {
+export function useAssignedProcedures(
+  options: AssignedProceduresFilterOptions = {},
+) {
   return useQuery({
     queryKey: [...ASSIGNED_PROCEDURES_QUERY_KEY, options],
     queryFn: () => fetchAssignedProcedures(options),
   });
 }
-

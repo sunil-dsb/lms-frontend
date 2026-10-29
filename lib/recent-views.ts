@@ -21,15 +21,18 @@ export interface RecentView {
   at: string;
 }
 
-const KEY = 'lms_recent_views';
+const KEY = "lms_recent_views";
 const KEEP = 8;
 
-export function recordRecentView(view: Omit<RecentView, 'at'>): void {
+export function recordRecentView(view: Omit<RecentView, "at">): void {
   try {
     const raw = window.localStorage.getItem(KEY);
     const prev: RecentView[] = raw ? (JSON.parse(raw) as RecentView[]) : [];
     const rest = prev.filter((v) => v.slug !== view.slug);
-    const next = [{ ...view, at: new Date().toISOString() }, ...rest].slice(0, KEEP);
+    const next = [{ ...view, at: new Date().toISOString() }, ...rest].slice(
+      0,
+      KEEP,
+    );
     window.localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
     /* private window or storage off: the record is best-effort */

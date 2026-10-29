@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export interface FilterChip {
   value: string;
@@ -31,15 +31,23 @@ interface FilterChipsProps {
  * pill stands on its own, white like every other control on the page ground,
  * and the chosen one is terracotta.
  */
-export function FilterChips({ label, chips, value, onChange, className }: FilterChipsProps): React.ReactElement {
+export function FilterChips({
+  label,
+  chips,
+  value,
+  onChange,
+  className,
+}: FilterChipsProps): React.ReactElement {
   return (
-    <div className={cn('chipbar', className)} role="group" aria-label={label}>
+    <div className={cn("chipbar", className)} role="group" aria-label={label}>
       {chips.map((chip) => {
-        const current = chip.value === value ? 'true' : undefined;
+        const current = chip.value === value ? "true" : undefined;
         const body = (
           <>
             <span>{chip.label}</span>
-            {typeof chip.count === 'number' ? <span className="n">{chip.count}</span> : null}
+            {typeof chip.count === "number" ? (
+              <span className="n">{chip.count}</span>
+            ) : null}
           </>
         );
         return chip.href ? (
@@ -47,7 +55,12 @@ export function FilterChips({ label, chips, value, onChange, className }: Filter
             {body}
           </Link>
         ) : (
-          <button key={chip.value} type="button" aria-current={current} onClick={() => onChange?.(chip.value)}>
+          <button
+            key={chip.value}
+            type="button"
+            aria-current={current}
+            onClick={() => onChange?.(chip.value)}
+          >
             {body}
           </button>
         );

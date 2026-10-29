@@ -1,19 +1,8 @@
-import * as React from 'react';
-import Link from 'next/link';
-import { LuChevronRight } from 'react-icons/lu';
-import type { TrainingSummary } from './EmployeeHome';
+import * as React from "react";
+import Link from "next/link";
+import { LuChevronRight } from "react-icons/lu";
+import type { TrainingSummary } from "./EmployeeHome";
 
-/**
- * Unified Home card — reference design:
- * ┌────────────────────────────────────────────────────────┐
- * │  [MG]   María González                                 │
- * │         Line Cook · Grill                              │
- * │                                                        │
- * │  Complete your orientation                             │
- * │  training                                            > │
- * │  0 of 3 chapters done                                  │
- * └────────────────────────────────────────────────────────┘
- */
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
@@ -26,10 +15,10 @@ export function Greeting({
   stationName,
   trailing,
   training,
-  locale = 'en',
+  locale = "en",
   isOnboarding = false,
   line,
-  greetLine = 'Good morning',
+  greetLine = "Good morning",
 }: {
   /** Optional backwards compatibility */
   line?: string;
@@ -45,8 +34,8 @@ export function Greeting({
   greetLine?: string;
 }): React.ReactElement {
   const badge = initials(name);
-  const subtitle = [roleName, stationName].filter(Boolean).join(' · ');
-  const isEs = locale === 'es';
+  const subtitle = [roleName, stationName].filter(Boolean).join(" · ");
+  const isEs = locale === "es";
   // `line` is the translated time-aware greeting from the caller
   // ("Good morning" / "Good afternoon" / "Good evening"); `greetLine` is the
   // legacy default. Prefer `line` when provided.
@@ -59,20 +48,20 @@ export function Greeting({
         {/* Card 1: Profile */}
         <div
           className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] shadow-xs"
-          style={{ padding: '14px 16px' }}
+          style={{ padding: "14px 16px" }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div
               aria-hidden="true"
               className="shrink-0 rounded-full bg-[var(--color-ink)] text-[var(--color-surface)] font-bold"
               style={{
-                width: '42px',
-                height: '42px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '15px',
-                letterSpacing: '0.02em',
+                width: "42px",
+                height: "42px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "15px",
+                letterSpacing: "0.02em",
               }}
             >
               {badge}
@@ -81,14 +70,14 @@ export function Greeting({
             <div className="min-w-0 flex-1">
               <h2
                 className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] leading-snug tracking-tight truncate"
-                style={{ fontSize: '17px' }}
+                style={{ fontSize: "17px" }}
               >
                 {greetText}
               </h2>
               {subtitle ? (
                 <p
                   className="text-[13px] text-[var(--color-ink-2)] truncate"
-                  style={{ marginTop: '2px', lineHeight: '1.35' }}
+                  style={{ marginTop: "2px", lineHeight: "1.35" }}
                 >
                   {subtitle}
                 </p>
@@ -96,43 +85,41 @@ export function Greeting({
             </div>
 
             {trailing ? (
-              <div className="shrink-0" style={{ marginLeft: 'auto' }}>
+              <div className="shrink-0" style={{ marginLeft: "auto" }}>
                 {trailing}
               </div>
             ) : null}
           </div>
         </div>
 
-        {/* Training (Orientation) card with thumbnail matching procedure rows */}
+        {/* Card 2: Orientation Required */}
         <Link
           href={`/${locale}/employee/training`}
-          className="group block rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] shadow-xs transition-all duration-200 hover:border-[var(--color-line-2)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-600)]"
-          style={{ marginTop: '12px', padding: '14px 16px', textDecoration: 'none' }}
+          className="group block rounded-2xl border-2 border-[var(--color-brand)] bg-[var(--color-surface)] shadow-xs transition-all duration-200 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-600)]"
+          style={{
+            marginTop: "10px",
+            padding: "14px 16px",
+            textDecoration: "none",
+          }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            {/* Orientation thumbnail like in procedures */}
-            <div
-              className="relative shrink-0 overflow-hidden rounded-lg bg-[var(--color-panel)]"
-              style={{ width: '64px', height: '64px', minWidth: '64px' }}
-            >
-              <img
-                src="/img/orientation-cover.jpg"
-                alt=""
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                style={{ width: '64px', height: '64px', minWidth: '64px' }}
-              />
-            </div>
-
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
             <div className="min-w-0 flex-1">
               <p
                 className="text-xs font-bold uppercase tracking-wider text-[var(--color-brand)]"
-                style={{ marginBottom: '4px' }}
+                style={{ marginBottom: "4px" }}
               >
-                {isEs ? 'OBLIGATORIO' : 'REQUIRED'}
+                {isEs ? "OBLIGATORIO" : "REQUIRED"}
               </p>
               <h2
                 className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] tracking-tight"
-                style={{ fontSize: '16px', lineHeight: '1.25' }}
+                style={{ fontSize: "16px", lineHeight: "1.25" }}
               >
                 {isEs ? (
                   <>Termina tu inducción</>
@@ -142,11 +129,11 @@ export function Greeting({
               </h2>
               <p
                 className="text-xs sm:text-sm text-[var(--color-ink-2)]"
-                style={{ marginTop: '4px' }}
+                style={{ marginTop: "4px" }}
               >
                 {isEs
-                  ? `${training?.done ?? 0} de ${training?.total ?? 3} capítulos completados`
-                  : `${training?.done ?? 0} of ${training?.total ?? 3} chapters done`}
+                  ? `${training?.done ?? 0} de ${training?.total ?? 0} capítulos completados`
+                  : `${training?.done ?? 0} of ${training?.total ?? 0} chapters done`}
               </p>
             </div>
 
@@ -154,7 +141,7 @@ export function Greeting({
             <div
               aria-hidden="true"
               className="flex shrink-0 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-xs transition-all duration-200 group-hover:scale-105 group-hover:bg-[var(--color-brand-hover)]"
-              style={{ width: '38px', height: '38px' }}
+              style={{ width: "38px", height: "38px" }}
             >
               <LuChevronRight className="text-xl" />
             </div>
@@ -164,30 +151,48 @@ export function Greeting({
     );
   }
 
-  // SCENARIO B: Onboarding Completed
-  const regularTitle = isEs ? 'Progreso de capacitación' : 'Training progress';
-  const regularSubtitle = isEs ? '3 de 5 capítulos completados' : '3 of 5 chapters done';
-  const pct = 60;
+  // SCENARIO B: Training Progress on real data
+  const regularTitle = isEs ? "Progreso de capacitación" : "Training progress";
+  const doneChapters = training?.completedChapters ?? 0;
+  const totalChapters = training?.totalChapters ?? 0;
+  const pct =
+    training?.progressPercent ??
+    (totalChapters > 0
+      ? Math.min(100, Math.round((doneChapters / totalChapters) * 100))
+      : 0);
+
+  const regularSubtitle =
+    totalChapters > 0
+      ? isEs
+        ? `${doneChapters} de ${totalChapters} ${totalChapters === 1 ? "capítulo completado" : "capítulos completados"}`
+        : `${doneChapters} of ${totalChapters} ${totalChapters === 1 ? "chapter" : "chapters"} done`
+      : training && training.total > 0
+        ? isEs
+          ? `${training.done} de ${training.total} ${training.total === 1 ? "curso completado" : "cursos completados"}`
+          : `${training.done} of ${training.total} ${training.total === 1 ? "course" : "courses"} done`
+        : isEs
+          ? "Sin cursos asignados"
+          : "No training assigned";
 
   return (
     <>
       {/* Card 1: Profile */}
       <div
         className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] shadow-xs"
-        style={{ padding: '14px 16px' }}
+        style={{ padding: "14px 16px" }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <div
             aria-hidden="true"
             className="shrink-0 rounded-full bg-[var(--color-ink)] text-[var(--color-surface)] font-bold"
             style={{
-              width: '42px',
-              height: '42px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '15px',
-              letterSpacing: '0.02em',
+              width: "42px",
+              height: "42px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "15px",
+              letterSpacing: "0.02em",
             }}
           >
             {badge}
@@ -196,14 +201,14 @@ export function Greeting({
           <div className="min-w-0 flex-1">
             <h2
               className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] leading-snug tracking-tight truncate"
-              style={{ fontSize: '17px' }}
+              style={{ fontSize: "17px" }}
             >
               {greetText}
             </h2>
             {subtitle ? (
               <p
                 className="text-[13px] text-[var(--color-ink-2)] truncate"
-                style={{ marginTop: '2px', lineHeight: '1.35' }}
+                style={{ marginTop: "2px", lineHeight: "1.35" }}
               >
                 {subtitle}
               </p>
@@ -211,72 +216,88 @@ export function Greeting({
           </div>
 
           {trailing ? (
-            <div className="shrink-0" style={{ marginLeft: 'auto' }}>
+            <div className="shrink-0" style={{ marginLeft: "auto" }}>
               {trailing}
             </div>
           ) : null}
         </div>
       </div>
 
-      {/* Card 2: Training Progress Box */}
-      <Link
-        href={`/${locale}/employee/training`}
-        className="group block rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] shadow-xs transition-all duration-200 hover:border-[var(--color-line-2)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-600)]"
-        style={{
-          marginTop: '10px',
-          padding: '14px 16px',
-          textDecoration: 'none',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          {/* Left: Title + Subtitle + Horizontal progress bar */}
-          <div className="min-w-0 flex-1">
-            <p
-              className="font-bold text-[var(--color-ink)] leading-snug tracking-tight"
-              style={{ fontSize: '15px' }}
-            >
-              {regularTitle}
-            </p>
-            <p
-              className="text-xs text-[var(--color-ink-2)]"
-              style={{ marginTop: '2px' }}
-            >
-              {regularSubtitle}
-            </p>
-            {/* Horizontal progress bar */}
+      {/* Card 2: Training Progress Box — only rendered when assigned courses exist */}
+      {training && training.total > 0 ? (
+        <Link
+          href={`/${locale}/employee/training`}
+          className="group block rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] shadow-xs transition-all duration-200 hover:border-[var(--color-line-2)] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-600)]"
+          style={{
+            marginTop: "10px",
+            padding: "14px 16px",
+            textDecoration: "none",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            {/* Left: Title + Subtitle + Horizontal progress bar */}
+            <div className="min-w-0 flex-1">
+              <p
+                className="font-bold text-[var(--color-ink)] leading-snug tracking-tight"
+                style={{ fontSize: "15px" }}
+              >
+                {regularTitle}
+              </p>
+              <p
+                className="text-xs text-[var(--color-ink-2)]"
+                style={{ marginTop: "2px" }}
+              >
+                {regularSubtitle}
+              </p>
+              {/* Horizontal progress bar */}
+              <div
+                className="w-full rounded-full bg-[var(--color-line-2)] overflow-hidden"
+                style={{ height: "5px", marginTop: "10px" }}
+              >
+                <div
+                  className="h-full rounded-full bg-[var(--color-brand)] transition-all duration-300"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Right: Circular % ring + chevron */}
             <div
-              className="w-full rounded-full bg-[var(--color-line-2)] overflow-hidden"
-              style={{ height: '5px', marginTop: '10px' }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                flexShrink: 0,
+              }}
             >
               <div
-                className="h-full rounded-full bg-[var(--color-brand)]"
-                style={{ width: `${pct}%` }}
+                className="relative flex shrink-0 items-center justify-center rounded-full"
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  border: "2.5px solid var(--color-brand)",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  color: "var(--color-ink)",
+                }}
+              >
+                {pct}%
+              </div>
+              <LuChevronRight
+                aria-hidden="true"
+                className="shrink-0 text-lg text-[var(--color-ink-3)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--color-ink)]"
               />
             </div>
           </div>
-
-          {/* Right: Circular 60% ring + chevron */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <div
-              className="relative flex shrink-0 items-center justify-center rounded-full"
-              style={{
-                width: '44px',
-                height: '44px',
-                border: '2.5px solid var(--color-brand)',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                color: 'var(--color-ink)',
-              }}
-            >
-              {pct}%
-            </div>
-            <LuChevronRight
-              aria-hidden="true"
-              className="shrink-0 text-lg text-[var(--color-ink-3)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--color-ink)]"
-            />
-          </div>
-        </div>
-      </Link>
+        </Link>
+      ) : null}
     </>
   );
 }

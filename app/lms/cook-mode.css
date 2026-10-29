@@ -11,460 +11,462 @@
 /* --- the step number is the tick (used by both demo3 and cook mode) --------- */
 
 button.step-check {
-   position: relative;
-   padding: 0;
-   font: inherit;
-   cursor: pointer;
-   transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  position: relative;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
 }
 
 button.step-check::after {
-   content: '';
-   position: absolute;
-   inset: -9px;
+  content: "";
+  position: absolute;
+  inset: -9px;
 }
 
 button.step-check:focus-visible {
-   outline: 2px solid var(--ring);
-   outline-offset: 2px;
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 @media (hover: hover) {
-   .step:not(.is-done) button.step-check:hover {
-      border-color: var(--ink-3);
-   }
+  .step:not(.is-done) button.step-check:hover {
+    border-color: var(--ink-3);
+  }
 }
 
 /* Done: the same green tick as a checklist, so "done" looks one way. */
 .step.is-done .step-num,
 .step-num.is-on {
-   border-color: var(--ok);
-   background: var(--ok-fill) center / 17px 17px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8l3 3 5-5'/%3E%3C/svg%3E");
+  border-color: var(--ok);
+  background: var(--ok-fill) center / 17px 17px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8l3 3 5-5'/%3E%3C/svg%3E");
 }
 
 .step.is-done .step-num::before {
-   content: '';
+  content: "";
 }
 
 .step.is-done .step-line {
-   color: var(--ink-3);
+  color: var(--ink-3);
 }
 
 .qty {
-   font-weight: 700;
-   font-variant-numeric: tabular-nums;
-   white-space: nowrap;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* --- the way in: cook-status under the facts ------------------------------- */
 
 .cook-status {
-   position: relative;
-   margin: var(--s-3) var(--s-5) 0;
-   padding: var(--s-4) var(--s-4) var(--s-5);
-   border-radius: var(--r-lg);
-   background: var(--wash);
-   overflow: hidden;
+  position: relative;
+  margin: var(--s-3) var(--s-5) 0;
+  padding: var(--s-4) var(--s-4) var(--s-5);
+  border-radius: var(--r-lg);
+  background: var(--wash);
+  overflow: hidden;
 }
 
 .cook-status-text {
-   display: grid;
-   gap: 2px;
+  display: grid;
+  gap: 2px;
 }
 
 .cook-status-text b {
-   display: flex;
-   align-items: center;
-   gap: var(--s-2);
-   font-size: var(--t-md);
-   font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-md);
+  font-variant-numeric: tabular-nums;
 }
 
 .cook-status-text span {
-   font-size: var(--t-sm);
-   color: var(--ink-2);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
 }
 
-.cook-status[data-state='done'] .cook-status-text .i {
-   color: var(--ok);
+.cook-status[data-state="done"] .cook-status-text .i {
+  color: var(--ok);
 }
 
 .cook-status-bar {
-   position: absolute;
-   left: 0;
-   right: 0;
-   bottom: 0;
-   height: 4px;
-   background: var(--line);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: var(--line);
 }
 
 .cook-status-bar i {
-   display: block;
-   height: 100%;
-   background: var(--brand-600);
+  display: block;
+  height: 100%;
+  background: var(--brand-600);
 }
 
 @media (min-width: 600px) {
-   .cook-status {
-      margin-left: var(--s-8);
-      margin-right: var(--s-8);
-      padding-left: var(--s-5);
-   }
+  .cook-status {
+    margin-left: var(--s-8);
+    margin-right: var(--s-8);
+    padding-left: var(--s-5);
+  }
 }
 
 /* --- one place per device -------------------------------------------------- */
 
 .cook-bar-btn {
-   display: inline-flex;
-   align-items: center;
-   gap: var(--s-2);
-   min-height: 38px;
-   padding: 0 var(--s-3);
-   font-size: var(--t-sm);
-   font-weight: 700;
-   border-radius: var(--r-pill);
-   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 38px;
+  padding: 0 var(--s-3);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
 }
 
 .doc-bar .timer-chip {
-   display: none;
+  display: none;
 }
 
 @media (min-width: 720px) {
-   .cook-bar-btn {
-      min-height: 44px;
-      padding: 0 var(--s-5);
-      font-size: var(--t-base);
-   }
+  .cook-bar-btn {
+    min-height: 44px;
+    padding: 0 var(--s-5);
+    font-size: var(--t-base);
+  }
 
-   .doc-bar .timer-chip {
-      display: inline-flex;
-      flex: none;
-   }
+  .doc-bar .timer-chip {
+    display: inline-flex;
+    flex: none;
+  }
 }
 
 /* --- how far along --------------------------------------------------------- */
 
 .method-progress {
-   display: flex;
-   align-items: center;
-   justify-content: space-between;
-   gap: var(--s-3);
-   margin: 0 0 var(--s-3);
-   font-weight: 600;
-   color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-3);
+  font-weight: 600;
+  color: var(--ink-2);
 }
 
 .method-reset {
-   min-height: 48px;
-   padding: 0 var(--s-2);
-   border: 0;
-   background: none;
-   color: var(--ink-2);
-   font: inherit;
-   font-size: var(--t-sm);
-   text-decoration: underline;
-   text-underline-offset: 3px;
-   cursor: pointer;
+  min-height: 48px;
+  padding: 0 var(--s-2);
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 .method-reset:hover {
-   color: var(--ink);
+  color: var(--ink);
 }
 
 /* --- the parts ------------------------------------------------------------- */
 
 .doc-sec.phase {
-   margin-top: var(--s-8);
+  margin-top: var(--s-8);
 }
 
 .phase-part {
-   margin-bottom: var(--s-1);
-   font-size: var(--t-sm);
-   font-weight: 600;
-   letter-spacing: var(--caps-track);
-   text-transform: uppercase;
-   color: var(--ink-3);
+  margin-bottom: var(--s-1);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  letter-spacing: var(--caps-track);
+  text-transform: uppercase;
+  color: var(--ink-3);
 }
 
-.doc-sec.phase>h2 {
-   margin-bottom: var(--s-2);
+.doc-sec.phase > h2 {
+  margin-bottom: var(--s-2);
 }
 
 /* --- a step as one line ---------------------------------------------------- */
 
 .steps.compact .step {
-   grid-template-columns: 30px minmax(0, 1fr) auto;
-   column-gap: var(--s-3);
-   row-gap: 0;
-   align-items: start;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  column-gap: var(--s-3);
+  row-gap: 0;
+  align-items: start;
 }
 
 .steps.compact .step-line {
-   font-size: var(--t-base);
-   line-height: 1.5;
-   max-width: 62ch;
+  font-size: var(--t-base);
+  line-height: 1.5;
+  max-width: 62ch;
 }
 
 .steps.compact .step-body {
-   padding-top: 3px;
+  padding-top: 3px;
 }
 
 .step-extra {
-   grid-column: 2 / -1;
+  grid-column: 2 / -1;
 }
 
 .step-extra .note-block {
-   margin-top: var(--s-3);
+  margin-top: var(--s-3);
 }
 
 .step-extra .crit {
-   margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 @media (min-width: 720px) {
-   .steps.compact .step {
-      column-gap: var(--s-4);
-   }
+  .steps.compact .step {
+    column-gap: var(--s-4);
+  }
 
-   .steps.compact .step-line {
-      font-size: var(--t-md);
-   }
+  .steps.compact .step-line {
+    font-size: var(--t-md);
+  }
 }
 
 /* --- the thumbnail --------------------------------------------------------- */
 
 .step-thumb {
-   position: relative;
-   display: block;
-   width: 72px;
-   height: 72px;
-   padding: 0;
-   border: 0;
-   border-radius: var(--r-md);
-   overflow: hidden;
-   background: var(--panel);
-   cursor: pointer;
-   transition: transform var(--dur-press) var(--ease);
+  position: relative;
+  display: block;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--panel);
+  cursor: pointer;
+  transition: transform var(--dur-press) var(--ease);
 }
 
 .step-thumb img {
-   display: block;
-   width: 100%;
-   height: 100%;
-   object-fit: cover;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .step-thumb:active {
-   transform: scale(0.97);
+  transform: scale(0.97);
 }
 
 .step-thumb:focus-visible {
-   outline: 2px solid var(--ring);
-   outline-offset: 2px;
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 /* Right and wrong, side by side, each with its colour along the bottom. */
 .step-thumb.is-pair {
-   display: grid;
-   grid-template-columns: 1fr 1fr;
-   gap: 2px;
-   background: var(--surface);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--surface);
 }
 
 .step-thumb.is-pair img {
-   border-radius: 0;
+  border-radius: 0;
 }
 
 .step-thumb.is-pair img.ok {
-   border-bottom: 4px solid var(--ok);
+  border-bottom: 4px solid var(--ok);
 }
 
 .step-thumb.is-pair img.no {
-   border-bottom: 4px solid var(--bad);
+  border-bottom: 4px solid var(--bad);
 }
 
 /* Multi-photo grid thumb (2 to 4 photos) */
 .step-thumb.is-grid {
-   display: grid;
-   gap: 2px;
-   background: var(--surface);
-   overflow: hidden;
+  display: grid;
+  gap: 2px;
+  background: var(--surface);
+  overflow: hidden;
 }
 
 .step-thumb.is-grid-2 {
-   grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
 }
 
 .step-thumb.is-grid-3 {
-   grid-template-columns: 1fr 1fr;
-   grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
 }
 
 .step-thumb.is-grid-3 img:first-child {
-   grid-row: span 2;
+  grid-row: span 2;
 }
 
 .step-thumb.is-grid-4 {
-   grid-template-columns: 1fr 1fr;
-   grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
 }
 
 .step-thumb.is-grid img {
-   display: block;
-   width: 100%;
-   height: 100%;
-   object-fit: cover;
-   border-radius: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
 }
 
 .step-thumb .badge {
-   position: absolute;
-   left: 4px;
-   bottom: 4px;
-   display: inline-flex;
-   align-items: center;
-   gap: 2px;
-   padding: 0 6px 0 3px;
-   border-radius: var(--r-pill);
-   background: var(--scrim-strong);
-   color: var(--on-fill);
-   font-size: var(--t-sm);
-   font-weight: 600;
-   line-height: 1.5;
-   font-variant-numeric: tabular-nums;
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px 0 3px;
+  border-radius: var(--r-pill);
+  background: var(--scrim-strong);
+  color: var(--on-fill);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (min-width: 720px) {
-   .step-thumb {
-      width: 120px;
-      height: 90px;
-   }
+  .step-thumb {
+    width: 120px;
+    height: 90px;
+  }
 }
 
 /* The whole video: one more line of the same shape. */
 .video-row {
-   display: grid;
-   grid-template-columns: auto minmax(0, 1fr);
-   gap: var(--s-4);
-   align-items: center;
-   padding: var(--s-3);
-   border-radius: var(--r-lg);
-   background: var(--wash);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-4);
+  align-items: center;
+  padding: var(--s-3);
+  border-radius: var(--r-lg);
+  background: var(--wash);
 }
 
 .video-row p {
-   display: grid;
-   gap: 2px;
+  display: grid;
+  gap: 2px;
 }
 
 .video-row span {
-   font-size: var(--t-sm);
-   color: var(--ink-2);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
 }
 
 /* --- doc-sec-cta: a slot in the Yield section for the "Start cooking" CTA -- */
 
 .doc-sec-cta {
-   display: flex;
-   justify-content: flex-end;
-   margin: 0 0 var(--s-3);
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 var(--s-3);
 }
 
 .doc-sec-cta .btn {
-   min-height: 48px;
-   padding: 0 var(--s-5);
-   font-weight: 700;
+  min-height: 48px;
+  padding: 0 var(--s-5);
+  font-weight: 700;
 }
 
 .cook-start {
-   display: inline-flex;
-   align-items: center;
-   gap: var(--s-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
 }
 
 /* --- step-extras (timer / discard hints on the document view) -------------- */
 
 .step-extras {
-   display: flex;
-   flex-wrap: wrap;
-   gap: var(--s-2);
-   margin-top: var(--s-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
 }
 
 .step-extras .step-time[data-kind] {
-   display: inline-flex;
-   align-items: center;
-   gap: 6px;
-   min-height: 26px;
-   height: auto;
-   padding: 3px 10px;
-   border-radius: var(--r-pill);
-   font-size: var(--t-xs);
-   font-weight: 500;
-   font-variant-numeric: tabular-nums;
-   line-height: 1.25;
-   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  height: auto;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  border: 1px solid transparent;
 }
 
-.step-extras .step-time[data-kind='timer'] {
-   background: var(--brand-tint);
-   color: var(--brand-700);
-   border-color: var(--ring);
+.step-extras .step-time[data-kind="timer"] {
+  background: var(--brand-tint);
+  color: var(--brand-700);
+  border-color: var(--ring);
 }
 
-.step-extras .step-time[data-kind='timer'] .i,
-.step-extras .step-time[data-kind='timer'] svg {
-   color: var(--brand-600);
+.step-extras .step-time[data-kind="timer"] .i,
+.step-extras .step-time[data-kind="timer"] svg {
+  color: var(--brand-600);
 }
 
-.step-extras .step-time[data-kind='discard'] {
-   background: var(--warn-tint);
-   color: var(--warn-ink);
-   border-color: rgba(180, 83, 9, 0.2);
+.step-extras .step-time[data-kind="discard"] {
+  background: var(--warn-tint);
+  color: var(--warn-ink);
+  border-color: rgba(180, 83, 9, 0.2);
 }
 
-.step-extras .step-time[data-kind='discard'] .i,
-.step-extras .step-time[data-kind='discard'] svg {
-   color: var(--warn-ink);
+.step-extras .step-time[data-kind="discard"] .i,
+.step-extras .step-time[data-kind="discard"] svg {
+  color: var(--warn-ink);
 }
 
 .checklist {
-   margin: 0;
-   padding: 0;
-   list-style: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .checklist-row {
-   display: flex;
-   width: 100%;
-   align-items: center;
-   gap: var(--s-3);
-   padding: var(--s-3) var(--s-4) !important;
-   border: 0;
-   border-radius: 0 !important;
-   background: transparent;
-   cursor: pointer;
-   text-align: left;
-   transition: background-color 0.15s ease;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4) !important;
+  border: 0;
+  border-radius: 0 !important;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
 }
 
 .checklist-row:hover {
-   background: var(--wash) !important;
-   border-radius: 0 !important;
+  background: var(--wash) !important;
+  border-radius: 0 !important;
 }
 
 .checklist-row--done {
-   background: var(--ok-tint) !important;
+  background: var(--ok-tint) !important;
 }
 
 /* --- shot with compare border (used by document view) ---------------------- */
 
-.shot[data-compare='ok'] {
-   border-bottom: 4px solid var(--ok);
+.shot[data-compare="ok"] {
+  border-bottom: 4px solid var(--ok);
 }
 
-.shot[data-compare='no'] {
-   border-bottom: 4px solid var(--bad);
+.shot[data-compare="no"] {
+  border-bottom: 4px solid var(--bad);
 }
-

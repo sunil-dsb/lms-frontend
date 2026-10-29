@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { fetchMe } from './api';
-import type { Employee } from '@/lib/types';
+import { useQuery } from "@tanstack/react-query";
+import { fetchMe } from "./api";
+import type { Employee } from "@/lib/types";
 
-export const ME_QUERY_KEY = ['auth', 'me'] as const;
+export const ME_QUERY_KEY = ["auth", "me"] as const;
 
 /**
  * Session owner through TanStack Query (provider defaults: 5 min staleTime,
@@ -23,5 +23,9 @@ export function useMe(): {
     queryFn: () => fetchMe().then((r) => r.employee),
   });
 
-  return { employee: query.data ?? null, isLoading: query.isLoading, error: query.error };
+  return {
+    employee: query.data ?? null,
+    isLoading: query.isLoading,
+    error: query.error,
+  };
 }

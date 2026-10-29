@@ -1,7 +1,15 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { IngredientsTable, MethodSteps, Scaler, Section, Yield, type Ingredient, type MethodStep } from './index';
+import * as React from "react";
+import {
+  IngredientsTable,
+  MethodSteps,
+  Scaler,
+  Section,
+  Yield,
+  type Ingredient,
+  type MethodStep,
+} from "./index";
 
 /**
  * A recipe, in the two sections /sop-recipe-format.html gives it: Yield — the
@@ -52,7 +60,12 @@ export function RecipeBody({
   cookMode,
 }: {
   factors: number[];
-  yieldItems: { label: string; value: string; unit?: string; scales?: boolean }[];
+  yieldItems: {
+    label: string;
+    value: string;
+    unit?: string;
+    scales?: boolean;
+  }[];
   ingredients: Ingredient[];
   steps: MethodStep[];
   batchLabel: string;
@@ -67,10 +80,10 @@ export function RecipeBody({
   const scaled = React.useMemo(
     () =>
       yieldItems
-        .filter((y) => (y.value ?? '').trim() !== '')
+        .filter((y) => (y.value ?? "").trim() !== "")
         .map((y) => {
           if (!y.scales) return y;
-          const n = parseFloat(y.value.replace(',', '.'));
+          const n = parseFloat(y.value.replace(",", "."));
           if (!Number.isFinite(n)) return y;
           const value = String(Math.round(((n * factor) / base) * 100) / 100);
           return { ...y, value };
@@ -97,14 +110,14 @@ export function RecipeBody({
       const first = s.shots?.[0];
       if (!first) return s;
       const second = s.shots?.[1];
-      const isCompare = first.compare === 'ok' && second?.compare === 'no';
+      const isCompare = first.compare === "ok" && second?.compare === "no";
       return {
         ...s,
         shots: undefined,
         mediaThumb: {
           src: first.src,
           alt: first.alt,
-          compare: isCompare ? 'ok' : undefined,
+          compare: isCompare ? "ok" : undefined,
           pairSrc: isCompare ? second.src : undefined,
           images: s.shots?.map((sh) => ({ src: sh.src, alt: sh.alt })),
         },
@@ -117,7 +130,7 @@ export function RecipeBody({
   const doneCount = cookMode?.done?.filter(Boolean).length ?? 0;
   const allDone = doneCount === steps.length && steps.length > 0;
   const displayCount = allDone
-    ? 'all done'
+    ? "all done"
     : doneCount > 0
       ? `${doneCount} of ${steps.length} done`
       : stepsCount;
@@ -126,12 +139,28 @@ export function RecipeBody({
     <>
       {hasYield ? (
         <Section title={yieldTitle}>
-          {factors.length > 0 ? <Scaler factors={factors} selected={factor} onSelect={setFactor} label={batchLabel} /> : null}
+          {factors.length > 0 ? (
+            <Scaler
+              factors={factors}
+              selected={factor}
+              onSelect={setFactor}
+              label={batchLabel}
+            />
+          ) : null}
           {scaled.length > 0 ? (
-            <Yield items={scaled.map((y) => ({ label: y.label, value: y.unit ? `${y.value} ${y.unit}` : y.value }))} />
+            <Yield
+              items={scaled.map((y) => ({
+                label: y.label,
+                value: y.unit ? `${y.value} ${y.unit}` : y.value,
+              }))}
+            />
           ) : null}
           {showTable ? (
-            <IngredientsTable ingredients={ingredients} factors={factors} selectedFactor={factor} />
+            <IngredientsTable
+              ingredients={ingredients}
+              factors={factors}
+              selectedFactor={factor}
+            />
           ) : null}
         </Section>
       ) : null}
@@ -142,7 +171,11 @@ export function RecipeBody({
               <span>
                 {doneCount} of {steps.length} done
               </span>
-              <button type="button" className="method-reset" onClick={cookMode.onReset}>
+              <button
+                type="button"
+                className="method-reset"
+                onClick={cookMode.onReset}
+              >
                 Start a new batch
               </button>
             </p>

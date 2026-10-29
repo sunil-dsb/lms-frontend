@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import * as React from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Loading state for the admin procedure detail page
@@ -52,7 +52,10 @@ export function AdminProcedureDetailSkeleton(): React.ReactElement {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-[var(--radius-md)] bg-[var(--color-panel)]" />
+            <Skeleton
+              key={i}
+              className="h-16 w-full rounded-[var(--radius-md)] bg-[var(--color-panel)]"
+            />
           ))}
         </div>
       </div>

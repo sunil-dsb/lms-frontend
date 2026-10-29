@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { createPortal } from 'react-dom';
-import { cn } from '@/lib/utils';
-import { LuChevronRight } from 'react-icons/lu';
-import { Icon } from '@/components/ui/icon';
-import type { IconType } from 'react-icons';
-import { IconTile } from '@/components/ui/icon-tile';
+import * as React from "react";
+import { createPortal } from "react-dom";
+import { cn } from "@/lib/utils";
+import { LuChevronRight } from "react-icons/lu";
+import { Icon } from "@/components/ui/icon";
+import type { IconType } from "react-icons";
+import { IconTile } from "@/components/ui/icon-tile";
 
 interface PopoverProps {
   open: boolean;
   onClose: () => void;
   triggerRef: React.RefObject<HTMLElement | null>;
   children: React.ReactNode;
-  align?: 'start' | 'end';
-  side?: 'top' | 'bottom';
+  align?: "start" | "end";
+  side?: "top" | "bottom";
   className?: string;
   width?: number;
 }
@@ -30,13 +30,17 @@ export function Popover({
   onClose,
   triggerRef,
   children,
-  align = 'end',
-  side = 'bottom',
+  align = "end",
+  side = "bottom",
   className,
   width: customWidth,
 }: PopoverProps): React.ReactElement | null {
   const panelRef = React.useRef<HTMLDivElement>(null);
-  const [pos, setPos] = React.useState<{ top: number; left: number; width: number } | null>(null);
+  const [pos, setPos] = React.useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -57,16 +61,12 @@ export function Popover({
     const targetWidth = customWidth ?? Math.min(360, Math.max(280, rect.width));
     const width = Math.min(targetWidth, vw - 32);
 
-    let left =
-      align === 'end'
-        ? rect.right - width
-        : rect.left;
+    let left = align === "end" ? rect.right - width : rect.left;
 
     // Keep within screen edges
     left = Math.max(12, Math.min(left, vw - width - 12));
 
-    let top =
-      side === 'top' ? rect.top - panelHeight - gap : rect.bottom + gap;
+    let top = side === "top" ? rect.top - panelHeight - gap : rect.bottom + gap;
 
     if (top + panelHeight > vh - 12) {
       // Flip up if bottom exceeds viewport
@@ -92,12 +92,12 @@ export function Popover({
     });
     const onResize = (): void => recompute();
     const onScroll = (): void => recompute();
-    window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onScroll, true);
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener("keydown", onKey);
     const onPointer = (e: PointerEvent): void => {
       const target = e.target as Node | null;
       if (!target) return;
@@ -105,20 +105,20 @@ export function Popover({
       if (triggerRef.current?.contains(target)) return;
       onClose();
     };
-    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener("pointerdown", onPointer);
     return () => {
       cancelAnimationFrame(anim);
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onScroll, true);
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onPointer);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll, true);
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointer);
     };
   }, [open, onClose, recompute, triggerRef]);
 
   React.useEffect(() => {
     if (!open) {
       const trigger = triggerRef.current;
-      if (trigger && typeof trigger.focus === 'function') {
+      if (trigger && typeof trigger.focus === "function") {
         trigger.focus();
       }
     }
@@ -127,15 +127,28 @@ export function Popover({
   if (!open || !mounted) return null;
 
   const style: React.CSSProperties = pos
-    ? { position: 'fixed', top: pos.top, left: pos.left, width: pos.width, zIndex: 9999 }
-    : { position: 'fixed', top: -9999, left: -9999, width: customWidth ?? 360, visibility: 'hidden', zIndex: 9999 };
+    ? {
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 9999,
+      }
+    : {
+        position: "fixed",
+        top: -9999,
+        left: -9999,
+        width: customWidth ?? 360,
+        visibility: "hidden",
+        zIndex: 9999,
+      };
 
   return createPortal(
     <div
       ref={panelRef}
       role="menu"
       className={cn(
-        'rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-2 shadow-[var(--e-3)] transition-opacity duration-[var(--dur)]',
+        "rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-2 shadow-[var(--e-3)] transition-opacity duration-[var(--dur)]",
         className,
       )}
       style={style}
@@ -186,7 +199,13 @@ export function PopoverItem({
     >
       <div className="flex items-center gap-3 min-w-0">
         {icon && (
-          <IconTile size="sm" icon={icon} tone="quiet" shape="circle" className="group-hover:bg-[var(--color-panel)] group-hover:text-[var(--color-ink)]" />
+          <IconTile
+            size="sm"
+            icon={icon}
+            tone="quiet"
+            shape="circle"
+            className="group-hover:bg-[var(--color-panel)] group-hover:text-[var(--color-ink)]"
+          />
         )}
         <div className="min-w-0">
           <div className="text-sm font-semibold text-[var(--color-ink)]">
@@ -199,7 +218,10 @@ export function PopoverItem({
           )}
         </div>
       </div>
-      <LuChevronRight aria-hidden="true" className="shrink-0 text-base text-[var(--color-ink-3)] transition-transform group-hover:text-[var(--color-ink)]" />
+      <LuChevronRight
+        aria-hidden="true"
+        className="shrink-0 text-base text-[var(--color-ink-3)] transition-transform group-hover:text-[var(--color-ink)]"
+      />
     </button>
   );
 }

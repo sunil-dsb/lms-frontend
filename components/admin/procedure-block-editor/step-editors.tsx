@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   DndContext,
   KeyboardSensor,
@@ -10,23 +10,23 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from '@dnd-kit/core';
+} from "@dnd-kit/core";
 import {
   SortableContext,
   arrayMove,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { cn } from '@/lib/utils';
-import { SegmentedControl } from '@/components/ui/segmented-control';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CustomSelect } from '@/components/ui/custom-select';
-import { RowActions } from '@/components/ui/row-actions';
-import { nextStepId } from '@/lib/procedure-blocks';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { RowActions } from "@/components/ui/row-actions";
+import { nextStepId } from "@/lib/procedure-blocks";
 import type {
   CriticalLimit,
   Localised,
@@ -38,21 +38,71 @@ import type {
   ProcedureMethodStep,
   ProcedureNoteKind,
   ProcedureYieldItem,
-} from '@/lib/types';
-import { syncAmountsWithFactors } from '@/lib/procedure-blocks';
-import { ALLERGEN_KEYS, type AllergenKey } from '@/lib/allergens';
+} from "@/lib/types";
+import { syncAmountsWithFactors } from "@/lib/procedure-blocks";
+import { ALLERGEN_KEYS, type AllergenKey } from "@/lib/allergens";
+import { uploadMedia, deleteUpload } from "@/lib/api";
+import { classifyVideoUrl } from "@/lib/procedure-media";
 import {
-  uploadMedia,
-  deleteUpload,
-} from '@/lib/api';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import { LuArrowDown, LuArrowUp, LuCamera, LuChevronDown, LuChevronUp, LuCircleAlert, LuCirclePlay, LuCloudUpload, LuCopy, LuFocus, LuGripVertical, LuHeading1, LuHeading2, LuHeading3, LuImage, LuImagePlus, LuLightbulb, LuLink, LuListChecks, LuListOrdered, LuPaperclip, LuPlus, LuRefreshCw, LuRotateCcw, LuTable, LuTrash2, LuTriangleAlert, LuType, LuUpload, LuUtensils, LuVideo, LuWorkflow, LuWrench, LuX } from 'react-icons/lu';
-import { Icon } from '@/components/ui/icon';
-import type { IconType } from 'react-icons';
+  LuArrowDown,
+  LuArrowUp,
+  LuCamera,
+  LuChevronDown,
+  LuChevronUp,
+  LuCircleAlert,
+  LuCirclePlay,
+  LuCloudUpload,
+  LuCopy,
+  LuFocus,
+  LuGripVertical,
+  LuHeading1,
+  LuHeading2,
+  LuHeading3,
+  LuImage,
+  LuImagePlus,
+  LuLightbulb,
+  LuLink,
+  LuListChecks,
+  LuListOrdered,
+  LuPaperclip,
+  LuPlus,
+  LuRefreshCw,
+  LuRotateCcw,
+  LuTable,
+  LuTrash2,
+  LuTriangleAlert,
+  LuType,
+  LuUpload,
+  LuUtensils,
+  LuVideo,
+  LuWorkflow,
+  LuWrench,
+  LuX,
+} from "react-icons/lu";
+import { Icon } from "@/components/ui/icon";
+import type { IconType } from "react-icons";
 
 // Must stay in sync with the backend whitelist at lms-backend/src/services/uploads.ts.
 // SVG is intentionally omitted — it can carry inline JS.
-import { ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES, BilingualTabs, EditorProps, Field, MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, NOTE_KINDS, UNITS, asLocalised, asOpt, emptyCriticalLimit, emptyIngredient, newMethodStep, setLocalised, setOpt, textareaCls } from './shared';
+import {
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_VIDEO_TYPES,
+  BilingualTabs,
+  EditorProps,
+  Field,
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
+  NOTE_KINDS,
+  UNITS,
+  asLocalised,
+  asOpt,
+  emptyCriticalLimit,
+  emptyIngredient,
+  newMethodStep,
+  setLocalised,
+  setOpt,
+  textareaCls,
+} from "./shared";
 
 function SortableStepRow({
   step,
@@ -69,12 +119,19 @@ function SortableStepRow({
   total: number;
   onChange: (next: ProcedureMethodStep) => void;
   onRemove: () => void;
-  onMove: (direction: 'up' | 'down') => void;
+  onMove: (direction: "up" | "down") => void;
   onDuplicate: () => void;
   /** True inside a `recipe` block — gates the cook-mode-only fields. */
   recipeAware?: boolean;
 }): React.ReactElement {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: step.id ?? `step-${index}`,
   });
   const style: React.CSSProperties = {
@@ -85,7 +142,7 @@ function SortableStepRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(isDragging && 'opacity-60')}
+      className={cn(isDragging && "opacity-60")}
     >
       <StepRow
         step={step}
@@ -128,63 +185,80 @@ function StepRow({
   total: number;
   onChange: (next: ProcedureMethodStep) => void;
   onRemove: () => void;
-  onMove: (direction: 'up' | 'down') => void;
+  onMove: (direction: "up" | "down") => void;
   onDuplicate: () => void;
   dragHandle: React.ReactNode;
   /** True inside a `recipe` block — gates the cook-mode-only fields
    *  (timer / discard / compare-images) so `method` blocks stay simple. */
   recipeAware?: boolean;
 }): React.ReactElement {
-  const t = useTranslations('admin.library.new.form');
-  const tComp = useTranslations('admin.library.new.form.composer');
-  const [lang, setLang] = React.useState<'en' | 'es'>('en');
+  const t = useTranslations("admin.library.new.form");
+  const tComp = useTranslations("admin.library.new.form.composer");
+  const [lang, setLang] = React.useState<"en" | "es">("en");
   const [critOpen, setCritOpen] = React.useState(false);
   const [videoOpen, setVideoOpen] = React.useState(!!step.videoSegment);
   const [upload, setUpload] = React.useState<{
-    state: 'idle' | 'uploading' | 'failed';
+    state: "idle" | "uploading" | "failed";
     fileName?: string;
     error?: string;
-  }>({ state: 'idle' });
+  }>({ state: "idle" });
   const videoFileRef = React.useRef<HTMLInputElement>(null);
   const limit = step.criticalLimit;
   const seg = step.videoSegment;
   // Differentiates an R2 upload (which the remove button must clean up) from
   // a pasted YouTube/Vimeo link (which has no R2 object to delete).
-  const videoClass = React.useMemo(() => classifyVideoUrl(seg?.src ?? ''), [seg?.src]);
-  const isR2Upload = videoClass.provider === 'file';
+  const videoClass = React.useMemo(
+    () => classifyVideoUrl(seg?.src ?? ""),
+    [seg?.src],
+  );
+  const isR2Upload = videoClass.provider === "file";
 
   function patchLimit(patch: Partial<CriticalLimit>): void {
-    onChange({ ...step, criticalLimit: { ...(limit ?? emptyCriticalLimit()), ...patch } });
+    onChange({
+      ...step,
+      criticalLimit: { ...(limit ?? emptyCriticalLimit()), ...patch },
+    });
   }
-  function patchSegment(patch: Partial<NonNullable<ProcedureMethodStep['videoSegment']>>): void {
-    const base = seg ?? { src: '', startSec: 0, endSec: 0 };
+  function patchSegment(
+    patch: Partial<NonNullable<ProcedureMethodStep["videoSegment"]>>,
+  ): void {
+    const base = seg ?? { src: "", startSec: 0, endSec: 0 };
     onChange({ ...step, videoSegment: { ...base, ...patch } });
   }
 
   async function startVideoUpload(file: File): Promise<void> {
     if (!ALLOWED_VIDEO_TYPES.has(file.type)) {
-      setUpload({ state: 'failed', fileName: file.name, error: tComp('video.uploadUnsupported') });
+      setUpload({
+        state: "failed",
+        fileName: file.name,
+        error: tComp("video.uploadUnsupported"),
+      });
       return;
     }
     if (file.size > MAX_VIDEO_BYTES) {
-      setUpload({ state: 'failed', fileName: file.name, error: tComp('video.uploadTooBig') });
+      setUpload({
+        state: "failed",
+        fileName: file.name,
+        error: tComp("video.uploadTooBig"),
+      });
       return;
     }
-    setUpload({ state: 'uploading', fileName: file.name });
+    setUpload({ state: "uploading", fileName: file.name });
     try {
       const src = await uploadMedia(file);
       patchSegment({ src });
-      setUpload({ state: 'idle' });
+      setUpload({ state: "idle" });
     } catch (err) {
-      const message = err instanceof Error ? err.message : tComp('video.uploadFailed');
-      setUpload({ state: 'failed', fileName: file.name, error: message });
+      const message =
+        err instanceof Error ? err.message : tComp("video.uploadFailed");
+      setUpload({ state: "failed", fileName: file.name, error: message });
     }
   }
 
   function handleVideoFileChange(e: React.ChangeEvent<HTMLInputElement>): void {
     const file = e.target.files?.[0];
     if (!file) return;
-    e.target.value = '';
+    e.target.value = "";
     void startVideoUpload(file);
   }
 
@@ -194,7 +268,7 @@ function StepRow({
       <div className="flex items-center gap-2">
         {dragHandle}
         <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] font-mono text-sm font-semibold text-[var(--color-ink)]">
-          {String(index + 1).padStart(2, '0')}
+          {String(index + 1).padStart(2, "0")}
         </span>
         <span className="text-sm font-semibold text-[var(--color-ink-3)]">
           Step
@@ -204,22 +278,22 @@ function StepRow({
             triggerLabel="Step actions"
             items={[
               {
-                label: t('stepActions.moveUp'),
+                label: t("stepActions.moveUp"),
                 icon: LuArrowUp,
-                onSelect: () => onMove('up'),
+                onSelect: () => onMove("up"),
               },
               {
-                label: t('stepActions.moveDown'),
+                label: t("stepActions.moveDown"),
                 icon: LuArrowDown,
-                onSelect: () => onMove('down'),
+                onSelect: () => onMove("down"),
               },
               {
-                label: t('stepActions.duplicate'),
+                label: t("stepActions.duplicate"),
                 icon: LuCopy,
                 onSelect: onDuplicate,
               },
               {
-                label: t('stepActions.delete'),
+                label: t("stepActions.delete"),
                 icon: LuX,
                 destructive: true,
                 onSelect: onRemove,
@@ -231,14 +305,24 @@ function StepRow({
 
       {/* Instructions — bilingual */}
       <div className="space-y-2">
-        <BilingualTabs active={lang} onChange={setLang} enLabel={tComp('tabs.en')} esLabel={tComp('tabs.es')} />
-        <Field label={t('instructions')} required>
+        <BilingualTabs
+          active={lang}
+          onChange={setLang}
+          enLabel={tComp("tabs.en")}
+          esLabel={tComp("tabs.es")}
+        />
+        <Field label={t("instructions")} required>
           <textarea
             value={asLocalised(step.body, lang)}
-            onChange={(e) => onChange({ ...step, body: setLocalised(step.body, lang, e.target.value) })}
+            onChange={(e) =>
+              onChange({
+                ...step,
+                body: setLocalised(step.body, lang, e.target.value),
+              })
+            }
             rows={3}
             maxLength={500}
-            placeholder={t('instructionsPlaceholder')}
+            placeholder={t("instructionsPlaceholder")}
             className={textareaCls}
           />
         </Field>
@@ -254,11 +338,13 @@ function StepRow({
               onChange({
                 ...step,
                 critical: e.target.checked,
-                criticalLimit: e.target.checked ? limit ?? emptyCriticalLimit() : undefined,
+                criticalLimit: e.target.checked
+                  ? (limit ?? emptyCriticalLimit())
+                  : undefined,
               })
             }
           />
-          {t('criticalControl')}
+          {t("criticalControl")}
         </label>
         {step.critical && (
           <div className="mt-2 space-y-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-warn-tint)] p-3">
@@ -271,12 +357,12 @@ function StepRow({
             >
               <span className="text-sm font-semibold uppercase tracking-caps text-[var(--color-ink-2)]">
                 <LuFocus aria-hidden="true" className="mr-1" />
-                {t('criticalLimit')}
+                {t("criticalLimit")}
               </span>
               <span className="font-mono text-md font-semibold text-[var(--color-ink)]">
                 {limit?.value || (
                   <em className="not-italic text-sm font-normal text-[var(--color-ink-3)]">
-                    {t('notSet')}
+                    {t("notSet")}
                   </em>
                 )}
               </span>
@@ -287,38 +373,45 @@ function StepRow({
             </button>
             {critOpen && (
               <div id={`crit-${step.id ?? index}`} className="space-y-2 pt-1">
-                <Field label={t('limitValue')} required>
+                <Field label={t("limitValue")} required>
                   <Input
-                    value={limit?.value ?? ''}
+                    value={limit?.value ?? ""}
                     onChange={(e) => patchLimit({ value: e.target.value })}
                     placeholder="≥ 165°F"
                   />
                 </Field>
-                <Field label={t('limitDescription')} hint={t('limitDescriptionHint')}>
+                <Field
+                  label={t("limitDescription")}
+                  hint={t("limitDescriptionHint")}
+                >
                   <Input
-                    value={limit?.subtitle ?? ''}
+                    value={limit?.subtitle ?? ""}
                     onChange={(e) => patchLimit({ subtitle: e.target.value })}
-                    placeholder={t('limitDescriptionPlaceholder')}
+                    placeholder={t("limitDescriptionPlaceholder")}
                   />
                 </Field>
-                <Field label={t('limitHowToCheck')} required>
+                <Field label={t("limitHowToCheck")} required>
                   <Input
-                    value={limit?.howToCheck ?? ''}
+                    value={limit?.howToCheck ?? ""}
                     onChange={(e) => patchLimit({ howToCheck: e.target.value })}
-                    placeholder={t('limitHowToCheckPlaceholder')}
+                    placeholder={t("limitHowToCheckPlaceholder")}
                   />
                 </Field>
-                <Field label={t('correctiveAction')} required>
+                <Field label={t("correctiveAction")} required>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <Input
-                      value={limit?.breachLabel ?? ''}
-                      onChange={(e) => patchLimit({ breachLabel: e.target.value })}
-                      placeholder={t('correctiveActionConditionPlaceholder')}
+                      value={limit?.breachLabel ?? ""}
+                      onChange={(e) =>
+                        patchLimit({ breachLabel: e.target.value })
+                      }
+                      placeholder={t("correctiveActionConditionPlaceholder")}
                     />
                     <Input
-                      value={limit?.breachResponse ?? ''}
-                      onChange={(e) => patchLimit({ breachResponse: e.target.value })}
-                      placeholder={t('correctiveActionResponsePlaceholder')}
+                      value={limit?.breachResponse ?? ""}
+                      onChange={(e) =>
+                        patchLimit({ breachResponse: e.target.value })
+                      }
+                      placeholder={t("correctiveActionResponsePlaceholder")}
                     />
                   </div>
                 </Field>
@@ -338,13 +431,13 @@ function StepRow({
             onClick={() => setVideoOpen(true)}
           >
             <LuVideo aria-hidden="true" className="mr-1" />
-            {t('addVideo')}
+            {t("addVideo")}
           </Button>
         )}
         {(videoOpen || seg) && (
           <div className="space-y-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] p-3">
             <div className="flex items-center justify-between">
-              <Label className="text-sm">{t('videoSegment')}</Label>
+              <Label className="text-sm">{t("videoSegment")}</Label>
               <Button
                 type="button"
                 variant="ghost"
@@ -356,24 +449,24 @@ function StepRow({
                   if (isR2Upload && seg?.src) {
                     void deleteUpload({ url: seg.src }).catch(() => undefined);
                   }
-                  setUpload({ state: 'idle' });
+                  setUpload({ state: "idle" });
                   setVideoOpen(false);
                   onChange({ ...step, videoSegment: undefined });
                 }}
               >
                 <LuX aria-hidden="true" className="mr-1" />
-                {t('removeVideo')}
+                {t("removeVideo")}
               </Button>
             </div>
-            <Field label={t('videoSrc')}>
+            <Field label={t("videoSrc")}>
               <div className="flex items-center gap-2">
                 <Input
                   type="url"
-                  value={seg?.src ?? ''}
+                  value={seg?.src ?? ""}
                   onChange={(e) => patchSegment({ src: e.target.value })}
                   placeholder="https://…"
                   className="flex-1"
-                  aria-label={t('videoSrc')}
+                  aria-label={t("videoSrc")}
                 />
                 <input
                   ref={videoFileRef}
@@ -387,25 +480,25 @@ function StepRow({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  disabled={upload.state === 'uploading'}
+                  disabled={upload.state === "uploading"}
                   onClick={() => videoFileRef.current?.click()}
                   className="gap-1 text-sm"
                 >
                   <LuCloudUpload aria-hidden="true" />
-                  {upload.state === 'uploading'
-                    ? tComp('video.uploading')
-                    : tComp('video.uploadChange')}
+                  {upload.state === "uploading"
+                    ? tComp("video.uploading")
+                    : tComp("video.uploadChange")}
                 </Button>
               </div>
             </Field>
-            {upload.state === 'uploading' && (
+            {upload.state === "uploading" && (
               <p className="flex items-center gap-2 text-sm text-[var(--color-ink-2)]">
                 <span className="spinner" aria-hidden="true" />
-                {tComp('video.uploading')}
-                {upload.fileName ? ` · ${upload.fileName}` : ''}
+                {tComp("video.uploading")}
+                {upload.fileName ? ` · ${upload.fileName}` : ""}
               </p>
             )}
-            {upload.state === 'failed' && upload.error && (
+            {upload.state === "failed" && upload.error && (
               <p
                 role="alert"
                 className="flex items-center gap-2 text-sm text-[var(--color-bad)]"
@@ -418,7 +511,9 @@ function StepRow({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-2 rounded-[var(--radius-sm)] bg-[var(--color-panel)] px-3 py-0.5 text-sm font-semibold text-[var(--color-ink-2)]">
                   <Icon icon={isR2Upload ? LuVideo : LuLink} />
-                  {isR2Upload ? tComp('video.uploadDone') : tComp('video.uploadLinked')}
+                  {isR2Upload
+                    ? tComp("video.uploadDone")
+                    : tComp("video.uploadLinked")}
                 </span>
                 <a
                   href={seg.src}
@@ -427,30 +522,40 @@ function StepRow({
                   className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-brand-700)] underline-offset-4 hover:underline"
                 >
                   <LuCirclePlay aria-hidden="true" />
-                  {t('previewClip')}
+                  {t("previewClip")}
                 </a>
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">
-              <Field label={t('videoStart')}>
+              <Field label={t("videoStart")}>
                 <Input
                   type="number"
                   min={0}
                   step={1}
                   value={seg?.startSec ?? 0}
                   onChange={(e) =>
-                    patchSegment({ startSec: Math.max(0, Math.floor(Number(e.target.value) || 0)) })
+                    patchSegment({
+                      startSec: Math.max(
+                        0,
+                        Math.floor(Number(e.target.value) || 0),
+                      ),
+                    })
                   }
                 />
               </Field>
-              <Field label={t('videoEnd')}>
+              <Field label={t("videoEnd")}>
                 <Input
                   type="number"
                   min={0}
                   step={1}
                   value={seg?.endSec ?? 0}
                   onChange={(e) =>
-                    patchSegment({ endSec: Math.max(0, Math.floor(Number(e.target.value) || 0)) })
+                    patchSegment({
+                      endSec: Math.max(
+                        0,
+                        Math.floor(Number(e.target.value) || 0),
+                      ),
+                    })
                   }
                 />
               </Field>
@@ -460,9 +565,9 @@ function StepRow({
       </div>
 
       {/* Cook-mode extras — only shown inside a recipe block. The fields below
-        *  drive the document view's per-step hints and the cook-mode modal's
-        *  timer chip + discard-time line + compare pair. They stay silent on
-        *  a `method` block, where cook mode is not mounted. */}
+       *  drive the document view's per-step hints and the cook-mode modal's
+       *  timer chip + discard-time line + compare pair. They stay silent on
+       *  a `method` block, where cook mode is not mounted. */}
       {recipeAware ? <CookModeFields step={step} onChange={onChange} /> : null}
     </div>
   );
@@ -480,14 +585,14 @@ function CookModeFields({
   step: ProcedureMethodStep;
   onChange: (next: ProcedureMethodStep) => void;
 }): React.ReactElement {
-  const t = useTranslations('admin.library.new.form');
+  const t = useTranslations("admin.library.new.form");
   const hasTimer = !!step.timer;
   const hasDiscard = !!step.discardAt;
   const hasCompare = !!step.compareImages;
   return (
     <div className="space-y-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] p-3">
       <div className="text-sm font-semibold uppercase tracking-caps text-[var(--color-ink-2)]">
-        {t('cookMode')}
+        {t("cookMode")}
       </div>
 
       <label className="flex items-center gap-2 text-sm text-[var(--color-ink-2)]">
@@ -498,25 +603,34 @@ function CookModeFields({
             onChange({
               ...step,
               timer: e.target.checked
-                ? { seconds: step.timer?.seconds ?? 60, label: step.timer?.label ?? '' }
+                ? {
+                    seconds: step.timer?.seconds ?? 60,
+                    label: step.timer?.label ?? "",
+                  }
                 : undefined,
             })
           }
         />
-        {t('addTimer')}
+        {t("addTimer")}
       </label>
       {hasTimer ? (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px]">
-          <Field label={t('timerLabel')} hint={t('timerLabelHint')}>
+          <Field label={t("timerLabel")} hint={t("timerLabelHint")}>
             <Input
-              value={step.timer?.label ?? ''}
+              value={step.timer?.label ?? ""}
               onChange={(e) =>
-                onChange({ ...step, timer: { seconds: step.timer?.seconds ?? 60, label: e.target.value } })
+                onChange({
+                  ...step,
+                  timer: {
+                    seconds: step.timer?.seconds ?? 60,
+                    label: e.target.value,
+                  },
+                })
               }
               placeholder="Hand wash"
             />
           </Field>
-          <Field label={t('timerSeconds')}>
+          <Field label={t("timerSeconds")}>
             <Input
               type="number"
               min={1}
@@ -525,8 +639,11 @@ function CookModeFields({
                 onChange({
                   ...step,
                   timer: {
-                    seconds: Math.max(1, Math.floor(Number(e.target.value) || 1)),
-                    label: step.timer?.label ?? '',
+                    seconds: Math.max(
+                      1,
+                      Math.floor(Number(e.target.value) || 1),
+                    ),
+                    label: step.timer?.label ?? "",
                   },
                 })
               }
@@ -543,14 +660,16 @@ function CookModeFields({
             onChange({
               ...step,
               discardAt: e.target.checked ? true : undefined,
-              discardAtHours: e.target.checked ? step.discardAtHours ?? 48 : undefined,
+              discardAtHours: e.target.checked
+                ? (step.discardAtHours ?? 48)
+                : undefined,
             })
           }
         />
-        {t('addDiscard')}
+        {t("addDiscard")}
       </label>
       {hasDiscard ? (
-        <Field label={t('discardHours')}>
+        <Field label={t("discardHours")}>
           <Input
             type="number"
             min={1}
@@ -559,7 +678,10 @@ function CookModeFields({
               onChange({
                 ...step,
                 discardAt: true,
-                discardAtHours: Math.max(1, Math.floor(Number(e.target.value) || 48)),
+                discardAtHours: Math.max(
+                  1,
+                  Math.floor(Number(e.target.value) || 48),
+                ),
               })
             }
           />
@@ -570,12 +692,19 @@ function CookModeFields({
         <input
           type="checkbox"
           checked={hasCompare}
-          onChange={(e) => onChange({ ...step, compareImages: e.target.checked ? true : undefined })}
+          onChange={(e) =>
+            onChange({
+              ...step,
+              compareImages: e.target.checked ? true : undefined,
+            })
+          }
         />
-        {t('compareImages')}
+        {t("compareImages")}
       </label>
       {hasCompare && (!step.images || step.images.length < 2) ? (
-        <p className="text-xs text-[var(--color-warn-ink)]">{t('compareImagesHint')}</p>
+        <p className="text-xs text-[var(--color-warn-ink)]">
+          {t("compareImagesHint")}
+        </p>
       ) : null}
     </div>
   );
@@ -598,20 +727,26 @@ export function StepsList({
 }): React.ReactElement {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   function handleDragEnd(e: DragEndEvent): void {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
-    const from = steps.findIndex((s) => (s.id ?? `step-${steps.indexOf(s)}`) === active.id);
-    const to = steps.findIndex((s) => (s.id ?? `step-${steps.indexOf(s)}`) === over.id);
+    const from = steps.findIndex(
+      (s) => (s.id ?? `step-${steps.indexOf(s)}`) === active.id,
+    );
+    const to = steps.findIndex(
+      (s) => (s.id ?? `step-${steps.indexOf(s)}`) === over.id,
+    );
     if (from === -1 || to === -1 || from === to) return;
     onChange(arrayMove(steps, from, to));
   }
 
-  function moveStep(i: number, dir: 'up' | 'down'): void {
-    const j = dir === 'up' ? i - 1 : i + 1;
+  function moveStep(i: number, dir: "up" | "down"): void {
+    const j = dir === "up" ? i - 1 : i + 1;
     if (j < 0 || j >= steps.length) return;
     onChange(arrayMove(steps, i, j));
   }
@@ -636,7 +771,11 @@ export function StepsList({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
       <SortableContext
         items={steps.map((s, i) => s.id ?? `step-${i}`)}
         strategy={verticalListSortingStrategy}
@@ -668,20 +807,26 @@ export function StepsList({
 export function MethodEditor({
   block,
   onChange,
-}: EditorProps<Extract<ProcedureBlock, { kind: 'method' }>>): React.ReactElement {
-  const t = useTranslations('admin.library.new.form');
+}: EditorProps<
+  Extract<ProcedureBlock, { kind: "method" }>
+>): React.ReactElement {
+  const t = useTranslations("admin.library.new.form");
   return (
     <div className="space-y-3">
-      <StepsList steps={block.steps} onChange={(steps) => onChange({ ...block, steps })} />
+      <StepsList
+        steps={block.steps}
+        onChange={(steps) => onChange({ ...block, steps })}
+      />
       <Button
         type="button"
         variant="ghost"
         size="sm"
-        onClick={() => onChange({ ...block, steps: [...block.steps, newMethodStep()] })}
+        onClick={() =>
+          onChange({ ...block, steps: [...block.steps, newMethodStep()] })
+        }
       >
-        + {t('addStep')}
+        + {t("addStep")}
       </Button>
     </div>
   );
 }
-

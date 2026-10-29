@@ -1,27 +1,50 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getSubcategoryIcon } from '@/lib/category-icons';
-import type { Category, Procedure, Subcategory } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui/modal';
-import { BilingualInput, type BilingualValue } from '@/components/ui/bilingual-input';
-import { IconTile } from '@/components/ui/icon-tile';
-import { Popover } from '@/components/ui/popover';
-import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
-import { cn } from '@/lib/utils';
-import { LuCheck, LuChevronDown, LuChevronRight, LuPlus, LuX } from 'react-icons/lu';
-import { EmptyState } from '@/components/ui/empty-state';
-import { PageHeader } from '@/components/admin/page-header';
-import { Label } from '@/components/ui/label';
-import { CategoryDetailSkeleton } from '@/components/admin/category-detail-skeleton';
-import { fetchProcedures, updateProcedureStation } from '@/services/library/api';
-import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
-import { backendSlug, categorySlugsMatch, createBackendSubcategory, fetchBackendCategories, fetchBackendSubcategories } from '@/services/categories/api';
-import { StatusPill } from '@/components/ui/status-pill';
+import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSubcategoryIcon } from "@/lib/category-icons";
+import type { Category, Procedure, Subcategory } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "@/components/ui/modal";
+import {
+  BilingualInput,
+  type BilingualValue,
+} from "@/components/ui/bilingual-input";
+import { IconTile } from "@/components/ui/icon-tile";
+import { Popover } from "@/components/ui/popover";
+import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
+import { cn } from "@/lib/utils";
+import {
+  LuCheck,
+  LuChevronDown,
+  LuChevronRight,
+  LuPlus,
+  LuX,
+} from "react-icons/lu";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/admin/page-header";
+import { Label } from "@/components/ui/label";
+import { CategoryDetailSkeleton } from "@/components/admin/category-detail-skeleton";
+import {
+  fetchProcedures,
+  updateProcedureStation,
+} from "@/services/library/api";
+import { PROCEDURES_QUERY_KEY } from "@/services/library/hooks";
+import {
+  backendSlug,
+  categorySlugsMatch,
+  createBackendSubcategory,
+  fetchBackendCategories,
+  fetchBackendSubcategories,
+} from "@/services/categories/api";
+import { StatusPill } from "@/components/ui/status-pill";
 export interface StationOption {
   id: string;
   name: string;
@@ -40,31 +63,50 @@ export interface ProcedureRow {
 
 /** Relative "Updated … ago" label from an ISO timestamp. */
 function updatedAgoLabel(updatedAt: string, isEs: boolean): string {
-  const minutes = Math.max(0, Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60000));
-  if (minutes < 1) return isEs ? 'Actualizado justo ahora' : 'Updated just now';
-  if (minutes < 60) return isEs ? `Actualizado hace ${minutes} min` : `Updated ${minutes} min ago`;
+  const minutes = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(updatedAt).getTime()) / 60000),
+  );
+  if (minutes < 1) return isEs ? "Actualizado justo ahora" : "Updated just now";
+  if (minutes < 60)
+    return isEs
+      ? `Actualizado hace ${minutes} min`
+      : `Updated ${minutes} min ago`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) {
     return hours === 1
-      ? isEs ? 'Actualizado hace 1 h' : 'Updated 1 hr ago'
-      : isEs ? `Actualizado hace ${hours} h` : `Updated ${hours} hrs ago`;
+      ? isEs
+        ? "Actualizado hace 1 h"
+        : "Updated 1 hr ago"
+      : isEs
+        ? `Actualizado hace ${hours} h`
+        : `Updated ${hours} hrs ago`;
   }
   const days = Math.floor(hours / 24);
-  if (days === 1) return isEs ? 'Actualizado hace 1 día' : 'Updated 1 day ago';
-  if (days < 7) return isEs ? `Actualizado hace ${days} días` : `Updated ${days} days ago`;
+  if (days === 1) return isEs ? "Actualizado hace 1 día" : "Updated 1 day ago";
+  if (days < 7)
+    return isEs ? `Actualizado hace ${days} días` : `Updated ${days} days ago`;
   const weeks = Math.floor(days / 7);
   if (weeks < 5) {
     return weeks === 1
-      ? isEs ? 'Actualizado hace 1 sem' : 'Updated 1 wk ago'
-      : isEs ? `Actualizado hace ${weeks} sem` : `Updated ${weeks} wks ago`;
+      ? isEs
+        ? "Actualizado hace 1 sem"
+        : "Updated 1 wk ago"
+      : isEs
+        ? `Actualizado hace ${weeks} sem`
+        : `Updated ${weeks} wks ago`;
   }
   const months = Math.floor(days / 30);
   if (months < 12) {
     return months === 1
-      ? isEs ? 'Actualizado hace 1 mes' : 'Updated 1 mo ago'
-      : isEs ? `Actualizado hace ${months} meses` : `Updated ${months} mos ago`;
+      ? isEs
+        ? "Actualizado hace 1 mes"
+        : "Updated 1 mo ago"
+      : isEs
+        ? `Actualizado hace ${months} meses`
+        : `Updated ${months} mos ago`;
   }
-  return isEs ? 'Actualizado hace más de un año' : 'Updated over a year ago';
+  return isEs ? "Actualizado hace más de un año" : "Updated over a year ago";
 }
 /** One accordion row. The header is the clickable subcategory row; the
  *  body lists the published procedures with one station chip (or the
@@ -106,7 +148,7 @@ export function SubcategoryAccordion({
 
   // General categories apply to every station — the header shows one
   // "All stations" pill instead of per-station chips.
-  const isGeneral = category.kind === 'general';
+  const isGeneral = category.kind === "general";
 
   return (
     <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xs">
@@ -117,22 +159,26 @@ export function SubcategoryAccordion({
         aria-expanded={isOpen}
         aria-controls={panelId}
         onClick={(e) => {
-          if ((e.target as HTMLElement).closest('button, a, [role="menuitem"], [role="dialog"]')) {
+          if (
+            (e.target as HTMLElement).closest(
+              'button, a, [role="menuitem"], [role="dialog"]',
+            )
+          ) {
             return;
           }
           onToggle();
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            if ((e.target as HTMLElement).closest('button, a')) return;
+          if (e.key === "Enter" || e.key === " ") {
+            if ((e.target as HTMLElement).closest("button, a")) return;
             e.preventDefault();
             onToggle();
           }
         }}
         className={cn(
-          'flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3 text-left transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]',
-          isOpen ? 'bg-[var(--color-wash)]' : 'hover:bg-[var(--color-wash)]',
+          "flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3 text-left transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]",
+          isOpen ? "bg-[var(--color-wash)]" : "hover:bg-[var(--color-wash)]",
         )}
       >
         <div className="flex min-w-0 items-center gap-3">
@@ -143,14 +189,14 @@ export function SubcategoryAccordion({
                 {subName}
               </h2>
               <span className="text-xs font-normal text-[var(--color-ink-3)]">
-                · {procedures.length}{' '}
+                · {procedures.length}{" "}
                 {procedures.length === 1
                   ? isEs
-                    ? 'procedimiento'
-                    : 'procedure'
+                    ? "procedimiento"
+                    : "procedure"
                   : isEs
-                    ? 'procedimientos'
-                    : 'procedures'}
+                    ? "procedimientos"
+                    : "procedures"}
               </span>
             </div>
             <p className="mt-0.5 truncate text-sm leading-meta text-[var(--color-ink-3)]">
@@ -178,14 +224,14 @@ export function SubcategoryAccordion({
             className="shrink-0 font-semibold shadow-2xs"
           >
             <LuPlus className="text-base" />
-            <span>{isEs ? 'Añadir procedimiento' : 'Add procedure'}</span>
+            <span>{isEs ? "Añadir procedimiento" : "Add procedure"}</span>
           </Button>
 
           <LuChevronRight
             aria-hidden="true"
             className={cn(
-              'size-4 shrink-0 text-[var(--color-ink-3)] transition-transform',
-              isOpen && 'rotate-90',
+              "size-4 shrink-0 text-[var(--color-ink-3)] transition-transform",
+              isOpen && "rotate-90",
             )}
           />
         </div>
@@ -204,8 +250,8 @@ export function SubcategoryAccordion({
                 compact
                 title={
                   isEs
-                    ? 'Sin procedimientos aún en esta subcategoría.'
-                    : 'No procedures yet in this subcategory.'
+                    ? "Sin procedimientos aún en esta subcategoría."
+                    : "No procedures yet in this subcategory."
                 }
               />
             </div>
@@ -269,28 +315,31 @@ export function ProcedureListItem({
   };
 
   const savePicker = (): void => {
-    const targetStations = stations.filter((s) => draftStationIds.includes(s.id));
+    const targetStations = stations.filter((s) =>
+      draftStationIds.includes(s.id),
+    );
     setPickerOpen(false);
     onToggleStation(targetStations);
   };
 
   const canChangeStation = stations.length > 0;
   const assignedStations = procedure.stations;
-  const isAllAssigned = stations.length > 0 && assignedStations.length === stations.length;
+  const isAllAssigned =
+    stations.length > 0 && assignedStations.length === stations.length;
 
   const rowActions: RowActionItem[] = [
     {
-      label: isEs ? 'Ver procedimiento' : 'View procedure',
+      label: isEs ? "Ver procedimiento" : "View procedure",
       onSelect: onOpenProcedure,
     },
     {
-      label: isEs ? 'Editar' : 'Edit',
+      label: isEs ? "Editar" : "Edit",
       onSelect: onEditProcedure,
     },
     ...(canChangeStation
       ? [
           {
-            label: isEs ? 'Asignar estaciones' : 'Assign stations',
+            label: isEs ? "Asignar estaciones" : "Assign stations",
             onSelect: () => openPicker(),
           } as RowActionItem,
         ]
@@ -307,7 +356,7 @@ export function ProcedureListItem({
             tabIndex={0}
             onClick={onOpenProcedure}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 onOpenProcedure();
               }
@@ -320,12 +369,16 @@ export function ProcedureListItem({
               </h4>
               {procedure.status && (
                 <StatusPill
-                  tone={procedure.status === 'published' ? 'ok' : 'neutral'}
+                  tone={procedure.status === "published" ? "ok" : "neutral"}
                   withDot
                 >
-                  {procedure.status === 'published'
-                    ? isEs ? 'Publicado' : 'Published'
-                    : isEs ? 'Borrador' : 'Draft'}
+                  {procedure.status === "published"
+                    ? isEs
+                      ? "Publicado"
+                      : "Published"
+                    : isEs
+                      ? "Borrador"
+                      : "Draft"}
                 </StatusPill>
               )}
             </div>
@@ -359,13 +412,13 @@ export function ProcedureListItem({
                 </div>
               ) : (
                 <span className="inline-flex items-center rounded-lg border border-dashed border-[var(--color-line-2)] px-3.5 py-2 text-xs font-semibold text-[var(--color-ink-3)]">
-                  {isEs ? 'Sin estación' : 'No station'}
+                  {isEs ? "Sin estación" : "No station"}
                 </span>
               )
             ) : isAllAssigned ? (
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center rounded-lg border border-[var(--color-line-2)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)]">
-                  {isEs ? 'Todas las estaciones' : 'All stations'}
+                  {isEs ? "Todas las estaciones" : "All stations"}
                 </span>
                 <button
                   ref={pickerTriggerRef}
@@ -373,10 +426,10 @@ export function ProcedureListItem({
                   onClick={() => openPicker()}
                   aria-haspopup="menu"
                   aria-expanded={pickerOpen}
-                  aria-label={isEs ? 'Cambiar estaciones' : 'Change stations'}
+                  aria-label={isEs ? "Cambiar estaciones" : "Change stations"}
                   className="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                 >
-                  <span>{isEs ? 'Cambiar' : 'Change'}</span>
+                  <span>{isEs ? "Cambiar" : "Change"}</span>
                 </button>
               </div>
             ) : (
@@ -388,15 +441,21 @@ export function ProcedureListItem({
                         key={st.id}
                         className="group/chip inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)]"
                       >
-                        <span className="max-w-[120px] truncate">{st.name}</span>
+                        <span className="max-w-[120px] truncate">
+                          {st.name}
+                        </span>
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const next = assignedStations.filter((item) => item.id !== st.id);
+                            const next = assignedStations.filter(
+                              (item) => item.id !== st.id,
+                            );
                             onToggleStation(next);
                           }}
-                          aria-label={isEs ? `Eliminar ${st.name}` : `Remove ${st.name}`}
+                          aria-label={
+                            isEs ? `Eliminar ${st.name}` : `Remove ${st.name}`
+                          }
                           className="rounded-sm p-0.5 text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus-visible:outline-none"
                         >
                           <LuX className="text-[12px]" />
@@ -407,7 +466,9 @@ export function ProcedureListItem({
                       <button
                         type="button"
                         onClick={() => openPicker()}
-                        aria-label={isEs ? 'Ver más estaciones' : 'See more stations'}
+                        aria-label={
+                          isEs ? "Ver más estaciones" : "See more stations"
+                        }
                         className="inline-flex min-w-[38px] items-center justify-center rounded-lg border border-[var(--color-line-2)] bg-[var(--color-panel-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink)] shadow-2xs transition-colors hover:border-[var(--color-line-hover)] hover:bg-[var(--color-panel)]"
                       >
                         +{assignedStations.length - 2}
@@ -419,11 +480,11 @@ export function ProcedureListItem({
                       onClick={() => openPicker()}
                       aria-haspopup="menu"
                       aria-expanded={pickerOpen}
-                      aria-label={isEs ? 'Añadir estaciones' : 'Add stations'}
+                      aria-label={isEs ? "Añadir estaciones" : "Add stations"}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                     >
                       <LuPlus className="text-xs" />
-                      <span>{isEs ? 'Añadir estación' : 'Add station'}</span>
+                      <span>{isEs ? "Añadir estación" : "Add station"}</span>
                     </button>
                   </>
                 ) : (
@@ -433,11 +494,11 @@ export function ProcedureListItem({
                     onClick={() => openPicker()}
                     aria-haspopup="menu"
                     aria-expanded={pickerOpen}
-                    aria-label={isEs ? 'Añadir estaciones' : 'Add stations'}
+                    aria-label={isEs ? "Añadir estaciones" : "Add stations"}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                   >
                     <LuPlus className="text-xs" />
-                    <span>{isEs ? 'Añadir estación' : 'Add station'}</span>
+                    <span>{isEs ? "Añadir estación" : "Add station"}</span>
                   </button>
                 )}
               </div>
@@ -450,10 +511,7 @@ export function ProcedureListItem({
             </span>
 
             <div className="hidden md:block shrink-0">
-              <RowActions
-                items={rowActions}
-                triggerLabel={procedure.titleEn}
-              />
+              <RowActions items={rowActions} triggerLabel={procedure.titleEn} />
             </div>
           </div>
         </div>
@@ -470,7 +528,7 @@ export function ProcedureListItem({
         >
           <div className="space-y-1.5 p-1">
             <p className="px-2 pt-1 text-xs font-semibold text-[var(--color-ink-3)]">
-              {isEs ? 'Asignar estaciones' : 'Assign stations'}
+              {isEs ? "Asignar estaciones" : "Assign stations"}
             </p>
             <ul className="max-h-60 overflow-y-auto space-y-0.5">
               {stations.map((s) => {
@@ -489,8 +547,8 @@ export function ProcedureListItem({
                         );
                       }}
                       className={cn(
-                        'flex w-full cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-md)] px-2 py-1.5 text-left transition-colors',
-                        'hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-brand-tint)] focus-visible:outline-none',
+                        "flex w-full cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-md)] px-2 py-1.5 text-left transition-colors",
+                        "hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-brand-tint)] focus-visible:outline-none",
                       )}
                     >
                       <span className="text-sm font-medium text-[var(--color-ink)]">
@@ -499,10 +557,10 @@ export function ProcedureListItem({
                       <span
                         aria-hidden="true"
                         className={cn(
-                          'inline-flex size-5 items-center justify-center rounded-[var(--radius-sm)] border transition-colors',
+                          "inline-flex size-5 items-center justify-center rounded-[var(--radius-sm)] border transition-colors",
                           checked
-                            ? 'border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-white'
-                            : 'border-[var(--color-line-2)] bg-[var(--color-surface)] text-transparent',
+                            ? "border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-white"
+                            : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-transparent",
                         )}
                       >
                         <LuCheck className="text-[12px]" />
@@ -514,8 +572,8 @@ export function ProcedureListItem({
             </ul>
             <p className="px-2 text-[11px] text-[var(--color-ink-3)]">
               {isEs
-                ? 'Selecciona las estaciones correspondientes y guarda.'
-                : 'Select all applicable stations and save.'}
+                ? "Selecciona las estaciones correspondientes y guarda."
+                : "Select all applicable stations and save."}
             </p>
             <div className="flex items-center justify-end gap-2 border-t border-[var(--color-line)] px-2 py-2">
               <button
@@ -523,14 +581,14 @@ export function ProcedureListItem({
                 onClick={() => setPickerOpen(false)}
                 className="rounded-[var(--radius-md)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
               >
-                {isEs ? 'Cancelar' : 'Cancel'}
+                {isEs ? "Cancelar" : "Cancel"}
               </button>
               <button
                 type="button"
                 onClick={savePicker}
                 className="rounded-[var(--radius-md)] bg-[var(--color-brand-600)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--color-brand-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
               >
-                {isEs ? 'Guardar' : 'Save'}
+                {isEs ? "Guardar" : "Save"}
               </button>
             </div>
           </div>

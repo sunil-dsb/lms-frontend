@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { fetchJobs, fetchRoles } from './api';
+import { useQuery } from "@tanstack/react-query";
+import { fetchJobs, fetchRoles } from "./api";
 
-export const JOBS_QUERY_KEY = ['jobs'] as const;
-export const ROLES_QUERY_KEY = ['roles'] as const;
+export const JOBS_QUERY_KEY = ["jobs"] as const;
+export const ROLES_QUERY_KEY = ["roles"] as const;
 
 /**
  * Jobs / roles through TanStack Query (5 min staleTime, no refetch on
@@ -20,7 +20,12 @@ export function useJobs() {
   return {
     jobs: query.data ?? [],
     isLoading: query.isLoading,
-    error: query.error instanceof Error ? query.error : query.error ? new Error('Failed to fetch jobs') : null,
+    error:
+      query.error instanceof Error
+        ? query.error
+        : query.error
+          ? new Error("Failed to fetch jobs")
+          : null,
     refetch: () => void query.refetch(),
   };
 }
@@ -34,7 +39,12 @@ export function useRoles() {
   return {
     roles: query.data ?? [],
     isLoading: query.isLoading,
-    error: query.error instanceof Error ? query.error : query.error ? new Error('Failed to fetch roles') : null,
+    error:
+      query.error instanceof Error
+        ? query.error
+        : query.error
+          ? new Error("Failed to fetch roles")
+          : null,
     refetch: () => void query.refetch(),
   };
 }

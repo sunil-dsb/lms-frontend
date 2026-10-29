@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useTranslations } from 'next-intl';
-import type { RecipeIngredientItem } from './recipe-ingredients-editor';
-import type { ProcedureBlock, ProcedureMethodStep } from '@/lib/types';
-import { LuChefHat, LuEye } from 'react-icons/lu';
+import * as React from "react";
+import { useTranslations } from "next-intl";
+import type { RecipeIngredientItem } from "./recipe-ingredients-editor";
+import type { ProcedureBlock, ProcedureMethodStep } from "@/lib/types";
+import { LuChefHat, LuEye } from "react-icons/lu";
 
 interface RecipeLivePreviewProps {
   title: string;
@@ -23,11 +23,14 @@ export function RecipeLivePreview({
   selectedFactor,
   blocks,
 }: RecipeLivePreviewProps): React.ReactElement {
-  const t = useTranslations('admin.library.new.recipe');
+  const t = useTranslations("admin.library.new.recipe");
 
   // Extract method steps from method blocks if any exist
   const methodSteps = blocks
-    .filter((b): b is Extract<ProcedureBlock, { kind: 'method' }> => b.kind === 'method')
+    .filter(
+      (b): b is Extract<ProcedureBlock, { kind: "method" }> =>
+        b.kind === "method",
+    )
     .flatMap((b) => b.steps);
 
   return (
@@ -35,14 +38,16 @@ export function RecipeLivePreview({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-[var(--color-ink)] font-semibold text-sm">
           <LuEye aria-hidden="true" className="text-[var(--color-ink-2)]" />
-          <span>{t('previewTitle')}</span>
+          <span>{t("previewTitle")}</span>
         </div>
         <button
           type="button"
-          onClick={() => alert('Full Preview: Shows exact employee view full screen.')}
+          onClick={() =>
+            alert("Full Preview: Shows exact employee view full screen.")
+          }
           className="text-sm font-medium text-[var(--color-brand-700)] hover:underline"
         >
-          {t('viewFullPreview')}
+          {t("viewFullPreview")}
         </button>
       </div>
 
@@ -56,7 +61,7 @@ export function RecipeLivePreview({
         {/* Title & Category Badge */}
         <div>
           <h4 className="font-[family-name:var(--font-ui)] text-md font-semibold text-[var(--color-ink)]">
-            {title.trim() || t('previewTitlePlaceholder')}
+            {title.trim() || t("previewTitlePlaceholder")}
           </h4>
           <span className="mt-1 inline-block rounded-[var(--radius-sm)] bg-[var(--color-panel)] px-3 py-0.5 text-sm font-semibold text-[var(--color-ink-2)]">
             {categoryLabel}
@@ -79,15 +84,20 @@ export function RecipeLivePreview({
         {ingredients.length > 0 && (
           <div className="space-y-2 border-t border-[var(--color-line)] pt-2">
             <h5 className="text-sm font-semibold text-[var(--color-ink-3)]">
-              {t('previewIngredientsHeader', { factor: `${selectedFactor}×` })}
+              {t("previewIngredientsHeader", { factor: `${selectedFactor}×` })}
             </h5>
             <ul className="space-y-1 text-sm">
               {ingredients.map((ing) => {
                 if (!ing.name.trim()) return null;
                 const qtyNum = parseFloat(ing.quantity);
-                const scaledQty = isNaN(qtyNum) ? ing.quantity : `${(qtyNum * selectedFactor).toFixed(0)}`;
+                const scaledQty = isNaN(qtyNum)
+                  ? ing.quantity
+                  : `${(qtyNum * selectedFactor).toFixed(0)}`;
                 return (
-                  <li key={ing.id} className="flex items-center justify-between text-[var(--color-ink)]">
+                  <li
+                    key={ing.id}
+                    className="flex items-center justify-between text-[var(--color-ink)]"
+                  >
                     <span className="font-medium">{ing.name}</span>
                     <span className="font-mono text-[var(--color-ink-2)]">
                       {scaledQty} {ing.unit}
@@ -107,9 +117,12 @@ export function RecipeLivePreview({
             </h5>
             <div className="space-y-2 text-sm">
               {methodSteps.map((step, idx) => {
-                const bodyText = step.body.en || step.body.es || '';
+                const bodyText = step.body.en || step.body.es || "";
                 return (
-                  <div key={`${step.id || 'step'}-${idx}`} className="flex items-start gap-2">
+                  <div
+                    key={`${step.id || "step"}-${idx}`}
+                    className="flex items-start gap-2"
+                  >
                     <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] font-mono text-sm font-bold text-[var(--color-ink)]">
                       {idx + 1}
                     </span>

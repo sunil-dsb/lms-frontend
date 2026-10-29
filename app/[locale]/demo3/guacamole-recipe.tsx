@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { useTranslations } from 'next-intl';
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { useTranslations } from "next-intl";
 import {
   RiArrowDownSLine,
   RiArrowLeftLine,
@@ -20,17 +20,21 @@ import {
   RiTempColdLine,
   RiTimeLine,
   RiTimerLine,
-} from 'react-icons/ri';
-import { DocBehaviour } from '@/components/doc/doc-behaviour';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+} from "react-icons/ri";
+import { DocBehaviour } from "@/components/doc/doc-behaviour";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   CookMode,
   type CookModeIngredient,
   type CookModeLabels,
   type CookModeRecipe,
-} from '@/components/doc/cook-mode';
-import { TimerChip, useNow, type Timer } from '@/components/doc/procedure-timers';
-import type { ProcedureMethodStep } from '@/lib/types';
+} from "@/components/doc/cook-mode";
+import {
+  TimerChip,
+  useNow,
+  type Timer,
+} from "@/components/doc/procedure-timers";
+import type { ProcedureMethodStep } from "@/lib/types";
 import {
   FACTORS,
   FULL_VIDEO,
@@ -44,7 +48,7 @@ import {
   type Media,
   type Qty,
   type RecipeStep,
-} from './recipe-data';
+} from "./recipe-data";
 
 /**
  * /demo3's recipe at the length a real one will have: 23 steps, most with a
@@ -65,7 +69,7 @@ import {
  * page's bespoke `STEPS` shape via a thin adapter below.
  */
 
-const STORE = 'demo3-guacamole-progress';
+const STORE = "demo3-guacamole-progress";
 const N = STEPS.length;
 
 /* ── cook-mode adapter ────────────────────────────────────────────────────
@@ -75,7 +79,12 @@ const N = STEPS.length;
  * the bespoke shape once at module scope and pass the result in.
  */
 
-import { adaptIngredients, adaptSteps, COOK_LABELS, mediaWord } from './cook-mode-adapter';
+import {
+  adaptIngredients,
+  adaptSteps,
+  COOK_LABELS,
+  mediaWord,
+} from "./cook-mode-adapter";
 
 function Thumb({
   media,
@@ -86,9 +95,14 @@ function Thumb({
   label: string;
   onOpen: () => void;
 }): React.ReactElement {
-  if (media.kind === 'compare') {
+  if (media.kind === "compare") {
     return (
-      <button type="button" className="step-thumb is-pair" aria-label={label} onClick={onOpen}>
+      <button
+        type="button"
+        className="step-thumb is-pair"
+        aria-label={label}
+        onClick={onOpen}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={`${IMG}/${media.ok.src}`} alt="" className="ok" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -97,10 +111,18 @@ function Thumb({
     );
   }
   return (
-    <button type="button" className="step-thumb" aria-label={label} onClick={onOpen}>
+    <button
+      type="button"
+      className="step-thumb"
+      aria-label={label}
+      onClick={onOpen}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`${IMG}/${media.src}`} alt={media.kind === 'clip' ? '' : media.alt} />
-      {media.kind === 'clip' ? (
+      <img
+        src={`${IMG}/${media.src}`}
+        alt={media.kind === "clip" ? "" : media.alt}
+      />
+      {media.kind === "clip" ? (
         <span className="badge">
           <RiPlayFill className="i i-sm" aria-hidden="true" />
           {media.at}
@@ -114,7 +136,7 @@ function Warn({
   kind,
   children,
 }: {
-  kind: 'warn' | 'allergen';
+  kind: "warn" | "allergen";
   children: React.ReactNode;
 }): React.ReactElement {
   return (
@@ -123,7 +145,7 @@ function Warn({
         <RiErrorWarningFill className="i" aria-hidden="true" />
       </div>
       <div>
-        <span className="label">{kind === 'warn' ? 'Safety' : 'Allergen'}</span>
+        <span className="label">{kind === "warn" ? "Safety" : "Allergen"}</span>
         <p>{children}</p>
       </div>
     </div>
@@ -145,18 +167,26 @@ function CritLimit(): React.ReactElement {
       </h3>
       <div className="crit-b">
         <p className="crit-num">4 °C (39 °F) or below</p>
-        <p className="crit-sub">Into the walk-in within 30 minutes of finishing. Check before service.</p>
+        <p className="crit-sub">
+          Into the walk-in within 30 minutes of finishing. Check before service.
+        </p>
         <dl className="crit-parts">
           <div className="crit-part">
             <dt className="crit-lbl">How to check</dt>
-            <dd>Probe the centre of the pan with a sanitised thermometer. Record on the Cold Holding Log.</dd>
+            <dd>
+              Probe the centre of the pan with a sanitised thermometer. Record
+              on the Cold Holding Log.
+            </dd>
           </div>
           <div className="crit-part breach">
             <dt className="crit-lbl">
               <RiErrorWarningFill className="i i-sm" aria-hidden="true" />
               If it is above 4 °C
             </dt>
-            <dd>Discard. Guacamole is not reheated, so there is no way to bring it back. Tell the chef on duty.</dd>
+            <dd>
+              Discard. Guacamole is not reheated, so there is no way to bring it
+              back. Tell the chef on duty.
+            </dd>
           </div>
         </dl>
       </div>
@@ -167,7 +197,7 @@ function CritLimit(): React.ReactElement {
 /* ── page ───────────────────────────────────────────────────────────────── */
 
 export function GuacamoleRecipe(): React.ReactElement {
-  const tApp = useTranslations('app');
+  const tApp = useTranslations("app");
   const [factor, setFactor] = React.useState<number>(1);
   const [done, setDone] = React.useState<boolean[]>(() => Array(N).fill(false));
   const [at, setAt] = React.useState(0);
@@ -180,23 +210,28 @@ export function GuacamoleRecipe(): React.ReactElement {
   const ctlRef = React.useRef<HTMLDetailsElement>(null);
 
   const q: Qty = (k) => (
-    <b className="qty">{scale(INGREDIENTS.find((i) => i.key === k)!.base, factor)}</b>
+    <b className="qty">
+      {scale(INGREDIENTS.find((i) => i.key === k)!.base, factor)}
+    </b>
   );
 
   // Where the cook was: the batch, every tick, and the step cook mode was on.
   React.useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORE) ?? 'null') as {
+      const saved = JSON.parse(localStorage.getItem(STORE) ?? "null") as {
         factor: number;
         steps: boolean[];
         at: number;
         timers?: Timer[];
       } | null;
       if (saved) {
-        if ((FACTORS as readonly number[]).includes(saved.factor)) setFactor(saved.factor);
+        if ((FACTORS as readonly number[]).includes(saved.factor))
+          setFactor(saved.factor);
         if (saved.steps?.length === N) setDone(saved.steps);
-        if (Number.isInteger(saved.at) && saved.at >= 0 && saved.at <= N) setAt(saved.at);
-        if (Array.isArray(saved.timers)) setTimers(saved.timers.filter((t) => typeof t.endsAt === 'number'));
+        if (Number.isInteger(saved.at) && saved.at >= 0 && saved.at <= N)
+          setAt(saved.at);
+        if (Array.isArray(saved.timers))
+          setTimers(saved.timers.filter((t) => typeof t.endsAt === "number"));
       }
     } catch {
       /* private window: the page simply starts fresh */
@@ -206,7 +241,10 @@ export function GuacamoleRecipe(): React.ReactElement {
   React.useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORE, JSON.stringify({ factor, steps: done, at, timers }));
+      localStorage.setItem(
+        STORE,
+        JSON.stringify({ factor, steps: done, at, timers }),
+      );
     } catch {
       /* nothing to keep it in */
     }
@@ -216,7 +254,9 @@ export function GuacamoleRecipe(): React.ReactElement {
   // chip goes after 15 seconds, so the header does not stay alarmed.
   React.useEffect(() => {
     if (timers.some((t) => t.endsAt + 15000 <= now && done[t.step - 1])) {
-      setTimers((all) => all.filter((t) => !(t.endsAt + 15000 <= now && done[t.step - 1])));
+      setTimers((all) =>
+        all.filter((t) => !(t.endsAt + 15000 <= now && done[t.step - 1])),
+      );
     }
   }, [timers, now, done]);
 
@@ -247,16 +287,21 @@ export function GuacamoleRecipe(): React.ReactElement {
     const after = (): void => {
       ctl.open = wasOpen;
     };
-    window.addEventListener('beforeprint', before);
-    window.addEventListener('afterprint', after);
+    window.addEventListener("beforeprint", before);
+    window.addEventListener("afterprint", after);
     return () => {
-      window.removeEventListener('beforeprint', before);
-      window.removeEventListener('afterprint', after);
+      window.removeEventListener("beforeprint", before);
+      window.removeEventListener("afterprint", after);
     };
   }, []);
 
   function onScalerKey(e: React.KeyboardEvent): void {
-    const d = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[e.key];
+    const d = (
+      { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<
+        string,
+        number
+      >
+    )[e.key];
     if (!d) return;
     e.preventDefault();
     const i = FACTORS.indexOf(factor as (typeof FACTORS)[number]);
@@ -275,7 +320,8 @@ export function GuacamoleRecipe(): React.ReactElement {
       { step: n, label: t.label, endsAt: Date.now() + t.seconds * 1000 },
     ]);
   };
-  const clearTimer = (n: number): void => setTimers((all) => all.filter((x) => x.step !== n));
+  const clearTimer = (n: number): void =>
+    setTimers((all) => all.filter((x) => x.step !== n));
   const openCook = (start: number): void => setCook({ open: true, start });
   const newBatch = (): void => {
     setDone(Array(N).fill(false));
@@ -290,8 +336,8 @@ export function GuacamoleRecipe(): React.ReactElement {
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         const li = document.getElementById(`step-${where}`);
-        li?.scrollIntoView({ block: 'center' });
-        li?.querySelector<HTMLButtonElement>('.step-check')?.focus({
+        li?.scrollIntoView({ block: "center" });
+        li?.querySelector<HTMLButtonElement>(".step-check")?.focus({
           preventScroll: true,
         });
       }),
@@ -301,14 +347,22 @@ export function GuacamoleRecipe(): React.ReactElement {
   const doneCount = done.filter(Boolean).length;
   const allDone = doneCount === N;
   const resumeAt = !allDone && at >= 1 ? at : 0;
-  const ctaLabel = resumeAt ? `Continue at step ${resumeAt}` : allDone ? 'Start a new batch' : 'Start cooking';
+  const ctaLabel = resumeAt
+    ? `Continue at step ${resumeAt}`
+    : allDone
+      ? "Start a new batch"
+      : "Start cooking";
   const onCta = (): void => {
     if (allDone) newBatch();
     openCook(allDone ? 0 : resumeAt);
   };
   /** The one main action, in whichever bar this device shows. */
   const cookButton = (className: string): React.ReactElement => (
-    <button type="button" className={`btn ${allDone ? 'btn-secondary' : 'btn-primary'} ${className}`} onClick={onCta}>
+    <button
+      type="button"
+      className={`btn ${allDone ? "btn-secondary" : "btn-primary"} ${className}`}
+      onClick={onCta}
+    >
       {allDone ? null : <RiPlayFill className="i" aria-hidden="true" />}
       {ctaLabel}
     </button>
@@ -316,11 +370,11 @@ export function GuacamoleRecipe(): React.ReactElement {
 
   const recipe: CookModeRecipe = React.useMemo(
     () => ({
-      title: 'Guacamole Fresco',
+      title: "Guacamole Fresco",
       factors: [...FACTORS],
       ingredients: adaptIngredients(),
       steps: adaptSteps(),
-      recipeBlockId: 'demo3-guacamole',
+      recipeBlockId: "demo3-guacamole",
     }),
     [],
   );
@@ -331,7 +385,11 @@ export function GuacamoleRecipe(): React.ReactElement {
         <DocBehaviour />
 
         <div className="doc-bar" id="bar">
-          <a className="btn btn-ghost btn-icon btn-lg" href="#" aria-label="Back to Recipes">
+          <a
+            className="btn btn-ghost btn-icon btn-lg"
+            href="#"
+            aria-label="Back to Recipes"
+          >
             <RiArrowLeftLine className="i" aria-hidden="true" />
           </a>
           <div className="where">
@@ -339,15 +397,24 @@ export function GuacamoleRecipe(): React.ReactElement {
             <span>Recipes</span>
           </div>
           {/* The way in, on a tablet or a computer. */}
-          <TimerChip timers={timers} now={now} onClear={clearTimer} onOpen={(n) => openCook(n)} />
-          {cookButton('cook-bar-btn')}
+          <TimerChip
+            timers={timers}
+            now={now}
+            onClear={clearTimer}
+            onOpen={(n) => openCook(n)}
+          />
+          {cookButton("cook-bar-btn")}
           <ThemeToggle
             labels={{
-              toDark: tApp('themeToDark'),
-              toLight: tApp('themeToLight'),
+              toDark: tApp("themeToDark"),
+              toLight: tApp("themeToLight"),
             }}
           />
-          <button className="btn btn-ghost btn-icon btn-lg" type="button" aria-label="More options">
+          <button
+            className="btn btn-ghost btn-icon btn-lg"
+            type="button"
+            aria-label="More options"
+          >
             <RiMore2Fill className="i" aria-hidden="true" />
           </button>
         </div>
@@ -366,11 +433,17 @@ export function GuacamoleRecipe(): React.ReactElement {
           <RiErrorWarningFill className="i i-lg" aria-hidden="true" />
           <div>
             <b>Contains sesame</b>
-            <p>In the finishing oil, step 17. Check the ticket before it leaves the pass.</p>
+            <p>
+              In the finishing oil, step 17. Check the ticket before it leaves
+              the pass.
+            </p>
           </div>
         </div>
 
-        <p className="doc-purpose">To make guacamole that holds its colour and texture through a full service.</p>
+        <p className="doc-purpose">
+          To make guacamole that holds its colour and texture through a full
+          service.
+        </p>
 
         <dl className="facts">
           <div>
@@ -406,7 +479,7 @@ export function GuacamoleRecipe(): React.ReactElement {
         {/* Where the cook is, under the facts, once there is anything to say.
             The button for it is in the bar. */}
         {resumeAt || allDone ? (
-          <div className="cook-status" data-state={allDone ? 'done' : 'resume'}>
+          <div className="cook-status" data-state={allDone ? "done" : "resume"}>
             <p className="cook-status-text">
               {allDone ? (
                 <>
@@ -439,7 +512,12 @@ export function GuacamoleRecipe(): React.ReactElement {
             <span className="lbl" id="batch-lbl">
               Batch
             </span>
-            <div className="choices" role="radiogroup" aria-labelledby="batch-lbl" onKeyDown={onScalerKey}>
+            <div
+              className="choices"
+              role="radiogroup"
+              aria-labelledby="batch-lbl"
+              onKeyDown={onScalerKey}
+            >
               {FACTORS.map((f, i) => (
                 <button
                   key={f}
@@ -478,8 +556,10 @@ export function GuacamoleRecipe(): React.ReactElement {
             </div>
           </dl>
 
-          <table className={factor === 1 ? 'ing is-base' : 'ing'}>
-            <caption className="vh">Ingredients, at the base batch and at the selected batch size</caption>
+          <table className={factor === 1 ? "ing is-base" : "ing"}>
+            <caption className="vh">
+              Ingredients, at the base batch and at the selected batch size
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Ingredient</th>
@@ -498,9 +578,12 @@ export function GuacamoleRecipe(): React.ReactElement {
                     {ing.name}
                     {ing.allergen ? (
                       <>
-                        {' '}
+                        {" "}
                         <span className="flag">
-                          <RiErrorWarningFill className="i i-sm" aria-hidden="true" />
+                          <RiErrorWarningFill
+                            className="i i-sm"
+                            aria-hidden="true"
+                          />
                           Allergen
                         </span>
                       </>
@@ -532,7 +615,11 @@ export function GuacamoleRecipe(): React.ReactElement {
 
           {/* The whole video, as one more line of the same shape. */}
           <div className="video-row">
-            <button type="button" className="step-thumb" aria-label={`Play the whole recipe, ${FULL_VIDEO.len}`}>
+            <button
+              type="button"
+              className="step-thumb"
+              aria-label={`Play the whole recipe, ${FULL_VIDEO.len}`}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={FULL_VIDEO.src} alt="" loading="lazy" />
               <span className="badge">
@@ -542,7 +629,10 @@ export function GuacamoleRecipe(): React.ReactElement {
             </button>
             <p>
               <b>The whole recipe on video</b>
-              <span>Watch it once before you start. Each step&apos;s part plays on its own in cook mode.</span>
+              <span>
+                Watch it once before you start. Each step&apos;s part plays on
+                its own in cook mode.
+              </span>
             </p>
           </div>
         </section>
@@ -557,55 +647,76 @@ export function GuacamoleRecipe(): React.ReactElement {
               </p>
               {/* How far through this part, once it is started. */}
               <h2>
-                {ph.name}{' '}
+                {ph.name}{" "}
                 <span className="count">
-                  &middot; {ticked === total ? 'all done' : ticked ? `${ticked} of ${total} done` : `${total} steps`}
+                  &middot;{" "}
+                  {ticked === total
+                    ? "all done"
+                    : ticked
+                      ? `${ticked} of ${total} done`
+                      : `${total} steps`}
                 </span>
               </h2>
               {/* One list per part, numbered on from the last: step 5 is still step 5. */}
-              <ol className="steps compact" start={ph.from} style={{ counterReset: `step ${ph.from - 1}` }}>
-                {STEPS.filter((s) => s.n >= ph.from && s.n <= ph.to).map((s) => {
-                  const isDone = done[s.n - 1];
-                  return (
-                    <li
-                      key={s.n}
-                      id={`step-${s.n}`}
-                      className={['step', s.crit ? 'is-crit' : '', isDone ? 'is-done' : '', s.media ? 'has-media' : '']
-                        .filter(Boolean)
-                        .join(' ')}
-                    >
-                      <button
-                        type="button"
-                        className="step-num step-check"
-                        aria-pressed={isDone}
-                        aria-label={`Step ${s.n}${s.crit ? ', critical' : ''}: ${isDone ? 'done, tap to undo' : 'mark done'}`}
-                        onClick={() => setStep(s.n, !isDone)}
-                      />
-                      <div className="step-body">
-                        {s.crit ? (
-                          <span className="step-flag">
-                            <RiFocus3Line className="i i-sm" aria-hidden="true" />
-                            Critical step
-                          </span>
-                        ) : null}
-                        <p className="step-line">{s.text(q)}</p>
-                      </div>
-                      {s.media ? (
-                        <Thumb
-                          media={s.media}
-                          label={`Step ${s.n}: open ${mediaWord(s.media)} in cook mode`}
-                          onOpen={() => openCook(s.n)}
+              <ol
+                className="steps compact"
+                start={ph.from}
+                style={{ counterReset: `step ${ph.from - 1}` }}
+              >
+                {STEPS.filter((s) => s.n >= ph.from && s.n <= ph.to).map(
+                  (s) => {
+                    const isDone = done[s.n - 1];
+                    return (
+                      <li
+                        key={s.n}
+                        id={`step-${s.n}`}
+                        className={[
+                          "step",
+                          s.crit ? "is-crit" : "",
+                          isDone ? "is-done" : "",
+                          s.media ? "has-media" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                      >
+                        <button
+                          type="button"
+                          className="step-num step-check"
+                          aria-pressed={isDone}
+                          aria-label={`Step ${s.n}${s.crit ? ", critical" : ""}: ${isDone ? "done, tap to undo" : "mark done"}`}
+                          onClick={() => setStep(s.n, !isDone)}
                         />
-                      ) : null}
-                      {s.warn || s.crit ? (
-                        <div className="step-extra">
-                          {s.warn ? <Warn kind={s.warn.kind}>{s.warn.body}</Warn> : null}
-                          {s.crit ? <CritLimit /> : null}
+                        <div className="step-body">
+                          {s.crit ? (
+                            <span className="step-flag">
+                              <RiFocus3Line
+                                className="i i-sm"
+                                aria-hidden="true"
+                              />
+                              Critical step
+                            </span>
+                          ) : null}
+                          <p className="step-line">{s.text(q)}</p>
                         </div>
-                      ) : null}
-                    </li>
-                  );
-                })}
+                        {s.media ? (
+                          <Thumb
+                            media={s.media}
+                            label={`Step ${s.n}: open ${mediaWord(s.media)} in cook mode`}
+                            onOpen={() => openCook(s.n)}
+                          />
+                        ) : null}
+                        {s.warn || s.crit ? (
+                          <div className="step-extra">
+                            {s.warn ? (
+                              <Warn kind={s.warn.kind}>{s.warn.body}</Warn>
+                            ) : null}
+                            {s.crit ? <CritLimit /> : null}
+                          </div>
+                        ) : null}
+                      </li>
+                    );
+                  },
+                )}
               </ol>
             </section>
           );
@@ -676,8 +787,13 @@ export function GuacamoleRecipe(): React.ReactElement {
 
       {/* The way in, on a phone: always there, under the thumb. */}
       <div className="cook-dock">
-        <TimerChip timers={timers} now={now} onClear={clearTimer} onOpen={(n) => openCook(n)} />
-        {cookButton('btn-lg')}
+        <TimerChip
+          timers={timers}
+          now={now}
+          onClear={clearTimer}
+          onOpen={(n) => openCook(n)}
+        />
+        {cookButton("btn-lg")}
       </div>
 
       <CookMode

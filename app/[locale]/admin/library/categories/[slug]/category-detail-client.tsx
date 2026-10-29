@@ -1,30 +1,56 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getSubcategoryIcon } from '@/lib/category-icons';
-import type { Category, Procedure, Subcategory } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui/modal';
-import { BilingualInput, type BilingualValue } from '@/components/ui/bilingual-input';
-import { IconTile } from '@/components/ui/icon-tile';
-import { Popover } from '@/components/ui/popover';
-import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
-import { cn } from '@/lib/utils';
-import { LuCheck, LuChevronDown, LuChevronRight, LuPlus, LuX } from 'react-icons/lu';
-import { EmptyState } from '@/components/ui/empty-state';
-import { PageHeader } from '@/components/admin/page-header';
-import { Label } from '@/components/ui/label';
-import { CategoryDetailSkeleton } from '@/components/admin/category-detail-skeleton';
-import { fetchProcedures, updateProcedureStation } from '@/services/library/api';
-import { PROCEDURES_QUERY_KEY } from '@/services/library/hooks';
-import { backendSlug, categorySlugsMatch, createBackendSubcategory, fetchBackendCategories, fetchBackendSubcategories } from '@/services/categories/api';
-import { AVAILABLE_ICONS } from '../category-actions';
-import { ProcedureListItem, SubcategoryAccordion } from './category-detail-rows';
-import type { ProcedureRow, StationOption } from './category-detail-rows';
-import { useStations } from '@/services/stations/hooks';
+import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSubcategoryIcon } from "@/lib/category-icons";
+import type { Category, Procedure, Subcategory } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "@/components/ui/modal";
+import {
+  BilingualInput,
+  type BilingualValue,
+} from "@/components/ui/bilingual-input";
+import { IconTile } from "@/components/ui/icon-tile";
+import { Popover } from "@/components/ui/popover";
+import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
+import { cn } from "@/lib/utils";
+import {
+  LuCheck,
+  LuChevronDown,
+  LuChevronRight,
+  LuPlus,
+  LuX,
+} from "react-icons/lu";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/admin/page-header";
+import { Label } from "@/components/ui/label";
+import { CategoryDetailSkeleton } from "@/components/admin/category-detail-skeleton";
+import {
+  fetchProcedures,
+  updateProcedureStation,
+} from "@/services/library/api";
+import { PROCEDURES_QUERY_KEY } from "@/services/library/hooks";
+import {
+  backendSlug,
+  categorySlugsMatch,
+  createBackendSubcategory,
+  fetchBackendCategories,
+  fetchBackendSubcategories,
+} from "@/services/categories/api";
+import { AVAILABLE_ICONS } from "../category-actions";
+import {
+  ProcedureListItem,
+  SubcategoryAccordion,
+} from "./category-detail-rows";
+import type { ProcedureRow, StationOption } from "./category-detail-rows";
+import { useStations } from "@/services/stations/hooks";
 
 interface CategoryDetailClientProps {
   /** The category the server saw. `null` when the category exists only in the
@@ -41,9 +67,10 @@ interface CategoryDetailClientProps {
 
 function isUuid(val: string | null | undefined): boolean {
   if (!val) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    val,
+  );
 }
-
 
 export function CategoryDetailClient({
   initialCategory,
@@ -53,16 +80,24 @@ export function CategoryDetailClient({
 }: CategoryDetailClientProps): React.ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const isEs = locale === 'es';
-  const [category, setCategory] = React.useState<Category | null>(initialCategory);
-  const [isResolving, setIsResolving] = React.useState<boolean>(initialCategory === null);
+  const isEs = locale === "es";
+  const [category, setCategory] = React.useState<Category | null>(
+    initialCategory,
+  );
+  const [isResolving, setIsResolving] = React.useState<boolean>(
+    initialCategory === null,
+  );
   const [notFound, setNotFound] = React.useState<boolean>(false);
   const [addSubcategoryOpen, setAddSubcategoryOpen] = React.useState(false);
-  const [newSubcategoryName, setNewSubcategoryName] = React.useState<BilingualValue>({ en: '', es: '' });
-  const [newSubcategoryIcon, setNewSubcategoryIcon] = React.useState('folder');
-  const [showSubcategoryIconPicker, setShowSubcategoryIconPicker] = React.useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] =
+    React.useState<BilingualValue>({ en: "", es: "" });
+  const [newSubcategoryIcon, setNewSubcategoryIcon] = React.useState("folder");
+  const [showSubcategoryIconPicker, setShowSubcategoryIconPicker] =
+    React.useState(false);
   const [creatingSubcategory, setCreatingSubcategory] = React.useState(false);
-  const [subcategoryError, setSubcategoryError] = React.useState<string | null>(null);
+  const [subcategoryError, setSubcategoryError] = React.useState<string | null>(
+    null,
+  );
 
   // If the server did not resolve the category, retry against the backend
   // category API instead of filling this page from demo data.
@@ -71,7 +106,10 @@ export function CategoryDetailClient({
     let cancelled = false;
     (async () => {
       try {
-        const categories = await fetchBackendCategories({ page: 1, limit: 200 });
+        const categories = await fetchBackendCategories({
+          page: 1,
+          limit: 200,
+        });
         const match = categories.find((c) => c.slug === slug);
         if (cancelled) return;
         if (match) {
@@ -95,7 +133,7 @@ export function CategoryDetailClient({
   const canFetchSubcategories = Boolean(categoryId && isUuid(categoryId));
 
   const subcategoriesQuery = useQuery({
-    queryKey: ['categories', 'backend-subcategories', categoryId],
+    queryKey: ["categories", "backend-subcategories", categoryId],
     queryFn: () => fetchBackendSubcategories(categoryId!),
     enabled: canFetchSubcategories,
     staleTime: 60 * 60 * 1000,
@@ -114,19 +152,19 @@ export function CategoryDetailClient({
 
   const isSubcategoriesLoading =
     isResolving ||
-    (canFetchSubcategories && (
-      subcategoriesQuery.isPending ||
-      subcategoriesQuery.isLoading ||
-      (subcategoriesQuery.isFetching && (!subcategoriesQuery.data || subcategories.length === 0)) ||
-      subcategoriesQuery.data === undefined
-    ));
+    (canFetchSubcategories &&
+      (subcategoriesQuery.isPending ||
+        subcategoriesQuery.isLoading ||
+        (subcategoriesQuery.isFetching &&
+          (!subcategoriesQuery.data || subcategories.length === 0)) ||
+        subcategoriesQuery.data === undefined));
 
   // Real procedures — published + drafts for the admin, via the super_admin filter API.
   // Rows are matched to panels below by subcategory (exact id, slug, or
   // English name): backend rows never carry these mock ids, so joining on
   // ids alone would leave every panel empty.
   const proceduresQuery = useQuery({
-    queryKey: [...PROCEDURES_QUERY_KEY, 'category-detail', { categoryId }],
+    queryKey: [...PROCEDURES_QUERY_KEY, "category-detail", { categoryId }],
     queryFn: () => fetchProcedures({}, true).then((r) => r.procedures),
     enabled: category !== null,
     staleTime: 5000,
@@ -150,12 +188,17 @@ export function CategoryDetailClient({
     const live = (stationsQuery.data ?? []).filter((s) => !s.isArchived);
     if (live.length > 0) {
       return [...live]
-        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name))
+        .sort(
+          (a, b) =>
+            (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
+            a.name.localeCompare(b.name),
+        )
         .map((s) => ({ id: s.id, name: s.name }));
     }
     const seen = new Map<string, string>();
     for (const p of proceduresQuery.data ?? []) {
-      if (p.station && !seen.has(p.station.id)) seen.set(p.station.id, p.station.name);
+      if (p.station && !seen.has(p.station.id))
+        seen.set(p.station.id, p.station.name);
     }
     return [...seen].map(([id, name]) => ({ id, name }));
   }, [stationsQuery.data, proceduresQuery.data]);
@@ -174,11 +217,15 @@ export function CategoryDetailClient({
         rowStations = override;
       } else {
         const rawIds: string[] =
-          Array.isArray(p.stationScope?.stationIds) && p.stationScope.stationIds.length > 0
+          Array.isArray(p.stationScope?.stationIds) &&
+          p.stationScope.stationIds.length > 0
             ? p.stationScope.stationIds
-            : Array.isArray((p as unknown as { stationIds?: string[] }).stationIds) &&
-              ((p as unknown as { stationIds?: string[] }).stationIds?.length ?? 0) > 0
-              ? ((p as unknown as { stationIds: string[] }).stationIds)
+            : Array.isArray(
+                  (p as unknown as { stationIds?: string[] }).stationIds,
+                ) &&
+                ((p as unknown as { stationIds?: string[] }).stationIds
+                  ?.length ?? 0) > 0
+              ? (p as unknown as { stationIds: string[] }).stationIds
               : p.station?.id
                 ? [p.station.id]
                 : p.stationId
@@ -186,7 +233,9 @@ export function CategoryDetailClient({
                   : [];
         rowStations = rawIds.map((id) => ({
           id,
-          name: stationsById.get(id) ?? (p.station?.id === id ? p.station.name : id),
+          name:
+            stationsById.get(id) ??
+            (p.station?.id === id ? p.station.name : id),
         }));
       }
 
@@ -219,16 +268,19 @@ export function CategoryDetailClient({
           }
         ).subcategory;
         const pid = p.subcategoryId ?? ps?.id ?? null;
-        const pname = ps?.nameEn ?? '';
+        const pname = ps?.nameEn ?? "";
         if (!pid && !pname) return false;
         return (
-          (sub.id !== '' && pid !== null && sub.id === pid) ||
-          (pname !== '' &&
+          (sub.id !== "" && pid !== null && sub.id === pid) ||
+          (pname !== "" &&
             (categorySlugsMatch(backendSlug(pname), sub.slug) ||
               normName(pname) === normName(sub.nameEn)))
         );
       });
-      rows.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      rows.sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
       map[sub.slug] = rows;
     }
     return map;
@@ -270,9 +322,11 @@ export function CategoryDetailClient({
                     stationIds: validIds,
                     stationScope:
                       validIds.length > 0
-                        ? { mode: 'specific', stationIds: validIds }
+                        ? { mode: "specific", stationIds: validIds }
                         : null,
-                    station: updated.station ?? (next[0] ? { id: next[0].id, name: next[0].name } : null),
+                    station:
+                      updated.station ??
+                      (next[0] ? { id: next[0].id, name: next[0].name } : null),
                   }
                 : proc,
             );
@@ -303,10 +357,13 @@ export function CategoryDetailClient({
     return (
       <div className="mx-auto max-w-page space-y-6">
         <PageHeader
-          title={isEs ? 'Cargando categoría…' : 'Loading category…'}
+          title={isEs ? "Cargando categoría…" : "Loading category…"}
         />
         <div role="status" aria-live="polite" className="animate-pulse">
-          <EmptyState compact title={isEs ? 'Cargando categoría…' : 'Loading category…'} />
+          <EmptyState
+            compact
+            title={isEs ? "Cargando categoría…" : "Loading category…"}
+          />
         </div>
       </div>
     );
@@ -318,16 +375,16 @@ export function CategoryDetailClient({
     return (
       <div className="mx-auto max-w-page space-y-6">
         <PageHeader
-          title={isEs ? 'Categoría no encontrada' : 'Category not found'}
+          title={isEs ? "Categoría no encontrada" : "Category not found"}
           subtitle={
             isEs
-              ? 'La categoría solicitada no existe o fue eliminada.'
-              : 'The requested category does not exist or has been removed.'
+              ? "La categoría solicitada no existe o fue eliminada."
+              : "The requested category does not exist or has been removed."
           }
           actions={
             <Link href={`/${locale}/admin/library/categories`}>
               <Button variant="secondary">
-                {isEs ? 'Volver a categorías' : 'Back to categories'}
+                {isEs ? "Volver a categorías" : "Back to categories"}
               </Button>
             </Link>
           }
@@ -344,12 +401,16 @@ export function CategoryDetailClient({
         title={isEs ? category.nameEs : category.nameEn}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="primary" icon={LuPlus} onClick={() => setAddSubcategoryOpen(true)}>
-              {isEs ? 'Agregar subcategoría' : 'Add subcategory'}
+            <Button
+              variant="primary"
+              icon={LuPlus}
+              onClick={() => setAddSubcategoryOpen(true)}
+            >
+              {isEs ? "Agregar subcategoría" : "Add subcategory"}
             </Button>
             <Link href={`/${locale}/admin/library/categories`}>
               <Button variant="secondary">
-                {isEs ? 'Volver a categorías' : 'Back to categories'}
+                {isEs ? "Volver a categorías" : "Back to categories"}
               </Button>
             </Link>
           </div>
@@ -370,29 +431,47 @@ export function CategoryDetailClient({
           onSubmit={async (event) => {
             event.preventDefault();
             if (!categoryId || creatingSubcategory) return;
-            const nameEn = newSubcategoryName.en.trim() || newSubcategoryName.es.trim();
-            const nameEs = newSubcategoryName.es.trim() || newSubcategoryName.en.trim();
+            const nameEn =
+              newSubcategoryName.en.trim() || newSubcategoryName.es.trim();
+            const nameEs =
+              newSubcategoryName.es.trim() || newSubcategoryName.en.trim();
             if (!nameEn || !nameEs) return;
             setCreatingSubcategory(true);
             setSubcategoryError(null);
             try {
-              await createBackendSubcategory(categoryId, { nameEn, nameEs, subcategoryIcon: newSubcategoryIcon });
-              await queryClient.invalidateQueries({ queryKey: ['categories', 'backend-subcategories', categoryId] });
-              await queryClient.invalidateQueries({ queryKey: ['categories', 'all-subcategories'] });
+              await createBackendSubcategory(categoryId, {
+                nameEn,
+                nameEs,
+                subcategoryIcon: newSubcategoryIcon,
+              });
+              await queryClient.invalidateQueries({
+                queryKey: ["categories", "backend-subcategories", categoryId],
+              });
+              await queryClient.invalidateQueries({
+                queryKey: ["categories", "all-subcategories"],
+              });
               setAddSubcategoryOpen(false);
-              setNewSubcategoryName({ en: '', es: '' });
-              setNewSubcategoryIcon('folder');
+              setNewSubcategoryName({ en: "", es: "" });
+              setNewSubcategoryIcon("folder");
               setShowSubcategoryIconPicker(false);
             } catch (error) {
-              setSubcategoryError(error instanceof Error ? error.message : 'Could not create subcategory.');
+              setSubcategoryError(
+                error instanceof Error
+                  ? error.message
+                  : "Could not create subcategory.",
+              );
             } finally {
               setCreatingSubcategory(false);
             }
           }}
         >
           <ModalHeader
-            title={isEs ? 'Agregar subcategoría' : 'Add subcategory'}
-            description={isEs ? `Crear una subcategoría en ${category.nameEs}.` : `Create a subcategory in ${category.nameEn}.`}
+            title={isEs ? "Agregar subcategoría" : "Add subcategory"}
+            description={
+              isEs
+                ? `Crear una subcategoría en ${category.nameEs}.`
+                : `Create a subcategory in ${category.nameEn}.`
+            }
             onClose={() => {
               if (creatingSubcategory) return;
               setAddSubcategoryOpen(false);
@@ -401,27 +480,35 @@ export function CategoryDetailClient({
           />
           <ModalBody className="max-h-[calc(100dvh-14rem)] overscroll-contain">
             <BilingualInput
-              label={isEs ? 'Nombre de subcategoría' : 'Subcategory name'}
+              label={isEs ? "Nombre de subcategoría" : "Subcategory name"}
               value={newSubcategoryName}
               onChange={setNewSubcategoryName}
               maxLength={200}
-              placeholder={{ en: 'e.g. Plating', es: 'p. ej. Emplatado' }}
+              placeholder={{ en: "e.g. Plating", es: "p. ej. Emplatado" }}
             />
             <div className="space-y-1.5 mt-4">
-              <Label>{isEs ? 'Icono' : 'Icon'}</Label>
+              <Label>{isEs ? "Icono" : "Icon"}</Label>
               <div className="flex items-center gap-3">
                 <IconTile
                   size="md"
-                  icon={(AVAILABLE_ICONS.find((i) => i.id === newSubcategoryIcon) ?? AVAILABLE_ICONS[AVAILABLE_ICONS.length - 1]).icon}
+                  icon={
+                    (
+                      AVAILABLE_ICONS.find(
+                        (i) => i.id === newSubcategoryIcon,
+                      ) ?? AVAILABLE_ICONS[AVAILABLE_ICONS.length - 1]
+                    ).icon
+                  }
                 />
                 <Button
                   type="button"
                   variant="neutral"
                   icon={LuChevronDown}
                   aria-expanded={showSubcategoryIconPicker}
-                  onClick={() => setShowSubcategoryIconPicker(!showSubcategoryIconPicker)}
+                  onClick={() =>
+                    setShowSubcategoryIconPicker(!showSubcategoryIconPicker)
+                  }
                 >
-                  {isEs ? 'Elegir icono' : 'Choose icon'}
+                  {isEs ? "Elegir icono" : "Choose icon"}
                 </Button>
               </div>
               {showSubcategoryIconPicker ? (
@@ -440,28 +527,52 @@ export function CategoryDetailClient({
                           setShowSubcategoryIconPicker(false);
                         }}
                         className={cn(
-                          'flex flex-col items-center gap-1 rounded-[var(--radius-md)] border p-2 text-sm transition-colors',
+                          "flex flex-col items-center gap-1 rounded-[var(--radius-md)] border p-2 text-sm transition-colors",
                           isSelected
-                            ? 'border-[var(--color-ring)] bg-[var(--color-brand-tint)] font-semibold text-[var(--color-brand-700)]'
-                            : 'border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-panel)]',
+                            ? "border-[var(--color-ring)] bg-[var(--color-brand-tint)] font-semibold text-[var(--color-brand-700)]"
+                            : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-panel)]",
                         )}
                       >
                         <IconComponent aria-hidden="true" className="text-lg" />
-                        <span className="w-full truncate text-center">{item.label}</span>
+                        <span className="w-full truncate text-center">
+                          {item.label}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
               ) : null}
             </div>
-            {subcategoryError ? <p role="alert" className="text-sm text-[var(--color-bad)]">{subcategoryError}</p> : null}
+            {subcategoryError ? (
+              <p role="alert" className="text-sm text-[var(--color-bad)]">
+                {subcategoryError}
+              </p>
+            ) : null}
           </ModalBody>
           <ModalFooter className="mb-3">
-            <Button type="button" variant="neutral" disabled={creatingSubcategory} onClick={() => setAddSubcategoryOpen(false)}>
-              {isEs ? 'Cancelar' : 'Cancel'}
+            <Button
+              type="button"
+              variant="neutral"
+              disabled={creatingSubcategory}
+              onClick={() => setAddSubcategoryOpen(false)}
+            >
+              {isEs ? "Cancelar" : "Cancel"}
             </Button>
-            <Button type="submit" variant="primary" disabled={creatingSubcategory || (!newSubcategoryName.en.trim() && !newSubcategoryName.es.trim())}>
-              {creatingSubcategory ? (isEs ? 'Guardando...' : 'Saving...') : (isEs ? 'Crear' : 'Create')}
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={
+                creatingSubcategory ||
+                (!newSubcategoryName.en.trim() && !newSubcategoryName.es.trim())
+              }
+            >
+              {creatingSubcategory
+                ? isEs
+                  ? "Guardando..."
+                  : "Saving..."
+                : isEs
+                  ? "Crear"
+                  : "Create"}
             </Button>
           </ModalFooter>
         </form>
@@ -472,13 +583,15 @@ export function CategoryDetailClient({
           role="alert"
           className="rounded-[var(--radius-md)] bg-[var(--color-bad-tint)] px-3 py-2 text-sm text-[var(--color-bad)]"
         >
-          {isEs ? 'No se pudieron cargar las subcategorías.' : 'Could not load subcategories.'}{' '}
+          {isEs
+            ? "No se pudieron cargar las subcategorías."
+            : "Could not load subcategories."}{" "}
           <button
             type="button"
             onClick={() => void subcategoriesQuery.refetch()}
             className="font-semibold underline underline-offset-2"
           >
-            {isEs ? 'Reintentar' : 'Retry'}
+            {isEs ? "Reintentar" : "Retry"}
           </button>
         </p>
       ) : null}
@@ -488,13 +601,15 @@ export function CategoryDetailClient({
           role="alert"
           className="rounded-[var(--radius-md)] bg-[var(--color-bad-tint)] px-3 py-2 text-sm text-[var(--color-bad)]"
         >
-          {isEs ? 'No se pudieron cargar los procedimientos.' : 'Could not load procedures.'}{' '}
+          {isEs
+            ? "No se pudieron cargar los procedimientos."
+            : "Could not load procedures."}{" "}
           <button
             type="button"
             onClick={() => void proceduresQuery.refetch()}
             className="font-semibold underline underline-offset-2"
           >
-            {isEs ? 'Reintentar' : 'Retry'}
+            {isEs ? "Reintentar" : "Retry"}
           </button>
         </p>
       ) : null}
@@ -502,13 +617,13 @@ export function CategoryDetailClient({
       {showSkeleton ? (
         <CategoryDetailSkeleton
           hideHeader
-          aria-label={isEs ? 'Cargando subcategorías' : 'Loading subcategories'}
+          aria-label={isEs ? "Cargando subcategorías" : "Loading subcategories"}
         />
       ) : subcategories.length === 0 ? (
         <p className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)] p-6 text-center text-sm text-[var(--color-ink-3)]">
           {isEs
-            ? 'Esta categoría no tiene subcategorías.'
-            : 'This category has no subcategories.'}
+            ? "Esta categoría no tiene subcategorías."
+            : "This category has no subcategories."}
         </p>
       ) : (
         <div className="space-y-3">
@@ -533,4 +648,3 @@ export function CategoryDetailClient({
     </div>
   );
 }
-

@@ -9,6 +9,7 @@
 Every page in the application must maintain a strict, uniform width hierarchy from top to bottom.
 
 ### Rules:
+
 1. **Single Container Constraint per Page Route:**
    - Every page component must use a single outer wrapper with a standardized max-width:
      - **Standard Admin Pages / Forms / Settings:** `mx-auto max-w-5xl space-y-6`
@@ -67,6 +68,7 @@ Every page in the application must maintain a strict, uniform width hierarchy fr
 ## 5. Verification Checklist for New Pages
 
 Before signing off on any new page or component:
+
 1. Verify top breadcrumb/header aligns vertically with all cards, steppers, and footers down the page.
 2. Confirm zero inner max-width conflicts (e.g. no nested `max-w-4xl` inside a `max-w-7xl` container).
 3. Check button shapes are pills and badge shapes are rectangles.

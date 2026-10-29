@@ -23,6 +23,31 @@
 @import "./lms/document-media.css" layer(components);
 @import "./lms/dashboards.css" layer(components);
 @import "./lms/wizard-controls.css" layer(components);
+
+@layer components {
+  .rich-text-prose p,
+  .rich-text-content p { margin: 0 0 0.65rem; }
+  .rich-text-prose p:last-child,
+  .rich-text-content p:last-child { margin-bottom: 0; }
+  .rich-text-prose h1,
+  .rich-text-content h1 { margin: 0.8rem 0 0.4rem; font-size: 1.35rem; font-weight: 700; }
+  .rich-text-prose h2,
+  .rich-text-content h2 { margin: 0.7rem 0 0.35rem; font-size: 1.15rem; font-weight: 700; }
+  .rich-text-prose ul,
+  .rich-text-content ul { margin: 0.4rem 0 0.7rem; list-style: disc; padding-left: 1.5rem; }
+  .rich-text-prose ol,
+  .rich-text-content ol { margin: 0.4rem 0 0.7rem; list-style: decimal; padding-left: 1.5rem; }
+  .rich-text-prose li,
+  .rich-text-content li { padding-left: 0.15rem; }
+  .rich-text-prose a,
+  .rich-text-content a { color: var(--color-brand-700); text-decoration: underline; text-underline-offset: 2px; }
+  .rich-text-prose blockquote,
+  .rich-text-content blockquote { margin: 0.65rem 0; border-left: 3px solid var(--color-line-2); padding-left: 0.8rem; }
+  .rich-text-embedded { width: 100%; height: 100%; overflow: hidden; }
+  .rich-text-embedded > div:last-child { height: calc(100% - 28px); overflow: auto; padding: 0.45rem; }
+  .rich-text-embedded .rich-text-prose { min-height: 100%; }
+  .bli.bli--rich-text { --bli-h-active-multi: 220px; --bli-h-inactive-multi: 34px; }
+}
 @import "./lms/bilingual-inputs.css" layer(components);
 @import "./lms/cook-mode.css" layer(components);
 @import "./lms/cook-mode-detail.css" layer(components);
@@ -222,13 +247,20 @@
   --z-index-modal: var(--z-modal);
   --z-index-toast: var(--z-toast);
   --z-index-tooltip: var(--z-tooltip);
+
+  /* Fonts */
+  --font-ui: var(--font-ui);
+  --font-display: var(--font-display);
 }
 
 /* ============================================================
    BASE
    ============================================================ */
 @layer base {
-  html, body { height: 100%; }
+  html,
+  body {
+    height: 100%;
+  }
   body {
     background-color: var(--color-bg);
     color: var(--color-ink);
@@ -237,16 +269,38 @@
     line-height: var(--lh-body);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4, h5 { margin: 0; line-height: var(--lh-heading); text-wrap: balance; }
-  p { margin: 0; text-wrap: pretty; }
-  button, input, select, textarea { font: inherit; color: inherit; }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    margin: 0;
+    line-height: var(--lh-heading);
+    text-wrap: balance;
+  }
+  p {
+    margin: 0;
+    text-wrap: pretty;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
   /* Single crisp 1px border for all inputs and textareas on focus. No double ring or outline. */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     font-family: var(--font-ui);
   }
-  input:focus, input:focus-visible,
-  textarea:focus, textarea:focus-visible,
-  select:focus, select:focus-visible {
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible {
     outline: none !important;
     box-shadow: none !important;
     --tw-ring-shadow: none !important;
@@ -256,9 +310,14 @@
     border-color: var(--color-brand) !important;
   }
   /* The outline follows each element's own radius. Exclude form controls which handle focus via custom borders. */
-  :focus-visible:not(input):not(textarea):not(select) { outline: 3px solid var(--color-ring); outline-offset: 2px; }
+  :focus-visible:not(input):not(textarea):not(select) {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 2px;
+  }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
@@ -275,15 +334,24 @@
    vocabulary; Tailwind utilities are the higher-level one.
    ============================================================ */
 @layer components {
-.display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: var(--display-track);
-  line-height: 1.1;
-}
-.i { font-size: 1.25em; line-height: 1; flex-shrink: 0; display: inline-flex; }
-.i-sm { font-size: 1em; }
-.i-lg { font-size: 1.5em; }
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: var(--display-track);
+    line-height: 1.1;
+  }
+  .i {
+    font-size: 1.25em;
+    line-height: 1;
+    flex-shrink: 0;
+    display: inline-flex;
+  }
+  .i-sm {
+    font-size: 1em;
+  }
+  .i-lg {
+    font-size: 1.5em;
+  }
 }
 
 /* ============================================================
@@ -291,30 +359,69 @@
    Named with proc- prefix to avoid collisions.
    ============================================================ */
 @keyframes proc-fadein {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes proc-slidein {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes proc-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.4; transform: scale(0.75); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.75);
+  }
 }
 
 @keyframes proc-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(250%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  @keyframes proc-fadein  { from { opacity: 1; } }
-  @keyframes proc-slidein { from { opacity: 1; transform: none; } }
-  @keyframes proc-pulse   { 50% { opacity: 1; transform: none; } }
-  @keyframes proc-shimmer { 100% { transform: none; } }
+  @keyframes proc-fadein {
+    from {
+      opacity: 1;
+    }
+  }
+  @keyframes proc-slidein {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes proc-pulse {
+    50% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes proc-shimmer {
+    100% {
+      transform: none;
+    }
+  }
 }
 
 html,

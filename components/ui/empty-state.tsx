@@ -1,7 +1,7 @@
-import * as React from 'react';
-import type { IconType } from 'react-icons';
-import { Icon } from '@/components/ui/icon';
-import { IconTile } from '@/components/ui/icon-tile';
+import * as React from "react";
+import type { IconType } from "react-icons";
+import { Icon } from "@/components/ui/icon";
+import { IconTile } from "@/components/ui/icon-tile";
 
 /**
  * A place where something will be, and is not yet.
@@ -39,11 +39,11 @@ export function EmptyState({
   return (
     <article
       className={[
-        'flex flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)]',
-        'border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)]',
-        'px-6 text-center',
-        compact ? 'py-8' : 'py-16',
-      ].join(' ')}
+        "flex flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)]",
+        "border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)]",
+        "px-6 text-center",
+        compact ? "py-8" : "py-16",
+      ].join(" ")}
     >
       {icon ? (
         <IconTile size="lg" icon={icon} tone="quiet" shape="circle" />
@@ -53,7 +53,11 @@ export function EmptyState({
         <h3 className="font-[family-name:var(--font-ui)] text-base font-semibold leading-heading text-[var(--color-ink)]">
           {title}
         </h3>
-        {body ? <p className="max-w-note text-sm leading-body text-[var(--color-ink-2)]">{body}</p> : null}
+        {body ? (
+          <p className="max-w-note text-sm leading-body text-[var(--color-ink-2)]">
+            {body}
+          </p>
+        ) : null}
       </div>
 
       {action ? <div className="pt-1">{action}</div> : null}

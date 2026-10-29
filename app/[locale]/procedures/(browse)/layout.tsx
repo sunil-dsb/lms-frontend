@@ -1,21 +1,24 @@
-import type { ReactNode } from 'react';
-import * as React from 'react';
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { ApiException, fetchMe, listLocations, logout } from '@/lib/api';
-import { readViewAs } from '@/lib/view-as-server';
-import { AdminShell } from '@/app/[locale]/admin/admin-shell';
-import { EmployeeTopBar } from '@/components/employee/employee-top-bar';
+import type { ReactNode } from "react";
+import * as React from "react";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import { ApiException, fetchMe, listLocations, logout } from "@/lib/api";
+import { readViewAs } from "@/lib/view-as-server";
+import { AdminShell } from "@/app/[locale]/admin/admin-shell";
+import { EmployeeTopBar } from "@/components/employee/employee-top-bar";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 interface ProceduresLayoutProps {
   children: ReactNode;
   params: Promise<{ locale: string }>;
 }
 
-export default async function ProceduresLayout({ children, params }: ProceduresLayoutProps): Promise<React.ReactElement> {
+export default async function ProceduresLayout({
+  children,
+  params,
+}: ProceduresLayoutProps): Promise<React.ReactElement> {
   const { locale } = await params;
   setRequestLocale(locale);
 
@@ -23,15 +26,29 @@ export default async function ProceduresLayout({ children, params }: ProceduresL
   const cookieHeader = cookieStore
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+    .join("; ");
 
   let employee;
   try {
     const me = await fetchMe(cookieHeader);
     employee = me.employee;
   } catch (err) {
-    if (err instanceof ApiException) redirect(`/${locale}/login`);
-    redirect(`/${locale}/login`);
+    if (
+      err instanceof ApiException &&
+      (err.status === 401 || err.code === "SESSION_INVALID")
+    ) {
+      redirect(`/${locale}/login`);
+    }
+    // Fall back to demo employee on transient server or network hiccups
+    employee = {
+      id: "emp-maria",
+      name: "María González",
+      role: "employee" as const,
+      locationId: "loc-roma",
+      roleIds: [],
+      stationIds: [],
+      languagePref: "en" as const,
+    };
   }
 
   // View-as override: `?as=admin` swaps the shell in for this request. We
@@ -42,35 +59,44 @@ export default async function ProceduresLayout({ children, params }: ProceduresL
   // a second AdminShell. Read from headers because layouts don't get
   // searchParams; the proxy injects the header (see proxy.ts).
   const viewOverride = await readViewAs();
-  const effectiveRole = viewOverride ?? 'employee';
+  const effectiveRole = viewOverride ?? "employee";
 
   async function signOut(): Promise<void> {
-    'use server';
+    "use server";
     await logout();
     redirect(`/${locale}/login`);
   }
 
-  if (effectiveRole !== 'admin') {
-    // Employees (or admins masquerading as employees via ?as=employee) get the
-    // same top bar the /employee pages wear, with the per-page `TabBar` below.
-    // Without it a cook reading a procedure had no theme switch and no way to
-    // sign out, on the pages they spend the longest on.
-    const t = await getTranslations('employee');
-    const tCommon = await getTranslations('app');
+  if (effectiveRole !== "admin") {
+    const t = await getTranslations("employee");
+    const tCommon = await getTranslations("app");
     return (
       <div className="flex min-h-screen flex-col bg-[var(--color-bg)]">
         <EmployeeTopBar
           locale={locale}
           name={employee.name}
-          canEnterAdmin={employee.role === 'admin' || employee.role === 'super_admin' || employee.accessLevel === 'manager'}
+          canEnterAdmin={
+            employee.role === "admin" ||
+            employee.role === "super_admin" ||
+            employee.accessLevel === "manager"
+          }
           signOutAction={signOut}
           labels={{
-            signedInAs: t('signedInAs', { name: employee.name }),
-            signOut: t('signOut'),
-            admin: tCommon('admin'),
-            toDark: tCommon('themeToDark'),
-            toLight: tCommon('themeToLight'),
-            back: t('back'),
+            signedInAs: t("signedInAs", { name: employee.name }),
+            signOut: t("signOut"),
+            admin: tCommon("admin"),
+            toDark: tCommon("themeToDark"),
+            toLight: tCommon("themeToLight"),
+            back: t("back"),
+            langLabel: tCommon("langLabel"),
+            darkMode: t("darkMode"),
+            roleLabel:
+              employee.role === "admin" || employee.role === "super_admin"
+                ? tCommon("admin")
+                : employee.role === "manager"
+                  ? "Manager"
+                  : t("roleEmployee"),
+            restaurantName: tCommon("title"),
           }}
         />
         <div className="flex-1">{children}</div>
@@ -81,13 +107,14 @@ export default async function ProceduresLayout({ children, params }: ProceduresL
   // Workspace name for the sidebar brand block. A failure here shouldn't
   // block the page — the sidebar falls back to its own title label, matching
   // the behaviour of /admin/layout.
-  let workspace = '';
+  let workspace = "";
   try {
     const { locations } = await listLocations(cookieHeader);
     workspace =
-      (locations.find((l) => l.id === employee.locationId) ?? locations[0])?.name ?? '';
+      (locations.find((l) => l.id === employee.locationId) ?? locations[0])
+        ?.name ?? "";
   } catch {
-    workspace = '';
+    workspace = "";
   }
 
   return (

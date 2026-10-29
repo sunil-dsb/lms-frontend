@@ -36,19 +36,19 @@ Some areas, especially training, still use local demo data. See [Current impleme
 
 ## Technology
 
-| Area | Technology |
-| --- | --- |
-| Runtime | Node.js 22 or newer |
-| Package manager | pnpm 10 (declared in `package.json`) |
-| Framework | Next.js 16 App Router |
-| UI | React 19, TypeScript 6 |
-| Styling | Tailwind CSS 4 and the project design tokens |
-| Localization | `next-intl` 4, English and Spanish |
-| Server state | TanStack Query 5 |
-| HTTP client | Axios |
-| Validation | Zod 4 |
-| Translation provider | OpenRouter through a Next.js route handler |
-| Hosting configuration | AWS Amplify (`amplify.yml`) |
+| Area                  | Technology                                   |
+| --------------------- | -------------------------------------------- |
+| Runtime               | Node.js 22 or newer                          |
+| Package manager       | pnpm 10 (declared in `package.json`)         |
+| Framework             | Next.js 16 App Router                        |
+| UI                    | React 19, TypeScript 6                       |
+| Styling               | Tailwind CSS 4 and the project design tokens |
+| Localization          | `next-intl` 4, English and Spanish           |
+| Server state          | TanStack Query 5                             |
+| HTTP client           | Axios                                        |
+| Validation            | Zod 4                                        |
+| Translation provider  | OpenRouter through a Next.js route handler   |
+| Hosting configuration | AWS Amplify (`amplify.yml`)                  |
 
 ## Requirements
 
@@ -83,41 +83,41 @@ The backend must be configured and running for live authentication, employee, ca
 
 Create `.env.local` from `.env.local.example`. Do not commit `.env.local` or put secrets in variables prefixed with `NEXT_PUBLIC_`; Next.js embeds public variables in browser code.
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `NEXT_PUBLIC_API_BASE` | Recommended | Base URL for backend API requests. Example: `http://localhost:8000` when using the backend's default port. |
-| `NEXT_PUBLIC_API_URL` | No | Legacy alternate API base URL used by the shared HTTP client when `NEXT_PUBLIC_API_BASE` is unset. Prefer `NEXT_PUBLIC_API_BASE`. |
-| `BACKEND_API_URL` | No | Server-side fallback for the shared HTTP client. Keep it server-only. |
-| `OPENROUTER_API_KEY` | For translation | Server-side key used by `/api/backend/translate`. Configure it in the hosting environment for deployment. |
-| `NEXT_PUBLIC_GEMINI_API_KEY` | Legacy; avoid for production | A public Gemini key is exposed in the browser bundle. The server translation route uses `OPENROUTER_API_KEY` instead. |
-| `NEXT_PUBLIC_GEMINI_MODEL` | Legacy/optional | Model override for the legacy client-side Gemini helper. |
+| Variable                     | Required                     | Purpose                                                                                                                           |
+| ---------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_BASE`       | Recommended                  | Base URL for backend API requests. Example: `http://localhost:8000` when using the backend's default port.                        |
+| `NEXT_PUBLIC_API_URL`        | No                           | Legacy alternate API base URL used by the shared HTTP client when `NEXT_PUBLIC_API_BASE` is unset. Prefer `NEXT_PUBLIC_API_BASE`. |
+| `BACKEND_API_URL`            | No                           | Server-side fallback for the shared HTTP client. Keep it server-only.                                                             |
+| `OPENROUTER_API_KEY`         | For translation              | Server-side key used by `/api/backend/translate`. Configure it in the hosting environment for deployment.                         |
+| `NEXT_PUBLIC_GEMINI_API_KEY` | Legacy; avoid for production | A public Gemini key is exposed in the browser bundle. The server translation route uses `OPENROUTER_API_KEY` instead.             |
+| `NEXT_PUBLIC_GEMINI_MODEL`   | Legacy/optional              | Model override for the legacy client-side Gemini helper.                                                                          |
 
 The shared HTTP client falls back to `http://localhost:8000` when no API base is configured. Keep the configured URL aligned with the backend port and deployment origin.
 
 ## Scripts
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Start the Next.js development server. |
-| `pnpm build` | Create the production build. |
-| `pnpm start` | Serve a previously built app. |
-| `pnpm typecheck` | Run TypeScript without emitting files. |
-| `pnpm lint` | Run the lint command defined in `package.json`. |
-| `pnpm check` | Run lint, typecheck, and a production build. |
+| Command          | Purpose                                         |
+| ---------------- | ----------------------------------------------- |
+| `pnpm dev`       | Start the Next.js development server.           |
+| `pnpm build`     | Create the production build.                    |
+| `pnpm start`     | Serve a previously built app.                   |
+| `pnpm typecheck` | Run TypeScript without emitting files.          |
+| `pnpm lint`      | Run the lint command defined in `package.json`. |
+| `pnpm check`     | Run lint, typecheck, and a production build.    |
 
 ## Application routes
 
 Application pages are under `app/[locale]`. Both `en` and `es` are supported, with locale prefixes always present.
 
-| Area | Routes |
-| --- | --- |
-| Home and sign-in | `/[locale]`, `/[locale]/login` |
-| Invite and account recovery | `/[locale]/invite/[token]`, `/[locale]/activate`, `/[locale]/activate/[token]`, `/[locale]/set-password`, `/[locale]/set-password/[token]`, `/[locale]/forgot-password`, `/[locale]/reset-password`, `/[locale]/reset-password/[token]` |
-| Employee | `/[locale]/employee/home`, `/[locale]/employee/training`, `/[locale]/employee/training/[id]` |
-| Procedures | `/[locale]/procedures`, `/[locale]/procedures/[id]` |
-| Administrator | `/[locale]/admin`, `/[locale]/admin/employees`, `/[locale]/admin/employees/new`, `/[locale]/admin/employees/[id]`, `/[locale]/admin/library`, `/[locale]/admin/library/new`, `/[locale]/admin/library/[id]`, `/[locale]/admin/library/[id]/edit`, `/[locale]/admin/library/categories`, `/[locale]/admin/library/categories/[slug]`, `/[locale]/admin/library/categories/[slug]/[subSlug]`, `/[locale]/admin/training`, `/[locale]/admin/training/new`, `/[locale]/admin/training/[id]/assign`, `/[locale]/admin/settings` |
-| Reports and utilities | `/[locale]/admin/reports`, `/[locale]/design-system`, `/[locale]/demo1`, `/[locale]/demo2`, `/[locale]/demo3` |
-| Translation API | `POST /api/backend/translate` |
+| Area                        | Routes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home and sign-in            | `/[locale]`, `/[locale]/login`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Invite and account recovery | `/[locale]/invite/[token]`, `/[locale]/activate`, `/[locale]/activate/[token]`, `/[locale]/set-password`, `/[locale]/set-password/[token]`, `/[locale]/forgot-password`, `/[locale]/reset-password`, `/[locale]/reset-password/[token]`                                                                                                                                                                                                                                                                                    |
+| Employee                    | `/[locale]/employee/home`, `/[locale]/employee/training`, `/[locale]/employee/training/[id]`                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Procedures                  | `/[locale]/procedures`, `/[locale]/procedures/[id]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Administrator               | `/[locale]/admin`, `/[locale]/admin/employees`, `/[locale]/admin/employees/new`, `/[locale]/admin/employees/[id]`, `/[locale]/admin/library`, `/[locale]/admin/library/new`, `/[locale]/admin/library/[id]`, `/[locale]/admin/library/[id]/edit`, `/[locale]/admin/library/categories`, `/[locale]/admin/library/categories/[slug]`, `/[locale]/admin/library/categories/[slug]/[subSlug]`, `/[locale]/admin/training`, `/[locale]/admin/training/new`, `/[locale]/admin/training/[id]/assign`, `/[locale]/admin/settings` |
+| Reports and utilities       | `/[locale]/admin/reports`, `/[locale]/design-system`, `/[locale]/demo1`, `/[locale]/demo2`, `/[locale]/demo3`                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Translation API             | `POST /api/backend/translate`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 This is an overview, not an access-control specification. The route layouts and backend authorization determine access.
 

@@ -1,4 +1,4 @@
-import type { Procedure } from '@/lib/types';
+import type { Procedure } from "@/lib/types";
 
 /**
  * Promo dishes — limited-time items (typically 1–2 months) the home page surfaces
@@ -15,8 +15,8 @@ import type { Procedure } from '@/lib/types';
  * `SEED_PROCEDURES` (or will arrive via the backend).
  */
 export const PROMO_SLUGS: readonly string[] = [
-  'herb-crusted-sea-bass',
-  'truffle-mushroom-risotto',
+  "herb-crusted-sea-bass",
+  "truffle-mushroom-risotto",
 ] as const;
 
 /** Hard cap on the number of promos shown on the home page. */
@@ -30,7 +30,9 @@ const PROMO_SLUG_SET = new Set(PROMO_SLUGS);
  * page) so we benefit from the audience/clearance filter that ran before us;
  * a promo the cook may not read should not show up here.
  */
-export function pickPromoProcedures(procedures: readonly Procedure[]): Procedure[] {
+export function pickPromoProcedures(
+  procedures: readonly Procedure[],
+): Procedure[] {
   const found: Procedure[] = [];
   for (const slug of PROMO_SLUGS) {
     const match = procedures.find((p) => p.slug === slug);

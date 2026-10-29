@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { setRequestLocale } from 'next-intl/server';
-import { EmployeeDetailClient } from './employee-detail-client';
+import * as React from "react";
+import { setRequestLocale } from "next-intl/server";
+import { EmployeeDetailClient } from "./employee-detail-client";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;

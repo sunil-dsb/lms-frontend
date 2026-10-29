@@ -1,5 +1,4 @@
-'use client';
-
+"use client";
 
 import * as React from "react";
 
@@ -7,42 +6,56 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 
-
 import { toast } from "@/components/ui/toast";
-
-
-
 
 import { type BilingualValue } from "@/components/ui/bilingual-input";
 
-
-
-
-
-
-
-
-
 import { type RecipeIngredientItem } from "@/components/admin/recipe-ingredients-editor";
 
+import {
+  isTranslating,
+  subscribeTranslations,
+} from "@/lib/use-bilingual-translation";
 
-
-import { isTranslating, subscribeTranslations } from "@/lib/use-bilingual-translation";
-
-import { fetchQuizById, getQuizById, listEmployees, listStations } from "@/lib/api";
-import { emptyIngredient, emptyYieldItems, toEditorContent } from "@/lib/procedure-draft";
+import {
+  fetchQuizById,
+  getQuizById,
+  listEmployees,
+  listStations,
+} from "@/lib/api";
+import {
+  emptyIngredient,
+  emptyYieldItems,
+  toEditorContent,
+} from "@/lib/procedure-draft";
 import { backendSlug, categorySlugsMatch } from "@/services/categories/api";
-import type { AdminEmployee, Category, Procedure, ProcedureAudience, ProcedureBlock, ProcedureProtection, ProcedureQuiz, ProcedureYieldItem, Role, Station } from "@/lib/types";
-import { validateProcedureForm as validateProcedureInput, type ValidationErrorResult } from "./procedure-editor-validation";
+import type {
+  AdminEmployee,
+  Category,
+  Procedure,
+  ProcedureAudience,
+  ProcedureBlock,
+  ProcedureProtection,
+  ProcedureQuiz,
+  ProcedureYieldItem,
+  Role,
+  Station,
+} from "@/lib/types";
+import {
+  validateProcedureForm as validateProcedureInput,
+  type ValidationErrorResult,
+} from "./procedure-editor-validation";
 import { createProcedureSaveHandler } from "./procedure-editor-save";
 import { useProcedureEditorDerivedData } from "./procedure-editor-derived";
 import { createProcedureNavigationHandlers } from "./procedure-editor-navigation";
 import { useProcedureImportFlow } from "./procedure-editor-import";
 
-
-
-
-const EVERYONE: ProcedureAudience = { mode: "everyone", stationIds: [], roleIds: [], employeeIds: [] };
+const EVERYONE: ProcedureAudience = {
+  mode: "everyone",
+  stationIds: [],
+  roleIds: [],
+  employeeIds: [],
+};
 
 export type WizardStepId = "details" | "quiz" | "access" | "review";
 
@@ -52,13 +65,11 @@ export interface ProcedureEditorProps {
   initial?: Procedure;
 }
 
-
 export function useProcedureEditorModel({
   locale,
   categories: initialCategories,
   initial,
 }: ProcedureEditorProps) {
-
   const t = useTranslations("admin.library.editor");
   const tErr = useTranslations("admin.library.new.errors");
   const tStep = useTranslations("admin.library.new.stepper");
@@ -70,8 +81,9 @@ export function useProcedureEditorModel({
 
   /* ---------------------------------------------------------- reference -- */
 
-  const [categories, setCategories] =
-    React.useState<Category[]>(initialCategories ?? []);
+  const [categories, setCategories] = React.useState<Category[]>(
+    initialCategories ?? [],
+  );
 
   // Sync state whenever initialCategories updates from loader
   React.useEffect(() => {
@@ -130,8 +142,12 @@ export function useProcedureEditorModel({
   React.useEffect(() => {
     if (initial?.quizId && !savedQuiz) {
       fetchQuizById(initial.quizId).then((loaded) => {
-        if (loaded) {
-          setQuiz({ questions: loaded.questions, attached: loaded.attached ?? true });
+        // Only load into the procedure editor if the quiz belongs to a procedure
+        if (loaded && (!loaded.quizType || loaded.quizType === "procedure")) {
+          setQuiz({
+            questions: loaded.questions,
+            attached: loaded.attached ?? true,
+          });
         }
       });
     }
@@ -163,26 +179,52 @@ export function useProcedureEditorModel({
     setIconImageUrl,
     setDirty,
     messages: {
-      loaded: t('importLoaded'),
-      errorTitle: t('importErrorTitle'),
-      errorBody: t('importErrorBody'),
-      fileTypeError: t('importFileTypeError'),
-      fileSizeError: t('importFileSizeError'),
+      loaded: t("importLoaded"),
+      errorTitle: t("importErrorTitle"),
+      errorBody: t("importErrorBody"),
+      fileTypeError: t("importFileTypeError"),
+      fileSizeError: t("importFileSizeError"),
     },
   });
   const {
-    creationMode, setCreationMode, importedId, setImportedId, importedSlug, setImportedSlug,
-    importFile, setImportFile, importBannerFile, setImportBannerFile,
-    importStep, setImportStep, importing, setImporting, importError, setImportError,
-    importDragOver, setImportDragOver, importLoadingId, setImportLoadingId,
-    importAbortRef, importInputRef, applyImportedProcedure, IMPORT_ACCEPT,
-    startImport, cancelImport, runImport, importElapsed, setImportElapsed,
-    formatFileSize, resetToChoiceScreen,
+    creationMode,
+    setCreationMode,
+    importedId,
+    setImportedId,
+    importedSlug,
+    setImportedSlug,
+    importFile,
+    setImportFile,
+    importBannerFile,
+    setImportBannerFile,
+    importStep,
+    setImportStep,
+    importing,
+    setImporting,
+    importError,
+    setImportError,
+    importDragOver,
+    setImportDragOver,
+    importLoadingId,
+    setImportLoadingId,
+    importAbortRef,
+    importInputRef,
+    applyImportedProcedure,
+    IMPORT_ACCEPT,
+    startImport,
+    cancelImport,
+    runImport,
+    importElapsed,
+    setImportElapsed,
+    formatFileSize,
+    resetToChoiceScreen,
   } = importFlow;
 
   const [titleError, setTitleError] = React.useState<string | null>(null);
   const [purposeError, setPurposeError] = React.useState<string | null>(null);
-  const [blockErrors, setBlockErrors] = React.useState<Record<string, string>>({});
+  const [blockErrors, setBlockErrors] = React.useState<Record<string, string>>(
+    {},
+  );
   const [stationsError, setStationsError] = React.useState<boolean>(false);
   const [pending, startTransition] = React.useTransition();
   // A translation scheduled or in flight blocks Save — `save()` reads state
@@ -219,9 +261,13 @@ export function useProcedureEditorModel({
 
   // Always start at top of page on mount / navigation
   React.useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     const rafId = requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "instant" as ScrollBehavior,
+      });
     });
     return () => cancelAnimationFrame(rafId);
   }, []);
@@ -232,12 +278,15 @@ export function useProcedureEditorModel({
   // (or file it under General), then publish from the editor.
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('publishBlocked') !== '1') return;
-    setStep('access');
+    if (params.get("publishBlocked") !== "1") return;
+    setStep("access");
     setStationsError(true);
-    toast.error(t('stationsRequired'));
+    toast.error(t("stationsRequired"));
     const rafId = requestAnimationFrame(() => {
-      stationsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      stationsSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
     });
     return () => cancelAnimationFrame(rafId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -245,10 +294,7 @@ export function useProcedureEditorModel({
 
   React.useEffect(() => {
     let alive = true;
-    void Promise.all([
-      listStations(),
-      listEmployees({ status: "active" }),
-    ])
+    void Promise.all([listStations(), listEmployees({ status: "active" })])
       .then(([s, e]) => {
         if (!alive) return;
         if (s?.stations) setStations(s.stations);
@@ -291,9 +337,7 @@ export function useProcedureEditorModel({
           .replace(/[^a-z0-9]/gi, "")
           .toLowerCase();
         if (tail.length < 2) continue;
-        const matches = stations.filter((s) =>
-          normLive(s.name).includes(tail),
-        );
+        const matches = stations.filter((s) => normLive(s.name).includes(tail));
         if (matches.length === 1 && !next.includes(matches[0].id)) {
           next.push(matches[0].id);
         }
@@ -335,7 +379,9 @@ export function useProcedureEditorModel({
     }
     if (!categoryId && subcategoryId && categories.length > 0) {
       const parentCat = categories.find((c) =>
-        c.subcategories?.some((s) => s.id === subcategoryId || s.slug === subcategoryId)
+        c.subcategories?.some(
+          (s) => s.id === subcategoryId || s.slug === subcategoryId,
+        ),
       );
       if (parentCat) {
         setCategoryId(parentCat.id);
@@ -353,7 +399,8 @@ export function useProcedureEditorModel({
   // SUBCATEGORY_NOT_FOUND at save time.
   const catalogReconciled = React.useRef(false);
   React.useEffect(() => {
-    if (!initial || catalogReconciled.current || categories.length === 0) return;
+    if (!initial || catalogReconciled.current || categories.length === 0)
+      return;
     const liveSubs = categories.flatMap((c) =>
       (c.subcategories ?? []).map((s) => ({ sub: s, parentId: c.id })),
     );
@@ -377,8 +424,7 @@ export function useProcedureEditorModel({
       ({ sub }) =>
         (savedSub.slug &&
           categorySlugsMatch(backendSlug(sub.nameEn), savedSub.slug)) ||
-        (savedSub.nameEn &&
-          normName(sub.nameEn) === normName(savedSub.nameEn)),
+        (savedSub.nameEn && normName(sub.nameEn) === normName(savedSub.nameEn)),
     );
     catalogReconciled.current = true;
     if (hits.length === 1) {
@@ -392,10 +438,10 @@ export function useProcedureEditorModel({
   // Every edit marks the page dirty; one wrapper instead of a line per field.
   const edit =
     <T,>(set: React.Dispatch<React.SetStateAction<T>>) =>
-      (v: T): void => {
-        set(v);
-        setDirty(true);
-      };
+    (v: T): void => {
+      set(v);
+      setDirty(true);
+    };
 
   // Leaving with unsaved work asks first.
   React.useEffect(() => {
@@ -408,12 +454,13 @@ export function useProcedureEditorModel({
   const isPristineNew =
     !initial &&
     !importedId &&
-    title.en.trim() === '' &&
-    title.es.trim() === '' &&
-    purpose.en.trim() === '' &&
-    purpose.es.trim() === '' &&
+    title.en.trim() === "" &&
+    title.es.trim() === "" &&
+    purpose.en.trim() === "" &&
+    purpose.es.trim() === "" &&
     blocks.length === 0;
-  const showEntryCards = step === 'details' && creationMode === null && isPristineNew;
+  const showEntryCards =
+    step === "details" && creationMode === null && isPristineNew;
 
   // Revoke any blob URL we created so the browser frees the memory.
   React.useEffect(() => {
@@ -470,8 +517,8 @@ export function useProcedureEditorModel({
   })();
 
   const validateProcedureForm = (
-    scope: 'details' | 'access' | 'all',
-    status: 'draft' | 'published',
+    scope: "details" | "access" | "all",
+    status: "draft" | "published",
   ): ValidationErrorResult | null =>
     validateProcedureInput({
       scope,
@@ -481,33 +528,28 @@ export function useProcedureEditorModel({
       blocks,
       audience,
       isEs,
-      titleRequiredMessage: t('titleRequired'),
-      purposeRequiredMessage: t('purposeRequired'),
+      titleRequiredMessage: t("titleRequired"),
+      purposeRequiredMessage: t("purposeRequired"),
       stationsSection: stationsSectionRef.current,
     });
 
-
   /* ----------------------------------------------------------------- save -- */
 
-  const {
-    scrollToTarget,
-    applyValidationError,
-    handleNext,
-    handleSelectStep,
-  } = createProcedureNavigationHandlers({
-    step,
-    quizQuestionMissingAnswer,
-    tQuizDesc,
-    validateProcedureForm,
-    setTitleError,
-    setPurposeError,
-    setBlockErrors,
-    setStationsError,
-    setStep,
-    stepIdx,
-    steps: STEPS,
-    stationsSectionRef,
-  });
+  const { scrollToTarget, applyValidationError, handleNext, handleSelectStep } =
+    createProcedureNavigationHandlers({
+      step,
+      quizQuestionMissingAnswer,
+      tQuizDesc,
+      validateProcedureForm,
+      setTitleError,
+      setPurposeError,
+      setBlockErrors,
+      setStationsError,
+      setStep,
+      stepIdx,
+      steps: STEPS,
+      stationsSectionRef,
+    });
 
   const save = createProcedureSaveHandler({
     quizQuestionMissingAnswer,
@@ -545,12 +587,10 @@ export function useProcedureEditorModel({
     setError,
   });
 
-
   const published = initial?.status === "published";
 
   /* --------------------------------------------------------------- render -- */
 
-  
   return {
     locale,
     initial,

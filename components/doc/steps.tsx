@@ -1,12 +1,31 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { ALLERGEN_LABELS, type AllergenKey } from '@/lib/allergens';
-import { LuArrowLeft, LuArrowLeftRight, LuBadgeCheck, LuCheck, LuChevronDown, LuChevronRight, LuCircleAlert, LuDownload, LuFocus, LuImage, LuLightbulb, LuLock, LuPlay, LuTestTube, LuTriangleAlert, LuUtensils, LuWrench, LuX } from 'react-icons/lu';
-import { Icon, iconByName } from '@/components/ui/icon';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import type { IconType } from 'react-icons';
-import { Shot } from './recipe';
+import * as React from "react";
+import { ALLERGEN_LABELS, type AllergenKey } from "@/lib/allergens";
+import {
+  LuArrowLeft,
+  LuArrowLeftRight,
+  LuBadgeCheck,
+  LuCheck,
+  LuChevronDown,
+  LuChevronRight,
+  LuCircleAlert,
+  LuDownload,
+  LuFocus,
+  LuImage,
+  LuLightbulb,
+  LuLock,
+  LuPlay,
+  LuTestTube,
+  LuTriangleAlert,
+  LuUtensils,
+  LuWrench,
+  LuX,
+} from "react-icons/lu";
+import { Icon, iconByName } from "@/components/ui/icon";
+import { classifyVideoUrl } from "@/lib/procedure-media";
+import type { IconType } from "react-icons";
+import { Shot } from "./recipe";
 
 /**
  * The vocabulary of an SOP / recipe / training chapter page.
@@ -20,15 +39,15 @@ import { Shot } from './recipe';
  */
 
 const cn = (...parts: Array<string | false | null | undefined>) =>
-  parts.filter(Boolean).join(' ');
-export type NoteKind = 'warn' | 'tip' | 'alt' | 'equip' | 'allergen';
+  parts.filter(Boolean).join(" ");
+export type NoteKind = "warn" | "tip" | "alt" | "equip" | "allergen";
 
 const NOTE_META: Record<NoteKind, { icon: IconType; label: string }> = {
-  warn:     { icon: LuTriangleAlert,           label: 'Warning' },
-  tip:      { icon: LuLightbulb,       label: 'Tip' },
-  alt:      { icon: LuArrowLeftRight, label: 'Alternative' },
-  equip:    { icon: LuWrench,           label: 'Equipment' },
-  allergen: { icon: LuCircleAlert,   label: 'Allergen' },
+  warn: { icon: LuTriangleAlert, label: "Warning" },
+  tip: { icon: LuLightbulb, label: "Tip" },
+  alt: { icon: LuArrowLeftRight, label: "Alternative" },
+  equip: { icon: LuWrench, label: "Equipment" },
+  allergen: { icon: LuCircleAlert, label: "Allergen" },
 };
 
 export function NoteBlock({
@@ -44,7 +63,7 @@ export function NoteBlock({
   // A kind this build does not know about is still a note with something to say.
   const meta = NOTE_META[kind] ?? NOTE_META.warn;
   return (
-    <div className={cn('note-block', `n-${kind}`)}>
+    <div className={cn("note-block", `n-${kind}`)}>
       <span className="ico">
         <Icon icon={meta.icon} className="i" />
       </span>
@@ -73,7 +92,12 @@ export type MethodStep = {
    *  `compare: 'ok' | 'no'` paints a green/red bottom border so the pair
    *  reads as a "right vs wrong" comparison (mirrors demo3's cook-mode
    *  compare panel). */
-  shots?: Array<{ src: string; alt: string; caption?: string; compare?: 'ok' | 'no' }>;
+  shots?: Array<{
+    src: string;
+    alt: string;
+    caption?: string;
+    compare?: "ok" | "no";
+  }>;
   /** Video attached to this step. Same idea as `shots` — direct on the step
    *  rather than floating in the procedure. */
   video?: { src: string; caption?: string };
@@ -89,7 +113,7 @@ export type MethodStep = {
     alt: string;
     /** "compare" pairs two thumbs in an `is-pair` block with green/red
      *  bottom borders. */
-    compare?: 'ok' | 'no';
+    compare?: "ok" | "no";
     /** A second photo for the compare pair. Only used when `compare` is
      *  "ok" (the "no" half is the second photo). */
     pairSrc?: string;
@@ -111,7 +135,7 @@ export function fmtClock(totalSec: number): string {
   const s = Math.max(0, Math.floor(totalSec));
   const m = Math.floor(s / 60);
   const r = s % 60;
-  return `${m}:${String(r).padStart(2, '0')}`;
+  return `${m}:${String(r).padStart(2, "0")}`;
 }
 
 export function MethodSteps({
@@ -131,7 +155,9 @@ export function MethodSteps({
     <ol
       className="steps compact"
       start={startIndex}
-      style={startIndex > 1 ? { counterReset: `step ${startIndex - 1}` } : undefined}
+      style={
+        startIndex > 1 ? { counterReset: `step ${startIndex - 1}` } : undefined
+      }
     >
       {steps.map((s, i) => {
         const actualNum = startIndex + i;
@@ -139,11 +165,11 @@ export function MethodSteps({
         // When a side thumbnail (single, compare pair, or grid) is provided, render as side media layout
         const showSideThumb = Boolean(s.mediaThumb);
         const classes = cn(
-          'step',
-          s.critical && 'is-crit',
-          isDone && 'is-done',
-          nowIndex === i && 'is-now',
-          showSideThumb && 'has-media',
+          "step",
+          s.critical && "is-crit",
+          isDone && "is-done",
+          nowIndex === i && "is-now",
+          showSideThumb && "has-media",
         );
         return (
           <li key={i} id={`step-${actualNum}`} className={classes || undefined}>
@@ -152,7 +178,7 @@ export function MethodSteps({
                 type="button"
                 className="step-num step-check"
                 aria-pressed={isDone}
-                aria-label={`Step ${actualNum}${s.critical ? ', critical' : ''}: ${isDone ? 'done, tap to undo' : 'mark done'}`}
+                aria-label={`Step ${actualNum}${s.critical ? ", critical" : ""}: ${isDone ? "done, tap to undo" : "mark done"}`}
                 onClick={() => onToggleStep(i)}
               />
             ) : (
@@ -161,11 +187,12 @@ export function MethodSteps({
             <div className="step-body">
               {s.critical && (
                 <span className="step-flag">
-                  <LuFocus aria-hidden="true" className="i i-sm" /> Critical step
+                  <LuFocus aria-hidden="true" className="i i-sm" /> Critical
+                  step
                 </span>
               )}
               {/* A caller can hand over either a plain sentence or its own markup. */}
-              {typeof s.body === 'string' ? (
+              {typeof s.body === "string" ? (
                 <p className="step-line">{s.body}</p>
               ) : (
                 <div className="step-line">{s.body}</div>
@@ -186,22 +213,31 @@ export function MethodSteps({
                   href={s.clip.src}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={s.onThumbOpen ? (e) => { e.preventDefault(); s.onThumbOpen?.(); } : undefined}
+                  onClick={
+                    s.onThumbOpen
+                      ? (e) => {
+                          e.preventDefault();
+                          s.onThumbOpen?.();
+                        }
+                      : undefined
+                  }
                 >
                   <LuPlay aria-hidden="true" className="i i-sm" />
-                  <span>{fmtClock(s.clip.startSec)}–{fmtClock(s.clip.endSec)}</span>
+                  <span>
+                    {fmtClock(s.clip.startSec)}–{fmtClock(s.clip.endSec)}
+                  </span>
                 </a>
               )}
               {/* Photographs: when multiple photos are attached and not rendered as side thumb */}
               {!showSideThumb && s.shots && s.shots.length > 1 ? (
                 <div
                   className={cn(
-                    'grid gap-3 mt-3 items-stretch',
+                    "grid gap-3 mt-3 items-stretch",
                     s.shots.length === 2
-                      ? 'grid-cols-2 max-w-2xl'
+                      ? "grid-cols-2 max-w-2xl"
                       : s.shots.length === 3
-                        ? 'grid-cols-2 sm:grid-cols-3 max-w-3xl'
-                        : 'grid-cols-2 sm:grid-cols-4 max-w-4xl',
+                        ? "grid-cols-2 sm:grid-cols-3 max-w-3xl"
+                        : "grid-cols-2 sm:grid-cols-4 max-w-4xl",
                   )}
                 >
                   {s.shots.slice(0, 4).map((sh, j) => (
@@ -218,7 +254,12 @@ export function MethodSteps({
                 </div>
               ) : !showSideThumb && s.shots && s.shots.length === 1 ? (
                 <div className="mt-3 max-w-xl">
-                  <Shot src={s.shots[0].src} alt={s.shots[0].alt} caption={s.shots[0].caption} compare={s.shots[0].compare} />
+                  <Shot
+                    src={s.shots[0].src}
+                    alt={s.shots[0].alt}
+                    caption={s.shots[0].caption}
+                    compare={s.shots[0].compare}
+                  />
                 </div>
               ) : null}
 
@@ -231,11 +272,11 @@ export function MethodSteps({
             </div>
             {/* Right-side thumb: rendered only when no inline body photos */}
             {showSideThumb && s.mediaThumb ? (
-              s.mediaThumb.compare === 'ok' && s.mediaThumb.pairSrc ? (
+              s.mediaThumb.compare === "ok" && s.mediaThumb.pairSrc ? (
                 <button
                   type="button"
                   className="step-thumb is-pair"
-                  aria-label={s.thumbLabel ?? 'Open this step in cook mode'}
+                  aria-label={s.thumbLabel ?? "Open this step in cook mode"}
                   onClick={s.onThumbOpen}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -247,17 +288,17 @@ export function MethodSteps({
                 <button
                   type="button"
                   className={cn(
-                    'step-thumb is-grid',
-                    s.mediaThumb.images.length === 2 && 'is-grid-2',
-                    s.mediaThumb.images.length === 3 && 'is-grid-3',
-                    s.mediaThumb.images.length >= 4 && 'is-grid-4',
+                    "step-thumb is-grid",
+                    s.mediaThumb.images.length === 2 && "is-grid-2",
+                    s.mediaThumb.images.length === 3 && "is-grid-3",
+                    s.mediaThumb.images.length >= 4 && "is-grid-4",
                   )}
-                  aria-label={s.thumbLabel ?? 'Open this step in cook mode'}
+                  aria-label={s.thumbLabel ?? "Open this step in cook mode"}
                   onClick={s.onThumbOpen}
                 >
                   {s.mediaThumb.images.slice(0, 4).map((img, idx) => (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img key={idx} src={img.src} alt={img.alt || ''} />
+                    <img key={idx} src={img.src} alt={img.alt || ""} />
                   ))}
                   {s.mediaThumb.badge ? (
                     <span className="badge">
@@ -270,7 +311,7 @@ export function MethodSteps({
                 <button
                   type="button"
                   className="step-thumb"
-                  aria-label={s.thumbLabel ?? 'Open this step in cook mode'}
+                  aria-label={s.thumbLabel ?? "Open this step in cook mode"}
                   onClick={s.onThumbOpen}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -284,11 +325,7 @@ export function MethodSteps({
                 </button>
               )
             ) : null}
-            {s.extra ? (
-              <div className="step-extra">
-                {s.extra}
-              </div>
-            ) : null}
+            {s.extra ? <div className="step-extra">{s.extra}</div> : null}
           </li>
         );
       })}
@@ -303,12 +340,12 @@ function StepVideo({ src, caption }: { src: string; caption?: string }) {
   const videoClass = classifyVideoUrl(src);
   return (
     <figure className="shot">
-      {videoClass.provider === 'file' ? (
+      {videoClass.provider === "file" ? (
         <video controls src={src} />
       ) : videoClass.embedUrl ? (
         <iframe
           src={videoClass.embedUrl}
-          title={caption ?? 'video'}
+          title={caption ?? "video"}
           className="aspect-video w-full rounded-[var(--radius-md)]"
           allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -327,7 +364,12 @@ export function PrepSteps({ steps }: { steps: PrepStep[] }) {
     <ul className="steps prep">
       {steps.map((s) => (
         <li key={s.id} className="step">
-          <input type="checkbox" className="tick" id={s.id} defaultChecked={s.done} />
+          <input
+            type="checkbox"
+            className="tick"
+            id={s.id}
+            defaultChecked={s.done}
+          />
           <div className="step-body">
             <label htmlFor={s.id}>{s.label}</label>
           </div>
@@ -339,7 +381,7 @@ export function PrepSteps({ steps }: { steps: PrepStep[] }) {
 
 export function CriticalLimit({
   icon,
-  label = 'Critical limit',
+  label = "Critical limit",
   value,
   subtitle,
   howToCheck,
@@ -374,7 +416,9 @@ export function CriticalLimit({
               <LuCircleAlert aria-hidden="true" className="i i-sm" />
               {breach}
             </dt>
-            <dd>{/* content is rendered by parent via a custom breach block */}</dd>
+            <dd>
+              {/* content is rendered by parent via a custom breach block */}
+            </dd>
           </div>
         </dl>
       </div>
@@ -403,7 +447,8 @@ export function CriticalLimitFull({
   return (
     <div className="crit">
       <h3 className="crit-h">
-        <Icon icon={iconByName(icon)} className="i i-sm" /> {label ?? 'Critical limit'}
+        <Icon icon={iconByName(icon)} className="i i-sm" />{" "}
+        {label ?? "Critical limit"}
       </h3>
       <div className="crit-b">
         <p className="crit-num">{value}</p>
@@ -425,4 +470,3 @@ export function CriticalLimitFull({
     </div>
   );
 }
-

@@ -1,11 +1,30 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { ALLERGEN_LABELS, type AllergenKey } from '@/lib/allergens';
-import { LuArrowLeft, LuArrowLeftRight, LuBadgeCheck, LuCheck, LuChevronDown, LuChevronRight, LuCircleAlert, LuDownload, LuFocus, LuImage, LuLightbulb, LuLock, LuPlay, LuTestTube, LuTriangleAlert, LuUtensils, LuWrench, LuX } from 'react-icons/lu';
-import { Icon, iconByName } from '@/components/ui/icon';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import type { IconType } from 'react-icons';
+import * as React from "react";
+import { ALLERGEN_LABELS, type AllergenKey } from "@/lib/allergens";
+import {
+  LuArrowLeft,
+  LuArrowLeftRight,
+  LuBadgeCheck,
+  LuCheck,
+  LuChevronDown,
+  LuChevronRight,
+  LuCircleAlert,
+  LuDownload,
+  LuFocus,
+  LuImage,
+  LuLightbulb,
+  LuLock,
+  LuPlay,
+  LuTestTube,
+  LuTriangleAlert,
+  LuUtensils,
+  LuWrench,
+  LuX,
+} from "react-icons/lu";
+import { Icon, iconByName } from "@/components/ui/icon";
+import { classifyVideoUrl } from "@/lib/procedure-media";
+import type { IconType } from "react-icons";
 
 /**
  * The vocabulary of an SOP / recipe / training chapter page.
@@ -19,7 +38,7 @@ import type { IconType } from 'react-icons';
  */
 
 const cn = (...parts: Array<string | false | null | undefined>) =>
-  parts.filter(Boolean).join(' ');
+  parts.filter(Boolean).join(" ");
 export function Shot({
   src,
   alt,
@@ -37,12 +56,12 @@ export function Shot({
   height?: number;
   /** When set, paints a green (ok) or red (no) bottom border so the pair reads
    *  as a "right vs wrong" comparison. Mirrors demo3's cook-mode compare panel. */
-  compare?: 'ok' | 'no';
+  compare?: "ok" | "no";
   aspectRatio?: string;
   className?: string;
 }) {
   return (
-    <figure className={cn('shot', className)} data-compare={compare}>
+    <figure className={cn("shot", className)} data-compare={compare}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
@@ -51,7 +70,9 @@ export function Shot({
         height={height}
         loading="lazy"
         className={cn(
-          aspectRatio ? `${aspectRatio} w-full object-cover` : 'max-h-[var(--media-max-h)] w-full object-cover',
+          aspectRatio
+            ? `${aspectRatio} w-full object-cover`
+            : "max-h-[var(--media-max-h)] w-full object-cover",
         )}
       />
       {caption && <figcaption>{caption}</figcaption>}
@@ -98,14 +119,28 @@ export function Compare({
     <div className="compare">
       <figure className="ok">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={correct.src} alt={correct.alt} width={1200} height={900} loading="lazy" className="aspect-[4/3] w-full object-cover" />
+        <img
+          src={correct.src}
+          alt={correct.alt}
+          width={1200}
+          height={900}
+          loading="lazy"
+          className="aspect-[4/3] w-full object-cover"
+        />
         <figcaption>
           <LuCheck aria-hidden="true" className="i i-sm" /> Correct
         </figcaption>
       </figure>
       <figure className="no">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={incorrect.src} alt={incorrect.alt} width={1200} height={900} loading="lazy" className="aspect-[4/3] w-full object-cover" />
+        <img
+          src={incorrect.src}
+          alt={incorrect.alt}
+          width={1200}
+          height={900}
+          loading="lazy"
+          className="aspect-[4/3] w-full object-cover"
+        />
         <figcaption>
           <LuX aria-hidden="true" className="i i-sm" /> Over-mashed
         </figcaption>
@@ -127,7 +162,7 @@ export function Scaler({
   factors,
   selected,
   onSelect,
-  label = 'Batch',
+  label = "Batch",
 }: {
   factors: number[];
   selected: number;
@@ -138,15 +173,25 @@ export function Scaler({
   // groups' aria-labelledby to the first label.
   const labelId = React.useId();
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): void => {
-    const keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'];
+    const keys = [
+      "ArrowRight",
+      "ArrowDown",
+      "ArrowLeft",
+      "ArrowUp",
+      "Home",
+      "End",
+    ];
     if (!keys.includes(e.key)) return;
     e.preventDefault();
     const i = factors.indexOf(selected);
     const at =
-      e.key === 'Home' ? 0
-      : e.key === 'End' ? factors.length - 1
-      : e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % factors.length
-      : (i - 1 + factors.length) % factors.length;
+      e.key === "Home"
+        ? 0
+        : e.key === "End"
+          ? factors.length - 1
+          : e.key === "ArrowRight" || e.key === "ArrowDown"
+            ? (i + 1) % factors.length
+            : (i - 1 + factors.length) % factors.length;
     const next = factors[at];
     if (next === undefined) return;
     onSelect?.(next);
@@ -156,8 +201,15 @@ export function Scaler({
 
   return (
     <div className="scaler">
-      <span className="lbl" id={labelId}>{label}</span>
-      <div className="choices" role="radiogroup" aria-labelledby={labelId} onKeyDown={onKeyDown}>
+      <span className="lbl" id={labelId}>
+        {label}
+      </span>
+      <div
+        className="choices"
+        role="radiogroup"
+        aria-labelledby={labelId}
+        onKeyDown={onKeyDown}
+      >
         {factors.map((f) => {
           const checked = f === selected;
           return (
@@ -188,8 +240,11 @@ export type Ingredient = {
   amounts: string[];
 };
 
-export function scaleAmount(baseAmount: string | undefined, factorMultiplier: number): string {
-  if (!baseAmount || baseAmount.trim() === '') return '';
+export function scaleAmount(
+  baseAmount: string | undefined,
+  factorMultiplier: number,
+): string {
+  if (!baseAmount || baseAmount.trim() === "") return "";
   const trimmed = baseAmount.trim();
 
   // If factor multiplier is 1, return base as-is
@@ -201,10 +256,12 @@ export function scaleAmount(baseAmount: string | undefined, factorMultiplier: nu
     const whole = fractionMatch[1] ? parseFloat(fractionMatch[1]) : 0;
     const num = parseFloat(fractionMatch[2]);
     const den = parseFloat(fractionMatch[3]);
-    const unit = fractionMatch[4] ? ` ${fractionMatch[4].trim()}` : '';
+    const unit = fractionMatch[4] ? ` ${fractionMatch[4].trim()}` : "";
     if (den !== 0) {
       const val = (whole + num / den) * factorMultiplier;
-      const rounded = Number.isInteger(val) ? String(val) : String(parseFloat(val.toFixed(2)));
+      const rounded = Number.isInteger(val)
+        ? String(val)
+        : String(parseFloat(val.toFixed(2)));
       return `${rounded}${unit}`;
     }
   }
@@ -212,13 +269,13 @@ export function scaleAmount(baseAmount: string | undefined, factorMultiplier: nu
   // Check for leading number with optional unit, e.g. "78", "2.5", "100 g", "2.5 kg"
   const numMatch = trimmed.match(/^([0-9]+(?:[.,][0-9]+)?)\s*(.*)$/);
   if (numMatch) {
-    const num = parseFloat(numMatch[1].replace(',', '.'));
+    const num = parseFloat(numMatch[1].replace(",", "."));
     if (!Number.isNaN(num)) {
       const scaledVal = num * factorMultiplier;
       const formattedNum = Number.isInteger(scaledVal)
         ? String(scaledVal)
         : String(parseFloat(scaledVal.toFixed(2)));
-      const unit = numMatch[2] ? ` ${numMatch[2].trim()}` : '';
+      const unit = numMatch[2] ? ` ${numMatch[2].trim()}` : "";
       return `${formattedNum}${unit}`;
     }
   }
@@ -243,13 +300,19 @@ export function IngredientsTable({
   const columns = isBase ? [baseIndex] : [baseIndex, selectedIndex];
 
   return (
-    <table className={cn('ing', isBase && 'is-base')}>
-      <caption className="vh">Ingredients at the base batch and at the selected batch size</caption>
+    <table className={cn("ing", isBase && "is-base")}>
+      <caption className="vh">
+        Ingredients at the base batch and at the selected batch size
+      </caption>
       <thead>
         <tr>
           <th scope="col">Ingredient</th>
           {columns.map((i) => (
-            <th key={factors[i]} scope="col" className={cn('num', i === selectedIndex && !isBase && 'adj')}>
+            <th
+              key={factors[i]}
+              scope="col"
+              className={cn("num", i === selectedIndex && !isBase && "adj")}
+            >
               {factors[i]}×
             </th>
           ))}
@@ -263,24 +326,28 @@ export function IngredientsTable({
               {ing.form && <span className="form">{ing.form}</span>}
               {ing.allergen && (
                 <span className="flag">
-                  <LuCircleAlert aria-hidden="true" className="i i-sm" /> Allergen
+                  <LuCircleAlert aria-hidden="true" className="i i-sm" />{" "}
+                  Allergen
                 </span>
               )}
             </th>
             {columns.map((j) => {
               const explicit = ing.amounts[j];
-              const baseVal = ing.amounts[baseIndex] ?? '';
+              const baseVal = ing.amounts[baseIndex] ?? "";
               const baseFactor = factors[baseIndex] || 1;
               const colFactor = factors[j] || 1;
               const multiplier = colFactor / baseFactor;
 
               const displayAmount =
-                explicit && explicit.trim() !== ''
+                explicit && explicit.trim() !== ""
                   ? explicit
                   : scaleAmount(baseVal, multiplier);
 
               return (
-                <td key={factors[j]} className={cn('num', j === selectedIndex && !isBase && 'adj')}>
+                <td
+                  key={factors[j]}
+                  className={cn("num", j === selectedIndex && !isBase && "adj")}
+                >
                   {displayAmount}
                 </td>
               );
@@ -295,4 +362,3 @@ export function IngredientsTable({
 /* ----------------------------------------------------------------
    Chapters: attachments + related
    ---------------------------------------------------------------- */
-

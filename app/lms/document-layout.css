@@ -2,75 +2,75 @@
    TABLE, EMPTY, SKELETON, TYPE, DENSITY
    ============================================================ */
 .tbl {
-   width: 100%;
-   border-collapse: collapse;
-   font-size: var(--t-sm);
-   background: var(--surface);
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+  background: var(--surface);
 }
 
 .tbl th {
-   text-align: left;
-   font-weight: 600;
-   color: var(--ink-2);
-   padding: var(--s-3);
-   border-bottom: 1px solid var(--line-2);
-   white-space: nowrap;
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding: var(--s-3);
+  border-bottom: 1px solid var(--line-2);
+  white-space: nowrap;
 }
 
 .tbl td {
-   padding: var(--s-3);
-   border-bottom: 1px solid var(--line);
+  padding: var(--s-3);
+  border-bottom: 1px solid var(--line);
 }
 
 .tbl tbody tr:hover {
-   background: var(--bg-admin);
+  background: var(--bg-admin);
 }
 
 .tbl-wrap {
-   overflow-x: auto;
-   border: 1px solid var(--line);
-   border-radius: var(--r-lg);
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
 }
 
 .empty {
-   text-align: center;
-   padding: var(--s-10) var(--s-6);
-   border: 1px dashed var(--line-2);
-   border-radius: var(--r-lg);
-   max-width: 460px;
+  text-align: center;
+  padding: var(--s-10) var(--s-6);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-lg);
+  max-width: 460px;
 }
 
 .empty h4 {
-   font-size: var(--t-md);
-   font-weight: 600;
-   margin-bottom: var(--s-2);
+  font-size: var(--t-md);
+  font-weight: 600;
+  margin-bottom: var(--s-2);
 }
 
 .empty p {
-   color: var(--ink-2);
-   font-size: var(--t-sm);
-   margin-bottom: var(--s-5);
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  margin-bottom: var(--s-5);
 }
 
 .skel {
-   background: var(--line);
-   border-radius: var(--r-sm);
-   position: relative;
-   overflow: hidden;
+  background: var(--line);
+  border-radius: var(--r-sm);
+  position: relative;
+  overflow: hidden;
 }
 
 .skel::after {
-   content: '';
-   position: absolute;
-   inset: 0;
-   background: linear-gradient(90deg, transparent, var(--sheen), transparent);
-   animation: sweep 1.4s infinite;
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--sheen), transparent);
+  animation: sweep 1.4s infinite;
 }
 
 @keyframes sweep {
-   to {
-      transform: translateX(100%);
-   }
+  to {
+    transform: translateX(100%);
+  }
 }
 
 /* ============================================================
@@ -79,25 +79,25 @@
    and printed and laminated at the station. Both are first-class.
    ============================================================ */
 .doc {
-   --bar-h: 64px;
-   max-width: var(--doc-w);
-   margin: 0 auto;
-   background: var(--surface);
-   padding-bottom: calc(var(--s-10) + env(safe-area-inset-bottom, 0px));
+  --bar-h: 64px;
+  max-width: var(--doc-w);
+  margin: 0 auto;
+  background: var(--surface);
+  padding-bottom: calc(var(--s-10) + env(safe-area-inset-bottom, 0px));
 }
 
 /* Persistent bar: where am I, and how do I get out */
 .doc-bar {
-   position: sticky;
-   top: 0;
-   z-index: var(--z-sticky);
-   display: flex;
-   align-items: center;
-   gap: var(--s-2);
-   min-height: var(--bar-h);
-   padding: var(--s-2) var(--s-3);
-   background: var(--surface);
-   border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--bar-h);
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
 }
 
 /* Visible by default; the script hides it only once it can also reveal it.
@@ -106,135 +106,137 @@
 /* No transition until the script has finished setting the initial state, or the
    title visibly fades out on every page load before the reveal logic engages. */
 .doc-bar .where {
-   flex: 1;
-   min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .doc-bar.is-ready .where {
-   transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
 }
 
 .doc-bar.can-reveal .where {
-   opacity: 0;
-   transform: translateY(4px);
+  opacity: 0;
+  transform: translateY(4px);
 }
 
 .doc-bar.can-reveal.is-scrolled .where {
-   opacity: 1;
-   transform: none;
+  opacity: 1;
+  transform: none;
 }
 
 /* Both lines truncate. Only the title did, so a long category wrapped, grew the
    bar past --bar-h, and pushed the sticky scaler underneath it. */
 .doc-bar .where b,
 .doc-bar .where span {
-   display: block;
-   line-height: var(--lh-meta);
-   white-space: nowrap;
-   overflow: hidden;
-   text-overflow: ellipsis;
+  display: block;
+  line-height: var(--lh-meta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .doc-bar .where b {
-   font-size: var(--t-base);
-   font-weight: 600;
+  font-size: var(--t-base);
+  font-weight: 600;
 }
 
 .doc-bar .where span {
-   font-size: var(--t-sm);
-   color: var(--ink-2);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
 }
 
 /* Cover photo: the station or the thing, seen once before reading. No text on it.
    A banner, not a hero: at 16/9 it ate half a phone screen before a word was read. */
 .cover {
-   height: 168px;
-   overflow: hidden;
-   background: var(--panel);
+  height: 168px;
+  overflow: hidden;
+  background: var(--panel);
 }
 
 .cover img {
-   width: 100%;
-   height: 100%;
-   object-fit: cover;
-   display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .cover.is-empty {
-   display: grid;
-   place-items: center;
-   color: var(--ink-2);
-   font-size: var(--t-sm);
-   text-align: center;
-   padding: var(--s-4);
-   border-bottom: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  text-align: center;
+  padding: var(--s-4);
+  border-bottom: 1px solid var(--line);
 }
 
 .cover.is-empty .i {
-   font-size: 28px;
-   color: var(--ink-3);
-   margin-bottom: var(--s-2);
+  font-size: 28px;
+  color: var(--ink-3);
+  margin-bottom: var(--s-2);
 }
 
 @media (min-width: 600px) {
-   .cover {
-      height: 220px;
-   }
+  .cover {
+    height: 220px;
+  }
 }
 
 /* The page icon straddles the cover's lower edge, the way a document with both a
    cover and an icon is laid out. It carries the category, so a cook recognises the
    kind of document before reading the title. */
 .doc-icon {
-   width: 60px;
-   height: 60px;
-   margin: calc(var(--s-8) * -1) 0 var(--s-5);
-   position: relative;
-   z-index: 1;
-   border-radius: var(--r-lg);
-   background: var(--panel);
-   box-shadow: 0 0 0 4px var(--surface);
-   display: grid;
-   place-items: center;
-   color: var(--ink);
+  width: 60px;
+  height: 60px;
+  margin: calc(var(--s-8) * -1) 0 var(--s-5);
+  position: relative;
+  z-index: 1;
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  box-shadow: 0 0 0 4px var(--surface);
+  display: grid;
+  place-items: center;
+  color: var(--ink);
 }
 
 .doc-icon .i {
-   font-size: 28px;
+  font-size: 28px;
 }
 
 .doc-icon.is-img {
-   overflow: hidden;
-   padding: 0;
+  overflow: hidden;
+  padding: 0;
 }
 
 .doc-icon.is-img img {
-   width: 100%;
-   height: 100%;
-   object-fit: cover;
-   border-radius: inherit;
-   display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
 }
 
 /* Without a cover the icon has nothing to straddle, so it sits on the page.
    The cover rule follows, and wins, when there is one. */
-.doc-head>.doc-icon:first-child {
-   margin-top: var(--s-8);
+.doc-head > .doc-icon:first-child {
+  margin-top: var(--s-8);
 }
 
 @media (min-width: 600px) {
-   .doc-head>.doc-icon:first-child {
-      margin-top: var(--s-10);
-   }
+  .doc-head > .doc-icon:first-child {
+    margin-top: var(--s-10);
+  }
 
-   /* The cover is a strong band; the title needs room to start after it. */
-   .cover+.doc-head .doc-icon {
-      margin-bottom: var(--s-6);
-   }
+  /* The cover is a strong band; the title needs room to start after it. */
+  .cover + .doc-head .doc-icon {
+    margin-bottom: var(--s-6);
+  }
 }
 
-.cover+.doc-head>.doc-icon:first-child {
-   margin-top: calc(var(--s-8) * -1);
+.cover + .doc-head > .doc-icon:first-child {
+  margin-top: calc(var(--s-8) * -1);
 }
 
 .doc-head {
@@ -248,9 +250,9 @@
 }
 
 .doc-crumb {
-   font-size: var(--t-sm);
-   color: var(--ink-2);
-   margin-bottom: var(--s-2);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+  margin-bottom: var(--s-2);
 }
 
 .doc-title {
@@ -260,63 +262,63 @@
 }
 
 @media (min-width: 600px) {
-   .doc-title {
-      font-size: var(--t-2xl);
-   }
+  .doc-title {
+    font-size: var(--t-2xl);
+  }
 }
 
 /* Allergen sits above everything. It is the one thing that cannot be scrolled past. */
 .allergen {
-   display: flex;
-   gap: var(--s-3);
-   align-items: flex-start;
-   margin: 0 var(--s-5) var(--s-5);
-   padding: var(--s-4);
-   background: var(--warn-tint);
-   color: var(--warn-ink);
-   border-radius: var(--r-lg);
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  margin: 0 var(--s-5) var(--s-5);
+  padding: var(--s-4);
+  background: var(--warn-tint);
+  color: var(--warn-ink);
+  border-radius: var(--r-lg);
 }
 
 .allergen .i {
-   margin-top: 2px;
+  margin-top: 2px;
 }
 
 .allergen b {
-   display: block;
-   font-size: var(--t-base);
+  display: block;
+  font-size: var(--t-base);
 }
 
 .allergen p {
-   font-size: var(--t-base);
-   margin-top: 2px;
+  font-size: var(--t-base);
+  margin-top: 2px;
 }
 
 .allergen-body {
-   flex: 1;
-   min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .allergen-chips {
-   list-style: none;
-   padding: 0;
-   margin: 0 0 var(--s-2);
-   display: flex;
-   flex-wrap: wrap;
-   gap: var(--s-1);
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--s-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
 }
 
 /* A badge, so a rectangle: a pill is what the system uses for "press this".
    14px, because the allergen list is text a cook acts on. */
 .allergen-chip {
-   display: inline-flex;
-   align-items: center;
-   padding: 2px var(--s-2);
-   border-radius: var(--r-sm);
-   background: var(--surface);
-   color: var(--warn-ink);
-   font-size: var(--t-sm);
-   font-weight: 600;
-   border: 1px solid var(--warn-ink);
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--s-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--warn-ink);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  border: 1px solid var(--warn-ink);
 }
 
 /* One sentence. EPA's own example is eight words. It is the lede, so it is set
@@ -342,145 +344,143 @@
    holds figures. */
 .facts,
 dl.yield {
-   display: grid;
-   grid-template-columns: 1fr 1fr;
-   gap: 0;
-   border: 1px solid var(--line);
-   border-radius: var(--r-lg);
-   overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
 }
 
 .facts {
-   margin: var(--s-10) var(--s-5) 0;
+  margin: var(--s-10) var(--s-5) 0;
 }
 
 dl.yield {
-   margin: 0 0 var(--s-5);
+  margin: 0 0 var(--s-5);
 }
 
-.facts>div,
-.yield>div {
-   padding: var(--s-3) var(--s-4);
-   min-width: 0;
-   border-bottom: 1px solid var(--line);
-   border-right: 1px solid var(--line);
+.facts > div,
+.yield > div {
+  padding: var(--s-3) var(--s-4);
+  min-width: 0;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
 }
 
-.facts>div:nth-child(2n),
-.yield>div:nth-child(2n) {
-   border-right: 0;
+.facts > div:nth-child(2n),
+.yield > div:nth-child(2n) {
+  border-right: 0;
 }
 
-.facts>div:nth-last-child(-n+2),
-.yield>div:nth-last-child(-n+2) {
-   border-bottom: 0;
+.facts > div:nth-last-child(-n + 2),
+.yield > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
 }
 
 .facts dt,
 .yield dt {
-   display: flex;
-   align-items: center;
-   gap: var(--s-2);
-   font-size: var(--t-sm);
-   font-weight: 500;
-   color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--ink-3);
 }
 
 .facts dt .i {
-   color: var(--ink-3);
+  color: var(--ink-3);
 }
 
 .facts .ok dt .i {
-   color: var(--ok);
+  color: var(--ok);
 }
 
 .facts dd,
 .yield dd {
-   margin: 2px 0 0;
-   font-variant-numeric: tabular-nums;
+  margin: 2px 0 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .facts dd {
-   font-size: var(--t-base);
-   font-weight: 600;
+  font-size: var(--t-base);
+  font-weight: 600;
 }
 
 .yield dd {
-   font-size: var(--t-lg);
-   font-weight: 700;
-   letter-spacing: var(--heading-track);
+  font-size: var(--t-lg);
+  font-weight: 700;
+  letter-spacing: var(--heading-track);
 }
 
 dl.yield[data-count="1"] {
-   grid-template-columns: 1fr;
+  grid-template-columns: 1fr;
 }
 
-dl.yield[data-count="1"]>div {
-   border-right: 0;
-   border-bottom: 0;
+dl.yield[data-count="1"] > div {
+  border-right: 0;
+  border-bottom: 0;
 }
 
 dl.yield[data-count="2"] {
-   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-dl.yield[data-count="2"]>div {
-   border-bottom: 0;
+dl.yield[data-count="2"] > div {
+  border-bottom: 0;
 }
 
-dl.yield[data-count="2"]>div:last-child {
-   border-right: 0;
+dl.yield[data-count="2"] > div:last-child {
+  border-right: 0;
 }
 
 dl.yield[data-count="3"] {
-   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-dl.yield[data-count="3"]>div {
-   border-bottom: 0;
+dl.yield[data-count="3"] > div {
+  border-bottom: 0;
 }
 
-dl.yield[data-count="3"]>div:last-child {
-   border-right: 0;
+dl.yield[data-count="3"] > div:last-child {
+  border-right: 0;
 }
 
 @media (min-width: 600px) {
+  .facts,
+  dl.yield {
+    grid-template-columns: repeat(4, 1fr);
+  }
 
-   .facts,
-   dl.yield {
-      grid-template-columns: repeat(4, 1fr);
-   }
+  dl.yield[data-count="1"] {
+    grid-template-columns: 1fr;
+  }
 
-   dl.yield[data-count="1"] {
-      grid-template-columns: 1fr;
-   }
+  dl.yield[data-count="2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-   dl.yield[data-count="2"] {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-   }
+  dl.yield[data-count="3"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 
-   dl.yield[data-count="3"] {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-   }
+  dl.yield[data-count="4"],
+  dl.yield:not([data-count]) {
+    grid-template-columns: repeat(4, 1fr);
+  }
 
-   dl.yield[data-count="4"],
-   dl.yield:not([data-count]) {
-      grid-template-columns: repeat(4, 1fr);
-   }
+  .facts > div:nth-child(2n),
+  .yield > div:nth-child(2n) {
+    border-right: 1px solid var(--line);
+  }
 
-   .facts>div:nth-child(2n),
-   .yield>div:nth-child(2n) {
-      border-right: 1px solid var(--line);
-   }
+  .facts > div:last-child,
+  .yield > div:last-child {
+    border-right: 0;
+  }
 
-   .facts>div:last-child,
-   .yield>div:last-child {
-      border-right: 0;
-   }
-
-   .facts>div,
-   .yield>div {
-      border-bottom: 0;
-   }
+  .facts > div,
+  .yield > div {
+    border-bottom: 0;
+  }
 }
-

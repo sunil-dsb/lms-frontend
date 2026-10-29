@@ -1,18 +1,20 @@
-import * as React from 'react';
-import { cookies } from 'next/headers';
-import { setRequestLocale } from 'next-intl/server';
-import { listLocations, ApiException, fetchMe } from '@/lib/api';
-import { fetchBackendCategories } from '@/services/categories/api';
-import type { Category } from '@/lib/types';
-import { CategoryDetailClient } from './category-detail-client';
+import * as React from "react";
+import { cookies } from "next/headers";
+import { setRequestLocale } from "next-intl/server";
+import { listLocations, ApiException, fetchMe } from "@/lib/api";
+import { fetchBackendCategories } from "@/services/categories/api";
+import type { Category } from "@/lib/types";
+import { CategoryDetailClient } from "./category-detail-client";
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>;
 }
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-async function readFirstManagedLocation(cookieHeader: string): Promise<string | null> {
+async function readFirstManagedLocation(
+  cookieHeader: string,
+): Promise<string | null> {
   try {
     const res = await listLocations(cookieHeader);
     return res.locations[0]?.id ?? null;
@@ -31,7 +33,7 @@ export default async function AdminCategoryDetailPage({
   const cookieHeader = cookieStore
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
-    .join('; ');
+    .join("; ");
 
   let locationId: string | null = null;
   try {
@@ -47,7 +49,10 @@ export default async function AdminCategoryDetailPage({
 
   let categories: Category[] = [];
   try {
-    categories = await fetchBackendCategories({ page: 1, limit: 200 }, cookieHeader);
+    categories = await fetchBackendCategories(
+      { page: 1, limit: 200 },
+      cookieHeader,
+    );
   } catch {
     // Let the client render its not-found state if the category API is unavailable.
   }
@@ -56,5 +61,12 @@ export default async function AdminCategoryDetailPage({
   // the same API if a category is not present in this server render.
   const category = categories.find((c) => c.slug === slug) ?? null;
 
-  return <CategoryDetailClient initialCategory={category} slug={slug} locale={locale} locationId={locationId} />;
+  return (
+    <CategoryDetailClient
+      initialCategory={category}
+      slug={slug}
+      locale={locale}
+      locationId={locationId}
+    />
+  );
 }

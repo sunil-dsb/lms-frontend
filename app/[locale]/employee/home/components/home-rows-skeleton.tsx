@@ -1,14 +1,26 @@
-import * as React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import * as React from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Row skeletons matching the ProcedureRow shape (icon tile + title + meta)
  * for section-level streaming: the card and heading paint with real data
  * while only the rows wait on the procedures query.
  */
-export function HomeRowsSkeleton({ count = 3 }: { count?: number }): React.ReactElement {
+export function HomeRowsSkeleton({
+  count = 3,
+}: {
+  count?: number;
+}): React.ReactElement {
   return (
-    <ul aria-hidden="true" style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <ul
+      aria-hidden="true"
+      style={{
+        marginTop: "10px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+      }}
+    >
       {Array.from({ length: count }, (_, i) => (
         <li
           key={i}

@@ -1,64 +1,128 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useTranslations } from 'next-intl';
-import { classifyVideoUrl } from '@/lib/procedure-media';
-import { LuArrowDown, LuArrowUp, LuCamera, LuChevronDown, LuChevronUp, LuCircleAlert, LuCirclePlay, LuCloudUpload, LuCopy, LuFocus, LuGripVertical, LuHeading1, LuHeading2, LuHeading3, LuImage, LuImagePlus, LuLightbulb, LuLink, LuListChecks, LuListOrdered, LuPaperclip, LuPlus, LuRefreshCw, LuRotateCcw, LuTable, LuTrash2, LuTriangleAlert, LuType, LuUpload, LuUtensils, LuVideo, LuWorkflow, LuWrench, LuX } from 'react-icons/lu';
-import { Icon } from '@/components/ui/icon';
-import type { IconType } from 'react-icons';
-import type { ProcedureBlock } from '@/lib/types';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { CustomSelect } from '@/components/ui/custom-select';
-import { syncAmountsWithFactors } from '@/lib/procedure-blocks';
-import { ALLERGEN_KEYS, type AllergenKey } from '@/lib/allergens';
-import { StepsList } from './step-editors';
+import * as React from "react";
+import { useTranslations } from "next-intl";
+import { classifyVideoUrl } from "@/lib/procedure-media";
+import {
+  LuArrowDown,
+  LuArrowUp,
+  LuCamera,
+  LuChevronDown,
+  LuChevronUp,
+  LuCircleAlert,
+  LuCirclePlay,
+  LuCloudUpload,
+  LuCopy,
+  LuFocus,
+  LuGripVertical,
+  LuHeading1,
+  LuHeading2,
+  LuHeading3,
+  LuImage,
+  LuImagePlus,
+  LuLightbulb,
+  LuLink,
+  LuListChecks,
+  LuListOrdered,
+  LuPaperclip,
+  LuPlus,
+  LuRefreshCw,
+  LuRotateCcw,
+  LuTable,
+  LuTrash2,
+  LuTriangleAlert,
+  LuType,
+  LuUpload,
+  LuUtensils,
+  LuVideo,
+  LuWorkflow,
+  LuWrench,
+  LuX,
+} from "react-icons/lu";
+import { Icon } from "@/components/ui/icon";
+import type { IconType } from "react-icons";
+import type { ProcedureBlock } from "@/lib/types";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { syncAmountsWithFactors } from "@/lib/procedure-blocks";
+import { ALLERGEN_KEYS, type AllergenKey } from "@/lib/allergens";
+import { StepsList } from "./step-editors";
 
 // Must stay in sync with the backend whitelist at lms-backend/src/services/uploads.ts.
 // SVG is intentionally omitted — it can carry inline JS.
-import { ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES, BilingualTabs, EditorProps, Field, MAX_IMAGE_BYTES, MAX_VIDEO_BYTES, NOTE_KINDS, UNITS, asLocalised, asOpt, emptyCriticalLimit, emptyIngredient, newMethodStep, setLocalised, setOpt, textareaCls } from './shared';
+import {
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_VIDEO_TYPES,
+  BilingualTabs,
+  EditorProps,
+  Field,
+  MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
+  NOTE_KINDS,
+  UNITS,
+  asLocalised,
+  asOpt,
+  emptyCriticalLimit,
+  emptyIngredient,
+  newMethodStep,
+  setLocalised,
+  setOpt,
+  textareaCls,
+} from "./shared";
 
 export function RecipeEditor({
   block,
   onChange,
-}: EditorProps<Extract<ProcedureBlock, { kind: 'recipe' }>>): React.ReactElement {
-  const tForm = useTranslations('admin.library.new.form');
-  const tComp = useTranslations('admin.library.new.form.composer');
-  const [lang, setLang] = React.useState<'en' | 'es'>('en');
+}: EditorProps<
+  Extract<ProcedureBlock, { kind: "recipe" }>
+>): React.ReactElement {
+  const tForm = useTranslations("admin.library.new.form");
+  const tComp = useTranslations("admin.library.new.form.composer");
+  const [lang, setLang] = React.useState<"en" | "es">("en");
   const factors = block.factors ?? [];
   const yields = block.yieldItems ?? [];
   const ingredients = block.ingredients ?? [];
 
   return (
     <div className="space-y-5">
-      <Field label={tForm('audience')}>
+      <Field label={tForm("audience")}>
         <textarea
-          value={block.audience ?? ''}
+          value={block.audience ?? ""}
           onChange={(e) => onChange({ ...block, audience: e.target.value })}
           rows={2}
-          placeholder={tForm('audiencePlaceholder')}
+          placeholder={tForm("audiencePlaceholder")}
           className={textareaCls}
         />
       </Field>
 
       <div className="space-y-3">
-        <Label className="text-sm">{tForm('allergenTitle')}</Label>
+        <Label className="text-sm">{tForm("allergenTitle")}</Label>
 
         <fieldset className="space-y-2">
           <legend className="text-sm text-[var(--color-ink-3)]">
-            {tForm('allergenPickerLabel')}
+            {tForm("allergenPickerLabel")}
           </legend>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {ALLERGEN_KEYS.map((key) => {
-              const checked = block.allergen?.selectedAllergens?.includes(key) ?? false;
-              const ensureAllergen = (mutate: (a: { summary: string; detail: string; selectedAllergens?: string[] }) => void) => {
-                const current = block.allergen ?? { summary: '', detail: '' };
+              const checked =
+                block.allergen?.selectedAllergens?.includes(key) ?? false;
+              const ensureAllergen = (
+                mutate: (a: {
+                  summary: string;
+                  detail: string;
+                  selectedAllergens?: string[];
+                }) => void,
+              ) => {
+                const current = block.allergen ?? { summary: "", detail: "" };
                 const draft = {
                   summary: current.summary,
                   detail: current.detail,
-                  selectedAllergens: current.selectedAllergens ? [...current.selectedAllergens] : [],
+                  selectedAllergens: current.selectedAllergens
+                    ? [...current.selectedAllergens]
+                    : [],
                 };
                 mutate(draft);
                 onChange({ ...block, allergen: draft });
@@ -67,10 +131,10 @@ export function RecipeEditor({
                 <label
                   key={key}
                   className={cn(
-                    'flex cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-sm transition-colors',
+                    "flex cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-sm transition-colors",
                     checked
-                      ? 'border-[var(--color-warn)] bg-[var(--color-warn-tint)] text-[var(--color-ink)]'
-                      : 'border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-wash)]',
+                      ? "border-[var(--color-warn)] bg-[var(--color-warn-tint)] text-[var(--color-ink)]"
+                      : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-wash)]",
                   )}
                 >
                   <input
@@ -81,7 +145,8 @@ export function RecipeEditor({
                         const set = new Set(a.selectedAllergens ?? []);
                         if (e.target.checked) set.add(key);
                         else set.delete(key);
-                        a.selectedAllergens = set.size > 0 ? Array.from(set) : undefined;
+                        a.selectedAllergens =
+                          set.size > 0 ? Array.from(set) : undefined;
                       })
                     }
                   />
@@ -95,7 +160,9 @@ export function RecipeEditor({
           {(() => {
             const currentSelected = block.allergen?.selectedAllergens ?? [];
             const standardSet = new Set<string>(ALLERGEN_KEYS);
-            const customTags = currentSelected.filter((k) => !standardSet.has(k));
+            const customTags = currentSelected.filter(
+              (k) => !standardSet.has(k),
+            );
 
             const addCustom = (name: string) => {
               const trimmed = name.trim();
@@ -105,8 +172,8 @@ export function RecipeEditor({
                 onChange({
                   ...block,
                   allergen: {
-                    summary: block.allergen?.summary ?? '',
-                    detail: block.allergen?.detail ?? '',
+                    summary: block.allergen?.summary ?? "",
+                    detail: block.allergen?.detail ?? "",
                     selectedAllergens: next,
                   },
                 });
@@ -118,8 +185,8 @@ export function RecipeEditor({
               onChange({
                 ...block,
                 allergen: {
-                  summary: block.allergen?.summary ?? '',
-                  detail: block.allergen?.detail ?? '',
+                  summary: block.allergen?.summary ?? "",
+                  detail: block.allergen?.detail ?? "",
                   selectedAllergens: next.length > 0 ? next : undefined,
                 },
               });
@@ -154,11 +221,11 @@ export function RecipeEditor({
                       type="text"
                       placeholder="e.g. Mustard, Sulfites, Gluten..."
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === "Enter") {
                           e.preventDefault();
                           const val = e.currentTarget.value;
                           addCustom(val);
-                          e.currentTarget.value = '';
+                          e.currentTarget.value = "";
                         }
                       }}
                       className="h-8 text-sm w-field-md"
@@ -168,10 +235,11 @@ export function RecipeEditor({
                       variant="secondary"
                       size="sm"
                       onClick={(e) => {
-                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                        const input = e.currentTarget
+                          .previousElementSibling as HTMLInputElement;
                         if (input && input.value) {
                           addCustom(input.value);
-                          input.value = '';
+                          input.value = "";
                         }
                       }}
                       className="h-8 px-3 text-sm font-semibold"
@@ -185,38 +253,38 @@ export function RecipeEditor({
           })()}
         </fieldset>
 
-        <Field label={tForm('allergenSummary')}>
+        <Field label={tForm("allergenSummary")}>
           <Input
-            value={block.allergen?.summary ?? ''}
+            value={block.allergen?.summary ?? ""}
             onChange={(e) =>
               onChange({
                 ...block,
                 allergen: {
                   summary: e.target.value,
-                  detail: block.allergen?.detail ?? '',
+                  detail: block.allergen?.detail ?? "",
                   selectedAllergens: block.allergen?.selectedAllergens,
                 },
               })
             }
             maxLength={50}
-            placeholder={tForm('allergenSummaryPlaceholder')}
+            placeholder={tForm("allergenSummaryPlaceholder")}
           />
         </Field>
-        <Field label={tForm('allergenDetail')}>
+        <Field label={tForm("allergenDetail")}>
           <textarea
-            value={block.allergen?.detail ?? ''}
+            value={block.allergen?.detail ?? ""}
             onChange={(e) =>
               onChange({
                 ...block,
                 allergen: {
-                  summary: block.allergen?.summary ?? '',
+                  summary: block.allergen?.summary ?? "",
                   detail: e.target.value,
                   selectedAllergens: block.allergen?.selectedAllergens,
                 },
               })
             }
             rows={2}
-            placeholder={tForm('allergenDetailPlaceholder')}
+            placeholder={tForm("allergenDetailPlaceholder")}
             className={textareaCls}
           />
         </Field>
@@ -224,7 +292,7 @@ export function RecipeEditor({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <Label className="text-sm">{tForm('yieldTitle')}</Label>
+          <Label className="text-sm">{tForm("yieldTitle")}</Label>
           <Button
             type="button"
             variant="ghost"
@@ -232,55 +300,72 @@ export function RecipeEditor({
             onClick={() =>
               onChange({
                 ...block,
-                yieldItems: [...yields, { label: '', value: '', unit: '' }],
+                yieldItems: [...yields, { label: "", value: "", unit: "" }],
               })
             }
           >
-            + {tForm('add')}
+            + {tForm("add")}
           </Button>
         </div>
-        <BilingualTabs active={lang} onChange={setLang} enLabel={tComp('tabs.en')} esLabel={tComp('tabs.es')} />
+        <BilingualTabs
+          active={lang}
+          onChange={setLang}
+          enLabel={tComp("tabs.en")}
+          esLabel={tComp("tabs.es")}
+        />
         {yields.map((y, i) => (
-          <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[1.5fr_1fr_0.75fr_auto]">
+          <div
+            key={i}
+            className="grid grid-cols-1 gap-2 sm:grid-cols-[1.5fr_1fr_0.75fr_auto]"
+          >
             <Input
               value={y.label}
               onChange={(e) =>
                 onChange({
                   ...block,
-                  yieldItems: yields.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)),
+                  yieldItems: yields.map((x, j) =>
+                    j === i ? { ...x, label: e.target.value } : x,
+                  ),
                 })
               }
-              placeholder={tForm('yieldLabel')}
+              placeholder={tForm("yieldLabel")}
             />
             <Input
               value={y.value}
               onChange={(e) =>
                 onChange({
                   ...block,
-                  yieldItems: yields.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)),
+                  yieldItems: yields.map((x, j) =>
+                    j === i ? { ...x, value: e.target.value } : x,
+                  ),
                 })
               }
               maxLength={50}
-              placeholder={tForm('yieldValue')}
+              placeholder={tForm("yieldValue")}
             />
             <Input
-              value={y.unit ?? ''}
+              value={y.unit ?? ""}
               onChange={(e) =>
                 onChange({
                   ...block,
-                  yieldItems: yields.map((x, j) => (j === i ? { ...x, unit: e.target.value } : x)),
+                  yieldItems: yields.map((x, j) =>
+                    j === i ? { ...x, unit: e.target.value } : x,
+                  ),
                 })
               }
-              placeholder={tForm('yieldUnit')}
+              placeholder={tForm("yieldUnit")}
             />
             {yields.length > 1 && (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                aria-label={tForm('remove')}
+                aria-label={tForm("remove")}
                 onClick={() =>
-                  onChange({ ...block, yieldItems: yields.filter((_, j) => j !== i) })
+                  onChange({
+                    ...block,
+                    yieldItems: yields.filter((_, j) => j !== i),
+                  })
                 }
               >
                 <LuX aria-hidden="true" />
@@ -291,7 +376,7 @@ export function RecipeEditor({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-sm">{tForm('scalerTitle')}</Label>
+        <Label className="text-sm">{tForm("scalerTitle")}</Label>
         <div className="flex flex-wrap gap-2">
           {factors.map((f, i) => (
             <div key={i} className="flex items-center gap-1">
@@ -301,11 +386,17 @@ export function RecipeEditor({
                 step={1}
                 value={f}
                 onChange={(e) => {
-                  const next = Math.max(1, Math.floor(Number(e.target.value) || 1));
+                  const next = Math.max(
+                    1,
+                    Math.floor(Number(e.target.value) || 1),
+                  );
                   onChange({
                     ...block,
                     factors: factors.map((x, j) => (j === i ? next : x)),
-                    ingredients: syncAmountsWithFactors(ingredients, factors.map((x, j) => (j === i ? next : x))),
+                    ingredients: syncAmountsWithFactors(
+                      ingredients,
+                      factors.map((x, j) => (j === i ? next : x)),
+                    ),
                   });
                 }}
                 className="w-20"
@@ -315,13 +406,16 @@ export function RecipeEditor({
                 type="button"
                 variant="ghost"
                 size="sm"
-                aria-label={tForm('remove')}
+                aria-label={tForm("remove")}
                 onClick={() => {
                   const nextFactors = factors.filter((_, j) => j !== i);
                   onChange({
                     ...block,
                     factors: nextFactors,
-                    ingredients: syncAmountsWithFactors(ingredients, nextFactors),
+                    ingredients: syncAmountsWithFactors(
+                      ingredients,
+                      nextFactors,
+                    ),
                   });
                 }}
               >
@@ -334,7 +428,10 @@ export function RecipeEditor({
             variant="ghost"
             size="sm"
             onClick={() => {
-              const nextVal = factors.length > 0 ? Math.max(factors[factors.length - 1] * 2, 1) : 1;
+              const nextVal =
+                factors.length > 0
+                  ? Math.max(factors[factors.length - 1] * 2, 1)
+                  : 1;
               const nextFactors = [...factors, nextVal];
               onChange({
                 ...block,
@@ -343,14 +440,14 @@ export function RecipeEditor({
               });
             }}
           >
-            + {tForm('addFactor')}
+            + {tForm("addFactor")}
           </Button>
         </div>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <Label className="text-sm">{tForm('ingredientsTitle')}</Label>
+          <Label className="text-sm">{tForm("ingredientsTitle")}</Label>
           <Button
             type="button"
             variant="ghost"
@@ -362,48 +459,57 @@ export function RecipeEditor({
               })
             }
           >
-            + {tForm('addIngredient')}
+            + {tForm("addIngredient")}
           </Button>
         </div>
         {ingredients.length === 0 && (
-          <p className="text-sm text-[var(--color-ink-3)]">{tForm('none')}</p>
+          <p className="text-sm text-[var(--color-ink-3)]">{tForm("none")}</p>
         )}
         {ingredients.map((row, i) => (
-          <div key={i} className="space-y-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] p-4">
+          <div
+            key={i}
+            className="space-y-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] p-4"
+          >
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-[2fr_1fr_1fr_auto]">
-              <Field label={tForm('ingredientName')} required>
+              <Field label={tForm("ingredientName")} required>
                 <Input
                   value={row.name}
                   onChange={(e) =>
                     onChange({
                       ...block,
-                      ingredients: ingredients.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)),
+                      ingredients: ingredients.map((x, j) =>
+                        j === i ? { ...x, name: e.target.value } : x,
+                      ),
                     })
                   }
-                  placeholder={tForm('ingredientNamePlaceholder')}
+                  placeholder={tForm("ingredientNamePlaceholder")}
                   maxLength={50}
                 />
               </Field>
-              <Field label={tForm('ingredientForm')}>
+              <Field label={tForm("ingredientForm")}>
                 <Input
-                  value={row.form ?? ''}
+                  value={row.form ?? ""}
                   onChange={(e) =>
                     onChange({
                       ...block,
-                      ingredients: ingredients.map((x, j) => (j === i ? { ...x, form: e.target.value } : x)),
+                      ingredients: ingredients.map((x, j) =>
+                        j === i ? { ...x, form: e.target.value } : x,
+                      ),
                     })
                   }
-                  placeholder={tForm('ingredientFormPlaceholder')}
+                  placeholder={tForm("ingredientFormPlaceholder")}
                 />
               </Field>
-              <Field label={tForm('ingredientUnit')}>
+              <Field label={tForm("ingredientUnit")}>
                 <CustomSelect
                   size="sm"
-                  value={row.unit ?? ''}
+                  value={row.unit ?? ""}
                   onChange={(val) =>
                     onChange({
                       ...block,
-                      ingredients: ingredients.map((x, j) => (j === i ? { ...x, unit: val } : x)),
+                      ingredients: ingredients.map((x, j) =>
+                        j === i ? { ...x, unit: val } : x,
+                      ),
                     })
                   }
                   options={UNITS.map((u) => ({ value: u, label: u }))}
@@ -414,7 +520,7 @@ export function RecipeEditor({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={tForm('remove')}
+                  aria-label={tForm("remove")}
                   onClick={() =>
                     onChange({
                       ...block,
@@ -434,20 +540,24 @@ export function RecipeEditor({
                   onChange({
                     ...block,
                     ingredients: ingredients.map((x, j) =>
-                      j === i ? { ...x, allergen: e.target.checked || undefined } : x,
+                      j === i
+                        ? { ...x, allergen: e.target.checked || undefined }
+                        : x,
                     ),
                   })
                 }
               />
-              {tForm('ingredientAllergen')}
+              {tForm("ingredientAllergen")}
             </label>
             <div className="space-y-1">
               <Label className="text-sm font-semibold text-[var(--color-ink-3)]">
-                {tForm('ingredientQuantity')}
+                {tForm("ingredientQuantity")}
               </Label>
               <div
                 className="grid gap-2"
-                style={{ gridTemplateColumns: `repeat(${factors.length || 1}, minmax(0,1fr))` }}
+                style={{
+                  gridTemplateColumns: `repeat(${factors.length || 1}, minmax(0,1fr))`,
+                }}
               >
                 {factors.map((f, j) => (
                   <div key={j} className="space-y-1">
@@ -456,7 +566,7 @@ export function RecipeEditor({
                     </Label>
                     <Input
                       type="text"
-                      value={row.amounts[j] ?? ''}
+                      value={row.amounts[j] ?? ""}
                       onChange={(e) =>
                         onChange({
                           ...block,
@@ -464,13 +574,15 @@ export function RecipeEditor({
                             k === i
                               ? {
                                   ...x,
-                                  amounts: x.amounts.map((a, l) => (l === j ? e.target.value : a)),
+                                  amounts: x.amounts.map((a, l) =>
+                                    l === j ? e.target.value : a,
+                                  ),
                                 }
                               : x,
                           ),
                         })
                       }
-                      placeholder={tForm('ingredientAmountPlaceholder')}
+                      placeholder={tForm("ingredientAmountPlaceholder")}
                     />
                   </div>
                 ))}
@@ -482,7 +594,7 @@ export function RecipeEditor({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <Label className="text-sm">{tForm('stepsTitle')}</Label>
+          <Label className="text-sm">{tForm("stepsTitle")}</Label>
           <Button
             type="button"
             variant="ghost"
@@ -491,12 +603,15 @@ export function RecipeEditor({
               onChange({ ...block, steps: [...block.steps, newMethodStep()] })
             }
           >
-            + {tForm('addStep')}
+            + {tForm("addStep")}
           </Button>
         </div>
-        <StepsList steps={block.steps} onChange={(steps) => onChange({ ...block, steps })} recipeAware />
+        <StepsList
+          steps={block.steps}
+          onChange={(steps) => onChange({ ...block, steps })}
+          recipeAware
+        />
       </div>
     </div>
   );
 }
-

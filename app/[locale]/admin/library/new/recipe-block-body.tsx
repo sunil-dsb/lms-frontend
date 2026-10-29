@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Inline editor for a `kind: 'recipe'` block, embedded inside a single
@@ -20,19 +20,19 @@
  * (still `[1]`), keeping the data shape round-trippable with the wizard.
  */
 
-import * as React from 'react';
-import { useTranslations } from 'next-intl';
-import { LuX } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CustomSelect } from '@/components/ui/custom-select';
-import { Icon } from '@/components/ui/icon';
-import { RowActions } from '@/components/ui/row-actions';
-import { BilingualInput } from '@/components/ui/bilingual-input';
-import { cn } from '@/lib/utils';
-import { ALLERGEN_KEYS, type AllergenKey } from '@/lib/allergens';
-import { nextStepId } from '@/lib/procedure-blocks';
+import * as React from "react";
+import { useTranslations } from "next-intl";
+import { LuX } from "react-icons/lu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CustomSelect } from "@/components/ui/custom-select";
+import { Icon } from "@/components/ui/icon";
+import { RowActions } from "@/components/ui/row-actions";
+import { BilingualInput } from "@/components/ui/bilingual-input";
+import { cn } from "@/lib/utils";
+import { ALLERGEN_KEYS, type AllergenKey } from "@/lib/allergens";
+import { nextStepId } from "@/lib/procedure-blocks";
 import type {
   Localised,
   ProcedureAllergen,
@@ -40,40 +40,56 @@ import type {
   ProcedureIngredient,
   ProcedureMethodStep,
   ProcedureYieldItem,
-} from '@/lib/types';
+} from "@/lib/types";
 
-type RecipeBlock = Extract<ProcedureBlock, { kind: 'recipe' }>;
+type RecipeBlock = Extract<ProcedureBlock, { kind: "recipe" }>;
 
 interface RecipeBlockBodyProps {
   block: RecipeBlock;
   onPatch: (next: RecipeBlock) => void;
-  lang?: 'en' | 'es';
+  lang?: "en" | "es";
 }
 
 // ---------------------------------------------------------------------------
 // Localised helpers (mirrored from notion-block-list.tsx).
 // ---------------------------------------------------------------------------
 
-function asLoc(v: Localised | undefined, lang: 'en' | 'es'): string {
-  return v?.[lang] ?? '';
+function asLoc(v: Localised | undefined, lang: "en" | "es"): string {
+  return v?.[lang] ?? "";
 }
-function setLoc(v: Localised | undefined, lang: 'en' | 'es', value: string): Localised {
-  return { en: v?.en ?? '', es: v?.es ?? '', [lang]: value };
+function setLoc(
+  v: Localised | undefined,
+  lang: "en" | "es",
+  value: string,
+): Localised {
+  return { en: v?.en ?? "", es: v?.es ?? "", [lang]: value };
 }
 
 const bodyTextareaCls =
-  'flex w-full resize-none rounded-[var(--radius-md)] border border-transparent bg-transparent px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-2)] hover:bg-[var(--color-surface)] focus:border-[var(--color-ring)] focus:bg-[var(--color-surface)] focus:outline-none';
+  "flex w-full resize-none rounded-[var(--radius-md)] border border-transparent bg-transparent px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-2)] hover:bg-[var(--color-surface)] focus:border-[var(--color-ring)] focus:bg-[var(--color-surface)] focus:outline-none";
 
 // Same unit list as the wizard's standalone recipe editor. Local duplication
 // keeps this file self-contained — both editors treat the list as a fixed
 // vocabulary of unit suffixes, not a registry.
-const UNITS = ['g', 'kg', 'ml', 'l', 'oz', 'lb', 'cup', 'tbsp', 'tsp', 'pcs', 'each'] as const;
+const UNITS = [
+  "g",
+  "kg",
+  "ml",
+  "l",
+  "oz",
+  "lb",
+  "cup",
+  "tbsp",
+  "tsp",
+  "pcs",
+  "each",
+] as const;
 
 /** One amount input per ingredient. `factors` is always `[1]` here so the
  *  parallel-array requirement (amounts.length === factors.length) collapses
  *  to a single string. */
 function emptyIngredient(): ProcedureIngredient {
-  return { name: '', form: '', allergen: false, unit: '', amounts: [''] };
+  return { name: "", form: "", allergen: false, unit: "", amounts: [""] };
 }
 
 // ---------------------------------------------------------------------------
@@ -86,7 +102,7 @@ export function RecipeBlockBody({
   onPatch,
   lang,
 }: RecipeBlockBodyProps): React.ReactElement {
-  const tForm = useTranslations('admin.library.new.form');
+  const tForm = useTranslations("admin.library.new.form");
   const ingredients = block.ingredients ?? [];
   const yieldItems = block.yieldItems ?? [];
 
@@ -99,17 +115,19 @@ export function RecipeBlockBody({
 
       <RecipeIngredients
         ingredients={ingredients}
-        onChange={(next) => onPatch({ ...block, factors: [1], ingredients: next })}
+        onChange={(next) =>
+          onPatch({ ...block, factors: [1], ingredients: next })
+        }
         labels={{
-          title: tForm('ingredientsTitle'),
-          add: tForm('addIngredient'),
-          none: tForm('none'),
-          name: tForm('ingredientName'),
-          namePlaceholder: tForm('ingredientNamePlaceholder'),
-          unit: tForm('ingredientUnit'),
-          amount: tForm('ingredientAmount'),
-          amountPlaceholder: tForm('ingredientAmountPlaceholder'),
-          remove: tForm('remove'),
+          title: tForm("ingredientsTitle"),
+          add: tForm("addIngredient"),
+          none: tForm("none"),
+          name: tForm("ingredientName"),
+          namePlaceholder: tForm("ingredientNamePlaceholder"),
+          unit: tForm("ingredientUnit"),
+          amount: tForm("ingredientAmount"),
+          amountPlaceholder: tForm("ingredientAmountPlaceholder"),
+          remove: tForm("remove"),
         }}
       />
 
@@ -118,8 +136,8 @@ export function RecipeBlockBody({
         onChange={(steps) => onPatch({ ...block, steps })}
         lang={lang}
         labels={{
-          title: tForm('stepsTitle'),
-          add: tForm('addStep'),
+          title: tForm("stepsTitle"),
+          add: tForm("addStep"),
         }}
       />
 
@@ -127,8 +145,8 @@ export function RecipeBlockBody({
         allergen={block.allergen}
         onChange={(allergen) => onPatch({ ...block, allergen })}
         labels={{
-          title: tForm('allergenTitle'),
-          picker: tForm('allergenPickerLabel'),
+          title: tForm("allergenTitle"),
+          picker: tForm("allergenPickerLabel"),
         }}
       />
     </div>
@@ -147,10 +165,10 @@ export function RecipeYieldSection({
   onChange: (next: ProcedureYieldItem[]) => void;
 }): React.ReactElement {
   const PRESETS = [
-    { label: 'Total Batch Weight', value: '2.5', unit: 'kg', scales: true },
-    { label: 'Portion Count', value: '20', unit: 'tacos', scales: true },
-    { label: 'Portion Size', value: '125', unit: 'g', scales: false },
-    { label: 'Total Cooking Time', value: '3.5', unit: 'hrs', scales: false },
+    { label: "Total Batch Weight", value: "2.5", unit: "kg", scales: true },
+    { label: "Portion Count", value: "20", unit: "tacos", scales: true },
+    { label: "Portion Size", value: "125", unit: "g", scales: false },
+    { label: "Total Cooking Time", value: "3.5", unit: "hrs", scales: false },
   ];
 
   function addPreset(p: (typeof PRESETS)[0]): void {
@@ -161,14 +179,13 @@ export function RecipeYieldSection({
   }
 
   function addEmpty(): void {
-    onChange([
-      ...yieldItems,
-      { label: '', value: '', unit: '', scales: true },
-    ]);
+    onChange([...yieldItems, { label: "", value: "", unit: "", scales: true }]);
   }
 
   function updateItem(idx: number, patch: Partial<ProcedureYieldItem>): void {
-    onChange(yieldItems.map((item, j) => (j === idx ? { ...item, ...patch } : item)));
+    onChange(
+      yieldItems.map((item, j) => (j === idx ? { ...item, ...patch } : item)),
+    );
   }
 
   function removeItem(idx: number): void {
@@ -179,7 +196,10 @@ export function RecipeYieldSection({
     <div className="space-y-2.5 pt-1.5">
       <div className="flex items-center justify-between gap-2">
         <Label className="text-sm font-semibold text-[var(--color-ink)] flex items-center gap-1.5">
-          <Icon icon="ri-scales-3-line" className="text-base text-[var(--color-brand)]" />
+          <Icon
+            icon="ri-scales-3-line"
+            className="text-base text-[var(--color-brand)]"
+          />
           Yield &amp; Batch Metrics
           {yieldItems.length > 0 && (
             <span className="inline-flex items-center justify-center rounded-full bg-[var(--color-wash)] border border-[var(--color-line-2)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-ink-2)]">
@@ -205,7 +225,9 @@ export function RecipeYieldSection({
           Presets:
         </span>
         {PRESETS.map((p) => {
-          const exists = yieldItems.some((y) => y.label.toLowerCase() === p.label.toLowerCase());
+          const exists = yieldItems.some(
+            (y) => y.label.toLowerCase() === p.label.toLowerCase(),
+          );
           return (
             <button
               key={p.label}
@@ -213,16 +235,22 @@ export function RecipeYieldSection({
               disabled={exists}
               onClick={() => addPreset(p)}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all border',
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all border",
                 exists
-                  ? 'border-[var(--color-line-2)]/80 bg-[var(--color-wash)]/60 text-[var(--color-ink-3)] cursor-default select-none'
-                  : 'border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] hover:bg-[var(--color-brand)]/5 active:scale-95 cursor-pointer shadow-2xs'
+                  ? "border-[var(--color-line-2)]/80 bg-[var(--color-wash)]/60 text-[var(--color-ink-3)] cursor-default select-none"
+                  : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] hover:bg-[var(--color-brand)]/5 active:scale-95 cursor-pointer shadow-2xs",
               )}
             >
               {exists ? (
-                <Icon icon="ri-check-line" className="text-xs text-[var(--color-ink-3)]" />
+                <Icon
+                  icon="ri-check-line"
+                  className="text-xs text-[var(--color-ink-3)]"
+                />
               ) : (
-                <Icon icon="ri-add-line" className="text-xs text-[var(--color-brand)]" />
+                <Icon
+                  icon="ri-add-line"
+                  className="text-xs text-[var(--color-brand)]"
+                />
               )}
               <span>{p.label}</span>
             </button>
@@ -232,7 +260,8 @@ export function RecipeYieldSection({
 
       {yieldItems.length === 0 ? (
         <p className="text-[11px] text-[var(--color-ink-3)] italic py-1">
-          Optional: Click a preset above (e.g. Total Batch Weight, Portion Count) to show batch yield metrics in the recipe header.
+          Optional: Click a preset above (e.g. Total Batch Weight, Portion
+          Count) to show batch yield metrics in the recipe header.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xs">
@@ -240,9 +269,14 @@ export function RecipeYieldSection({
             <thead>
               <tr className="border-b border-[var(--color-line-2)] bg-[var(--color-wash)]/60 text-[var(--color-ink-2)]">
                 <th className="px-3.5 py-2.5 font-semibold">Metric Name</th>
-                <th className="w-28 px-3 py-2.5 font-semibold text-center">Value</th>
+                <th className="w-28 px-3 py-2.5 font-semibold text-center">
+                  Value
+                </th>
                 <th className="w-28 px-3 py-2.5 font-semibold">Unit</th>
-                <th className="w-20 px-2 py-2.5 font-semibold text-center" title="Scales when multiplying batch (1×, 2×, 4×)">
+                <th
+                  className="w-20 px-2 py-2.5 font-semibold text-center"
+                  title="Scales when multiplying batch (1×, 2×, 4×)"
+                >
                   Scales?
                 </th>
                 <th className="w-12 px-2 py-2.5 text-center">
@@ -252,11 +286,16 @@ export function RecipeYieldSection({
             </thead>
             <tbody className="divide-y divide-[var(--color-line-2)]">
               {yieldItems.map((item, idx) => (
-                <tr key={idx} className="hover:bg-[var(--color-wash)]/30 transition-colors">
+                <tr
+                  key={idx}
+                  className="hover:bg-[var(--color-wash)]/30 transition-colors"
+                >
                   <td className="p-2.5 pl-3.5">
                     <Input
                       value={item.label}
-                      onChange={(e) => updateItem(idx, { label: e.target.value })}
+                      onChange={(e) =>
+                        updateItem(idx, { label: e.target.value })
+                      }
                       placeholder="e.g. Total Batch Weight"
                       className="h-8 text-xs font-medium placeholder:font-normal placeholder:text-[var(--color-ink-3)]/50"
                     />
@@ -264,15 +303,19 @@ export function RecipeYieldSection({
                   <td className="w-28 p-2.5">
                     <Input
                       value={item.value}
-                      onChange={(e) => updateItem(idx, { value: e.target.value })}
+                      onChange={(e) =>
+                        updateItem(idx, { value: e.target.value })
+                      }
                       placeholder="e.g. 2.5"
                       className="h-8 text-xs text-center font-semibold placeholder:font-normal placeholder:text-[var(--color-ink-3)]/40"
                     />
                   </td>
                   <td className="w-28 p-2.5">
                     <Input
-                      value={item.unit ?? ''}
-                      onChange={(e) => updateItem(idx, { unit: e.target.value })}
+                      value={item.unit ?? ""}
+                      onChange={(e) =>
+                        updateItem(idx, { unit: e.target.value })
+                      }
                       placeholder="e.g. kg"
                       className="h-8 text-xs font-medium placeholder:font-normal placeholder:text-[var(--color-ink-3)]/50"
                     />
@@ -285,7 +328,9 @@ export function RecipeYieldSection({
                       <input
                         type="checkbox"
                         checked={Boolean(item.scales)}
-                        onChange={(e) => updateItem(idx, { scales: e.target.checked })}
+                        onChange={(e) =>
+                          updateItem(idx, { scales: e.target.checked })
+                        }
                         className="size-4 rounded accent-[var(--color-brand)] cursor-pointer"
                       />
                     </label>
@@ -333,14 +378,15 @@ function RecipeIngredients({
     remove: string;
   };
 }): React.ReactElement {
-  function updateIngredient(idx: number, patch: Partial<ProcedureIngredient>): void {
+  function updateIngredient(
+    idx: number,
+    patch: Partial<ProcedureIngredient>,
+  ): void {
     onChange(ingredients.map((x, j) => (j === idx ? { ...x, ...patch } : x)));
   }
   function setAmount(idx: number, value: string): void {
     onChange(
-      ingredients.map((x, j) =>
-        j === idx ? { ...x, amounts: [value] } : x,
-      ),
+      ingredients.map((x, j) => (j === idx ? { ...x, amounts: [value] } : x)),
     );
   }
 
@@ -366,14 +412,14 @@ function RecipeIngredients({
               />
               <CustomSelect
                 size="sm"
-                value={row.unit ?? ''}
+                value={row.unit ?? ""}
                 onChange={(val) => updateIngredient(i, { unit: val })}
                 options={UNITS.map((u) => ({ value: u, label: u }))}
                 aria-label={labels.unit}
               />
               <Input
                 type="text"
-                value={row.amounts[0] ?? ''}
+                value={row.amounts[0] ?? ""}
                 onChange={(e) => setAmount(i, e.target.value)}
                 placeholder={labels.amountPlaceholder}
                 aria-label={labels.amount}
@@ -418,7 +464,7 @@ function RecipeStepList({
 }: {
   steps: ProcedureMethodStep[];
   onChange: (next: ProcedureMethodStep[]) => void;
-  lang?: 'en' | 'es';
+  lang?: "en" | "es";
   labels: { title: string; add: string };
 }): React.ReactElement {
   const update = (idx: number, next: ProcedureMethodStep): void => {
@@ -427,13 +473,18 @@ function RecipeStepList({
   const remove = (idx: number): void => {
     onChange(steps.filter((_, i) => i !== idx));
   };
-  const move = (idx: number, dir: 'up' | 'down'): void => {
-    const j = dir === 'up' ? idx - 1 : idx + 1;
+  const move = (idx: number, dir: "up" | "down"): void => {
+    const j = dir === "up" ? idx - 1 : idx + 1;
     if (j < 0 || j >= steps.length) return;
-    onChange([...steps.slice(0, idx), steps[j], steps[idx], ...steps.slice(idx + 1)]);
+    onChange([
+      ...steps.slice(0, idx),
+      steps[j],
+      steps[idx],
+      ...steps.slice(idx + 1),
+    ]);
   };
   const add = (): void => {
-    onChange([...steps, { id: nextStepId(), body: { en: '', es: '' } }]);
+    onChange([...steps, { id: nextStepId(), body: { en: "", es: "" } }]);
   };
 
   return (
@@ -448,18 +499,16 @@ function RecipeStepList({
         {steps.map((step, i) => (
           <li key={step.id ?? i} className="flex gap-3 items-start">
             <span className="mt-2 inline-flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-[var(--color-line-2)] bg-[var(--color-surface)] font-mono text-sm font-semibold text-[var(--color-ink)]">
-              {String(i + 1).padStart(2, '0')}
+              {String(i + 1).padStart(2, "0")}
             </span>
             <div className="flex-1 space-y-1">
               <BilingualInput
                 value={step.body}
-                onChange={(val) =>
-                  update(i, { ...step, body: val })
-                }
+                onChange={(val) => update(i, { ...step, body: val })}
                 multiline
                 placeholder={{
-                  en: 'Describe this step in English…',
-                  es: 'Describe este paso en español…',
+                  en: "Describe this step in English…",
+                  es: "Describe este paso en español…",
                 }}
               />
               {step.critical ? (
@@ -490,24 +539,37 @@ function StepRowMenu({
 }: {
   index: number;
   total: number;
-  onMove: (dir: 'up' | 'down') => void;
+  onMove: (dir: "up" | "down") => void;
   onRemove: () => void;
 }): React.ReactElement {
   const canRemove = total > 1;
   const items = [
     ...(index > 0
-      ? [{ label: 'Move up', icon: 'ri-arrow-up-line', onSelect: () => onMove('up') }]
+      ? [
+          {
+            label: "Move up",
+            icon: "ri-arrow-up-line",
+            onSelect: () => onMove("up"),
+          },
+        ]
       : []),
     ...(index < total - 1
-      ? [{ label: 'Move down', icon: 'ri-arrow-down-line', onSelect: () => onMove('down') }]
+      ? [
+          {
+            label: "Move down",
+            icon: "ri-arrow-down-line",
+            onSelect: () => onMove("down"),
+          },
+        ]
       : []),
     {
-      label: 'Delete step',
-      icon: 'ri-close-line',
+      label: "Delete step",
+      icon: "ri-close-line",
       destructive: true,
-      confirmTitle: 'Delete this step?',
-      confirmLabel: 'Delete step',
-      confirmDescription: "This step and its instructions will be permanently removed. This can't be undone.",
+      confirmTitle: "Delete this step?",
+      confirmLabel: "Delete step",
+      confirmDescription:
+        "This step and its instructions will be permanently removed. This can't be undone.",
       disabled: !canRemove,
       onSelect: () => {
         if (canRemove) onRemove();
@@ -534,9 +596,9 @@ function RecipeAllergens({
   onChange: (next: ProcedureAllergen | undefined) => void;
   labels: { title: string; picker: string };
 }): React.ReactElement {
-  const tForm = useTranslations('admin.library.new.form');
+  const tForm = useTranslations("admin.library.new.form");
   const selected = allergen?.selectedAllergens ?? [];
-  const [customInput, setCustomInput] = React.useState('');
+  const [customInput, setCustomInput] = React.useState("");
 
   const standardSet = new Set<string>(ALLERGEN_KEYS);
   const customTags = selected.filter((k) => !standardSet.has(k));
@@ -550,8 +612,10 @@ function RecipeAllergens({
       onChange(undefined);
     } else {
       onChange({
-        summary: allergen?.summary?.trim() || 'Contains allergens',
-        detail: allergen?.detail?.trim() || 'Please check ingredients list for allergen details',
+        summary: allergen?.summary?.trim() || "Contains allergens",
+        detail:
+          allergen?.detail?.trim() ||
+          "Please check ingredients list for allergen details",
         selectedAllergens: nextSelected,
       });
     }
@@ -563,12 +627,14 @@ function RecipeAllergens({
     if (!selected.includes(trimmed as AllergenKey)) {
       const next = [...selected, trimmed as AllergenKey];
       onChange({
-        summary: allergen?.summary?.trim() || 'Contains allergens',
-        detail: allergen?.detail?.trim() || 'Please check ingredients list for allergen details',
+        summary: allergen?.summary?.trim() || "Contains allergens",
+        detail:
+          allergen?.detail?.trim() ||
+          "Please check ingredients list for allergen details",
         selectedAllergens: next,
       });
     }
-    setCustomInput('');
+    setCustomInput("");
   }
 
   function removeCustom(tag: string): void {
@@ -577,8 +643,10 @@ function RecipeAllergens({
       onChange(undefined);
     } else {
       onChange({
-        summary: allergen?.summary?.trim() || 'Contains allergens',
-        detail: allergen?.detail?.trim() || 'Please check ingredients list for allergen details',
+        summary: allergen?.summary?.trim() || "Contains allergens",
+        detail:
+          allergen?.detail?.trim() ||
+          "Please check ingredients list for allergen details",
         selectedAllergens: next,
       });
     }
@@ -605,10 +673,10 @@ function RecipeAllergens({
               <label
                 key={key}
                 className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-sm transition-colors',
+                  "flex cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-sm transition-colors",
                   checked
-                    ? 'border-[var(--color-warn)] bg-[var(--color-warn-tint)] text-[var(--color-ink)]'
-                    : 'border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-wash)]',
+                    ? "border-[var(--color-warn)] bg-[var(--color-warn-tint)] text-[var(--color-ink)]"
+                    : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-wash)]",
                 )}
               >
                 <input
@@ -625,7 +693,9 @@ function RecipeAllergens({
         {/* Custom allergen chips & small inline add input */}
         <div className="flex flex-wrap items-center gap-3 pt-2">
           {customTags.length > 0 && (
-            <span className="text-xs font-semibold text-[var(--color-ink-3)]">Custom:</span>
+            <span className="text-xs font-semibold text-[var(--color-ink-3)]">
+              Custom:
+            </span>
           )}
           {customTags.map((tag) => (
             <span
@@ -660,7 +730,7 @@ function RecipeAllergens({
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   e.preventDefault();
                   addCustom();
                 }

@@ -1,6 +1,6 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CategoriesSkeletonProps {
   className?: string;
@@ -24,7 +24,7 @@ export function CategoriesSkeleton({
   stationCount = 4,
 }: CategoriesSkeletonProps): React.ReactElement {
   return (
-    <div aria-hidden="true" className={cn('space-y-6', className)}>
+    <div aria-hidden="true" className={cn("space-y-6", className)}>
       <section className="space-y-3">
         <Skeleton className="h-4 w-16" />
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

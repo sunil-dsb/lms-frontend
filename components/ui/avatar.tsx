@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 /**
  * A person's initials in a circle. Decorative: the name always sits beside it,
@@ -10,19 +10,19 @@ import { cn } from '@/lib/utils';
  */
 export function Avatar({
   initials,
-  size = 'sm',
+  size = "sm",
   className,
 }: {
   initials: string;
-  size?: 'sm' | 'md';
+  size?: "sm" | "md";
   className?: string;
 }): React.ReactElement {
   return (
     <span
       aria-hidden="true"
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] font-semibold text-[var(--color-ink)]',
-        size === 'sm' ? 'size-10 text-sm' : 'size-12',
+        "flex shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] font-semibold text-[var(--color-ink)]",
+        size === "sm" ? "size-10 text-sm" : "size-12",
         className,
       )}
     >

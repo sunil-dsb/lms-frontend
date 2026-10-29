@@ -1,6 +1,6 @@
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { fetchMe, ApiException } from '@/lib/api';
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { fetchMe, ApiException } from "@/lib/api";
 
 // Root locale page: if signed in, send to /employee/home or /admin/library; otherwise to /login.
 export default async function LocaleRootPage({
@@ -14,11 +14,11 @@ export default async function LocaleRootPage({
   const cookieHeader = cookieStore
     .getAll()
     .map((c: { name: string; value: string }) => `${c.name}=${c.value}`)
-    .join('; ');
+    .join("; ");
 
   try {
     const me = await fetchMe(cookieHeader);
-    if (me.employee.role === 'admin' || me.employee.role === 'super_admin') {
+    if (me.employee.role === "admin" || me.employee.role === "super_admin") {
       redirect(`/${locale}/admin`);
     } else {
       // An employee's interface is in their own language (PROJECT_OVERVIEW §02:

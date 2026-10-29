@@ -1,20 +1,16 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState, useTransition, useMemo } from 'react';
-import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import {
-  Modal,
-  ModalBody,
-  ModalFooter,
-} from '@/components/ui/modal';
-import { Button } from '@/components/ui/button';
-import { Avatar } from '@/components/ui/avatar';
-import { StatusPill } from '@/components/ui/status-pill';
-import { resendInvite } from '@/services/employees/api';
-import { ApiException } from '@/lib/errors';
-import type { AdminEmployee, InviteResult } from '@/lib/types';
+import * as React from "react";
+import { useState, useTransition, useMemo } from "react";
+import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { Modal, ModalBody, ModalFooter } from "@/components/ui/modal";
+import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/avatar";
+import { StatusPill } from "@/components/ui/status-pill";
+import { resendInvite } from "@/services/employees/api";
+import { ApiException } from "@/lib/errors";
+import type { AdminEmployee, InviteResult } from "@/lib/types";
 import {
   LuMail,
   LuSend,
@@ -23,7 +19,7 @@ import {
   LuClock,
   LuCircleAlert,
   LuX,
-} from 'react-icons/lu';
+} from "react-icons/lu";
 
 interface ResendInviteModalProps {
   open: boolean;
@@ -34,7 +30,7 @@ interface ResendInviteModalProps {
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
+  if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
@@ -44,11 +40,11 @@ export function ResendInviteModal({
   onClose,
   employee,
 }: ResendInviteModalProps): React.ReactElement | null {
-  const t = useTranslations('admin');
+  const t = useTranslations("admin");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [phase, setPhase] = useState<'confirm' | 'success'>('confirm');
+  const [phase, setPhase] = useState<"confirm" | "success">("confirm");
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -56,7 +52,7 @@ export function ResendInviteModal({
   // Reset state when modal opens or closes
   React.useEffect(() => {
     if (open) {
-      setPhase('confirm');
+      setPhase("confirm");
       setInviteResult(null);
       setError(null);
       setCopied(false);
@@ -64,13 +60,17 @@ export function ResendInviteModal({
   }, [open, employee.id]);
 
   const displayUrl = useMemo(() => {
-    if (!inviteResult?.url) return '';
+    if (!inviteResult?.url) return "";
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const urlObj = new URL(inviteResult.url, window.location.origin);
-        const inviteMatch = urlObj.pathname.match(/\/auth\/invites\/([^/]+)\/([^/]+)\/?$/);
-        if (inviteMatch) return `${window.location.origin}/${inviteMatch[1]}/invite/${encodeURIComponent(inviteMatch[2])}`;
-        if (urlObj.pathname.match(/^\/[^/]+\/invite\/[^/]+\/?$/)) return `${window.location.origin}${urlObj.pathname}${urlObj.search}`;
+        const inviteMatch = urlObj.pathname.match(
+          /\/auth\/invites\/([^/]+)\/([^/]+)\/?$/,
+        );
+        if (inviteMatch)
+          return `${window.location.origin}/${inviteMatch[1]}/invite/${encodeURIComponent(inviteMatch[2])}`;
+        if (urlObj.pathname.match(/^\/[^/]+\/invite\/[^/]+\/?$/))
+          return `${window.location.origin}${urlObj.pathname}${urlObj.search}`;
       }
     } catch {
       // fallback
@@ -84,13 +84,13 @@ export function ResendInviteModal({
       try {
         const { invite } = await resendInvite(employee.id);
         setInviteResult(invite);
-        setPhase('success');
+        setPhase("success");
         router.refresh();
       } catch (err) {
         if (err instanceof ApiException) {
           setError(err.message);
         } else {
-          setError(t('errorGeneric'));
+          setError(t("errorGeneric"));
         }
       }
     });
@@ -98,7 +98,7 @@ export function ResendInviteModal({
 
   async function copyUrl(): Promise<void> {
     try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(displayUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
@@ -111,8 +111,13 @@ export function ResendInviteModal({
   if (!open) return null;
 
   return (
-    <Modal open={open} onClose={onClose} size="md" className="max-w-[520px] w-full">
-      {phase === 'confirm' ? (
+    <Modal
+      open={open}
+      onClose={onClose}
+      size="md"
+      className="max-w-[520px] w-full"
+    >
+      {phase === "confirm" ? (
         <>
           {/* Centered Header with top-right Close button */}
           <div className="relative border-b border-[var(--color-line)] px-6 pt-6 pb-4 text-center">
@@ -125,10 +130,10 @@ export function ResendInviteModal({
               <LuX className="size-5" />
             </button>
             <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-tight text-[var(--color-ink)]">
-              {t('resendModalTitle')}
+              {t("resendModalTitle")}
             </h2>
             <p className="mt-1 text-xs sm:text-sm text-[var(--color-ink-2)]">
-              {t('resendModalSubtitle')}
+              {t("resendModalSubtitle")}
             </p>
           </div>
 
@@ -138,14 +143,24 @@ export function ResendInviteModal({
               <Avatar initials={initials(employee.name)} size="md" />
               <div className="min-w-0">
                 <h3 className="break-words text-left font-semibold leading-5 text-[var(--color-ink)]">
-                    {employee.name}
+                  {employee.name}
                 </h3>
                 <p className="mt-1 break-all text-left text-xs leading-4 text-[var(--color-ink-2)]">
-                  {employee.email || 'No email provided'}
+                  {employee.email || "No email provided"}
                 </p>
               </div>
-              <StatusPill tone={employee.status === 'pending' ? 'warn' : employee.status === 'active' ? 'ok' : 'neutral'}>
-                {t(`status${employee.status.charAt(0).toUpperCase()}${employee.status.slice(1)}`)}
+              <StatusPill
+                tone={
+                  employee.status === "pending"
+                    ? "warn"
+                    : employee.status === "active"
+                      ? "ok"
+                      : "neutral"
+                }
+              >
+                {t(
+                  `status${employee.status.charAt(0).toUpperCase()}${employee.status.slice(1)}`,
+                )}
               </StatusPill>
             </div>
 
@@ -154,11 +169,13 @@ export function ResendInviteModal({
               <LuMail className="size-4 shrink-0 mt-0.5 text-[var(--color-brand)]" />
               <div>
                 <p className="font-medium text-[var(--color-ink)] mb-0.5">
-                  {t('resendModalNotice', { email: employee.email ?? employee.name })}
+                  {t("resendModalNotice", {
+                    email: employee.email ?? employee.name,
+                  })}
                 </p>
                 <p className="text-[var(--color-ink-3)] text-[11px] mt-1 flex items-center gap-1">
                   <LuClock className="size-3" />
-                  {t('resendModalExpires')}
+                  {t("resendModalExpires")}
                 </p>
               </div>
             </div>
@@ -177,7 +194,7 @@ export function ResendInviteModal({
               onClick={onClose}
               disabled={isPending}
             >
-              {t('actionsCancel')}
+              {t("actionsCancel")}
             </Button>
             <Button
               type="button"
@@ -186,7 +203,7 @@ export function ResendInviteModal({
               disabled={isPending}
               icon={LuSend}
             >
-              {isPending ? t('resendModalSending') : t('resendModalConfirmBtn')}
+              {isPending ? t("resendModalSending") : t("resendModalConfirmBtn")}
             </Button>
           </ModalFooter>
         </>
@@ -206,10 +223,10 @@ export function ResendInviteModal({
               <LuX className="size-5" />
             </button>
             <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-tight text-[var(--color-ink)]">
-              {t('resendModalSuccessHeading')}
+              {t("resendModalSuccessHeading")}
             </h2>
             <p className="mt-1 text-xs sm:text-sm text-[var(--color-ink-2)]">
-              {t('inviteEmailSent')}
+              {t("inviteEmailSent")}
             </p>
           </div>
 
@@ -218,17 +235,19 @@ export function ResendInviteModal({
             <div className="rounded-[var(--radius-lg)] border border-[var(--color-ok-line,var(--color-line))] bg-[var(--color-ok-tint,#e8f8ed)] p-4 text-center space-y-1">
               <p className="font-semibold text-[var(--color-ok,#1a7f37)] flex items-center justify-center gap-1.5 text-sm">
                 <LuCheck className="size-4 shrink-0 text-[var(--color-ok)]" />
-                {t('resendModalSuccessHeading')}
+                {t("resendModalSuccessHeading")}
               </p>
               <p className="text-xs text-[var(--color-ink-2)] leading-relaxed">
-                {t('resendModalSuccessNotice', { email: employee.email ?? employee.name })}
+                {t("resendModalSuccessNotice", {
+                  email: employee.email ?? employee.name,
+                })}
               </p>
             </div>
 
             {/* Direct invitation link - Centered label + flex container with zero overflow */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-[var(--color-ink-2)] uppercase tracking-wider text-center">
-                {t('inviteUrlLabel')}
+                {t("inviteUrlLabel")}
               </label>
               <div className="flex items-center gap-2 w-full min-w-0">
                 <input
@@ -241,19 +260,19 @@ export function ResendInviteModal({
                 <Button
                   type="button"
                   size="sm"
-                  variant={copied ? 'secondary' : 'neutral'}
+                  variant={copied ? "secondary" : "neutral"}
                   onClick={() => void copyUrl()}
                   icon={copied ? LuCheck : LuCopy}
                   className="shrink-0 font-medium"
                 >
-                  {copied ? t('copied') : t('copyUrl')}
+                  {copied ? t("copied") : t("copyUrl")}
                 </Button>
               </div>
             </div>
 
             <p className="text-xs text-center text-[var(--color-ink-3)] flex items-center justify-center gap-1.5 pt-1">
               <LuClock className="size-3.5" />
-              {t('resendModalExpires')}
+              {t("resendModalExpires")}
             </p>
           </ModalBody>
           <ModalFooter>
@@ -263,7 +282,7 @@ export function ResendInviteModal({
               className="w-full sm:w-auto min-w-[100px]"
               onClick={onClose}
             >
-              {t('resendModalDone')}
+              {t("resendModalDone")}
             </Button>
           </ModalFooter>
         </>

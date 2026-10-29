@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { LuPencil } from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import type { Location, Role, Station } from '@/lib/types';
+import * as React from "react";
+import { LuPencil } from "react-icons/lu";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { Location, Role, Station } from "@/lib/types";
 import {
   LocationsManager,
   type LocationsManagerLabels,
   type LocationsManagerState,
-} from './locations/locations-manager';
+} from "./locations/locations-manager";
 import {
   RolesManager,
   type RolesManagerLabels,
   type RolesManagerState,
-} from './roles/roles-manager';
+} from "./roles/roles-manager";
 import {
   StationsManager,
   type StationsManagerLabels,
   type StationsManagerState,
-} from './stations/stations-manager';
+} from "./stations/stations-manager";
 
 export interface SettingsViewLabels {
   stationsHeading: string;
@@ -42,7 +42,10 @@ interface SettingsViewProps {
   stations: Station[];
   roles: Role[];
   locations: Location[];
-  labels: SettingsViewLabels & StationsManagerLabels & RolesManagerLabels & LocationsManagerLabels;
+  labels: SettingsViewLabels &
+    StationsManagerLabels &
+    RolesManagerLabels &
+    LocationsManagerLabels;
 }
 
 type Chip = { id: string; name: string };
@@ -61,9 +64,13 @@ export function SettingsView({
   locations,
   labels,
 }: SettingsViewProps): React.ReactElement {
-  const [stationsState, setStationsState] = React.useState<StationsManagerState>({ mode: 'closed' });
-  const [rolesState, setRolesState] = React.useState<RolesManagerState>({ mode: 'closed' });
-  const [locationsState, setLocationsState] = React.useState<LocationsManagerState>({ mode: 'closed' });
+  const [stationsState, setStationsState] =
+    React.useState<StationsManagerState>({ mode: "closed" });
+  const [rolesState, setRolesState] = React.useState<RolesManagerState>({
+    mode: "closed",
+  });
+  const [locationsState, setLocationsState] =
+    React.useState<LocationsManagerState>({ mode: "closed" });
 
   const stationChips: Chip[] = stations.map((s) => ({
     id: s.id,
@@ -87,7 +94,7 @@ export function SettingsView({
           heading={labels.stationsHeading}
           total={stationChips.length}
           addLabel={labels.addStation}
-          onAdd={() => setStationsState({ mode: 'create' })}
+          onAdd={() => setStationsState({ mode: "create" })}
           emptyLabel={labels.emptyStations}
         >
           {stationChips.map((chip) => {
@@ -97,7 +104,7 @@ export function SettingsView({
                 key={chip.id}
                 name={chip.name}
                 onEdit={() => {
-                  if (s) setStationsState({ mode: 'edit', entity: s });
+                  if (s) setStationsState({ mode: "edit", entity: s });
                 }}
                 editLabel={labels.stationEdit}
               />
@@ -109,7 +116,7 @@ export function SettingsView({
           heading={labels.rolesHeading}
           total={roleChips.length}
           addLabel={labels.addRole}
-          onAdd={() => setRolesState({ mode: 'create' })}
+          onAdd={() => setRolesState({ mode: "create" })}
           emptyLabel={labels.emptyRoles}
         >
           {roleChips.map((chip) => {
@@ -119,7 +126,7 @@ export function SettingsView({
                 key={chip.id}
                 name={chip.name}
                 onEdit={() => {
-                  if (r) setRolesState({ mode: 'edit', entity: r });
+                  if (r) setRolesState({ mode: "edit", entity: r });
                 }}
                 editLabel={labels.roleEdit}
               />
@@ -131,7 +138,7 @@ export function SettingsView({
           heading={labels.locationsHeading}
           total={locationChips.length}
           addLabel={labels.addLocation}
-          onAdd={() => setLocationsState({ mode: 'create' })}
+          onAdd={() => setLocationsState({ mode: "create" })}
           emptyLabel={labels.emptyLocations}
         >
           {locationChips.map((chip) => {
@@ -141,7 +148,7 @@ export function SettingsView({
                 key={chip.id}
                 name={chip.name}
                 onEdit={() => {
-                  if (l) setLocationsState({ mode: 'edit', entity: l });
+                  if (l) setLocationsState({ mode: "edit", entity: l });
                 }}
                 editLabel={labels.locationEdit}
               />
@@ -155,8 +162,17 @@ export function SettingsView({
         onStateChange={setStationsState}
         labels={labels}
       />
-      <RolesManager state={rolesState} onStateChange={setRolesState} stations={stations} labels={labels} />
-      <LocationsManager state={locationsState} onStateChange={setLocationsState} labels={labels} />
+      <RolesManager
+        state={rolesState}
+        onStateChange={setRolesState}
+        stations={stations}
+        labels={labels}
+      />
+      <LocationsManager
+        state={locationsState}
+        onStateChange={setLocationsState}
+        labels={labels}
+      />
     </div>
   );
 }
@@ -201,9 +217,7 @@ function SettingsCard({
       {total === 0 ? (
         <p className="text-sm text-[var(--color-ink-3)] py-2">{emptyLabel}</p>
       ) : (
-        <div className="mt-3 flex flex-col gap-2 items-stretch">
-          {children}
-        </div>
+        <div className="mt-3 flex flex-col gap-2 items-stretch">{children}</div>
       )}
 
       <Button variant="secondary" onClick={onAdd} className="mt-4 w-full">
@@ -234,13 +248,15 @@ function EntityChip({
       title={name}
       aria-label={`${editLabel}: ${name}`}
       className={cn(
-        'group flex w-full min-w-0 items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-left transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-inset',
-        'border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-panel)]',
+        "group flex w-full min-w-0 items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-left transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-inset",
+        "border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-panel)]",
       )}
     >
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-[var(--color-ink)]">{name}</span>
+        <span className="block truncate text-sm font-medium text-[var(--color-ink)]">
+          {name}
+        </span>
       </span>
       <LuPencil
         aria-hidden="true"

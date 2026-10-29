@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 /**
  * A radial meter: one ratio against its whole, drawn as an arc on a track of the
@@ -17,7 +17,7 @@ export function Meter({
   total,
   size = 44,
   stroke = 6,
-  tone = 'ok',
+  tone = "ok",
   label,
 }: {
   value: number;
@@ -27,7 +27,7 @@ export function Meter({
   /** Shown in the middle of the ring. The ring is the shape; this is the reading. */
   label?: string;
   /** ok for a completion share, warn when the remainder is what needs attention. */
-  tone?: 'ok' | 'warn';
+  tone?: "ok" | "warn";
 }): React.ReactElement | null {
   if (!Number.isFinite(total) || total <= 0) return null;
   const share = Math.max(0, Math.min(1, value / total));
@@ -44,13 +44,20 @@ export function Meter({
       role="presentation"
     >
       {/* the track: the same colour family, a step lighter */}
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-panel-2)" strokeWidth={stroke} />
       <circle
         cx={size / 2}
         cy={size / 2}
         r={r}
         fill="none"
-        stroke={tone === 'warn' ? 'var(--color-warn)' : 'var(--color-ok-fill)'}
+        stroke="var(--color-panel-2)"
+        strokeWidth={stroke}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={tone === "warn" ? "var(--color-warn)" : "var(--color-ok-fill)"}
         strokeWidth={stroke}
         strokeLinecap="round"
         strokeDasharray={`${c * share} ${c}`}
@@ -62,9 +69,14 @@ export function Meter({
 
   if (!label) return ring;
   return (
-    <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
+    <span
+      className="relative inline-flex shrink-0 items-center justify-center"
+      style={{ width: size, height: size }}
+    >
       {ring}
-      <span className="absolute text-md font-semibold leading-display tracking-tight text-[var(--color-ink)]">{label}</span>
+      <span className="absolute text-md font-semibold leading-display tracking-tight text-[var(--color-ink)]">
+        {label}
+      </span>
     </span>
   );
 }

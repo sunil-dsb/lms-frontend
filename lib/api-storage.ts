@@ -1,5 +1,5 @@
 export function getStored<T>(key: string, seed: T): T {
-  if (typeof window === 'undefined') return seed;
+  if (typeof window === "undefined") return seed;
   try {
     const raw = localStorage.getItem(`lms_demo_${key}`);
     return raw ? (JSON.parse(raw) as T) : seed;
@@ -13,7 +13,7 @@ export function getStored<T>(key: string, seed: T): T {
  *  Storage migration (and any future fixtures) to backfill `kind` on
  *  pre-existing records that predate the field. */
 export function setStored<T>(key: string, data: T): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(`lms_demo_${key}`, JSON.stringify(data));
   } catch {
@@ -24,13 +24,21 @@ export function setStored<T>(key: string, data: T): void {
 // One-time purge of pre-live demo payloads: browsers that ran the mock
 // era still carry seed rows under these keys, and the readers above would
 // keep serving them. Mirrors refill from the API on the next list fetch.
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   try {
-    if (!window.localStorage.getItem('lms_demo_purged_v1')) {
-      for (const key of ['locations', 'roles_v2', 'stations_v2', 'categories_v3', 'employees_v3', 'procedures_v2', 'quizzes']) {
+    if (!window.localStorage.getItem("lms_demo_purged_v1")) {
+      for (const key of [
+        "locations",
+        "roles_v2",
+        "stations_v2",
+        "categories_v3",
+        "employees_v3",
+        "procedures_v2",
+        "quizzes",
+      ]) {
         window.localStorage.removeItem(`lms_demo_${key}`);
       }
-      window.localStorage.setItem('lms_demo_purged_v1', '1');
+      window.localStorage.setItem("lms_demo_purged_v1", "1");
     }
   } catch {
     // Ignore storage errors

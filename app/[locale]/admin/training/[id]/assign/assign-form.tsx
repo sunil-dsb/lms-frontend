@@ -1,18 +1,24 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { StatusPill } from '@/components/ui/status-pill';
-import { Icon } from '@/components/ui/icon';
-import { FormSection } from '@/components/admin/form-section';
-import { cn } from '@/lib/utils';
-import type { TrainingAssignment, TrainingAssignmentStatus } from '@/lib/types';
-import { effectiveStatus } from '@/lib/mock-training';
-import { LuCheck, LuClipboardList, LuSearch, LuUserPlus, LuUsers } from 'react-icons/lu';
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { StatusPill } from "@/components/ui/status-pill";
+import { Icon } from "@/components/ui/icon";
+import { FormSection } from "@/components/admin/form-section";
+import { cn } from "@/lib/utils";
+import type { TrainingAssignment, TrainingAssignmentStatus } from "@/lib/types";
+import { effectiveStatus, assignCourseToEmployees } from "@/lib/mock-training";
+import {
+  LuCheck,
+  LuClipboardList,
+  LuSearch,
+  LuUserPlus,
+  LuUsers,
+} from "react-icons/lu";
 
 interface MockEmployee {
   id: string;
@@ -38,11 +44,14 @@ function statusFor(a: TrainingAssignment): TrainingAssignmentStatus {
   return effectiveStatus(a);
 }
 
-const STATUS_TONE: Record<TrainingAssignmentStatus, 'neutral' | 'ok' | 'warn' | 'bad'> = {
-  due: 'warn',
-  in_progress: 'warn',
-  complete: 'ok',
-  overdue: 'bad',
+const STATUS_TONE: Record<
+  TrainingAssignmentStatus,
+  "neutral" | "ok" | "warn" | "bad"
+> = {
+  due: "warn",
+  in_progress: "warn",
+  complete: "ok",
+  overdue: "bad",
 };
 
 // ---------------------------------------------------------------------------
@@ -57,7 +66,7 @@ function AlreadyAssignedTable({
   employees: MockEmployee[];
   assignments: TrainingAssignment[];
 }): React.ReactElement {
-  const t = useTranslations('admin.training.assign');
+  const t = useTranslations("admin.training.assign");
 
   const rows = React.useMemo(() => {
     return assignments.flatMap((a) => {
@@ -70,7 +79,7 @@ function AlreadyAssignedTable({
   if (rows.length === 0) {
     return (
       <p className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-line-2)] bg-[var(--color-wash)] px-4 py-3 text-sm text-[var(--color-ink-2)]">
-        {t('noneAssigned')}
+        {t("noneAssigned")}
       </p>
     );
   }
@@ -88,18 +97,20 @@ function AlreadyAssignedTable({
               className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-[11px] font-semibold text-[var(--color-ink)]"
             >
               {employee.name
-                .split(' ')
+                .split(" ")
                 .filter(Boolean)
                 .slice(0, 2)
                 .map((w) => w[0])
-                .join('')
+                .join("")
                 .toUpperCase()}
             </span>
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
                 {employee.name}
               </p>
-              <p className="truncate text-[11px] text-[var(--color-ink-2)]">{employee.station}</p>
+              <p className="truncate text-[11px] text-[var(--color-ink-2)]">
+                {employee.station}
+              </p>
             </div>
           </div>
           <StatusPill tone={STATUS_TONE[status]} withDot>
@@ -124,43 +135,47 @@ function EmployeePicker({
   selectedIds: Set<string>;
   onToggle: (id: string) => void;
 }): React.ReactElement {
-  const t = useTranslations('admin.training.assign');
-  const [search, setSearch] = React.useState('');
+  const t = useTranslations("admin.training.assign");
+  const [search, setSearch] = React.useState("");
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return employees;
     return employees.filter((e) =>
-      (e.name + ' ' + e.station).toLowerCase().includes(q),
+      (e.name + " " + e.station).toLowerCase().includes(q),
     );
   }, [employees, search]);
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <Label className="text-sm">{t('pickEmployees')}</Label>
+        <Label className="text-sm">{t("pickEmployees")}</Label>
         <span className="text-sm text-[var(--color-ink-2)]">
-          {t('selectedCount', { count: selectedIds.size })}
+          {t("selectedCount", { count: selectedIds.size })}
         </span>
       </div>
 
       <div className="relative">
         <LuSearch
           aria-hidden="true"
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--color-ink-3)]"
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-ink-3)] pointer-events-none z-10"
         />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder={t('searchEmployees')}
-          className="h-tap-admin pl-10 text-xs"
+          placeholder={t("searchEmployees")}
+          style={{
+            paddingLeft: "2.75rem",
+            paddingRight: search ? "2.5rem" : "1rem",
+          }}
+          className="!pl-11 h-tap-admin text-xs"
         />
       </div>
 
       <ul className="max-h-64 divide-y divide-[var(--color-line)] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)]">
         {filtered.length === 0 ? (
           <li className="px-3 py-2 text-sm text-[var(--color-ink-2)]">
-            {t('noEmployeesMatch')}
+            {t("noEmployeesMatch")}
           </li>
         ) : (
           filtered.map((e) => {
@@ -172,19 +187,19 @@ function EmployeePicker({
                   onClick={() => onToggle(e.id)}
                   aria-pressed={selected}
                   className={cn(
-                    'flex w-full items-center gap-3 px-3 py-2 text-left transition-colors',
+                    "flex w-full items-center gap-3 px-3 py-2 text-left transition-colors",
                     selected
-                      ? 'bg-[var(--color-brand-tint)] hover:bg-[var(--color-brand-tint-2)]'
-                      : 'hover:bg-[var(--color-wash)]',
+                      ? "bg-[var(--color-brand-tint)] hover:bg-[var(--color-brand-tint-2)]"
+                      : "hover:bg-[var(--color-wash)]",
                   )}
                 >
                   <span
                     aria-hidden="true"
                     className={cn(
-                      'inline-flex size-5 shrink-0 items-center justify-center rounded-md border transition-colors',
+                      "inline-flex size-5 shrink-0 items-center justify-center rounded-md border transition-colors",
                       selected
-                        ? 'border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-white'
-                        : 'border-[var(--color-line-3)] text-transparent',
+                        ? "border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-white"
+                        : "border-[var(--color-line-3)] text-transparent",
                     )}
                   >
                     {selected ? <LuCheck className="text-xs" /> : null}
@@ -217,7 +232,7 @@ export function AssignForm({
   employees,
   existingAssignments,
 }: AssignFormProps): React.ReactElement {
-  const t = useTranslations('admin.training.assign');
+  const t = useTranslations("admin.training.assign");
   const router = useRouter();
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [dueAt, setDueAt] = React.useState<string>(defaultDueDate());
@@ -236,11 +251,7 @@ export function AssignForm({
       (id) => !existingAssignments.some((a) => a.employeeId === id),
     );
     if (newIds.length === 0) return;
-    console.info('[training] assign course (mock)', {
-      courseId,
-      employeeIds: newIds,
-      dueAt,
-    });
+    assignCourseToEmployees(courseId, newIds, dueAt);
     setSelected(new Set());
     router.push(`/${locale}/admin/training`);
   }
@@ -252,7 +263,11 @@ export function AssignForm({
 
   return (
     <div className="space-y-8">
-      <FormSection icon={LuUsers} title={t('sectionNew')} subtitle={t('sectionNewSubtitle')}>
+      <FormSection
+        icon={LuUsers}
+        title={t("sectionNew")}
+        subtitle={t("sectionNewSubtitle")}
+      >
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <EmployeePicker
@@ -264,7 +279,7 @@ export function AssignForm({
 
           <div className="space-y-3">
             <Label htmlFor="dueAt" className="text-sm">
-              {t('dueAt')}
+              {t("dueAt")}
             </Label>
             <Input
               id="dueAt"
@@ -274,28 +289,30 @@ export function AssignForm({
               className="h-tap-admin text-sm"
               min={new Date().toISOString().slice(0, 10)}
             />
-            <p className="text-sm text-[var(--color-ink-2)]">{t('dueAtHint')}</p>
+            <p className="text-sm text-[var(--color-ink-2)]">
+              {t("dueAtHint")}
+            </p>
 
             {newSelections.length > 0 ? (
-              <div className="space-y-2 pt-2">
-                <p className="text-sm font-semibold text-[var(--color-ink-2)]">
-                  {t('summary', { count: newSelections.length })}
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] p-3 space-y-2">
+                <p className="text-xs font-semibold text-[var(--color-ink)]">
+                  {t("summary", { count: newSelections.length })}
                 </p>
-                <ul className="space-y-1">
+                <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto pr-1">
                   {newSelections.map((id) => {
                     const e = employees.find((x) => x.id === id);
                     if (!e) return null;
                     return (
-                      <li
+                      <span
                         key={id}
-                        className="flex items-center gap-2 rounded-md bg-[var(--color-wash)] px-2 py-1 text-xs"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] px-2.5 py-1 rounded-full text-[var(--color-ink)] shadow-xs"
                       >
-                        <Icon icon={LuUserPlus} className="text-xs text-[var(--color-ink-3)]" />
-                        <span className="truncate text-[var(--color-ink)]">{e.name}</span>
-                      </li>
+                        <LuUserPlus className="text-xs text-[var(--color-ink-3)] shrink-0" />
+                        <span className="truncate max-w-[130px]">{e.name}</span>
+                      </span>
                     );
                   })}
-                </ul>
+                </div>
               </div>
             ) : null}
 
@@ -308,7 +325,7 @@ export function AssignForm({
                 onClick={handleAssign}
               >
                 <LuUserPlus aria-hidden="true" className="mr-1" />
-                {t('assignAction', { count: newSelections.length })}
+                {t("assignAction", { count: newSelections.length })}
               </Button>
               {selected.size > 0 ? (
                 <Button
@@ -317,7 +334,7 @@ export function AssignForm({
                   size="sm"
                   onClick={() => setSelected(new Set())}
                 >
-                  {t('clearSelection')}
+                  {t("clearSelection")}
                 </Button>
               ) : null}
             </div>
@@ -327,15 +344,18 @@ export function AssignForm({
 
       <FormSection
         icon={LuClipboardList}
-        title={t('sectionCurrent')}
-        subtitle={t('sectionCurrentSubtitle')}
+        title={t("sectionCurrent")}
+        subtitle={t("sectionCurrentSubtitle")}
         headerAction={
           <span className="text-sm leading-meta text-[var(--color-ink-2)]">
-            {t('totalAssigned', { count: existingAssignments.length })}
+            {t("totalAssigned", { count: existingAssignments.length })}
           </span>
         }
       >
-        <AlreadyAssignedTable employees={employees} assignments={existingAssignments} />
+        <AlreadyAssignedTable
+          employees={employees}
+          assignments={existingAssignments}
+        />
       </FormSection>
     </div>
   );

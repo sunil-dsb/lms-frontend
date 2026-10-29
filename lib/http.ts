@@ -3,26 +3,27 @@ import axios, {
   type AxiosInstance,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
-} from 'axios';
-import { ApiException } from './errors';
+} from "axios";
+import { ApiException } from "./errors";
 
-function resolveBaseURL(url?: string, fallback = ''): string {
-  const raw = (url || fallback).trim().replace(/\/+$/, '');
-  if (!raw) return '';
+function resolveBaseURL(url?: string, fallback = ""): string {
+  const raw = (url || fallback).trim().replace(/\/+$/, "");
+  if (!raw) return "";
   if (/^https?:\/\//i.test(raw)) return raw;
-  const isLocal = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(raw);
-  return `${isLocal ? 'http' : 'https'}://${raw}`;
+  const isLocal =
+    /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(raw);
+  return `${isLocal ? "http" : "https"}://${raw}`;
 }
 
 const API_BASE_URL = resolveBaseURL(
   process.env.NEXT_PUBLIC_API_BASE ||
     process.env.NEXT_PUBLIC_API_URL ||
     process.env.BACKEND_API_URL,
-  'http://localhost:8000',
+  "http://localhost:8000",
 );
 
 export function backendApiUrl(path: string): string {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return `${API_BASE_URL}${normalizedPath}`;
 }
 
@@ -33,7 +34,7 @@ export const http: AxiosInstance = axios.create({
   withCredentials: true,
   timeout: 15_000,
   headers: {
-    'X-Requested-With': 'XMLHttpRequest',
+    "X-Requested-With": "XMLHttpRequest",
   },
 });
 
@@ -41,17 +42,17 @@ export const http: AxiosInstance = axios.create({
 
 http.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    config.headers.set('x-request-id', crypto.randomUUID());
+    config.headers.set("x-request-id", crypto.randomUUID());
 
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const isPublicActivation =
-        config.url?.includes('/auth/set-password') ||
-        config.url?.includes('/auth/invites');
+        config.url?.includes("/auth/set-password") ||
+        config.url?.includes("/auth/invites");
       const token =
-        localStorage.getItem('token') ||
-        (document.cookie.match(/(?:^|;\s*)lms_token=([^;]+)/)?.[1]);
+        localStorage.getItem("token") ||
+        document.cookie.match(/(?:^|;\s*)lms_token=([^;]+)/)?.[1];
       if (token && !isPublicActivation) {
-        config.headers.set('Authorization', `Bearer ${token}`);
+        config.headers.set("Authorization", `Bearer ${token}`);
       }
     }
     return config;
@@ -72,9 +73,9 @@ interface ApiErrorBody {
 function normaliseAxiosError(error: AxiosError<ApiErrorBody>): ApiException {
   const status = error.response?.status ?? 0;
   const body = error.response?.data;
-  const code = body?.code ?? body?.error?.code ?? 'UNKNOWN';
+  const code = body?.code ?? body?.error?.code ?? "UNKNOWN";
   const message =
-    body?.message ?? body?.error?.message ?? error.message ?? 'Request failed';
+    body?.message ?? body?.error?.message ?? error.message ?? "Request failed";
   const details =
     body?.details ??
     body?.errors?.map((e) => ({ path: e.field, message: e.message })) ??
@@ -85,7 +86,8 @@ function normaliseAxiosError(error: AxiosError<ApiErrorBody>): ApiException {
 
 http.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: AxiosError<ApiErrorBody>) => Promise.reject(normaliseAxiosError(error)),
+  (error: AxiosError<ApiErrorBody>) =>
+    Promise.reject(normaliseAxiosError(error)),
 );
 
 export default http;

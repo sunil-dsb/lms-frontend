@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   RiAlertLine,
   RiArrowDownSLine,
@@ -19,12 +19,20 @@ import {
   RiTempColdLine,
   RiTimeLine,
   RiTimerLine,
-} from 'react-icons/ri';
-import { DocBehaviour } from '@/components/doc/doc-behaviour';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { FACTORS, INGREDIENTS, PHASES, STEPS, fmt, scale, type Qty } from './recipe-data';
-import { StepStage } from './step-stage';
-import './stage.css';
+} from "react-icons/ri";
+import { DocBehaviour } from "@/components/doc/doc-behaviour";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import {
+  FACTORS,
+  INGREDIENTS,
+  PHASES,
+  STEPS,
+  fmt,
+  scale,
+  type Qty,
+} from "./recipe-data";
+import { StepStage } from "./step-stage";
+import "./stage.css";
 
 /**
  * The 23-step recipe with its pictures on one stage instead of beside every
@@ -51,22 +59,24 @@ const HOLD_PX = 48;
 
 function Warn({
   children,
-  kind = 'warn',
+  kind = "warn",
 }: {
   children: React.ReactNode;
-  kind?: 'warn' | 'allergen';
+  kind?: "warn" | "allergen";
 }): React.ReactElement {
   return (
     <div className={`note-block n-${kind}`}>
       <span className="ico">
-        {kind === 'allergen' ? (
+        {kind === "allergen" ? (
           <RiErrorWarningFill className="i" aria-hidden="true" />
         ) : (
           <RiAlertLine className="i" aria-hidden="true" />
         )}
       </span>
       <div>
-        <span className="label">{kind === 'allergen' ? 'Allergen' : 'Warning'}</span>
+        <span className="label">
+          {kind === "allergen" ? "Allergen" : "Warning"}
+        </span>
         <p>{children}</p>
       </div>
     </div>
@@ -82,18 +92,26 @@ function CritLimit(): React.ReactElement {
       </h3>
       <div className="crit-b">
         <p className="crit-num">4&nbsp;°C (39&nbsp;°F) or below</p>
-        <p className="crit-sub">Into the walk-in within 30 minutes of finishing. Check before service.</p>
+        <p className="crit-sub">
+          Into the walk-in within 30 minutes of finishing. Check before service.
+        </p>
         <dl className="crit-parts">
           <div className="crit-part">
             <dt className="crit-lbl">How to check</dt>
-            <dd>Probe the centre of the pan with a sanitised thermometer. Record on the Cold Holding Log.</dd>
+            <dd>
+              Probe the centre of the pan with a sanitised thermometer. Record
+              on the Cold Holding Log.
+            </dd>
           </div>
           <div className="crit-part breach">
             <dt className="crit-lbl">
               <RiErrorWarningLine className="i i-sm" aria-hidden="true" />
               If it is above 4&nbsp;°C
             </dt>
-            <dd>Discard. Guacamole is not reheated, so there is no way to bring it back. Tell the chef on duty.</dd>
+            <dd>
+              Discard. Guacamole is not reheated, so there is no way to bring it
+              back. Tell the chef on duty.
+            </dd>
           </div>
         </dl>
       </div>
@@ -101,12 +119,15 @@ function CritLimit(): React.ReactElement {
   );
 }
 
-const barHeight = (): number => document.querySelector('.doc-bar')?.getBoundingClientRect().height ?? 64;
+const barHeight = (): number =>
+  document.querySelector(".doc-bar")?.getBoundingClientRect().height ?? 64;
 
 /**
  * The step being read, from the scroll position, and a way to choose one.
  */
-function useReadingStep(stageRef: React.RefObject<HTMLDivElement | null>): [number, (n: number) => void] {
+function useReadingStep(
+  stageRef: React.RefObject<HTMLDivElement | null>,
+): [number, (n: number) => void] {
   const [active, setActive] = React.useState(1);
   // A step the cook tapped: `y` is null while the page is still travelling to it.
   const hold = React.useRef<{ y: number | null } | null>(null);
@@ -122,13 +143,19 @@ function useReadingStep(stageRef: React.RefObject<HTMLDivElement | null>): [numb
         hold.current = null;
       }
       const bar = barHeight();
-      const top = Math.max(bar, stageRef.current?.getBoundingClientRect().bottom ?? bar);
+      const top = Math.max(
+        bar,
+        stageRef.current?.getBoundingClientRect().bottom ?? bar,
+      );
       let line = top + (window.innerHeight - top) * 0.25;
       // Near the foot of the page the last steps can never climb to the line, so
       // over the last half-screen of scrolling the line comes down to meet them.
-      const below = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+      const below =
+        document.documentElement.scrollHeight -
+        (window.scrollY + window.innerHeight);
       const reach = window.innerHeight * 0.5;
-      if (below < reach) line += (1 - below / reach) * (window.innerHeight - 24 - line);
+      if (below < reach)
+        line += (1 - below / reach) * (window.innerHeight - 24 - line);
       let current = 1;
       for (let n = 1; n <= N; n++) {
         const el = document.getElementById(`step-${n}`);
@@ -141,17 +168,18 @@ function useReadingStep(stageRef: React.RefObject<HTMLDivElement | null>): [numb
       // The page has come to rest: a tapped step now holds from here.
       window.clearTimeout(settle);
       settle = window.setTimeout(() => {
-        if (hold.current && hold.current.y === null) hold.current.y = window.scrollY;
+        if (hold.current && hold.current.y === null)
+          hold.current.y = window.scrollY;
       }, 140);
     };
     update();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
       if (raf) cancelAnimationFrame(raf);
       window.clearTimeout(settle);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     };
   }, [stageRef]);
 
@@ -163,21 +191,32 @@ function useReadingStep(stageRef: React.RefObject<HTMLDivElement | null>): [numb
       // The first step of a part comes up with its part's heading above it, so
       // the heading is read rather than sliced under the stage.
       const first = !step.previousElementSibling;
-      const el = (first ? step.closest('.part')?.querySelector<HTMLElement>('.part-h') : null) ?? step;
+      const el =
+        (first
+          ? step.closest(".part")?.querySelector<HTMLElement>(".part-h")
+          : null) ?? step;
       // Its top just under the stage, once the stage is stuck, clear of the fade.
       const stageH = stageRef.current?.getBoundingClientRect().height ?? 0;
-      const target = Math.max(0, el.getBoundingClientRect().top + window.scrollY - (barHeight() + stageH + 24));
+      const target = Math.max(
+        0,
+        el.getBoundingClientRect().top +
+          window.scrollY -
+          (barHeight() + stageH + 24),
+      );
       const from = window.scrollY;
       if (Math.abs(target - from) < 2) {
         hold.current = { y: from };
         return;
       }
       hold.current = { y: null };
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      window.scrollTo({ top: target, behavior: reduced ? 'auto' : 'smooth' });
+      const reduced = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      window.scrollTo({ top: target, behavior: reduced ? "auto" : "smooth" });
       // At the foot of the page the scroll may stop short, or not start at all.
       window.setTimeout(() => {
-        if (hold.current && hold.current.y === null) hold.current.y = window.scrollY;
+        if (hold.current && hold.current.y === null)
+          hold.current.y = window.scrollY;
       }, 1200);
     },
     [stageRef],
@@ -187,14 +226,18 @@ function useReadingStep(stageRef: React.RefObject<HTMLDivElement | null>): [numb
 }
 
 export function GuacamoleRecipe(): React.ReactElement {
-  const tApp = useTranslations('app');
+  const tApp = useTranslations("app");
   const [factor, setFactor] = React.useState<number>(1);
   const radios = React.useRef<(HTMLButtonElement | null)[]>([]);
   const ctlRef = React.useRef<HTMLDetailsElement>(null);
   const stageRef = React.useRef<HTMLDivElement>(null);
   const [active, choose] = useReadingStep(stageRef);
 
-  const q: Qty = (k) => <b className="qty">{scale(INGREDIENTS.find((i) => i.key === k)!.base, factor)}</b>;
+  const q: Qty = (k) => (
+    <b className="qty">
+      {scale(INGREDIENTS.find((i) => i.key === k)!.base, factor)}
+    </b>
+  );
 
   // Document control ships open, so the page prints its number and approval
   // even without JavaScript; collapsed for reading, opened again for print.
@@ -210,16 +253,21 @@ export function GuacamoleRecipe(): React.ReactElement {
     const after = (): void => {
       ctl.open = wasOpen;
     };
-    window.addEventListener('beforeprint', before);
-    window.addEventListener('afterprint', after);
+    window.addEventListener("beforeprint", before);
+    window.addEventListener("afterprint", after);
     return () => {
-      window.removeEventListener('beforeprint', before);
-      window.removeEventListener('afterprint', after);
+      window.removeEventListener("beforeprint", before);
+      window.removeEventListener("afterprint", after);
     };
   }, []);
 
   function onScalerKey(e: React.KeyboardEvent): void {
-    const d = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[e.key];
+    const d = (
+      { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<
+        string,
+        number
+      >
+    )[e.key];
     if (!d) return;
     e.preventDefault();
     const i = FACTORS.indexOf(factor as (typeof FACTORS)[number]);
@@ -234,15 +282,28 @@ export function GuacamoleRecipe(): React.ReactElement {
         <DocBehaviour markCurrent={false} />
 
         <div className="doc-bar" id="bar">
-          <a className="btn btn-ghost btn-icon btn-lg" href="#" aria-label="Back to Recipes">
+          <a
+            className="btn btn-ghost btn-icon btn-lg"
+            href="#"
+            aria-label="Back to Recipes"
+          >
             <RiArrowLeftLine className="i" aria-hidden="true" />
           </a>
           <div className="where">
             <b lang="es">Guacamole Fresco</b>
             <span>Recipes</span>
           </div>
-          <ThemeToggle labels={{ toDark: tApp('themeToDark'), toLight: tApp('themeToLight') }} />
-          <button className="btn btn-ghost btn-icon btn-lg" type="button" aria-label="More options">
+          <ThemeToggle
+            labels={{
+              toDark: tApp("themeToDark"),
+              toLight: tApp("themeToLight"),
+            }}
+          />
+          <button
+            className="btn btn-ghost btn-icon btn-lg"
+            type="button"
+            aria-label="More options"
+          >
             <RiMore2Fill className="i" aria-hidden="true" />
           </button>
         </div>
@@ -261,11 +322,17 @@ export function GuacamoleRecipe(): React.ReactElement {
           <RiErrorWarningFill className="i i-lg" aria-hidden="true" />
           <div>
             <b>Contains sesame</b>
-            <p>In the finishing oil, step 17. Check the ticket before it leaves the pass.</p>
+            <p>
+              In the finishing oil, step 17. Check the ticket before it leaves
+              the pass.
+            </p>
           </div>
         </div>
 
-        <p className="doc-purpose">To make guacamole that holds its colour and texture through a full service.</p>
+        <p className="doc-purpose">
+          To make guacamole that holds its colour and texture through a full
+          service.
+        </p>
 
         <dl className="facts">
           <div>
@@ -304,7 +371,12 @@ export function GuacamoleRecipe(): React.ReactElement {
             <span className="lbl" id="batch-lbl">
               Batch
             </span>
-            <div className="choices" role="radiogroup" aria-labelledby="batch-lbl" onKeyDown={onScalerKey}>
+            <div
+              className="choices"
+              role="radiogroup"
+              aria-labelledby="batch-lbl"
+              onKeyDown={onScalerKey}
+            >
               {FACTORS.map((f, i) => (
                 <button
                   key={f}
@@ -343,8 +415,10 @@ export function GuacamoleRecipe(): React.ReactElement {
             </div>
           </dl>
 
-          <table className={factor === 1 ? 'ing is-base' : 'ing'}>
-            <caption className="vh">Ingredients, at the base batch and at the selected batch size</caption>
+          <table className={factor === 1 ? "ing is-base" : "ing"}>
+            <caption className="vh">
+              Ingredients, at the base batch and at the selected batch size
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Ingredient</th>
@@ -363,9 +437,12 @@ export function GuacamoleRecipe(): React.ReactElement {
                     {ing.name}
                     {ing.allergen ? (
                       <>
-                        {' '}
+                        {" "}
                         <span className="flag">
-                          <RiErrorWarningFill className="i i-sm" aria-hidden="true" />
+                          <RiErrorWarningFill
+                            className="i i-sm"
+                            aria-hidden="true"
+                          />
                           Allergen
                         </span>
                       </>
@@ -385,8 +462,8 @@ export function GuacamoleRecipe(): React.ReactElement {
             Method <span className="count">&middot; {N} steps</span>
           </h2>
           <p className="method-hint">
-            The picture follows the step you are reading. Tap a step to see its picture; tap the picture to see it
-            whole.
+            The picture follows the step you are reading. Tap a step to see its
+            picture; tap the picture to see it whole.
           </p>
 
           <div className="method-grid">
@@ -402,40 +479,57 @@ export function GuacamoleRecipe(): React.ReactElement {
                     {ph.name}
                   </h3>
                   {/* One list per part, numbered on from the last: step 5 is still step 5. */}
-                  <ol className="steps" start={ph.from} style={{ counterReset: `step ${ph.from - 1}` }}>
-                    {STEPS.filter((s) => s.n >= ph.from && s.n <= ph.to).map((s) => (
-                      <li
-                        key={s.n}
-                        id={`step-${s.n}`}
-                        className={['step', s.crit ? 'is-crit' : '', active === s.n ? 'is-now' : '']
-                          .filter(Boolean)
-                          .join(' ')}
-                        onClick={() => choose(s.n)}
-                      >
-                        <button
-                          type="button"
-                          className="step-num step-show"
-                          aria-current={active === s.n ? 'step' : undefined}
-                          aria-label={`Step ${s.n}${s.crit ? ', critical' : ''}: show its picture`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            choose(s.n);
-                          }}
-                        />
-                        <div className="step-body">
-                          {s.crit ? (
-                            <span className="step-flag">
-                              <RiFocus3Line className="i i-sm" aria-hidden="true" />
-                              Critical step
-                            </span>
-                          ) : null}
-                          <p className="step-line">{s.text(q)}</p>
-                          {s.note ? <p className="step-note">{s.note}</p> : null}
-                          {s.warn ? <Warn kind={s.warn.kind}>{s.warn.body}</Warn> : null}
-                          {s.crit ? <CritLimit /> : null}
-                        </div>
-                      </li>
-                    ))}
+                  <ol
+                    className="steps"
+                    start={ph.from}
+                    style={{ counterReset: `step ${ph.from - 1}` }}
+                  >
+                    {STEPS.filter((s) => s.n >= ph.from && s.n <= ph.to).map(
+                      (s) => (
+                        <li
+                          key={s.n}
+                          id={`step-${s.n}`}
+                          className={[
+                            "step",
+                            s.crit ? "is-crit" : "",
+                            active === s.n ? "is-now" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                          onClick={() => choose(s.n)}
+                        >
+                          <button
+                            type="button"
+                            className="step-num step-show"
+                            aria-current={active === s.n ? "step" : undefined}
+                            aria-label={`Step ${s.n}${s.crit ? ", critical" : ""}: show its picture`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              choose(s.n);
+                            }}
+                          />
+                          <div className="step-body">
+                            {s.crit ? (
+                              <span className="step-flag">
+                                <RiFocus3Line
+                                  className="i i-sm"
+                                  aria-hidden="true"
+                                />
+                                Critical step
+                              </span>
+                            ) : null}
+                            <p className="step-line">{s.text(q)}</p>
+                            {s.note ? (
+                              <p className="step-note">{s.note}</p>
+                            ) : null}
+                            {s.warn ? (
+                              <Warn kind={s.warn.kind}>{s.warn.body}</Warn>
+                            ) : null}
+                            {s.crit ? <CritLimit /> : null}
+                          </div>
+                        </li>
+                      ),
+                    )}
                   </ol>
                 </div>
               ))}

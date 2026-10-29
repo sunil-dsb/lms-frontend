@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from "react";
 
 /** Skeleton shown while the procedures page resolves the session on
  *  the server; the list itself streams in behind its own skeleton

@@ -1,5 +1,5 @@
-import type { BilingualValue } from '@/components/ui/bilingual-input';
-import type { ProcedureQuiz, ProcedureAudience, ProcedureBlock } from './types';
+import type { BilingualValue } from "@/components/ui/bilingual-input";
+import type { ProcedureQuiz, ProcedureAudience, ProcedureBlock } from "./types";
 
 /**
  * Pure progress functions for the procedure wizard.
@@ -14,36 +14,39 @@ import type { ProcedureQuiz, ProcedureAudience, ProcedureBlock } from './types';
  * input with one space in it should not count as progress.
  */
 
-const filled = (s?: string | null): boolean => Boolean(s && s.trim().length > 0);
+const filled = (s?: string | null): boolean =>
+  Boolean(s && s.trim().length > 0);
 
 export function hasBlockContent(b: ProcedureBlock): boolean {
   switch (b.kind) {
-    case 'text':
+    case "text":
       return filled(b.body?.en) || filled(b.body?.es);
-    case 'heading':
+    case "heading":
       return filled(b.text?.en) || filled(b.text?.es);
-    case 'method':
+    case "method":
       return b.steps.some((s) => filled(s.body?.en) || filled(s.body?.es));
-    case 'recipe':
+    case "recipe":
       return (
         b.steps.some((s) => filled(s.body?.en) || filled(s.body?.es)) ||
         Boolean(b.ingredients?.some((i) => filled(i.name)))
       );
-    case 'image':
+    case "image":
       return filled(b.src) || filled(b.alt?.en) || filled(b.alt?.es);
-    case 'video':
+    case "video":
       return filled(b.src);
-    case 'warning':
+    case "warning":
       return filled(b.body?.en) || filled(b.body?.es);
-    case 'attachment':
+    case "attachment":
       return filled(b.href) || filled(b.title?.en) || filled(b.title?.es);
-    case 'table':
+    case "table":
       return (
         b.headers.some((h) => filled(h?.en) || filled(h?.es)) ||
         b.rows.some((r) => r.some((c) => filled(c?.en) || filled(c?.es)))
       );
-    case 'checklist':
+    case "checklist":
       return b.items.some((i) => filled(i.text?.en) || filled(i.text?.es));
+    case "linked_procedures":
+      return b.procedureIds.length > 0;
     default:
       return false;
   }
@@ -70,7 +73,7 @@ export const getDetailsProgress = (state: {
   const validBlocks = (state.blocks ?? []).filter(hasBlockContent);
   const contentRatio = validBlocks.length > 0 ? 1 : 0;
 
-  return (aboutRatio * 0.5) + (contentRatio * 0.5);
+  return aboutRatio * 0.5 + contentRatio * 0.5;
 };
 
 /** Quiz (step 2) — one item. Skipping the quiz counts as complete (the
@@ -98,7 +101,7 @@ export const getQuizProgress = (state: {
  */
 export const getAccessProgress = (state: {
   subcategoryId: string;
-  categoryKind: 'general' | 'station-tied';
+  categoryKind: "general" | "station-tied";
   audience: ProcedureAudience;
 }): number => {
   if (!filled(state.subcategoryId)) return 0;
@@ -108,7 +111,7 @@ export const getAccessProgress = (state: {
 
   if (state.audience.stationIds.length > 0) done += 1;
 
-  if (state.audience.mode === 'everyone') {
+  if (state.audience.mode === "everyone") {
     done += 1;
   } else if (
     state.audience.employeeIds.length > 0 ||
@@ -141,7 +144,7 @@ export const getAllStepProgress = (state: {
   blocks?: ProcedureBlock[];
   quiz: ProcedureQuiz | null;
   subcategoryId: string;
-  categoryKind: 'general' | 'station-tied';
+  categoryKind: "general" | "station-tied";
   audience: ProcedureAudience;
 }): { details: number; quiz: number; access: number; review: number } => {
   const details = getDetailsProgress({

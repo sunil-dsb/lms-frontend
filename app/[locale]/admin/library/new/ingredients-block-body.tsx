@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Inline editor for an `ingredients` block, embedded inside a single
@@ -9,53 +9,53 @@
  * blocks.
  */
 
-import * as React from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Icon } from '@/components/ui/icon';
-import { RecipeYieldSection } from './recipe-block-body';
+import * as React from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Icon } from "@/components/ui/icon";
+import { RecipeYieldSection } from "./recipe-block-body";
 import type {
   ProcedureBlock,
   ProcedureIngredient,
   ProcedureYieldItem,
-} from '@/lib/types';
+} from "@/lib/types";
 
-type IngredientsBlock = Extract<ProcedureBlock, { kind: 'ingredients' }>;
+type IngredientsBlock = Extract<ProcedureBlock, { kind: "ingredients" }>;
 
 interface IngredientsBlockBodyProps {
   block: IngredientsBlock;
   onPatch: (next: IngredientsBlock) => void;
-  lang?: 'en' | 'es';
+  lang?: "en" | "es";
 }
 
 const COMMON_UNITS = [
-  'pcs',
-  'each',
-  'g',
-  'kg',
-  'ml',
-  'l',
-  'oz',
-  'lb',
-  'cup',
-  'tbsp',
-  'tsp',
-  'pinch',
-  'handful',
-  'spoonfuls',
-  'tortillas',
-  'wedge',
-  'coat',
-  'drizzle',
+  "pcs",
+  "each",
+  "g",
+  "kg",
+  "ml",
+  "l",
+  "oz",
+  "lb",
+  "cup",
+  "tbsp",
+  "tsp",
+  "pinch",
+  "handful",
+  "spoonfuls",
+  "tortillas",
+  "wedge",
+  "coat",
+  "drizzle",
 ] as const;
 
 function emptyIngredient(factorsCount = 1): ProcedureIngredient {
   return {
-    name: '',
-    form: '',
+    name: "",
+    form: "",
     allergen: false,
-    unit: '',
-    amounts: Array.from({ length: Math.max(1, factorsCount) }, () => ''),
+    unit: "",
+    amounts: Array.from({ length: Math.max(1, factorsCount) }, () => ""),
   };
 }
 
@@ -64,22 +64,34 @@ export function IngredientsBlockBody({
   onPatch,
 }: IngredientsBlockBodyProps): React.ReactElement {
   const ingredients = block.ingredients ?? [];
-  const factors = block.factors && block.factors.length > 0 ? block.factors : [1];
+  const factors =
+    block.factors && block.factors.length > 0 ? block.factors : [1];
   const yieldItems = block.yieldItems ?? [];
 
   function setFactors(nextFactors: number[]): void {
     const updatedIngredients = ingredients.map((ing) => {
-      const nextAmounts = nextFactors.map((_, idx) => ing.amounts[idx] ?? ing.amounts[0] ?? '');
+      const nextAmounts = nextFactors.map(
+        (_, idx) => ing.amounts[idx] ?? ing.amounts[0] ?? "",
+      );
       return { ...ing, amounts: nextAmounts };
     });
-    onPatch({ ...block, factors: nextFactors, ingredients: updatedIngredients });
+    onPatch({
+      ...block,
+      factors: nextFactors,
+      ingredients: updatedIngredients,
+    });
   }
 
-  function updateIngredient(idx: number, patch: Partial<ProcedureIngredient>): void {
+  function updateIngredient(
+    idx: number,
+    patch: Partial<ProcedureIngredient>,
+  ): void {
     onPatch({
       ...block,
       factors: [1],
-      ingredients: ingredients.map((x, j) => (j === idx ? { ...x, ...patch } : x)),
+      ingredients: ingredients.map((x, j) =>
+        j === idx ? { ...x, ...patch } : x,
+      ),
     });
   }
 
@@ -90,7 +102,7 @@ export function IngredientsBlockBody({
       ingredients: ingredients.map((x, j) => {
         if (j !== ingIdx) return x;
         const nextAmounts = [...x.amounts];
-        while (nextAmounts.length <= factorIdx) nextAmounts.push('');
+        while (nextAmounts.length <= factorIdx) nextAmounts.push("");
         nextAmounts[factorIdx] = value;
         return { ...x, amounts: nextAmounts };
       }),
@@ -115,18 +127,23 @@ export function IngredientsBlockBody({
 
   function addYieldItem(): void {
     const newItem: ProcedureYieldItem = {
-      label: 'Batch yield',
-      value: '',
-      unit: '',
+      label: "Batch yield",
+      value: "",
+      unit: "",
       scales: true,
     };
     onPatch({ ...block, yieldItems: [...yieldItems, newItem] });
   }
 
-  function updateYieldItem(idx: number, patch: Partial<ProcedureYieldItem>): void {
+  function updateYieldItem(
+    idx: number,
+    patch: Partial<ProcedureYieldItem>,
+  ): void {
     onPatch({
       ...block,
-      yieldItems: yieldItems.map((item, j) => (j === idx ? { ...item, ...patch } : item)),
+      yieldItems: yieldItems.map((item, j) =>
+        j === idx ? { ...item, ...patch } : item,
+      ),
     });
   }
 
@@ -155,7 +172,7 @@ export function IngredientsBlockBody({
 
         {ingredients.length === 0 ? (
           <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-2)] p-4 text-center text-sm text-[var(--color-ink-3)]">
-            No ingredients added yet.{' '}
+            No ingredients added yet.{" "}
             <button
               type="button"
               onClick={addIngredient}
@@ -171,7 +188,10 @@ export function IngredientsBlockBody({
                 <tr className="border-b border-[var(--color-line-2)] bg-[var(--color-wash)]/60 text-[var(--color-ink-2)]">
                   <th className="p-2 font-semibold">Ingredient name</th>
                   <th className="w-56 p-2 font-semibold">Amount / Qty</th>
-                  <th className="w-20 p-2 font-semibold text-center" title="Mark as allergen">
+                  <th
+                    className="w-20 p-2 font-semibold text-center"
+                    title="Mark as allergen"
+                  >
                     Allergen
                   </th>
                   <th className="w-8 p-2 text-center" />
@@ -180,15 +200,19 @@ export function IngredientsBlockBody({
               <tbody className="divide-y divide-[var(--color-line-2)]">
                 {ingredients.map((row, i) => {
                   const displayAmount =
-                    row.amounts[0] ??
-                    (row.unit ? `${row.unit}` : '');
+                    row.amounts[0] ?? (row.unit ? `${row.unit}` : "");
                   return (
-                    <tr key={i} className="hover:bg-[var(--color-wash)]/30 transition-colors">
+                    <tr
+                      key={i}
+                      className="hover:bg-[var(--color-wash)]/30 transition-colors"
+                    >
                       <td className="p-1.5">
                         <Input
                           value={row.name}
                           maxLength={100}
-                          onChange={(e) => updateIngredient(i, { name: e.target.value })}
+                          onChange={(e) =>
+                            updateIngredient(i, { name: e.target.value })
+                          }
                           placeholder="e.g. Halibut, Beer batter, Taco tortillas..."
                           className="h-8 text-xs font-medium"
                         />
@@ -209,7 +233,9 @@ export function IngredientsBlockBody({
                         <input
                           type="checkbox"
                           checked={Boolean(row.allergen)}
-                          onChange={(e) => updateIngredient(i, { allergen: e.target.checked })}
+                          onChange={(e) =>
+                            updateIngredient(i, { allergen: e.target.checked })
+                          }
                           className="size-4 cursor-pointer accent-[var(--color-warn)]"
                           title="Contains allergen"
                         />

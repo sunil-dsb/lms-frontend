@@ -1,24 +1,27 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
+import * as React from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui/modal";
 import {
   createStation,
   deleteStation,
   updateStation,
   ApiException,
-} from '@/lib/api';
-import type { Station } from '@/lib/types';
+} from "@/lib/api";
+import type { Station } from "@/lib/types";
 
 export type StationsManagerState =
-  | { mode: 'closed' }
-  | { mode: 'create' }
-  | { mode: 'edit'; entity: Station };
+  { mode: "closed" } | { mode: "create" } | { mode: "edit"; entity: Station };
 
 export interface StationsManagerLabels {
   stationName: string;
@@ -62,8 +65,8 @@ export function StationsManager({
   const [isPending, startTransition] = useTransition();
   const [createError, setCreateError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
-  const [createForm, setCreateForm] = useState<CreateForm>({ name: '' });
+  const [editName, setEditName] = useState("");
+  const [createForm, setCreateForm] = useState<CreateForm>({ name: "" });
 
   function refresh(): void {
     router.refresh();
@@ -72,8 +75,8 @@ export function StationsManager({
   function closeDrawer(): void {
     setCreateError(null);
     setEditError(null);
-    setEditName('');
-    onStateChange({ mode: 'closed' });
+    setEditName("");
+    onStateChange({ mode: "closed" });
   }
 
   function onCreate(event: React.FormEvent<HTMLFormElement>): void {
@@ -83,7 +86,7 @@ export function StationsManager({
     startTransition(async () => {
       try {
         await createStation({ name: createForm.name.trim() });
-        setCreateForm({ name: '' });
+        setCreateForm({ name: "" });
         closeDrawer();
         refresh();
       } catch (err) {
@@ -106,7 +109,8 @@ export function StationsManager({
         refresh();
       } catch (err) {
         if (err instanceof ApiException) {
-          if (err.code === 'STATION_NOT_FOUND') setEditError(labels.errorNotFound);
+          if (err.code === "STATION_NOT_FOUND")
+            setEditError(labels.errorNotFound);
           else setEditError(err.message);
         } else {
           setEditError(labels.errorGeneric);
@@ -124,7 +128,8 @@ export function StationsManager({
         refresh();
       } catch (err) {
         if (err instanceof ApiException) {
-          if (err.code === 'STATION_NOT_FOUND') setEditError(labels.errorNotFound);
+          if (err.code === "STATION_NOT_FOUND")
+            setEditError(labels.errorNotFound);
           else setEditError(err.message);
         } else {
           setEditError(labels.errorGeneric);
@@ -134,14 +139,14 @@ export function StationsManager({
   }
 
   React.useEffect(() => {
-    if (state.mode === 'edit') {
+    if (state.mode === "edit") {
       setEditName(state.entity.name);
       setEditError(null);
     }
   }, [state]);
 
-  const editingStation = state.mode === 'edit' ? state.entity : null;
-  const isCreateOpen = state.mode === 'create';
+  const editingStation = state.mode === "edit" ? state.entity : null;
+  const isCreateOpen = state.mode === "create";
   const isEditOpen = editingStation !== null;
 
   return (
@@ -244,10 +249,7 @@ export function StationsManager({
               >
                 {labels.stationCancel}
               </Button>
-              <Button
-                type="submit"
-                disabled={isPending || !editName.trim()}
-              >
+              <Button type="submit" disabled={isPending || !editName.trim()}>
                 {labels.stationSave}
               </Button>
             </ModalFooter>

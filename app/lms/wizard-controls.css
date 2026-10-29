@@ -6,255 +6,254 @@
    and every photograph printed at full size.
    ============================================================ */
 @media print {
-
-   /* Print is the station card: the terse sheet that gets laminated and posted.
+  /* Print is the station card: the terse sheet that gets laminated and posted.
      Photos and video live on the phone, reached from the QR code on the sheet.
      Target: two to three pages at 11pt. */
-   @page {
-      margin: 14mm;
-   }
+  @page {
+    margin: 14mm;
+  }
 
-   body {
-      background: var(--bg);
-      font-size: 11pt;
-      line-height: 1.4;
-   }
+  body {
+    background: var(--bg);
+    font-size: 11pt;
+    line-height: 1.4;
+  }
 
-   .doc {
-      max-width: none;
-      padding-bottom: 0;
-   }
+  .doc {
+    max-width: none;
+    padding-bottom: 0;
+  }
 
-   .doc-bar,
-   .doc-acts,
-   .scaler,
-   .step-time,
-   .provenance .flag,
-   .cover,
-   .doc-icon {
-      display: none;
-   }
+  .doc-bar,
+  .doc-acts,
+  .scaler,
+  .step-time,
+  .provenance .flag,
+  .cover,
+  .doc-icon {
+    display: none;
+  }
 
-   /* The photographs go, because they live on the phone behind the QR code. Their
+  /* The photographs go, because they live on the phone behind the QR code. Their
      captions stay: "Onion at 5 mm", "Probed at the centre: 4.0 C" and the rest are
      prose instructions that happen to be parented to an image, and hiding the figure
      deleted them from the laminated card. */
-   .shot img,
-   .shot .play,
-   .shot .dur {
-      display: none;
-   }
+  .shot img,
+  .shot .play,
+  .shot .dur {
+    display: none;
+  }
 
-   .shot {
-      margin: 2mm 0 0;
-   }
+  .shot {
+    margin: 2mm 0 0;
+  }
 
-   .shot figcaption {
-      margin: 0;
-      font-size: 10pt;
-      color: var(--ink);
-   }
+  .shot figcaption {
+    margin: 0;
+    font-size: 10pt;
+    color: var(--ink);
+  }
 
-   /* The comparison pair is the exception: without the two pictures, "Correct" and
+  /* The comparison pair is the exception: without the two pictures, "Correct" and
      "Over-mashed" carry nothing, and the step's own sentence already says it. */
-   .compare {
-      display: none;
-   }
+  .compare {
+    display: none;
+  }
 
-   .print-only {
-      display: block;
-   }
+  .print-only {
+    display: block;
+  }
 
-   .qr.print-only {
-      display: flex;
-      align-items: center;
-      gap: 4mm;
-      margin-top: 3mm;
-      font-size: 9pt;
-      color: var(--ink-2);
-   }
+  .qr.print-only {
+    display: flex;
+    align-items: center;
+    gap: 4mm;
+    margin-top: 3mm;
+    font-size: 9pt;
+    color: var(--ink-2);
+  }
 
-   .qr .code {
-      width: 20mm;
-      height: 20mm;
-      flex-shrink: 0;
-      border: 1px dashed var(--ink-3);
-      display: grid;
-      place-items: center;
-      font-size: 8pt;
-   }
+  .qr .code {
+    width: 20mm;
+    height: 20mm;
+    flex-shrink: 0;
+    border: 1px dashed var(--ink-3);
+    display: grid;
+    place-items: center;
+    font-size: 8pt;
+  }
 
-   .doc-head,
-   .doc-purpose,
-   .doc-sec {
-      padding-left: 0;
-      padding-right: 0;
-   }
+  .doc-head,
+  .doc-purpose,
+  .doc-sec {
+    padding-left: 0;
+    padding-right: 0;
+  }
 
-   .doc-purpose,
-   .doc-sec {
-      padding-top: 3mm;
-      padding-bottom: 3mm;
-   }
+  .doc-purpose,
+  .doc-sec {
+    padding-top: 3mm;
+    padding-bottom: 3mm;
+  }
 
-   .doc-sec {
-      margin-top: 0;
-   }
+  .doc-sec {
+    margin-top: 0;
+  }
 
-   .doc-purpose {
-      font-size: 12pt;
-   }
+  .doc-purpose {
+    font-size: 12pt;
+  }
 
-   .facts {
-      margin: 3mm 0 0;
-      break-inside: avoid;
-   }
+  .facts {
+    margin: 3mm 0 0;
+    break-inside: avoid;
+  }
 
-   .doc-title {
-      font-size: 20pt;
-      margin-bottom: 2mm;
-   }
+  .doc-title {
+    font-size: 20pt;
+    margin-bottom: 2mm;
+  }
 
-   .doc-sec>h2 {
-      font-size: 13pt;
-      margin-bottom: 2mm;
-   }
+  .doc-sec > h2 {
+    font-size: 13pt;
+    margin-bottom: 2mm;
+  }
 
-   .doc-purpose,
-   .step-body p,
-   .ing td,
-   .doc-sec p,
-   .crit-b {
-      font-size: 11pt;
-   }
+  .doc-purpose,
+  .step-body p,
+  .ing td,
+  .doc-sec p,
+  .crit-b {
+    font-size: 11pt;
+  }
 
-   .steps {
-      gap: 2mm;
-   }
+  .steps {
+    gap: 2mm;
+  }
 
-   .step,
-   .crit,
-   .note-block {
-      break-inside: avoid;
-   }
+  .step,
+  .crit,
+  .note-block {
+    break-inside: avoid;
+  }
 
-   .step {
-      padding: 0;
-      margin: 0;
-   }
+  .step {
+    padding: 0;
+    margin: 0;
+  }
 
-   .step.is-now {
-      background: none;
-   }
+  .step.is-now {
+    background: none;
+  }
 
-   .crit-num {
-      font-size: 14pt;
-   }
+  .crit-num {
+    font-size: 14pt;
+  }
 
-   .allergen {
-      break-inside: avoid;
-   }
+  .allergen {
+    break-inside: avoid;
+  }
 
-   .doc-ctl summary {
-      display: none;
-   }
+  .doc-ctl summary {
+    display: none;
+  }
 
-   /* Control fields are a block of record, not prose. Splitting them across a
+  /* Control fields are a block of record, not prose. Splitting them across a
      page break strands two rows on a sheet of their own. */
-   .doc-ctl,
-   .doc-ctl dl {
-      break-inside: avoid;
-   }
+  .doc-ctl,
+  .doc-ctl dl {
+    break-inside: avoid;
+  }
 
-   .doc-ctl dl {
-      display: grid;
-      padding-left: 0;
-      padding-right: 0;
-   }
+  .doc-ctl dl {
+    display: grid;
+    padding-left: 0;
+    padding-right: 0;
+  }
 
-   /* Chrome prints without background graphics by default, so anything that puts
+  /* Chrome prints without background graphics by default, so anything that puts
      white on a colour disappears. Two elements inverted that way: the control
      point's number and a ticked prep box. Both are redrawn as ink on white
      instead of relying on a setting the printer dialog controls. */
-   .step.is-crit .step-num {
-      background: none;
-      color: var(--bad);
-      border-color: var(--bad);
-   }
+  .step.is-crit .step-num {
+    background: none;
+    color: var(--bad);
+    border-color: var(--bad);
+  }
 
-   .tick,
-   .tick:checked {
-      background: none;
-      border-color: var(--ink);
-   }
+  .tick,
+  .tick:checked {
+    background: none;
+    border-color: var(--ink);
+  }
 
-   /* A station card is ticked with a pen, so every box prints empty. */
-   .tick:checked {
-      background-image: none;
-   }
+  /* A station card is ticked with a pen, so every box prints empty. */
+  .tick:checked {
+    background-image: none;
+  }
 
-   /* The same inversion problem, four more times. With background graphics off, a
+  /* The same inversion problem, four more times. With background graphics off, a
      tint is simply white, so anything that meant something by being tinted has to
      say it with a rule or a border instead. The corrective action is the line an
      inspector looks for; it cannot be the one that loses its mark. */
-   .crit-part.breach {
-      background: none;
-      border: 2px solid var(--bad);
-      border-radius: 2mm;
-      padding: 3mm;
-      margin: 3mm 0 0;
-   }
+  .crit-part.breach {
+    background: none;
+    border: 2px solid var(--bad);
+    border-radius: 2mm;
+    padding: 3mm;
+    margin: 3mm 0 0;
+  }
 
-   .note-block {
-      background: none;
-      border-left: 3px solid var(--ink-3);
-      padding-left: 3mm;
-   }
+  .note-block {
+    background: none;
+    border-left: 3px solid var(--ink-3);
+    padding-left: 3mm;
+  }
 
-   .n-warn {
-      border-left-color: var(--bad);
-   }
+  .n-warn {
+    border-left-color: var(--bad);
+  }
 
-   .n-allergen {
-      border-left-color: var(--warn-ink);
-   }
+  .n-allergen {
+    border-left-color: var(--warn-ink);
+  }
 
-   .allergen {
-      background: none;
-      border: 2px solid var(--warn-ink);
-      border-radius: 2mm;
-      padding: 3mm;
-   }
+  .allergen {
+    background: none;
+    border: 2px solid var(--warn-ink);
+    border-radius: 2mm;
+    padding: 3mm;
+  }
 
-   .step-flag {
-      background: none;
-      border: 1px solid var(--bad);
-      padding: 0.5mm 1.5mm;
-   }
+  .step-flag {
+    background: none;
+    border: 1px solid var(--bad);
+    padding: 0.5mm 1.5mm;
+  }
 
-   .crit-h {
-      background: none;
-      border-bottom: 1px solid var(--ink);
-   }
+  .crit-h {
+    background: none;
+    border-bottom: 1px solid var(--ink);
+  }
 
-   /* The allergen box kept the 600px margins while everything around it was reset
+  /* The allergen box kept the 600px margins while everything around it was reset
      to the page edge, so the one block that matters most sat visibly inset. */
-   .allergen {
-      margin-left: 0;
-      margin-right: 0;
-   }
+  .allergen {
+    margin-left: 0;
+    margin-right: 0;
+  }
 
-   /* .doc loses its max-width for print; the method column has to as well, or it
+  /* .doc loses its max-width for print; the method column has to as well, or it
      stops 48mm short while the tables beside it run full width. */
-   .steps {
-      max-width: none;
-   }
+  .steps {
+    max-width: none;
+  }
 
-   /* Related procedures are links. On paper they are a dead list, and the QR
+  /* Related procedures are links. On paper they are a dead list, and the QR
      code on the sheet reaches the real ones. */
-   #related {
-      display: none;
-   }
+  #related {
+    display: none;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -268,14 +267,14 @@
    The teeth point up and the strip is solid along the bottom, which is how the
    site draws it: the block below owns the edge, the space above is untouched. */
 .pix-edge {
-   display: block;
-   height: var(--pix-h);
-   /* The same colour as the block it hangs from, not the button's: in dark the
+  display: block;
+  height: var(--pix-h);
+  /* The same colour as the block it hangs from, not the button's: in dark the
      block is deeper, and teeth a step brighter than their own edge read as a
      separate object. */
-   background: var(--brand-600);
-   -webkit-mask: var(--pix-zigzag) 0 0 / var(--pix-w) var(--pix-h) repeat-x;
-   mask: var(--pix-zigzag) 0 0 / var(--pix-w) var(--pix-h) repeat-x;
+  background: var(--brand-600);
+  -webkit-mask: var(--pix-zigzag) 0 0 / var(--pix-w) var(--pix-h) repeat-x;
+  mask: var(--pix-zigzag) 0 0 / var(--pix-w) var(--pix-h) repeat-x;
 }
 
 /* Teeth down, for an edge hanging under the thing it belongs to. The 1px pull-up
@@ -284,14 +283,14 @@
    the page shows through as a hairline. Overlapping by one pixel closes it, and
    costs nothing, because this edge's top row is solid. */
 .pix-edge.is-down {
-   transform: scaleY(-1);
-   margin-top: -1px;
+  transform: scaleY(-1);
+  margin-top: -1px;
 }
 
 /* Quieter: the same shape in the line colour, for a divider that is structure
    rather than brand. */
 .pix-edge.is-line {
-   background: var(--line-2);
+  background: var(--line-2);
 }
 
 /* ---------------------------------------------------------------------------
@@ -302,147 +301,149 @@
    plus the three the React version needs and the static one did not have: a
    group label, a row that is a button, and the keyboard's own selection. */
 .find {
-   position: relative;
-   display: flex;
-   align-items: center;
-   gap: var(--s-2);
-   width: 100%;
-   max-width: var(--field-xl);
-   min-height: var(--tap-admin);
-   padding: 0 var(--s-3);
-   background: var(--wash);
-   border: 1px solid var(--line-3);
-   border-radius: var(--r-md);
-   transition: border-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  max-width: var(--field-xl);
+  min-height: var(--tap-admin);
+  padding: 0 var(--s-3);
+  background: var(--wash);
+  border: 1px solid var(--line-3);
+  border-radius: var(--r-md);
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
 }
 
 .find:focus-within {
-   background: var(--field);
-   border-color: var(--brand);
+  background: var(--field);
+  border-color: var(--brand);
 }
 
-.find>.i {
-   color: var(--ink-2);
-   flex-shrink: 0;
+.find > .i {
+  color: var(--ink-2);
+  flex-shrink: 0;
 }
 
 .find input {
-   flex: 1;
-   min-width: 0;
-   border: 0;
-   background: transparent;
-   color: var(--ink);
-   font: inherit;
-   font-size: var(--t-base);
-   min-height: var(--tap-admin);
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--t-base);
+  min-height: var(--tap-admin);
 }
 
 .find input:focus {
-   outline: none;
+  outline: none;
 }
 
 .find input::placeholder {
-   color: var(--ink-3);
+  color: var(--ink-3);
 }
 
 /* The browser's own clear button is an OS control: it ignores the type scale and
    the colour system and sits on top of ours. Escape clears the field instead. */
 .find input::-webkit-search-cancel-button,
 .find input::-webkit-search-decoration {
-   -webkit-appearance: none;
-   display: none;
+  -webkit-appearance: none;
+  display: none;
 }
 
 /* The shortcut, shown only while the field is empty and only where there is room
    for it. A hint that covers what you are typing is not a hint. */
 .find kbd {
-   flex-shrink: 0;
-   padding: 0 var(--s-1);
-   border: 1px solid var(--line-2);
-   border-radius: var(--r-sm);
-   font: inherit;
-   font-size: var(--t-sm);
-   color: var(--ink-3);
+  flex-shrink: 0;
+  padding: 0 var(--s-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  font: inherit;
+  font-size: var(--t-sm);
+  color: var(--ink-3);
 }
 
 .find-results {
-   position: absolute;
-   left: 0;
-   right: 0;
-   top: calc(100% + var(--s-1));
-   z-index: var(--z-dropdown);
-   list-style: none;
-   margin: 0;
-   padding: var(--s-2);
-   max-height: var(--list-max-h);
-   overflow-y: auto;
-   background: var(--surface);
-   border-radius: var(--r-lg);
-   box-shadow: var(--e-3);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + var(--s-1));
+  z-index: var(--z-dropdown);
+  list-style: none;
+  margin: 0;
+  padding: var(--s-2);
+  max-height: var(--list-max-h);
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--e-3);
 }
 
 .find-results ul {
-   list-style: none;
-   margin: 0;
-   padding: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 /* Which kind of answer this is. 14px in the meta colour: it is a label on a list,
    not a heading in a document. */
 .find-results .grp {
-   padding: var(--s-2) var(--s-3) var(--s-1);
-   font-size: var(--t-sm);
-   color: var(--ink-3);
+  padding: var(--s-2) var(--s-3) var(--s-1);
+  font-size: var(--t-sm);
+  color: var(--ink-3);
 }
 
 .find-results .hit {
-   display: flex;
-   gap: var(--s-3);
-   align-items: flex-start;
-   width: 100%;
-   min-height: var(--tap-admin);
-   padding: var(--s-2) var(--s-3);
-   border: 0;
-   border-radius: var(--r-md);
-   background: none;
-   color: var(--ink);
-   text-align: left;
-   font: inherit;
-   cursor: pointer;
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  width: 100%;
+  min-height: var(--tap-admin);
+  padding: var(--s-2) var(--s-3);
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
 }
 
 /* The pointer and the arrow keys mark the same row the same way, because they are
    the same thing: which row Enter will open. */
 .find-results .hit:hover,
 .find-results .hit[aria-selected="true"] {
-   background: var(--panel);
+  background: var(--panel);
 }
 
-.find-results .hit>.i {
-   color: var(--ink-3);
-   margin-top: 3px;
-   flex-shrink: 0;
+.find-results .hit > .i {
+  color: var(--ink-3);
+  margin-top: 3px;
+  flex-shrink: 0;
 }
 
 .find-results .hit b {
-   display: block;
-   font-weight: 400;
-   font-size: var(--t-base);
-   overflow: hidden;
-   text-overflow: ellipsis;
-   white-space: nowrap;
+  display: block;
+  font-weight: 400;
+  font-size: var(--t-base);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .find-results .hit span {
-   display: block;
-   font-size: var(--t-sm);
-   color: var(--ink-3);
+  display: block;
+  font-size: var(--t-sm);
+  color: var(--ink-3);
 }
 
 .find-results .none {
-   padding: var(--s-2) var(--s-3);
-   font-size: var(--t-base);
-   color: var(--ink-2);
+  padding: var(--s-2) var(--s-3);
+  font-size: var(--t-base);
+  color: var(--ink-2);
 }
 
 /* A two-seat segmented control for the admin bar: the recipe scaler's shape at
@@ -463,63 +464,67 @@
 /* The tray is a control's fill, not a card's: on the dark theme a tray painted
    --surface is the same colour as the content behind it. */
 .segbar {
-   display: inline-flex;
-   gap: var(--s-1);
-   padding: var(--s-1);
-   border-radius: var(--r-pill);
-   background: var(--field);
-   box-shadow: inset 0 0 0 1px var(--line-3);
-   position: relative;
-   isolation: isolate;
+  display: inline-flex;
+  gap: var(--s-1);
+  padding: var(--s-1);
+  border-radius: var(--r-pill);
+  background: var(--field);
+  box-shadow: inset 0 0 0 1px var(--line-3);
+  position: relative;
+  isolation: isolate;
 }
 
 /* The fill, as one object that moves. The component measures the chosen seat and
    writes its position and width here; before the first measurement the pill is
    not drawn at all, so nothing slides in from the left edge on load. */
 .segbar[data-sliding]::after {
-   content: '';
-   position: absolute;
-   z-index: -1;
-   top: var(--s-1);
-   bottom: var(--s-1);
-   left: 0;
-   width: var(--seg-w, 0);
-   transform: translateX(var(--seg-x, 0));
-   background: var(--ink);
-   border-radius: var(--r-pill);
-   transition: transform var(--dur) var(--ease), width var(--dur) var(--ease);
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: var(--s-1);
+  bottom: var(--s-1);
+  left: 0;
+  width: var(--seg-w, 0);
+  transform: translateX(var(--seg-x, 0));
+  background: var(--ink);
+  border-radius: var(--r-pill);
+  transition:
+    transform var(--dur) var(--ease),
+    width var(--dur) var(--ease);
 }
 
 .segbar[data-sliding]:not([data-ready])::after {
-   display: none;
+  display: none;
 }
 
 /* With the pill drawing the fill, the seat underneath must not draw its own --
    but only once the pill is actually drawn. Gated on data-sliding alone, the
    frames between mount and the first measurement left the chosen seat with no
    fill under white text, i.e. white on the white tray. */
-.segbar[data-sliding][data-ready]>[aria-current="true"] {
-   background: none;
+.segbar[data-sliding][data-ready] > [aria-current="true"] {
+  background: none;
 }
 
-.segbar>* {
-   display: inline-flex;
-   align-items: center;
-   gap: var(--s-2);
-   min-height: var(--tap-admin);
-   padding: 0 var(--s-3);
-   /* A seat keeps its label on one line and its width: the flexbox default is to
+.segbar > * {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap-admin);
+  padding: 0 var(--s-3);
+  /* A seat keeps its label on one line and its width: the flexbox default is to
      shrink every seat until the words wrap inside it. */
-   flex-shrink: 0;
-   white-space: nowrap;
-   border-radius: var(--r-pill);
-   box-shadow: inset 0 0 0 1px var(--line-3);
-   font-size: var(--t-sm);
-   font-weight: 600;
-   color: var(--ink-2);
-   text-decoration: none;
-   transition: background var(--dur-press) var(--ease), color var(--dur-press) var(--ease),
-      transform var(--dur-press) var(--ease);
+  flex-shrink: 0;
+  white-space: nowrap;
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 0 0 1px var(--line-3);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+  text-decoration: none;
+  transition:
+    background var(--dur-press) var(--ease),
+    color var(--dur-press) var(--ease),
+    transform var(--dur-press) var(--ease);
 }
 
 @media (max-width: 480px) {
@@ -540,18 +545,18 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-   .segbar>*:hover {
-      color: var(--ink);
-   }
+  .segbar > *:hover {
+    color: var(--ink);
+  }
 }
 
 /* Filled, exactly like the scaler: on a control with two or three seats the
    filled one is the answer to "which am I on", and a white seat on a white tray
    makes you look twice to find out. */
-.segbar>[aria-current="true"] {
-   background: var(--ink);
-   color: var(--surface);
-   box-shadow: none;
+.segbar > [aria-current="true"] {
+  background: var(--ink);
+  color: var(--surface);
+  box-shadow: none;
 }
 
 /* A filter row/* Sections of /* A filter row: one question, one chosen answer, an open-ended set -- the
@@ -564,64 +569,66 @@
    is white, and the chosen one is terracotta -- what this system uses for
    current position. */
 .chipbar {
-   display: flex;
-   flex-wrap: wrap;
-   gap: var(--s-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
 }
 
-.chipbar>* {
-   /* 12px between the name and the count, not 8: at 8 the number reads as a
+.chipbar > * {
+  /* 12px between the name and the count, not 8: at 8 the number reads as a
      trailing word of the label. The gap is what separates them — a circle
      around the number would do the same job while adding a shape inside a
      shape, 20px of width to every pill, and the most ink on the emptiest
      category. */
-   display: inline-flex;
-   align-items: center;
-   gap: var(--s-3);
-   min-height: var(--tap-admin);
-   padding: 0 var(--s-4);
-   flex-shrink: 0;
-   white-space: nowrap;
-   border-radius: var(--r-pill);
-   /* Filled the way a control is filled, not the way a card is: white on the
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--tap-admin);
+  padding: 0 var(--s-4);
+  flex-shrink: 0;
+  white-space: nowrap;
+  border-radius: var(--r-pill);
+  /* Filled the way a control is filled, not the way a card is: white on the
      light theme, where there is no plane between the bone ground and a white
      card, and a recessed step on the dark one, where the card is what rises. */
-   background: var(--field);
-   box-shadow: inset 0 0 0 1px var(--line-3);
-   font-size: var(--t-sm);
-   font-weight: 600;
-   color: var(--ink-2);
-   text-decoration: none;
-   cursor: pointer;
-   transition: background var(--dur-press) var(--ease), color var(--dur-press) var(--ease),
-      box-shadow var(--dur-press) var(--ease), transform var(--dur-press) var(--ease);
+  background: var(--field);
+  box-shadow: inset 0 0 0 1px var(--line-3);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--dur-press) var(--ease),
+    color var(--dur-press) var(--ease),
+    box-shadow var(--dur-press) var(--ease),
+    transform var(--dur-press) var(--ease);
 }
 
-.chipbar>*:active {
-   transform: scale(var(--press));
+.chipbar > *:active {
+  transform: scale(var(--press));
 }
 
 @media (hover: hover) and (pointer: fine) {
-   .chipbar>*:hover {
-      background: var(--panel);
-      color: var(--ink);
-   }
+  .chipbar > *:hover {
+    background: var(--panel);
+    color: var(--ink);
+  }
 }
 
-.chipbar>[aria-current="true"] {
-   background: var(--brand-tint);
-   color: var(--brand-700);
-   box-shadow: inset 0 0 0 1px var(--ring);
+.chipbar > [aria-current="true"] {
+  background: var(--brand-tint);
+  color: var(--brand-700);
+  box-shadow: inset 0 0 0 1px var(--ring);
 }
 
 /* The count is part of the label, not a badge beside it: one step back, so the
    name is read first and the number answers "anything in there?". */
 .chipbar .n {
-   font-variant-numeric: tabular-nums;
-   color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
 }
 
-.chipbar>[aria-current="true"] .n {
-   color: var(--brand-700);
+.chipbar > [aria-current="true"] .n {
+  color: var(--brand-700);
 }
-

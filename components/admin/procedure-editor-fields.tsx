@@ -2,38 +2,32 @@
 
 import * as React from "react";
 
-
 import { useTranslations } from "next-intl";
 
-
-import { LuCheck, LuChevronRight, LuFileText, LuSearch, LuTrash2, LuUpload, LuUsers, LuX } from "react-icons/lu";
+import {
+  LuCheck,
+  LuChevronRight,
+  LuFileText,
+  LuSearch,
+  LuTrash2,
+  LuUpload,
+  LuUsers,
+  LuX,
+} from "react-icons/lu";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 
-
-
-
-
-
-
-
-
 import { IconTile } from "@/components/ui/icon-tile";
 
-import { getCategoryIcon, getProcedureGlyphForSubcategory } from "@/lib/category-icons";
-
-
-
-
-
+import {
+  getCategoryIcon,
+  getProcedureGlyphForSubcategory,
+} from "@/lib/category-icons";
 
 import { cn } from "@/lib/utils";
 import { uploadMedia } from "@/lib/api";
 
-
 import type { AdminEmployee, Category, Role, Station } from "@/lib/types";
-
-
 
 export function CategoryAccordion({
   categories,
@@ -90,16 +84,16 @@ export function CategoryAccordion({
         // the whole header gets a brand tint and a brand icon tile, so the
         // chosen category is unmissable. The checkmark on the right is the
         // same affordance every selected list row wears.
-        const isActiveParent = subs.some(
-          (s) => s.id === selectedSubcategoryId,
-        );
+        const isActiveParent = subs.some((s) => s.id === selectedSubcategoryId);
         const CatIcon = getCategoryIcon(cat);
         return (
           <div
             key={cat.id}
             className={cn(
               "overflow-hidden rounded-[var(--radius-lg)] border bg-[var(--color-surface)] shadow-2xs",
-              isActiveParent ? "border-[var(--color-line-2)]" : "border-[var(--color-line-2)]",
+              isActiveParent
+                ? "border-[var(--color-line-2)]"
+                : "border-[var(--color-line-2)]",
             )}
           >
             <div
@@ -187,9 +181,7 @@ export function CategoryAccordion({
                           <button
                             type="button"
                             aria-pressed={isSelected}
-                            onClick={() =>
-                              onSelectSubcategory(cat.id, sub.id)
-                            }
+                            onClick={() => onSelectSubcategory(cat.id, sub.id)}
                             className={cn(
                               "inline-flex items-center gap-2 rounded-full border bg-[var(--color-surface)] px-4 py-3 text-sm font-semibold transition-colors",
                               isSelected
@@ -218,7 +210,6 @@ export function CategoryAccordion({
     </div>
   );
 }
-
 
 export function AssignBlock({
   people,
@@ -266,7 +257,8 @@ export function AssignBlock({
       })
       .sort(
         (a, b) =>
-          Number(inStation(b)) - Number(inStation(a)) || a.name.localeCompare(b.name),
+          Number(inStation(b)) - Number(inStation(a)) ||
+          a.name.localeCompare(b.name),
       );
   }, [people, filterStationIds, search]);
 
@@ -278,7 +270,8 @@ export function AssignBlock({
   // When the search query narrows the list past the visible threshold, we
   // just show everything that matches — no need to gate behind "Show more"
   // when the manager is already drilling down with text.
-  const visible = search.trim() || expanded ? filtered : filtered.slice(0, VISIBLE_COUNT);
+  const visible =
+    search.trim() || expanded ? filtered : filtered.slice(0, VISIBLE_COUNT);
   const hiddenCount = filtered.length - visible.length;
 
   return (
@@ -298,7 +291,10 @@ export function AssignBlock({
         </div>
 
         <div className="relative flex w-full sm:w-[280px] md:w-[340px] items-center rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-1.5 sm:py-2 transition-colors focus-within:border-[var(--color-brand)]">
-          <LuSearch aria-hidden="true" className="mr-2 size-4 shrink-0 text-[var(--color-ink-3)]" />
+          <LuSearch
+            aria-hidden="true"
+            className="mr-2 size-4 shrink-0 text-[var(--color-ink-3)]"
+          />
           <label className="sr-only" htmlFor="assign-search">
             {t("assignSearch")}
           </label>
@@ -343,15 +339,19 @@ export function AssignBlock({
             {visible.map((p) => {
               const isOn = selected.includes(p.id);
               const initials = initialsOf(p.name);
-              const assignedRoleName = p.roleIds
-                .map((id) => roleNameById.get(id))
-                .filter(Boolean)[0] ||
+              const assignedRoleName =
+                p.roleIds
+                  .map((id) => roleNameById.get(id))
+                  .filter(Boolean)[0] ||
                 (p.role === "admin" ? "Head Chef" : "Line Cook");
               const stationList = p.stationIds
                 .map((id) => stationNameById.get(id))
                 .filter(Boolean);
               const personStations = stationList.join(" · ");
-              const subtitle = [assignedRoleName, personStations].filter(Boolean).join(" · ") || assignedRoleName;
+              const subtitle =
+                [assignedRoleName, personStations]
+                  .filter(Boolean)
+                  .join(" · ") || assignedRoleName;
 
               return (
                 <li key={p.id}>
@@ -418,7 +418,10 @@ export function AssignBlock({
               onClick={() => setExpanded(true)}
               className="flex w-full items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] py-[10px] text-sm font-semibold text-[var(--color-ink)] transition-colors hover:border-[var(--color-line-3)] hover:bg-[var(--color-panel)]"
             >
-              <LuFileText aria-hidden="true" className="size-4 text-[var(--color-ink-2)]" />
+              <LuFileText
+                aria-hidden="true"
+                className="size-4 text-[var(--color-ink-2)]"
+              />
               <span>{t("assignShowMore", { count: hiddenCount })}</span>
             </button>
           ) : null}
@@ -466,11 +469,15 @@ export function ProcedureIconPicker({
     inputRef.current?.click();
   }
 
-  async function onFile(event: React.ChangeEvent<HTMLInputElement>): Promise<void> {
+  async function onFile(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ): Promise<void> {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    const isImage = (file.type && file.type.startsWith("image/")) || /\.(jpe?g|png|webp|gif|svg|avif|bmp|jfif|pjpeg)$/i.test(file.name);
+    const isImage =
+      (file.type && file.type.startsWith("image/")) ||
+      /\.(jpe?g|png|webp|gif|svg|avif|bmp|jfif|pjpeg)$/i.test(file.name);
     if (!isImage) {
       setError(t("iconFileTypeError"));
       return;
@@ -493,7 +500,9 @@ export function ProcedureIconPicker({
       toast.success("Icon uploaded successfully");
     } catch (err) {
       console.error("Failed to upload procedure icon:", err);
-      setError(err instanceof Error ? err.message : "Upload failed. Please try again.");
+      setError(
+        err instanceof Error ? err.message : "Upload failed. Please try again.",
+      );
       toast.error("Failed to upload icon");
     } finally {
       setUploading(false);
@@ -536,14 +545,18 @@ export function ProcedureIconPicker({
         <p className="text-sm font-bold leading-tight text-[var(--color-ink)]">
           {imageUrl ? displayFileName : t("iconLabelDefault")}
         </p>
-        <p className="text-xs text-[var(--color-ink-3)]">{t("iconPickerHint")}</p>
+        <p className="text-xs text-[var(--color-ink-3)]">
+          {t("iconPickerHint")}
+        </p>
         {uploading ? (
           <p className="text-xs font-medium text-[var(--color-brand-600)] flex items-center gap-1.5">
             <span className="spinner size-3" aria-hidden="true" />
             Uploading icon…
           </p>
         ) : error ? (
-          <p className="text-xs font-semibold text-[var(--color-bad)]">{error}</p>
+          <p className="text-xs font-semibold text-[var(--color-bad)]">
+            {error}
+          </p>
         ) : null}
       </div>
 
@@ -556,7 +569,11 @@ export function ProcedureIconPicker({
           disabled={uploading}
           onClick={pick}
         >
-          {uploading ? "Uploading…" : imageUrl ? t("iconReplace") : t("iconUpload")}
+          {uploading
+            ? "Uploading…"
+            : imageUrl
+              ? t("iconReplace")
+              : t("iconUpload")}
         </Button>
         {imageUrl && !uploading ? (
           <Button
@@ -581,4 +598,3 @@ export function ProcedureIconPicker({
     </div>
   );
 }
-

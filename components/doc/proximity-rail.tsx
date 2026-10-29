@@ -1,11 +1,15 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import * as React from "react";
+import { useTranslations } from "next-intl";
 
-
-
-type Item = { id: string; kind: 'section' | 'step'; n: number; critical: boolean; label: string };
+type Item = {
+  id: string;
+  kind: "section" | "step";
+  n: number;
+  critical: boolean;
+  label: string;
+};
 
 /** How near, in px, the pointer has to be before a line starts to reach. */
 const RADIUS = 40;
@@ -19,20 +23,33 @@ const SIZE = {
 
 /** A step's instruction without its controls: the flag, the play chip, a photo. */
 function stepText(step: HTMLElement): string {
-  const body = step.querySelector('.step-body > p') ?? step.querySelector('.step-body');
-  if (!body) return '';
+  const body =
+    step.querySelector(".step-body > p") ?? step.querySelector(".step-body");
+  if (!body) return "";
   const copy = body.cloneNode(true) as HTMLElement;
-  copy.querySelectorAll('button, .step-time, .step-flag, figure, .shot, .note-block').forEach((el) => el.remove());
-  return (copy.textContent ?? '').replace(/\s+/g, ' ').trim();
+  copy
+    .querySelectorAll(
+      "button, .step-time, .step-flag, figure, .shot, .note-block",
+    )
+    .forEach((el) => el.remove());
+  return (copy.textContent ?? "").replace(/\s+/g, " ").trim();
 }
 
 export function ProximityRail(): React.ReactElement | null {
-  const t = useTranslations('employee.doc.rail');
+  const t = useTranslations("employee.doc.rail");
   const [items, setItems] = React.useState<Item[]>([]);
   const [activeId, setActiveId] = React.useState<string | null>(null);
   // Kept after it hides, so the chip fades out with its words rather than empty.
-  const [near, setNear] = React.useState<{ id: string; y: number; label: string; on: boolean } | null>(null);
-  const hide = React.useCallback(() => setNear((p) => (p?.on ? { ...p, on: false } : p)), []);
+  const [near, setNear] = React.useState<{
+    id: string;
+    y: number;
+    label: string;
+    on: boolean;
+  } | null>(null);
+  const hide = React.useCallback(
+    () => setNear((p) => (p?.on ? { ...p, on: false } : p)),
+    [],
+  );
   const listRef = React.useRef<HTMLDivElement>(null);
   const lines = React.useRef(new Map<string, HTMLSpanElement>());
   const rows = React.useRef(new Map<string, HTMLButtonElement>());
@@ -42,15 +59,17 @@ export function ProximityRail(): React.ReactElement | null {
 
   /** What the item says now, read from the page. */
   const labelOf = React.useCallback(
-    (it: Pick<Item, 'id' | 'kind' | 'n' | 'critical'>): string => {
+    (it: Pick<Item, "id" | "kind" | "n" | "critical">): string => {
       const el = document.getElementById(it.id);
-      if (!el) return '';
-      if (it.kind === 'section') {
-        const h2 = el.querySelector('h2');
+      if (!el) return "";
+      if (it.kind === "section") {
+        const h2 = el.querySelector("h2");
         // The heading's own words, not its "· 11 steps" count.
-        return (h2?.childNodes[0]?.textContent ?? h2?.textContent ?? '').trim();
+        return (h2?.childNodes[0]?.textContent ?? h2?.textContent ?? "").trim();
       }
-      const head = it.critical ? t('critical', { n: it.n }) : t('step', { n: it.n });
+      const head = it.critical
+        ? t("critical", { n: it.n })
+        : t("step", { n: it.n });
       const text = stepText(el);
       return text ? `${head} · ${text}` : head;
     },
@@ -59,29 +78,42 @@ export function ProximityRail(): React.ReactElement | null {
 
   /* --- what is on the page ----------------------------------------------- */
   React.useEffect(() => {
-    const doc = document.querySelector('.doc');
+    const doc = document.querySelector(".doc");
     if (!doc) return;
-    const found: Omit<Item, 'label'>[] = [];
+    const found: Omit<Item, "label">[] = [];
     let stepCount = 0;
-    doc.querySelectorAll<HTMLElement>('.doc-sec').forEach((sec, i) => {
-      if (sec.querySelector('h2')) {
+    doc.querySelectorAll<HTMLElement>(".doc-sec").forEach((sec, i) => {
+      if (sec.querySelector("h2")) {
         if (!sec.id) sec.id = `section-${i + 1}`;
-        found.push({ id: sec.id, kind: 'section', n: i + 1, critical: false });
+        found.push({ id: sec.id, kind: "section", n: i + 1, critical: false });
       }
       // Numbered as the page numbers them: within their own list, from its
       // start, so a method split into parts goes on counting.
-      sec.querySelectorAll<HTMLOListElement>('.steps:not(.prep)').forEach((list) => {
-        const first = Number(list.getAttribute('start')) || 1;
-        list.querySelectorAll<HTMLElement>(':scope > .step').forEach((step, n) => {
-          stepCount += 1;
-          const uniqueStepId = `step-${stepCount}`;
-          step.id = uniqueStepId;
-          found.push({ id: uniqueStepId, kind: 'step', n: first + n, critical: step.classList.contains('is-crit') });
+      sec
+        .querySelectorAll<HTMLOListElement>(".steps:not(.prep)")
+        .forEach((list) => {
+          const first = Number(list.getAttribute("start")) || 1;
+          list
+            .querySelectorAll<HTMLElement>(":scope > .step")
+            .forEach((step, n) => {
+              stepCount += 1;
+              const uniqueStepId = `step-${stepCount}`;
+              step.id = uniqueStepId;
+              found.push({
+                id: uniqueStepId,
+                kind: "step",
+                n: first + n,
+                critical: step.classList.contains("is-crit"),
+              });
+            });
         });
-      });
     });
     // One line is not a map.
-    setItems(found.length > 1 ? found.map((it) => ({ ...it, label: labelOf(it) })) : []);
+    setItems(
+      found.length > 1
+        ? found.map((it) => ({ ...it, label: labelOf(it) }))
+        : [],
+    );
   }, [labelOf]);
 
   /* --- which one you are reading ----------------------------------------- */
@@ -102,19 +134,21 @@ export function ProximityRail(): React.ReactElement | null {
       if (!raf) raf = requestAnimationFrame(update);
     };
     update();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
     return () => {
       if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
     };
   }, [items]);
 
   /* --- the spring --------------------------------------------------------- */
   const kick = React.useCallback(() => {
     if (frame.current) return;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     let last = performance.now();
     const tick = (now: number): void => {
       const dt = Math.min((now - last) / 1000, 1 / 30);
@@ -133,10 +167,13 @@ export function ProximityRail(): React.ReactElement | null {
           s.x = target;
           s.v = 0;
         } else {
-          const a = (-SPRING.stiffness * (s.x - target) - SPRING.damping * s.v) / SPRING.mass;
+          const a =
+            (-SPRING.stiffness * (s.x - target) - SPRING.damping * s.v) /
+            SPRING.mass;
           s.v += a * dt;
           s.x += s.v * dt;
-          if (Math.abs(s.x - target) > 0.05 || Math.abs(s.v) > 0.05) moving = true;
+          if (Math.abs(s.x - target) > 0.05 || Math.abs(s.v) > 0.05)
+            moving = true;
           else s.x = target;
         }
         physics.current.set(it.id, s);
@@ -159,7 +196,7 @@ export function ProximityRail(): React.ReactElement | null {
       kick();
     };
     const move = (e: PointerEvent): void => {
-      if (e.pointerType === 'touch') return;
+      if (e.pointerType === "touch") return;
       const list = listRef.current;
       const box = list?.getBoundingClientRect();
       // Hidden below the wide breakpoint: no box, nothing to reach.
@@ -184,25 +221,41 @@ export function ProximityRail(): React.ReactElement | null {
       }
       const hit = best;
       if (!hit) hide();
-      else setNear((p) => (p?.on && p.id === hit.it.id ? p : { id: hit.it.id, y: hit.y - box.top, label: labelOf(hit.it), on: true }));
+      else
+        setNear((p) =>
+          p?.on && p.id === hit.it.id
+            ? p
+            : {
+                id: hit.it.id,
+                y: hit.y - box.top,
+                label: labelOf(hit.it),
+                on: true,
+              },
+        );
       kick();
     };
-    window.addEventListener('pointermove', move, { passive: true });
-    document.documentElement.addEventListener('mouseleave', leave);
-    window.addEventListener('blur', leave);
+    window.addEventListener("pointermove", move, { passive: true });
+    document.documentElement.addEventListener("mouseleave", leave);
+    window.addEventListener("blur", leave);
     return () => {
-      window.removeEventListener('pointermove', move);
-      document.documentElement.removeEventListener('mouseleave', leave);
-      window.removeEventListener('blur', leave);
+      window.removeEventListener("pointermove", move);
+      document.documentElement.removeEventListener("mouseleave", leave);
+      window.removeEventListener("blur", leave);
     };
   }, [items, kick, labelOf, hide]);
 
   function go(id: string): void {
     const el = document.getElementById(id);
     if (!el) return;
-    const bar = document.querySelector('.doc-bar')?.getBoundingClientRect().height ?? 64;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - bar - 16, behavior: reduced ? 'auto' : 'smooth' });
+    const bar =
+      document.querySelector(".doc-bar")?.getBoundingClientRect().height ?? 64;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    window.scrollTo({
+      top: el.getBoundingClientRect().top + window.scrollY - bar - 16,
+      behavior: reduced ? "auto" : "smooth",
+    });
     setActiveId(id);
   }
 
@@ -210,7 +263,7 @@ export function ProximityRail(): React.ReactElement | null {
   const nearItem = near ? items.find((i) => i.id === near.id) : null;
 
   return (
-    <nav aria-label={t('nav')} className="proxrail">
+    <nav aria-label={t("nav")} className="proxrail">
       <div ref={listRef} className="proxrail-list">
         {items.map((it, idx) => (
           <button
@@ -223,13 +276,18 @@ export function ProximityRail(): React.ReactElement | null {
             className="proxrail-row"
             data-kind={it.kind}
             data-critical={it.critical || undefined}
-            aria-current={activeId === it.id ? 'location' : undefined}
+            aria-current={activeId === it.id ? "location" : undefined}
             aria-label={it.label}
             onClick={() => go(it.id)}
             onFocus={(e) => {
               const r = e.currentTarget.getBoundingClientRect();
               const top = listRef.current?.getBoundingClientRect().top ?? 0;
-              setNear({ id: it.id, y: r.top + r.height / 2 - top, label: labelOf(it), on: true });
+              setNear({
+                id: it.id,
+                y: r.top + r.height / 2 - top,
+                label: labelOf(it),
+                on: true,
+              });
             }}
             onBlur={hide}
           >
@@ -248,7 +306,7 @@ export function ProximityRail(): React.ReactElement | null {
           aria-hidden="true"
           className="proxrail-label"
           data-critical={nearItem?.critical || undefined}
-          data-on={near?.on ? '' : undefined}
+          data-on={near?.on ? "" : undefined}
           style={{ top: near?.y ?? 0 }}
         >
           {near?.label}

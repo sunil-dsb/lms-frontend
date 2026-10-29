@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { LuCheck, LuChevronDown } from 'react-icons/lu';
-import { cn } from '@/lib/utils';
-import { Popover } from '@/components/ui/popover';
-import { Label } from '@/components/ui/label';
+import * as React from "react";
+import { LuCheck, LuChevronDown } from "react-icons/lu";
+import { cn } from "@/lib/utils";
+import { Popover } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
 
 export interface MultiSelectDropdownOption {
   value: string;
@@ -29,7 +29,7 @@ export function MultiSelectDropdown({
   value,
   onChange,
   options,
-  placeholder = 'Select...',
+  placeholder = "Select...",
   disabled = false,
   blockedReason,
 }: MultiSelectDropdownProps): React.ReactElement {
@@ -59,8 +59,15 @@ export function MultiSelectDropdown({
   const triggerWidth = triggerRef.current?.getBoundingClientRect().width;
 
   return (
-    <div className="grid min-w-0 w-full gap-2" data-slot="multi-select-dropdown">
-      <Label id={`${id}-label`} htmlFor={id} className="text-sm font-semibold text-[var(--color-ink)]">
+    <div
+      className="grid min-w-0 w-full gap-2"
+      data-slot="multi-select-dropdown"
+    >
+      <Label
+        id={`${id}-label`}
+        htmlFor={id}
+        className="text-sm font-semibold text-[var(--color-ink)]"
+      >
         {label}
       </Label>
 
@@ -71,13 +78,16 @@ export function MultiSelectDropdown({
         type="button"
         disabled={isDisabled}
         onClick={() => setOpen((prev) => !prev)}
-        title={selectedLabels.length > 0 ? selectedLabels.join(', ') : undefined}
+        title={
+          selectedLabels.length > 0 ? selectedLabels.join(", ") : undefined
+        }
         className={cn(
-          'flex min-h-10 w-full min-w-0 max-w-full items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--color-line-3)] bg-[var(--color-field)] px-4 py-2 text-sm text-[var(--color-ink)] transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:border-[var(--color-brand)]',
-          open && 'border-[var(--color-brand)] ring-1 ring-[var(--color-brand)]',
-          isDisabled && 'cursor-not-allowed opacity-60 bg-[var(--color-panel)]',
-          'hover:border-[var(--color-line-2)]',
+          "flex min-h-10 w-full min-w-0 max-w-full items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--color-line-3)] bg-[var(--color-field)] px-4 py-2 text-sm text-[var(--color-ink)] transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:border-[var(--color-brand)]",
+          open &&
+            "border-[var(--color-brand)] ring-1 ring-[var(--color-brand)]",
+          isDisabled && "cursor-not-allowed opacity-60 bg-[var(--color-panel)]",
+          "hover:border-[var(--color-line-2)]",
         )}
       >
         <div className="flex min-w-0 flex-1 items-center overflow-hidden">
@@ -87,7 +97,7 @@ export function MultiSelectDropdown({
             </span>
           ) : (
             <span className="block truncate font-medium text-[var(--color-ink)]">
-              {selectedLabels.join(', ')}
+              {selectedLabels.join(", ")}
             </span>
           )}
         </div>
@@ -100,8 +110,8 @@ export function MultiSelectDropdown({
           )}
           <LuChevronDown
             className={cn(
-              'size-4 text-[var(--color-ink-3)] transition-transform duration-200',
-              open && 'rotate-180',
+              "size-4 text-[var(--color-ink-3)] transition-transform duration-200",
+              open && "rotate-180",
             )}
             aria-hidden="true"
           />
@@ -132,20 +142,25 @@ export function MultiSelectDropdown({
                   <div className="flex items-center min-w-0">
                     <span
                       className={cn(
-                        'mr-3 flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
+                        "mr-3 flex size-4 shrink-0 items-center justify-center rounded border transition-colors",
                         isSelected
-                          ? 'border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-white'
-                          : 'border-[var(--color-line-2)] bg-[var(--color-surface)]',
+                          ? "border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-white"
+                          : "border-[var(--color-line-2)] bg-[var(--color-surface)]",
                       )}
                     >
-                      {isSelected && <LuCheck className="size-3 stroke-[3]" aria-hidden="true" />}
+                      {isSelected && (
+                        <LuCheck
+                          className="size-3 stroke-[3]"
+                          aria-hidden="true"
+                        />
+                      )}
                     </span>
                     <span
                       className={cn(
-                        'truncate',
+                        "truncate",
                         isSelected
-                          ? 'font-medium text-[var(--color-ink)]'
-                          : 'text-[var(--color-ink-2)]',
+                          ? "font-medium text-[var(--color-ink)]"
+                          : "text-[var(--color-ink-2)]",
                       )}
                     >
                       {opt.label}

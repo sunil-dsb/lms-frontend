@@ -2,94 +2,94 @@
    STEP NOTES: tinted wash, no border, colour carried by icon and label
    ============================================================ */
 .note-block {
-   display: grid;
-   grid-template-columns: 20px 1fr;
-   gap: var(--s-3);
-   padding: var(--s-4);
-   border-radius: var(--r-md);
-   border: 0;
-   background: var(--surface);
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  border: 0;
+  background: var(--surface);
 }
 
 .note-block .ico {
-   display: grid;
-   place-items: start center;
-   padding-top: 1px;
+  display: grid;
+  place-items: start center;
+  padding-top: 1px;
 }
 
 .note-block .ico .i {
-   font-size: 18px;
+  font-size: 18px;
 }
 
 .note-block .label {
-   font-weight: 600;
-   font-size: var(--t-sm);
-   display: block;
-   margin-bottom: 2px;
+  font-weight: 600;
+  font-size: var(--t-sm);
+  display: block;
+  margin-bottom: 2px;
 }
 
 .note-block p {
-   font-size: var(--t-base);
+  font-size: var(--t-base);
 }
 
 .n-warn {
-   background: var(--warn-tint);
+  background: var(--warn-tint);
 }
 
 .n-warn .ico {
-   color: var(--warn);
+  color: var(--warn);
 }
 
 .n-warn .label {
-   color: var(--warn-ink);
+  color: var(--warn-ink);
 }
 
 .n-tip {
-   background: var(--ok-tint);
+  background: var(--ok-tint);
 }
 
 .n-tip .ico {
-   color: var(--ok);
+  color: var(--ok);
 }
 
 .n-tip .label {
-   color: var(--ok);
+  color: var(--ok);
 }
 
 .n-alt {
-   background: var(--panel);
+  background: var(--panel);
 }
 
 .n-alt .ico {
-   color: var(--ink-2);
+  color: var(--ink-2);
 }
 
 .n-alt .label {
-   color: var(--ink-2);
+  color: var(--ink-2);
 }
 
 .n-equip {
-   background: var(--panel);
+  background: var(--panel);
 }
 
 .n-equip .ico {
-   color: var(--ink);
+  color: var(--ink);
 }
 
 .n-equip .label {
-   color: var(--ink);
+  color: var(--ink);
 }
 
 .n-allergen {
-   background: var(--bad-tint);
+  background: var(--bad-tint);
 }
 
 .n-allergen .ico {
-   color: var(--bad);
+  color: var(--bad);
 }
 
 .n-allergen .label {
-   color: var(--bad);
+  color: var(--bad);
 }
 
 /* ============================================================
@@ -100,41 +100,41 @@
    says "step 8". As divs with a CSS counter, the numbers existed only in the
    stylesheet and were announced to nobody. */
 .steps {
-   display: grid;
-   gap: var(--s-1);
-   counter-reset: step;
-   list-style: none;
-   margin: 0;
-   padding: 0;
+  display: grid;
+  gap: var(--s-1);
+  counter-reset: step;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 /* Line length is measured on the prose, not on the container that also holds
    full-bleed media. Capping the list meant a step photograph rendered at 247px
    beside a 616px video figure on the same page. */
-.step-body>p,
-.step-body>label {
-   max-width: 62ch;
+.step-body > p,
+.step-body > label {
+  max-width: 62ch;
 }
 
 /* Each step is padded so it can carry a background, and pulled back by the same
    amount so the text stays in the content column. */
 .step {
-   display: grid;
-   grid-template-columns: 30px 1fr;
-   gap: var(--s-4);
-   padding: var(--s-3);
-   margin: 0 calc(var(--s-3) * -1);
-   border-radius: var(--r-lg);
-   transition: background var(--dur) var(--ease);
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: var(--s-4);
+  padding: var(--s-3);
+  margin: 0 calc(var(--s-3) * -1);
+  border-radius: var(--r-lg);
+  transition: background var(--dur) var(--ease);
 }
 
 /* A step with a right-side photo thumbnail gets a third column for the thumb.
    The body fills the middle column, the thumb sits at the right edge — same
    rhythm demo3 uses for the cook-mode reader. */
 .step.has-media {
-   grid-template-columns: 30px minmax(0, 1fr) auto;
-   column-gap: var(--s-3);
-   align-items: start;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  column-gap: var(--s-3);
+  align-items: start;
 }
 
 /* Where you are, without a tap. A cook looks at the pan and looks back, and this is
@@ -147,43 +147,43 @@
    the same thing said twice, and it read as a border on the step rather than as a
    mark on the page. */
 .step.is-now {
-   background: var(--wash);
+  background: var(--wash);
 }
 
 /* Filled, not a ring: a filled disc reads at a glance and a ring does not. It cannot
    be taken for the control point's red disc, because that one always sits beside a
    CRITICAL STEP badge and this one never does. White on brand-600 is 4.9:1. */
 .step.is-now .step-num {
-   background: var(--brand-600);
-   border-color: var(--brand-600);
-   color: var(--on-fill);
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+  color: var(--on-fill);
 }
 
 /* Pure white, and lifted rather than outlined: white on a wash this faint is a
    1.08:1 edge and would vanish. Elevation or a border, never both. */
 .step.is-now .step-time {
-   background: var(--surface);
-   box-shadow: var(--e-1);
+  background: var(--surface);
+  box-shadow: var(--e-1);
 }
 
 .step-num {
-   counter-increment: step;
-   width: 30px;
-   height: 30px;
-   margin-top: 1px;
-   border-radius: var(--r-pill);
-   background: var(--surface);
-   border: 2px solid var(--line-2);
-   color: var(--ink);
-   display: grid;
-   place-items: center;
-   font-size: var(--t-sm);
-   font-weight: 700;
-   font-variant-numeric: tabular-nums;
+  counter-increment: step;
+  width: 30px;
+  height: 30px;
+  margin-top: 1px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 2px solid var(--line-2);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .step-num::before {
-   content: counter(step);
+  content: counter(step);
 }
 
 /* A prerequisite list is a checklist, not a sequence. Ticks, not numbers, so
@@ -194,7 +194,7 @@
    to be done before anyone had done it. The whole row is the target, not the circle,
    which puts it well past the 48px employee minimum. */
 .steps.prep {
-   margin-bottom: var(--s-5);
+  margin-bottom: var(--s-5);
 }
 
 /* One target, not two. The tick was 30px, its label about 28px, and the 16px
@@ -202,13 +202,13 @@
    the dead stripe, tapped again, and toggled the item on and then off. The label
    now spans the whole row and the tick sits on top of it. */
 .steps.prep .step {
-   align-items: stretch;
-   position: relative;
+  align-items: stretch;
+  position: relative;
 }
 
 .steps.prep .tick {
-   align-self: start;
-   z-index: 1;
+  align-self: start;
+  z-index: 1;
 }
 
 /* The label covers the text, not the photograph. Wrapping the whole step made the
@@ -216,177 +216,182 @@
    Scoped inside .step-body: a bare `.steps.prep label` outranks `.step` and would
    replace the step's own grid with a block, stacking the tick above its text. */
 .steps.prep .step-body label {
-   display: block;
-   cursor: pointer;
-   font-size: var(--t-md);
-   min-height: var(--tap-employee);
+  display: block;
+  cursor: pointer;
+  font-size: var(--t-md);
+  min-height: var(--tap-employee);
 }
 
 .steps.prep .step-body label::before {
-   content: "";
-   position: absolute;
-   inset: 0;
+  content: "";
+  position: absolute;
+  inset: 0;
 }
 
 /* A note that follows the instruction inside a step needs air above it. This was
    four inline style attributes on four elements. */
 .step-body .note-block,
-.step-body .shot+.note-block {
-   margin-top: var(--s-3);
+.step-body .shot + .note-block {
+  margin-top: var(--s-3);
 }
 
 .qr-note {
-   font-size: var(--t-sm);
-   color: var(--ink-2);
-   margin-bottom: var(--s-3);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+  margin-bottom: var(--s-3);
 }
 
 .tick {
-   appearance: none;
-   -webkit-appearance: none;
-   margin: 1px 0 0;
-   width: 30px;
-   height: 30px;
-   position: relative;
-   border: 2px solid var(--line-3);
-   border-radius: var(--r-pill);
-   background: var(--surface);
-   cursor: pointer;
-   transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 1px 0 0;
+  width: 30px;
+  height: 30px;
+  position: relative;
+  border: 2px solid var(--line-3);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
 }
 
 .tick:hover {
-   border-color: var(--ink-3);
+  border-color: var(--ink-3);
 }
 
 /* The check is drawn centred inside its own viewBox rather than positioned by hand:
    a CSS checkmark is an L-shaped border rotated 45deg, and its ink sits low and right
    of the box it rotates about, so it never lands in the middle of the circle. */
 .tick:checked {
-   border-color: var(--ok);
-   background: var(--ok-fill) center / 17px 17px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8l3 3 5-5'/%3E%3C/svg%3E");
+  border-color: var(--ok);
+  background: var(--ok-fill) center / 17px 17px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8l3 3 5-5'/%3E%3C/svg%3E");
 }
 
 /* Done work steps back without disappearing: a cook scanning for what is left
    should find it without reading the whole list again. */
-.tick:checked~.step-body label {
-   color: var(--ink-3);
+.tick:checked ~ .step-body label {
+  color: var(--ink-3);
 }
 
 .step-body {
-   padding-top: var(--s-1);
+  padding-top: var(--s-1);
 }
 
 .step-body p {
-   font-size: var(--t-md);
+  font-size: var(--t-md);
 }
 
 .step-media {
-   margin-top: var(--s-3);
-   border-radius: var(--r-md);
-   background: var(--panel);
-   aspect-ratio: 4/3;
-   display: grid;
-   place-items: center;
-   color: var(--ink-2);
-   font-size: var(--t-sm);
+  margin-top: var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--panel);
+  aspect-ratio: 4/3;
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
 }
 
 .step-time {
-   display: inline-flex;
-   align-items: center;
-   gap: var(--s-1);
-   margin-top: var(--s-1);
-   height: 24px;
-   min-height: 24px;
-   font-size: var(--t-xs);
-   font-weight: 600;
-   color: var(--ink-2);
-   background: var(--wash);
-   border: 1px solid var(--line);
-   border-radius: var(--r-pill);
-   padding: 0 var(--s-2);
-   cursor: pointer;
-   line-height: 1;
-   font-variant-numeric: tabular-nums;
-   text-decoration: none;
-   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-top: var(--s-1);
+  height: 24px;
+  min-height: 24px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--ink-2);
+  background: var(--wash);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 0 var(--s-2);
+  cursor: pointer;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .step-time .i {
-   color: var(--brand-600);
-   display: inline-flex;
+  color: var(--brand-600);
+  display: inline-flex;
 }
 
 /* Hover only on devices that have one. On a phone a :hover style sticks after the tap. */
 @media (hover: hover) {
-   .step-time:hover {
-      background: var(--panel-2);
-      color: var(--ink);
-      border-color: var(--line-hover);
-   }
+  .step-time:hover {
+    background: var(--panel-2);
+    color: var(--ink);
+    border-color: var(--line-hover);
+  }
 }
 
 .step-time:active {
-   transform: scale(0.97);
+  transform: scale(0.97);
 }
 
 .provenance {
-   display: flex;
-   flex-wrap: wrap;
-   align-items: center;
-   gap: var(--s-3);
-   padding: 0;
-   border-radius: var(--r-md);
-   font-size: var(--t-sm);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0;
+  border-radius: var(--r-md);
+  font-size: var(--t-sm);
 }
 
 .provenance .lead .i {
-   color: var(--ok);
+  color: var(--ok);
 }
 
 .provenance .lead {
-   display: flex;
-   align-items: center;
-   gap: var(--s-2);
-   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 600;
 }
 
 .provenance .who {
-   color: var(--ink-2);
+  color: var(--ink-2);
 }
 
 .provenance .flag {
-   margin-left: auto;
-   min-height: 48px;
-   background: var(--surface);
-   border: 0;
-   border-radius: var(--r-pill);
-   padding: 0 var(--s-4);
-   font-size: var(--t-sm);
-   font-weight: 600;
-   cursor: pointer;
-   color: var(--ink-2);
-   display: inline-flex;
-   gap: var(--s-2);
-   align-items: center;
+  margin-left: auto;
+  min-height: 48px;
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--r-pill);
+  padding: 0 var(--s-4);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--ink-2);
+  display: inline-flex;
+  gap: var(--s-2);
+  align-items: center;
 }
 
 .provenance .flag:hover {
-   color: var(--bad);
+  color: var(--bad);
 }
 
 .provenance.stale {
-   background: var(--warn-tint);
-   padding: var(--s-3) var(--s-4);
+  background: var(--warn-tint);
+  padding: var(--s-3) var(--s-4);
 }
 
 .provenance.stale .lead .i {
-   color: var(--warn-ink);
+  color: var(--warn-ink);
 }
 
 .provenance.stale .lead,
 .provenance.stale .who {
-   color: var(--warn-ink);
+  color: var(--warn-ink);
 }
-

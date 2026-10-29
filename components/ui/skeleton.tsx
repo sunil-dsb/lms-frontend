@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
 /**
  * Base pulsing placeholder. Every page skeleton builds on this one block
@@ -15,7 +15,10 @@ export function Skeleton({
     <div
       aria-hidden="true"
       style={style}
-      className={cn('animate-pulse rounded-[var(--radius-sm)] bg-[var(--color-panel-2)]', className)}
+      className={cn(
+        "animate-pulse rounded-[var(--radius-sm)] bg-[var(--color-panel-2)]",
+        className,
+      )}
       {...props}
     />
   );

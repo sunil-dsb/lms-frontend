@@ -1,7 +1,7 @@
-import * as React from 'react';
-import type { IconType } from 'react-icons';
-import { cn } from '@/lib/utils';
-import { Icon } from '@/components/ui/icon';
+import * as React from "react";
+import type { IconType } from "react-icons";
+import { cn } from "@/lib/utils";
+import { Icon } from "@/components/ui/icon";
 
 /**
  * Status pill — DESIGN.md §3.3.
@@ -10,15 +10,16 @@ import { Icon } from '@/components/ui/icon';
  *   - Six tones: ok, warn, bad, neutral (panel), info (ink-2), active (ok).
  *   - Tight, single line — a column widens, never truncates.
  */
-export type StatusTone = 'ok' | 'warn' | 'bad' | 'neutral' | 'info' | 'progress';
+export type StatusTone =
+  "ok" | "warn" | "bad" | "neutral" | "info" | "progress";
 
 const toneClasses: Record<StatusTone, string> = {
-  ok: 'bg-[var(--color-ok-tint)] text-[var(--color-ok)]',
-  warn: 'bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)]',
-  bad: 'bg-[var(--color-bad-tint)] text-[var(--color-bad)]',
-  neutral: 'bg-[var(--color-panel-2)] text-[var(--color-ink-2)]',
-  info: 'bg-[var(--color-panel)] text-[var(--color-ink-2)]',
-  progress: 'bg-[var(--color-panel)] text-[var(--color-ink)]',
+  ok: "bg-[var(--color-ok-tint)] text-[var(--color-ok)]",
+  warn: "bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)]",
+  bad: "bg-[var(--color-bad-tint)] text-[var(--color-bad)]",
+  neutral: "bg-[var(--color-panel-2)] text-[var(--color-ink-2)]",
+  info: "bg-[var(--color-panel)] text-[var(--color-ink-2)]",
+  progress: "bg-[var(--color-panel)] text-[var(--color-ink)]",
 };
 
 export interface StatusPillProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -30,7 +31,7 @@ export interface StatusPillProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 export function StatusPill({
-  tone = 'neutral',
+  tone = "neutral",
   withDot,
   icon,
   className,
@@ -41,16 +42,16 @@ export function StatusPill({
     <span
       data-slot="status-pill"
       className={cn(
-        'inline-flex items-center whitespace-nowrap rounded-md text-xs font-medium',
+        "inline-flex items-center whitespace-nowrap rounded-md text-xs font-medium",
         toneClasses[tone],
         className,
       )}
       style={{
-        paddingTop: '2px',
-        paddingBottom: '2px',
-        paddingLeft: '6px',
-        paddingRight: '6px',
-        gap: '3px',
+        paddingTop: "2px",
+        paddingBottom: "2px",
+        paddingLeft: "6px",
+        paddingRight: "6px",
+        gap: "3px",
       }}
       {...rest}
     >
@@ -58,7 +59,7 @@ export function StatusPill({
         <span
           aria-hidden="true"
           className="inline-block rounded-full bg-current"
-          style={{ width: '6px', height: '6px', flexShrink: 0 }}
+          style={{ width: "6px", height: "6px", flexShrink: 0 }}
         />
       ) : null}
       {icon ? <Icon icon={icon} /> : null}
@@ -76,7 +77,7 @@ export function StatusPill({
  * reads as a tally rather than as something to press.
  */
 export function CountBadge({
-  tone = 'warn',
+  tone = "warn",
   className,
   children,
 }: {
@@ -88,8 +89,8 @@ export function CountBadge({
     <span
       data-slot="count-badge"
       className={cn(
-        'inline-flex size-6 shrink-0 items-center justify-center rounded-full',
-        'text-sm font-semibold tabular-nums',
+        "inline-flex size-6 shrink-0 items-center justify-center rounded-full",
+        "text-sm font-semibold tabular-nums",
         toneClasses[tone],
         className,
       )}

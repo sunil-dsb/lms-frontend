@@ -1,5 +1,5 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 /**
  * The design tokens, read out of app/lms.css itself.
@@ -33,34 +33,40 @@ export type TokenGroup = { title: string; intro?: string; tokens: Token[] };
 
 function block(css: string, selector: RegExp): string {
   const m = selector.exec(css);
-  if (!m) return '';
+  if (!m) return "";
   let depth = 0;
-  const start = css.indexOf('{', m.index);
+  const start = css.indexOf("{", m.index);
   for (let i = start; i < css.length; i++) {
-    if (css[i] === '{') depth++;
-    else if (css[i] === '}' && --depth === 0) return css.slice(start + 1, i);
+    if (css[i] === "{") depth++;
+    else if (css[i] === "}" && --depth === 0) return css.slice(start + 1, i);
   }
-  return '';
+  return "";
 }
 
 const clean = (comment: string): string =>
   comment
-    .replace(/^\/\*|\*\/$/g, '')
-    .split('\n')
+    .replace(/^\/\*|\*\/$/g, "")
+    .split("\n")
     .map((l) => l.trim())
-    .join(' ')
-    .replace(/\s+/g, ' ')
+    .join(" ")
+    .replace(/\s+/g, " ")
     .trim();
 
 /** Every `--name: value;` in a block, with no comments. */
 function declarations(body: string): Map<string, string> {
   const out = new Map<string, string>();
-  const bare = body.replace(/\/\*[\s\S]*?\*\//g, '');
-  for (const m of bare.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) out.set(m[1]!, m[2]!.trim());
+  const bare = body.replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const m of bare.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g))
+    out.set(m[1]!, m[2]!.trim());
   return out;
 }
 
-function resolve(value: string, table: Map<string, string>, fallback: Map<string, string>, depth = 0): string {
+function resolve(
+  value: string,
+  table: Map<string, string>,
+  fallback: Map<string, string>,
+  depth = 0,
+): string {
   if (depth > 8) return value;
   return value.replace(/var\((--[\w-]+)\)/g, (_, name: string) => {
     const next = table.get(name) ?? fallback.get(name);
@@ -69,38 +75,46 @@ function resolve(value: string, table: Map<string, string>, fallback: Map<string
 }
 
 export async function readDesignTokens(): Promise<TokenGroup[]> {
-  const css = await readFile(path.join(process.cwd(), 'app', 'lms.css'), 'utf8');
+  const css = await readFile(
+    path.join(process.cwd(), "app", "lms.css"),
+    "utf8",
+  );
   const lightBody = block(css, /:root,\s*\.theme-light\s*\{/);
   const darkBody = block(css, /:root\[data-theme="dark"\]\s*\{/);
   const light = declarations(lightBody);
   const dark = declarations(darkBody);
 
   const groups: TokenGroup[] = [];
-  let group: TokenGroup = { title: 'Tokens', tokens: [] };
+  let group: TokenGroup = { title: "Tokens", tokens: [] };
   let last: Token | null = null;
   let pendingNote: string[] = [];
   let blankBefore = true;
 
   // Walk the light block in order: comments, declarations and blank lines.
-  const parts = lightBody.match(/\/\*[\s\S]*?\*\/|--[\w-]+\s*:[^;]+;|\n\s*\n/g) ?? [];
+  const parts =
+    lightBody.match(/\/\*[\s\S]*?\*\/|--[\w-]+\s*:[^;]+;|\n\s*\n/g) ?? [];
   for (const part of parts) {
     if (/^\n\s*\n$/.test(part)) {
       blankBefore = true;
       continue;
     }
-    if (part.startsWith('/*')) {
+    if (part.startsWith("/*")) {
       const text = clean(part);
       if (blankBefore) {
         // A new group: its first sentence is the title, the rest its intro.
         if (group.tokens.length) groups.push(group);
         const [first, ...rest] = text.split(/(?<=\.)\s+/);
-        group = { title: first!.replace(/[.:]$/, ''), intro: rest.join(' ') || undefined, tokens: [] };
+        group = {
+          title: first!.replace(/[.:]$/, ""),
+          intro: rest.join(" ") || undefined,
+          tokens: [],
+        };
         last = null;
       } else if (!group.tokens.length && !last) {
         // A second paragraph of the group's heading.
-        group.intro = [group.intro, text].filter(Boolean).join(' ');
+        group.intro = [group.intro, text].filter(Boolean).join(" ");
       } else if (last && /^[a-z0-9]/.test(text)) {
-        last.note = [last.note, text].filter(Boolean).join(' ');
+        last.note = [last.note, text].filter(Boolean).join(" ");
       } else {
         pendingNote.push(text);
       }
@@ -120,7 +134,7 @@ export async function readDesignTokens(): Promise<TokenGroup[]> {
       lightResolved: resolve(value, light, light),
       darkResolved: resolve(darkValue ?? value, dark, light),
       alias,
-      note: pendingNote.length ? pendingNote.join(' ') : undefined,
+      note: pendingNote.length ? pendingNote.join(" ") : undefined,
     };
     pendingNote = [];
     group.tokens.push(token);

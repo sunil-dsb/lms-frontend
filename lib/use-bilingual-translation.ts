@@ -1,12 +1,9 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 
-import {
-  TranslationError,
-  type TranslationLang,
-} from '@/lib/gemini-translate';
-import { translateViaServer } from '@/lib/translate-api';
+import { TranslationError, type TranslationLang } from "@/lib/gemini-translate";
+import { translateViaServer } from "@/lib/translate-api";
 
 export type { TranslationLang };
 
@@ -20,12 +17,12 @@ const ERROR_HINT_MS = 6000;
 /** Save gives pending translations this long before it proceeds anyway. */
 const DEFAULT_WAIT_TIMEOUT_MS = 8000;
 
-export type TranslationStatus = 'idle' | 'waiting' | 'translating' | 'error';
+export type TranslationStatus = "idle" | "waiting" | "translating" | "error";
 
-type FieldOwner = 'user' | 'generated' | 'initial' | 'empty';
+type FieldOwner = "user" | "generated" | "initial" | "empty";
 
 function otherSide(side: TranslationLang): TranslationLang {
-  return side === 'en' ? 'es' : 'en';
+  return side === "en" ? "es" : "en";
 }
 
 let slotSeq = 0;
@@ -68,7 +65,9 @@ export function isTranslating(): boolean {
  * Resolves once every pending translation on the page has settled, or after
  * `timeoutMs` so a hung request can never wedge the form.
  */
-export async function waitForTranslations(timeoutMs = DEFAULT_WAIT_TIMEOUT_MS): Promise<void> {
+export async function waitForTranslations(
+  timeoutMs = DEFAULT_WAIT_TIMEOUT_MS,
+): Promise<void> {
   if (activeSlots.size === 0) return;
 
   await new Promise<void>((resolve) => {
@@ -144,22 +143,25 @@ export function useBilingualTranslation({
   enabled = true,
 }: UseBilingualTranslationParams): BilingualTranslationApi {
   const translateFn = translate ?? translateViaServer;
-  const [status, setStatus] = React.useState<TranslationStatus>('idle');
-  const [activeTarget, setActiveTarget] = React.useState<TranslationLang | null>(null);
+  const [status, setStatus] = React.useState<TranslationStatus>("idle");
+  const [activeTarget, setActiveTarget] =
+    React.useState<TranslationLang | null>(null);
 
   const mountedRef = React.useRef(true);
   /** Bumped on every edit / reset / unmount. An in-flight response whose
    *  sequence no longer matches is stale and is discarded (edge #2). */
   const seqRef = React.useRef(0);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const errorTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const slotRef = React.useRef<number | null>(null);
   /** Cancels the in-flight fetch when a newer edit arrives or on unmount. */
   const abortRef = React.useRef<AbortController | null>(null);
 
   const ownerRef = React.useRef<Record<TranslationLang, FieldOwner>>({
-    en: englishValue.trim() ? 'initial' : 'empty',
-    es: spanishValue.trim() ? 'initial' : 'empty',
+    en: englishValue.trim() ? "initial" : "empty",
+    es: spanishValue.trim() ? "initial" : "empty",
   });
   const valuesRef = React.useRef({ en: englishValue, es: spanishValue });
   const settersRef = React.useRef({ onEnglishChange, onSpanishChange });
@@ -184,10 +186,13 @@ export function useBilingualTranslation({
     }
   }, []);
 
-  const write = React.useCallback((side: TranslationLang, text: string): void => {
-    if (side === 'en') settersRef.current.onEnglishChange(text);
-    else settersRef.current.onSpanishChange(text);
-  }, []);
+  const write = React.useCallback(
+    (side: TranslationLang, text: string): void => {
+      if (side === "en") settersRef.current.onEnglishChange(text);
+      else settersRef.current.onSpanishChange(text);
+    },
+    [],
+  );
 
   /** Read-through, so narrowing from an earlier check can't carry across an `await`. */
   const ownerOf = React.useCallback(
@@ -197,24 +202,21 @@ export function useBilingualTranslation({
 
   /** Drop the indicator without disturbing a newer request's state. */
   const settle = React.useCallback((): void => {
-    setStatus('idle');
+    setStatus("idle");
     setActiveTarget(null);
   }, []);
 
-  const flashError = React.useCallback(
-    (target: TranslationLang): void => {
-      setStatus('error');
-      setActiveTarget(target);
-      if (errorTimerRef.current !== null) clearTimeout(errorTimerRef.current);
-      errorTimerRef.current = setTimeout(() => {
-        errorTimerRef.current = null;
-        if (!mountedRef.current) return;
-        setStatus('idle');
-        setActiveTarget(null);
-      }, ERROR_HINT_MS);
-    },
-    [],
-  );
+  const flashError = React.useCallback((target: TranslationLang): void => {
+    setStatus("error");
+    setActiveTarget(target);
+    if (errorTimerRef.current !== null) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => {
+      errorTimerRef.current = null;
+      if (!mountedRef.current) return;
+      setStatus("idle");
+      setActiveTarget(null);
+    }, ERROR_HINT_MS);
+  }, []);
 
   const run = React.useCallback(
     async (
@@ -227,12 +229,12 @@ export function useBilingualTranslation({
       try {
         // Re-check right before firing: a newer edit may have arrived.
         if (mySeq !== seqRef.current) return;
-        if (ownerOf(target) === 'user') {
+        if (ownerOf(target) === "user") {
           settle();
           return;
         }
 
-        setStatus('translating');
+        setStatus("translating");
         setActiveTarget(target);
 
         const controller = new AbortController();
@@ -242,21 +244,24 @@ export function useBilingualTranslation({
         );
         if (abortRef.current === controller) abortRef.current = null;
         if (!translated || !translated.trim()) {
-          throw new TranslationError('empty-response', 'Translator returned no text');
+          throw new TranslationError(
+            "empty-response",
+            "Translator returned no text",
+          );
         }
 
         if (!mountedRef.current) return;
         if (mySeq !== seqRef.current) return; // stale response (edge #2)
         // Bailed out with this still the newest request, so nobody else is
         // going to reset the indicator for us.
-        if (ownerOf(target) === 'user') return settle(); // hand-edited (edge #3)
+        if (ownerOf(target) === "user") return settle(); // hand-edited (edge #3)
         if (valuesRef.current[source] !== text) return settle(); // source moved on
 
         write(target, maxLength ? translated.slice(0, maxLength) : translated);
-        ownerRef.current[target] = 'generated';
+        ownerRef.current[target] = "generated";
         settle();
       } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
         if (!mountedRef.current) return;
         if (mySeq !== seqRef.current) return;
         // Keep both sides exactly as they are — no clearing, no retry (edge #9).
@@ -274,7 +279,7 @@ export function useBilingualTranslation({
       const target = otherSide(side);
       const trimmed = text.trim();
 
-      ownerRef.current[side] = trimmed === '' ? 'empty' : 'user';
+      ownerRef.current[side] = trimmed === "" ? "empty" : "user";
 
       // Cancels the debounce timer, bumps the sequence (so any in-flight
       // response is discarded) and releases the outstanding slot.
@@ -286,7 +291,7 @@ export function useBilingualTranslation({
       }
 
       // Never overwrite a side the user typed into by hand (edge #3).
-      if (ownerRef.current[target] === 'user') {
+      if (ownerRef.current[target] === "user") {
         settle();
         return;
       }
@@ -294,7 +299,7 @@ export function useBilingualTranslation({
       // Empty / whitespace-only source: no request (edge #4, #5). Clearing a
       // generated target is handled after commit, in an effect below, so we
       // never write twice inside one event handler.
-      if (trimmed === '') {
+      if (trimmed === "") {
         settle();
         return;
       }
@@ -309,7 +314,7 @@ export function useBilingualTranslation({
       slotRef.current = slot;
       const mySeq = ++seqRef.current;
 
-      setStatus('waiting');
+      setStatus("waiting");
       setActiveTarget(target);
 
       // Every new keystroke replaced the previous timer (edge #7).
@@ -324,8 +329,8 @@ export function useBilingualTranslation({
   const reset = React.useCallback((): void => {
     invalidate();
     ownerRef.current = {
-      en: valuesRef.current.en.trim() ? 'initial' : 'empty',
-      es: valuesRef.current.es.trim() ? 'initial' : 'empty',
+      en: valuesRef.current.en.trim() ? "initial" : "empty",
+      es: valuesRef.current.es.trim() ? "initial" : "empty",
     };
     settle();
   }, [invalidate, settle]);
@@ -350,13 +355,19 @@ export function useBilingualTranslation({
    * cascade and no loop.
    */
   React.useEffect(() => {
-    if (valuesRef.current.en.trim() === '' && ownerRef.current.es === 'generated') {
-      write('es', '');
-      ownerRef.current.es = 'empty';
+    if (
+      valuesRef.current.en.trim() === "" &&
+      ownerRef.current.es === "generated"
+    ) {
+      write("es", "");
+      ownerRef.current.es = "empty";
     }
-    if (valuesRef.current.es.trim() === '' && ownerRef.current.en === 'generated') {
-      write('en', '');
-      ownerRef.current.en = 'empty';
+    if (
+      valuesRef.current.es.trim() === "" &&
+      ownerRef.current.en === "generated"
+    ) {
+      write("en", "");
+      ownerRef.current.en = "empty";
     }
   });
 

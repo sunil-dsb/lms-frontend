@@ -1,9 +1,12 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { backendSlug } from '@/services/categories/api';
-import { useBackendCategories, useAllSubcategories } from '@/services/categories/hooks';
-import { ProcedureEditor } from '@/components/admin/procedure-editor';
+import * as React from "react";
+import { backendSlug } from "@/services/categories/api";
+import {
+  useBackendCategories,
+  useAllSubcategories,
+} from "@/services/categories/hooks";
+import { ProcedureEditor } from "@/components/admin/procedure-editor";
 
 /**
  * Client data layer for the new-procedure wizard.
@@ -15,7 +18,11 @@ import { ProcedureEditor } from '@/components/admin/procedure-editor';
  * The editor mounts with an empty picker and fills in when the queries
  * resolve.
  */
-export function NewProcedureLoader({ locale }: { locale: string }): React.ReactElement {
+export function NewProcedureLoader({
+  locale,
+}: {
+  locale: string;
+}): React.ReactElement {
   const categoriesQuery = useBackendCategories();
   const backendCategories = categoriesQuery.data ?? [];
   const subcategoriesQuery = useAllSubcategories();

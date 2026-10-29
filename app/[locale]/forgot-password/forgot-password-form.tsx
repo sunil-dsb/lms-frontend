@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useState, useTransition, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import * as React from "react";
+import { useState, useTransition, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   LuArrowLeft,
   LuCircleCheck,
@@ -13,10 +13,10 @@ import {
   LuKeyRound,
   LuClock,
   LuExternalLink,
-} from 'react-icons/lu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "react-icons/lu";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -24,17 +24,19 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { requestPasswordReset } from '@/lib/api';
+} from "@/components/ui/card";
+import { requestPasswordReset } from "@/lib/api";
 
 interface ForgotPasswordFormProps {
   locale: string;
 }
 
-export function ForgotPasswordForm({ locale }: ForgotPasswordFormProps): React.ReactElement {
+export function ForgotPasswordForm({
+  locale,
+}: ForgotPasswordFormProps): React.ReactElement {
   const router = useRouter();
-  const t = useTranslations('forgotPassword');
-  const [email, setEmail] = useState('');
+  const t = useTranslations("forgotPassword");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -43,17 +45,19 @@ export function ForgotPasswordForm({ locale }: ForgotPasswordFormProps): React.R
     setError(null);
 
     const trimmed = email.trim();
-    if (!trimmed || !trimmed.includes('@')) {
-      setError(t('errorInvalid'));
+    if (!trimmed || !trimmed.includes("@")) {
+      setError(t("errorInvalid"));
       return;
     }
 
     startTransition(async () => {
       try {
         await requestPasswordReset({ email: trimmed });
-        router.push(`/${locale}/reset-password?email=${encodeURIComponent(trimmed)}`);
+        router.push(
+          `/${locale}/reset-password?email=${encodeURIComponent(trimmed)}`,
+        );
       } catch (err: any) {
-        setError(err?.message || t('errorGeneric'));
+        setError(err?.message || t("errorGeneric"));
       }
     });
   }
@@ -62,29 +66,32 @@ export function ForgotPasswordForm({ locale }: ForgotPasswordFormProps): React.R
     <Card
       className="flex-1 w-full border-t border-x sm:border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xl flex flex-col justify-between rounded-b-none sm:rounded-b-[32px] overflow-hidden pb-1 mb-0 sm:mb-20 backdrop-blur-sm"
       style={{
-        borderTopLeftRadius: '32px',
-        borderTopRightRadius: '32px',
+        borderTopLeftRadius: "32px",
+        borderTopRightRadius: "32px",
       }}
     >
       {/* Decorative top accent line */}
       <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
 
       <CardHeader className="text-center pt-6 pb-1 px-4 sm:px-7 sm:mt-12 shrink-0">
-
         <div className="p-3 mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-tint)]/60 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-brand-700)] border border-[var(--color-brand)]/20">
           <LuKeyRound className="text-xs" />
-          <span>{t('badge')}</span>
+          <span>{t("badge")}</span>
         </div>
 
         <CardTitle className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-ink)] leading-tight">
-          {t('title')}
+          {t("title")}
         </CardTitle>
         <CardDescription className="text-xs text-[var(--color-ink-2)] mt-1 max-w-xs mx-auto leading-relaxed">
-          {t('subtitle')}
+          {t("subtitle")}
         </CardDescription>
       </CardHeader>
 
-      <form onSubmit={handleSendReset} noValidate className="flex-1 flex flex-col justify-between">
+      <form
+        onSubmit={handleSendReset}
+        noValidate
+        className="flex-1 flex flex-col justify-between"
+      >
         <CardContent className="grid gap-3.5 px-6 sm:px-7 pb-2">
           {error ? (
             <div
@@ -97,15 +104,18 @@ export function ForgotPasswordForm({ locale }: ForgotPasswordFormProps): React.R
           ) : null}
 
           <div className="grid mt-6 gap-1.5">
-            <Label htmlFor="forgot-email" className="text-xs sm:text-sm font-semibold text-[var(--color-ink)]">
-              {t('emailLabel')}
+            <Label
+              htmlFor="forgot-email"
+              className="text-xs sm:text-sm font-semibold text-[var(--color-ink)]"
+            >
+              {t("emailLabel")}
             </Label>
             <Input
               id="forgot-email"
               name="email"
               type="email"
               autoComplete="email"
-              placeholder={t('emailPlaceholder')}
+              placeholder={t("emailPlaceholder")}
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -124,10 +134,10 @@ export function ForgotPasswordForm({ locale }: ForgotPasswordFormProps): React.R
             {isPending ? (
               <>
                 <LuLoader className="animate-spin text-base" />
-                <span>{t('submitting')}</span>
+                <span>{t("submitting")}</span>
               </>
             ) : (
-              <span>{t('submit')}</span>
+              <span>{t("submit")}</span>
             )}
           </Button>
 
@@ -136,11 +146,12 @@ export function ForgotPasswordForm({ locale }: ForgotPasswordFormProps): React.R
             className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors py-1 cursor-pointer"
           >
             <LuArrowLeft className="text-sm" />
-            <span>{t('backToLogin')}</span>
+            <span>{t("backToLogin")}</span>
           </Link>
 
           <p className="text-[11px] text-center text-[var(--color-ink-3)]/80 pt-1">
-            &copy; {new Date().getFullYear()} Alimentaria Mexicana &bull; Culinary Learning &amp; SOPs
+            &copy; {new Date().getFullYear()} Alimentaria Mexicana &bull;
+            Culinary Learning &amp; SOPs
           </p>
         </CardFooter>
       </form>

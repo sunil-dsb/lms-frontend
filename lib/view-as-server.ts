@@ -8,10 +8,10 @@
  * server-only API into the browser bundle and the build errors out.
  */
 
-import { headers } from 'next/headers';
-import { parseAsParam, type ViewAs } from '@/lib/view-as';
+import { headers } from "next/headers";
+import { parseAsParam, type ViewAs } from "@/lib/view-as";
 
-const HEADER = 'x-lms-view-as';
+const HEADER = "x-lms-view-as";
 
 /** Read the override from request headers — works from layouts and pages. */
 export async function readViewAs(): Promise<ViewAs | null> {

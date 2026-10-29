@@ -1,4 +1,4 @@
-import type { Role, CreateRoleInput, UpdateRoleInput } from '@/lib/types';
+import type { Role, CreateRoleInput, UpdateRoleInput } from "@/lib/types";
 
 export type { Role, CreateRoleInput, UpdateRoleInput };
 

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { LuX } from 'react-icons/lu';
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { LuX } from "react-icons/lu";
 
 /**
  * Drawer — DESIGN.md §3.6 overlay.
@@ -30,23 +30,23 @@ interface DrawerProps {
   /** Footer slot — typically [Cancel] + [Primary]. */
   footer?: React.ReactNode;
   /** sm = 24rem, md = 32rem (default), lg = 40rem. */
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
-const sizeClasses: Record<NonNullable<DrawerProps['size']>, string> = {
-  sm: 'w-drawer-sm max-w-sheet',
-  md: 'w-drawer-md max-w-sheet',
-  lg: 'w-drawer-lg max-w-sheet',
+const sizeClasses: Record<NonNullable<DrawerProps["size"]>, string> = {
+  sm: "w-drawer-sm max-w-sheet",
+  md: "w-drawer-md max-w-sheet",
+  lg: "w-drawer-lg max-w-sheet",
 };
 
 export function Drawer({
   open,
   onClose,
   title,
-  closeLabel = 'Close',
+  closeLabel = "Close",
   children,
   footer,
-  size = 'md',
+  size = "md",
 }: DrawerProps): React.ReactElement | null {
   const panelRef = React.useRef<HTMLDivElement>(null);
   const triggerRef = React.useRef<HTMLElement | null>(null);
@@ -63,11 +63,11 @@ export function Drawer({
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    document.addEventListener('keydown', onKey);
+    document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
 
     // Move focus into the panel.
     const t = window.setTimeout(() => {
@@ -75,11 +75,11 @@ export function Drawer({
     }, 0);
 
     return () => {
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
       window.clearTimeout(t);
       const trigger = triggerRef.current;
-      if (trigger && typeof trigger.focus === 'function') {
+      if (trigger && typeof trigger.focus === "function") {
         trigger.focus();
       }
     };
@@ -104,11 +104,11 @@ export function Drawer({
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          'absolute inset-y-0 right-0 flex flex-col outline-none',
-          'border-l border-[var(--color-line)] bg-[var(--color-surface)]',
-          'shadow-[var(--e-3)]',
+          "absolute inset-y-0 right-0 flex flex-col outline-none",
+          "border-l border-[var(--color-line)] bg-[var(--color-surface)]",
+          "shadow-[var(--e-3)]",
           sizeClasses[size],
-          'animate-[drawer-in_var(--dur)_var(--ease)]',
+          "animate-[drawer-in_var(--dur)_var(--ease)]",
         )}
       >
         <div className="flex items-center justify-between border-b border-[var(--color-line)] px-5 py-4">
@@ -120,10 +120,10 @@ export function Drawer({
             aria-label={closeLabel}
             onClick={onClose}
             className={cn(
-              'inline-flex h-tap-admin w-tap-admin items-center justify-center rounded-[var(--radius-md)]',
-              'text-[var(--color-ink)] transition-colors duration-[var(--dur)] ease-[var(--ease)]',
-              'hover:bg-[var(--color-panel)] active:translate-y-px',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2',
+              "inline-flex h-tap-admin w-tap-admin items-center justify-center rounded-[var(--radius-md)]",
+              "text-[var(--color-ink)] transition-colors duration-[var(--dur)] ease-[var(--ease)]",
+              "hover:bg-[var(--color-panel)] active:translate-y-px",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2",
             )}
           >
             <LuX aria-hidden="true" className="text-lg" />

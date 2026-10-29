@@ -1,13 +1,16 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useLocations } from '@/services/locations/hooks';
-import { useBackendCategories, useAllSubcategories } from '@/services/categories/hooks';
-import { useStations } from '@/services/stations/hooks';
-import { useProcedures } from '@/services/library/hooks';
-import { LibraryProcedureExplorer } from '@/components/admin/library-procedure-explorer';
-import { backendSlug } from '@/services/categories/api';
+import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useLocations } from "@/services/locations/hooks";
+import {
+  useBackendCategories,
+  useAllSubcategories,
+} from "@/services/categories/hooks";
+import { useStations } from "@/services/stations/hooks";
+import { useProcedures } from "@/services/library/hooks";
+import { LibraryProcedureExplorer } from "@/components/admin/library-procedure-explorer";
+import { backendSlug } from "@/services/categories/api";
 
 /**
  * Client data layer for the admin library explorer.
@@ -21,7 +24,11 @@ import { backendSlug } from '@/services/categories/api';
 const EMPTY_PROCEDURES: any[] = [];
 const EMPTY_STATIONS: any[] = [];
 
-export function LibraryExplorerClient({ locale }: { locale: string }): React.ReactElement {
+export function LibraryExplorerClient({
+  locale,
+}: {
+  locale: string;
+}): React.ReactElement {
   const locationsQuery = useLocations();
   const locationId = locationsQuery.data?.locations?.[0]?.id;
   const backendCategoriesQuery = useBackendCategories();

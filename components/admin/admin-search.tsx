@@ -1,17 +1,15 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { LuSearch, LuFileText, LuUser } from 'react-icons/lu';
-import { listEmployees, listProcedures } from '@/lib/api';
-import { fold } from '@/lib/utils';
-import type { AdminEmployee, Procedure } from '@/lib/types';
-
-
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { LuSearch, LuFileText, LuUser } from "react-icons/lu";
+import { listEmployees, listProcedures } from "@/lib/api";
+import { fold } from "@/lib/utils";
+import type { AdminEmployee, Procedure } from "@/lib/types";
 
 type Hit =
-  | { kind: 'procedure'; id: string; title: string; meta: string; href: string }
-  | { kind: 'person'; id: string; title: string; meta: string; href: string };
+  | { kind: "procedure"; id: string; title: string; meta: string; href: string }
+  | { kind: "person"; id: string; title: string; meta: string; href: string };
 
 const MAX_PER_GROUP = 4;
 
@@ -31,10 +29,13 @@ export function AdminSearch({
   };
 }): React.ReactElement {
   const router = useRouter();
-  const [query, setQuery] = React.useState('');
+  const [query, setQuery] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const [active, setActive] = React.useState(0);
-  const [data, setData] = React.useState<{ procedures: Procedure[]; people: AdminEmployee[] } | null>(null);
+  const [data, setData] = React.useState<{
+    procedures: Procedure[];
+    people: AdminEmployee[];
+  } | null>(null);
   const loading = React.useRef(false);
   const boxRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -43,7 +44,9 @@ export function AdminSearch({
     if (data || loading.current) return;
     loading.current = true;
     void Promise.all([listProcedures({}), listEmployees({})])
-      .then(([p, e]) => setData({ procedures: p.procedures, people: e.employees }))
+      .then(([p, e]) =>
+        setData({ procedures: p.procedures, people: e.employees }),
+      )
       // A failed fetch leaves the field a plain field: it still submits, and the
       // pages it submits to do their own filtering.
       .catch(() => setData({ procedures: [], people: [] }));
@@ -53,22 +56,29 @@ export function AdminSearch({
   // manager is typing into something else.
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
       const el = e.target as HTMLElement | null;
-      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+      if (
+        el &&
+        (el.tagName === "INPUT" ||
+          el.tagName === "TEXTAREA" ||
+          el.isContentEditable)
+      )
+        return;
       e.preventDefault();
       inputRef.current?.focus();
     };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, []);
 
   React.useEffect(() => {
     const onDown = (e: MouseEvent): void => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+      if (boxRef.current && !boxRef.current.contains(e.target as Node))
+        setOpen(false);
     };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
   const hits = React.useMemo<{ procedures: Hit[]; people: Hit[] }>(() => {
@@ -76,32 +86,31 @@ export function AdminSearch({
     if (needle.length < 2 || !data) return { procedures: [], people: [] };
 
     const titleOf = (p: Procedure): string =>
-      locale === 'es' ? p.titleEs || p.titleEn : p.titleEn || p.titleEs;
+      locale === "es" ? p.titleEs || p.titleEn : p.titleEn || p.titleEs;
 
     const procedures: Hit[] = data.procedures
       .filter((p) => fold(`${titleOf(p)} ${p.slug}`).includes(needle))
       .slice(0, MAX_PER_GROUP)
       .map((p) => ({
-        kind: 'procedure',
+        kind: "procedure",
         id: p.id,
         title: titleOf(p),
-        meta:
-          p.category
-            ? locale === 'es'
-              ? p.category.nameEs || p.category.nameEn
-              : p.category.nameEn || p.category.nameEs
-            : '',
+        meta: p.category
+          ? locale === "es"
+            ? p.category.nameEs || p.category.nameEn
+            : p.category.nameEn || p.category.nameEs
+          : "",
         href: `/${locale}/procedures/${p.slug}`,
       }));
 
     const people: Hit[] = data.people
-      .filter((e) => fold(`${e.name} ${e.employeeCode ?? ''}`).includes(needle))
+      .filter((e) => fold(`${e.name} ${e.employeeCode ?? ""}`).includes(needle))
       .slice(0, MAX_PER_GROUP)
       .map((e) => ({
-        kind: 'person',
+        kind: "person",
         id: e.id,
         title: e.name,
-        meta: e.employeeCode ?? '',
+        meta: e.employeeCode ?? "",
         // There is no page for one person yet, so a hit opens the list filtered
         // to them rather than pretending to open a profile.
         href: `/${locale}/admin/employees?q=${encodeURIComponent(e.name)}`,
@@ -115,17 +124,17 @@ export function AdminSearch({
 
   const go = (hit: Hit): void => {
     setOpen(false);
-    setQuery('');
+    setQuery("");
     router.push(hit.href);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       // First Escape clears what was typed, second one leaves the field. Clearing
       // is the thing wanted nine times out of ten, and the OS clear button is
       // hidden, so this is how the field is emptied.
       if (query) {
-        setQuery('');
+        setQuery("");
         setActive(0);
         return;
       }
@@ -133,13 +142,17 @@ export function AdminSearch({
       inputRef.current?.blur();
       return;
     }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       if (flat.length === 0) return;
       e.preventDefault();
-      setActive((i) => (e.key === 'ArrowDown' ? (i + 1) % flat.length : (i - 1 + flat.length) % flat.length));
+      setActive((i) =>
+        e.key === "ArrowDown"
+          ? (i + 1) % flat.length
+          : (i - 1 + flat.length) % flat.length,
+      );
       return;
     }
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       const hit = flat[active] ?? flat[0];
       if (hit) {
         e.preventDefault();
@@ -163,7 +176,7 @@ export function AdminSearch({
         onClick={() => go(hit)}
         className="hit"
       >
-        {hit.kind === 'procedure' ? (
+        {hit.kind === "procedure" ? (
           <LuFileText aria-hidden="true" className="i" />
         ) : (
           <LuUser aria-hidden="true" className="i" />
@@ -178,35 +191,41 @@ export function AdminSearch({
 
   return (
     <div ref={boxRef} className="find" role="search">
-        <LuSearch aria-hidden="true" className="i" />
-        <label className="sr-only" htmlFor="admin-find">
-          {labels.label}
-        </label>
-        <input
-          id="admin-find"
-          ref={inputRef}
-          type="search"
-          role="combobox"
-          aria-expanded={showPanel}
-          aria-controls="admin-find-results"
-          aria-activedescendant={showPanel && flat.length > 0 ? optionId(active) : undefined}
-          aria-autocomplete="list"
-          autoComplete="off"
-          value={query}
-          placeholder={labels.placeholder}
-          onFocus={() => {
-            load();
-            setOpen(true);
-          }}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setActive(0);
-            setOpen(true);
-          }}
-          onKeyDown={onKeyDown}
-        />
-        {/* The shortcut, while there is room and nothing typed. */}
-        {query ? null : <kbd className="hidden xl:block" title={labels.hint}>/</kbd>}
+      <LuSearch aria-hidden="true" className="i" />
+      <label className="sr-only" htmlFor="admin-find">
+        {labels.label}
+      </label>
+      <input
+        id="admin-find"
+        ref={inputRef}
+        type="search"
+        role="combobox"
+        aria-expanded={showPanel}
+        aria-controls="admin-find-results"
+        aria-activedescendant={
+          showPanel && flat.length > 0 ? optionId(active) : undefined
+        }
+        aria-autocomplete="list"
+        autoComplete="off"
+        value={query}
+        placeholder={labels.placeholder}
+        onFocus={() => {
+          load();
+          setOpen(true);
+        }}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setActive(0);
+          setOpen(true);
+        }}
+        onKeyDown={onKeyDown}
+      />
+      {/* The shortcut, while there is room and nothing typed. */}
+      {query ? null : (
+        <kbd className="hidden xl:block" title={labels.hint}>
+          /
+        </kbd>
+      )}
 
       {showPanel ? (
         <div className="find-results">
@@ -217,13 +236,19 @@ export function AdminSearch({
             {hits.procedures.length > 0 ? (
               <li role="group" aria-label={labels.procedures}>
                 <p className="grp">{labels.procedures}</p>
-                <ul role="presentation">{hits.procedures.map((h, i) => row(h, i))}</ul>
+                <ul role="presentation">
+                  {hits.procedures.map((h, i) => row(h, i))}
+                </ul>
               </li>
             ) : null}
             {hits.people.length > 0 ? (
               <li role="group" aria-label={labels.people}>
                 <p className="grp">{labels.people}</p>
-                <ul role="presentation">{hits.people.map((h, i) => row(h, hits.procedures.length + i))}</ul>
+                <ul role="presentation">
+                  {hits.people.map((h, i) =>
+                    row(h, hits.procedures.length + i),
+                  )}
+                </ul>
               </li>
             ) : null}
           </ul>

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 import {
   RiArrowLeftSLine,
   RiArrowRightSLine,
@@ -14,12 +14,24 @@ import {
   RiPriceTag3Line,
   RiTempColdLine,
   RiTimerLine,
-} from 'react-icons/ri';
-import type { ProcedureMethodStep } from '@/lib/types';
-import { TimerChip, fmtLeft, fmtLength, useNow, type Timer } from './procedure-timers';
-import { formatDiscardAt } from './discard-time';
-import { cn } from '@/lib/utils';
-import { amountFor, BigMedia, CritLimitBlock, mediaFor, type StepMedia } from './cook-mode-media';
+} from "react-icons/ri";
+import type { ProcedureMethodStep } from "@/lib/types";
+import {
+  TimerChip,
+  fmtLeft,
+  fmtLength,
+  useNow,
+  type Timer,
+} from "./procedure-timers";
+import { formatDiscardAt } from "./discard-time";
+import { cn } from "@/lib/utils";
+import {
+  amountFor,
+  BigMedia,
+  CritLimitBlock,
+  mediaFor,
+  type StepMedia,
+} from "./cook-mode-media";
 
 /**
  * Cook mode: the method one step at a time, full screen, for the cook with a
@@ -109,7 +121,7 @@ export type CookModeLabels = {
   /** "Back to step X" pill on the list view. */
   listBack: (where: string) => string;
   /** Where line shown in the modal header. */
-  where: (view: 'intro' | { n: number; total: number } | 'summary') => string;
+  where: (view: "intro" | { n: number; total: number } | "summary") => string;
   /** Accessible label on the modal <dialog>. */
   modalAria: string;
   /** Close button aria-label. */
@@ -158,7 +170,7 @@ export function CookMode({
   onTimer: (n: number) => void;
   onClearTimer: (n: number) => void;
   recipe: CookModeRecipe;
-  locale: 'en' | 'es';
+  locale: "en" | "es";
   labels: CookModeLabels;
   onClose: (at: number) => void;
 }): React.ReactElement {
@@ -169,7 +181,7 @@ export function CookMode({
   const ref = React.useRef<HTMLDialogElement>(null);
   const mainRef = React.useRef<HTMLDivElement>(null);
   const [i, setI] = React.useState(start);
-  const [dir, setDir] = React.useState<'next' | 'back' | null>(null);
+  const [dir, setDir] = React.useState<"next" | "back" | null>(null);
   const [list, setList] = React.useState(false);
   const [canWake, setCanWake] = React.useState(false);
   const swipe = React.useRef<{ x: number; y: number } | null>(null);
@@ -190,21 +202,21 @@ export function CookMode({
     if (!open) return;
     const html = document.documentElement;
     const prev = html.style.overflow;
-    html.style.overflow = 'hidden';
+    html.style.overflow = "hidden";
     return () => {
       html.style.overflow = prev;
     };
   }, [open]);
 
   React.useEffect(() => {
-    if (!open || !('wakeLock' in navigator)) return;
+    if (!open || !("wakeLock" in navigator)) return;
     setCanWake(true);
     let lock: WakeLockSentinel | null = null;
     let alive = true;
     const hold = async (): Promise<void> => {
-      if (document.visibilityState !== 'visible') return;
+      if (document.visibilityState !== "visible") return;
       try {
-        const got = await navigator.wakeLock.request('screen');
+        const got = await navigator.wakeLock.request("screen");
         if (alive) lock = got;
         else void got.release();
       } catch {
@@ -213,10 +225,10 @@ export function CookMode({
     };
     void hold();
     const onVisible = (): void => void hold();
-    document.addEventListener('visibilitychange', onVisible);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       alive = false;
-      document.removeEventListener('visibilitychange', onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
       void lock?.release().catch(() => undefined);
     };
   }, [open]);
@@ -224,7 +236,7 @@ export function CookMode({
   /* --- moving ------------------------------------------------------------- */
   function go(to: number): void {
     const next = Math.max(0, Math.min(LAST, to));
-    setDir(next > i ? 'next' : next < i ? 'back' : null);
+    setDir(next > i ? "next" : next < i ? "back" : null);
     setI(next);
     setList(false);
   }
@@ -240,9 +252,9 @@ export function CookMode({
     const m = mediaFor(STEPS[i] ?? ({} as ProcedureMethodStep), locale);
     if (!m) return;
     const srcs =
-      m.kind === 'compare'
+      m.kind === "compare"
         ? [m.ok.src, m.no.src]
-        : m.kind === 'gallery'
+        : m.kind === "gallery"
           ? m.photos.map((p) => p.src)
           : [m.src];
     srcs.forEach((s) => {
@@ -254,7 +266,9 @@ export function CookMode({
 
   React.useEffect(() => {
     if (!list) return;
-    mainRef.current?.querySelector('[aria-current="step"]')?.scrollIntoView({ block: 'center' });
+    mainRef.current
+      ?.querySelector('[aria-current="step"]')
+      ?.scrollIntoView({ block: "center" });
   }, [list]);
 
   // Reset to the caller's `start` whenever the modal opens. Without this, a
@@ -271,14 +285,14 @@ export function CookMode({
 
   function onKey(e: React.KeyboardEvent): void {
     if (e.defaultPrevented || list) return;
-    if (e.key === 'ArrowRight') go(i + 1);
-    else if (e.key === 'ArrowLeft') go(i - 1);
+    if (e.key === "ArrowRight") go(i + 1);
+    else if (e.key === "ArrowLeft") go(i - 1);
     else return;
     e.preventDefault();
   }
 
   function onPointerDown(e: React.PointerEvent): void {
-    if (e.pointerType === 'mouse' || list) return;
+    if (e.pointerType === "mouse" || list) return;
     swipe.current = { x: e.clientX, y: e.clientY };
   }
   function onPointerUp(e: React.PointerEvent): void {
@@ -292,7 +306,12 @@ export function CookMode({
   }
 
   function onScalerKey(e: React.KeyboardEvent): void {
-    const d = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[e.key];
+    const d = (
+      { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<
+        string,
+        number
+      >
+    )[e.key];
     if (!d) return;
     e.preventDefault();
     const at = factorIdx;
@@ -317,11 +336,17 @@ export function CookMode({
             <li key={k}>
               <button
                 type="button"
-                aria-current={k + 1 === i ? 'step' : undefined}
+                aria-current={k + 1 === i ? "step" : undefined}
                 onClick={() => go(k + 1)}
               >
                 <span
-                  className={['step-num', done[k] ? 'is-on' : '', s.critical ? 'is-crit' : ''].filter(Boolean).join(' ')}
+                  className={[
+                    "step-num",
+                    done[k] ? "is-on" : "",
+                    s.critical ? "is-crit" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 >
                   {done[k] ? null : k + 1}
                 </span>
@@ -332,9 +357,15 @@ export function CookMode({
         </ol>
       </nav>
     );
-    const where = step ? labels.listBack(`step ${step.body[locale].slice(0, 24)}`) : labels.listBack('the start');
+    const where = step
+      ? labels.listBack(`step ${step.body[locale].slice(0, 24)}`)
+      : labels.listBack("the start");
     foot = (
-      <button type="button" className="btn btn-secondary btn-lg cook-go" onClick={() => setList(false)}>
+      <button
+        type="button"
+        className="btn btn-secondary btn-lg cook-go"
+        onClick={() => setList(false)}
+      >
         {where}
       </button>
     );
@@ -348,7 +379,12 @@ export function CookMode({
           <span className="lbl" id="cook-batch-lbl">
             Batch
           </span>
-          <div className="choices" role="radiogroup" aria-labelledby="cook-batch-lbl" onKeyDown={onScalerKey}>
+          <div
+            className="choices"
+            role="radiogroup"
+            aria-labelledby="cook-batch-lbl"
+            onKeyDown={onScalerKey}
+          >
             {recipe.factors.map((f, k) => (
               <button
                 key={f}
@@ -393,25 +429,32 @@ export function CookMode({
         className="btn btn-primary btn-lg cook-go"
         onClick={() => go(doneCount > 0 && firstOpen > 0 ? firstOpen : 1)}
       >
-        {doneCount > 0 && firstOpen > 0 ? labels.startBtn(firstOpen) : labels.startBtn(0)}
+        {doneCount > 0 && firstOpen > 0
+          ? labels.startBtn(firstOpen)
+          : labels.startBtn(0)}
         <RiArrowRightSLine className="i" aria-hidden="true" />
       </button>
     );
   } else if (step) {
     const isDone = done[i - 1] ?? false;
     const upNext = STEPS[i];
-    const discard = step.discardAt ? formatDiscardAt(step.discardAtHours ?? 48) : null;
+    const discard = step.discardAt
+      ? formatDiscardAt(step.discardAtHours ?? 48)
+      : null;
     const running = step.timer ? timers.find((t) => t.step === i) : undefined;
     const media = mediaFor(step, locale);
-    const phase = step.phase?.[locale] || step.phase?.en || step.phase?.es || '';
+    const phase =
+      step.phase?.[locale] || step.phase?.en || step.phase?.es || "";
     screen = (
-      <div className={media ? 'cook-step has-media' : 'cook-step'}>
+      <div className={media ? "cook-step has-media" : "cook-step"}>
         {media ? <BigMedia media={media} /> : null}
         <div className="cook-pad">
           <div className="cook-stepline">
             <button
               type="button"
-              className={['step-num', 'step-check', isDone ? 'is-on' : ''].filter(Boolean).join(' ')}
+              className={["step-num", "step-check", isDone ? "is-on" : ""]
+                .filter(Boolean)
+                .join(" ")}
               aria-pressed={isDone}
               aria-label={labels.stepTick({ n: i, done: isDone })}
               onClick={() => tick(i, !isDone)}
@@ -436,19 +479,36 @@ export function CookMode({
             )}
           </div>
           <p className="cook-line">{step.body[locale]}</p>
-          {step.note ? <p className="cook-note">{step.note.body[locale]}</p> : null}
+          {step.note ? (
+            <p className="cook-note">{step.note.body[locale]}</p>
+          ) : null}
 
           {step.timer ? (
             running ? (
-              <div className="cook-timer" data-over={running.endsAt <= now || undefined}>
+              <div
+                className="cook-timer"
+                data-over={running.endsAt <= now || undefined}
+              >
                 <RiTimerLine className="i" aria-hidden="true" />
-                <b>{running.endsAt <= now ? 'Time is up' : fmtLeft(running.endsAt - now)}</b>
-                <button type="button" className="btn btn-ghost" onClick={() => onClearTimer(i)}>
-                  {running.endsAt <= now ? 'Clear' : 'Stop'}
+                <b>
+                  {running.endsAt <= now
+                    ? "Time is up"
+                    : fmtLeft(running.endsAt - now)}
+                </b>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => onClearTimer(i)}
+                >
+                  {running.endsAt <= now ? "Clear" : "Stop"}
                 </button>
               </div>
             ) : (
-              <button type="button" className="btn btn-secondary btn-lg cook-timer-start" onClick={() => onTimer(i)}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-lg cook-timer-start"
+                onClick={() => onTimer(i)}
+              >
                 <RiTimerLine className="i" aria-hidden="true" />
                 Start the {fmtLength(step.timer.seconds)} timer
               </button>
@@ -461,7 +521,6 @@ export function CookMode({
               <span>{labels.discard(discard)}</span>
             </p>
           ) : null}
-
 
           {upNext ? (
             <div className="cook-next">
@@ -481,12 +540,21 @@ export function CookMode({
           : labels.done.normal;
     foot = (
       <>
-        <button type="button" className="btn btn-secondary btn-lg btn-icon cook-back" aria-label="Previous step" onClick={() => go(i - 1)}>
+        <button
+          type="button"
+          className="btn btn-secondary btn-lg btn-icon cook-back"
+          aria-label="Previous step"
+          onClick={() => go(i - 1)}
+        >
           <RiArrowLeftSLine className="i" aria-hidden="true" />
         </button>
         <button
           type="button"
-          className={step.critical && !isDone ? 'btn btn-primary btn-lg cook-go is-crit' : 'btn btn-primary btn-lg cook-go'}
+          className={
+            step.critical && !isDone
+              ? "btn btn-primary btn-lg cook-go is-crit"
+              : "btn btn-primary btn-lg cook-go"
+          }
           onClick={() => {
             if (!isDone) tick(i, true);
             go(i + 1);
@@ -494,7 +562,9 @@ export function CookMode({
         >
           {isDone ? null : <RiCheckLine className="i" aria-hidden="true" />}
           {label}
-          {isDone ? <RiArrowRightSLine className="i" aria-hidden="true" /> : null}
+          {isDone ? (
+            <RiArrowRightSLine className="i" aria-hidden="true" />
+          ) : null}
         </button>
       </>
     );
@@ -512,7 +582,12 @@ export function CookMode({
             <p className="cook-sub">{labels.summaryLeftSub}</p>
             <div className="cook-left">
               {left.map((n) => (
-                <button key={n} type="button" className="btn btn-secondary" onClick={() => go(n)}>
+                <button
+                  key={n}
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => go(n)}
+                >
                   Step {n}
                 </button>
               ))}
@@ -524,20 +599,23 @@ export function CookMode({
       </div>
     );
     foot = (
-      <button type="button" className="btn btn-primary btn-lg cook-go" onClick={close}>
+      <button
+        type="button"
+        className="btn btn-primary btn-lg cook-go"
+        onClick={close}
+      >
         {labels.backToRecipe}
       </button>
     );
   }
 
-  const where =
-    list
-      ? labels.listBack('list')
-      : step
-        ? `Step ${i} of ${N}`
-        : i === 0
-          ? 'Before you start'
-          : 'Finished';
+  const where = list
+    ? labels.listBack("list")
+    : step
+      ? `Step ${i} of ${N}`
+      : i === 0
+        ? "Before you start"
+        : "Finished";
 
   return (
     <dialog
@@ -554,7 +632,12 @@ export function CookMode({
       {open ? (
         <>
           <header className="cook-top">
-            <button type="button" className="btn btn-ghost btn-icon btn-lg" aria-label={labels.closeAria} onClick={close}>
+            <button
+              type="button"
+              className="btn btn-ghost btn-icon btn-lg"
+              aria-label={labels.closeAria}
+              onClick={close}
+            >
               <RiCloseLine className="i" aria-hidden="true" />
             </button>
             <div className="cook-where">
@@ -566,12 +649,21 @@ export function CookMode({
                   </span>
                 )}
               </p>
-              <TimerChip timers={timers} now={now} onOpen={(n) => go(n)} onClear={onClearTimer} />
+              <TimerChip
+                timers={timers}
+                now={now}
+                onOpen={(n) => go(n)}
+                onClear={onClearTimer}
+              />
             </div>
             <button
               type="button"
               className="btn btn-ghost btn-icon btn-lg"
-              aria-label={list ? labels.listToggle.label(true) : labels.listToggle.label(false)}
+              aria-label={
+                list
+                  ? labels.listToggle.label(true)
+                  : labels.listToggle.label(false)
+              }
               aria-pressed={list}
               onClick={() => setList((v) => !v)}
             >
@@ -581,8 +673,18 @@ export function CookMode({
               <i style={{ width: `${(Math.min(i, N) / N) * 100}%` }} />
             </span>
           </header>
-          <div ref={mainRef} className="cook-main" onPointerDown={onPointerDown} onPointerUp={onPointerUp} onPointerCancel={() => (swipe.current = null)}>
-            <div key={list ? 'list' : i} className="cook-screen" data-dir={list ? undefined : (dir ?? undefined)}>
+          <div
+            ref={mainRef}
+            className="cook-main"
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={() => (swipe.current = null)}
+          >
+            <div
+              key={list ? "list" : i}
+              className="cook-screen"
+              data-dir={list ? undefined : (dir ?? undefined)}
+            >
               {screen}
             </div>
           </div>

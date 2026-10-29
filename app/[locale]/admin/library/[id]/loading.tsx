@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { AdminProcedureDetailSkeleton } from '@/components/admin/admin-procedure-detail-skeleton';
+import * as React from "react";
+import { AdminProcedureDetailSkeleton } from "@/components/admin/admin-procedure-detail-skeleton";
 
 /**
  * Skeleton for the admin procedure detail route

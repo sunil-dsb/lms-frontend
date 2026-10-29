@@ -1,28 +1,40 @@
-import http from '@/lib/http';
-import { EMPLOYEES_ENDPOINTS } from './endpoints';
+import http from "@/lib/http";
+import { EMPLOYEES_ENDPOINTS } from "./endpoints";
 import type {
   AdminEmployee,
   Employee,
   CreateEmployeeInput,
   InviteResult,
   EmployeeFilterOptions,
-} from './types';
+  EmployeeTrainingRow,
+} from "./types";
 
 function frontendInviteUrl(inviteUrl: string): string {
-  if (!inviteUrl) return '';
+  if (!inviteUrl) return "";
   try {
-    const parsed = new URL(inviteUrl, typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
-    const inviteMatch = parsed.pathname.match(/\/auth\/invites\/([^/]+)\/([^/]+)\/?$/);
+    const parsed = new URL(
+      inviteUrl,
+      typeof window === "undefined"
+        ? "http://localhost"
+        : window.location.origin,
+    );
+    const inviteMatch = parsed.pathname.match(
+      /\/auth\/invites\/([^/]+)\/([^/]+)\/?$/,
+    );
     if (inviteMatch) {
       const [, locale, token] = inviteMatch;
-      const origin = typeof window === 'undefined' ? '' : window.location.origin;
+      const origin =
+        typeof window === "undefined" ? "" : window.location.origin;
       return `${origin}/${locale}/invite/${encodeURIComponent(token)}`;
     }
     // Already a frontend invite URL (e.g. `/en/invite/token?token=…`) on
     // another host (production, tunnel): keep path + query, but point it
     // at the app the admin is actually using so copy → open → activate
     // works in this environment. Server-side has no origin — keep as-is.
-    if (typeof window !== 'undefined' && /^\/[a-z]{2}\/invite(\/|$)/i.test(parsed.pathname)) {
+    if (
+      typeof window !== "undefined" &&
+      /^\/[a-z]{2}\/invite(\/|$)/i.test(parsed.pathname)
+    ) {
       return `${window.location.origin}${parsed.pathname}${parsed.search}`;
     }
   } catch {
@@ -46,11 +58,11 @@ function normalizeEmployee<T extends Employee>(raw: any): T {
         : [];
   const accessLevel =
     raw?.accessLevel ??
-    (raw?.role === 'manager'
-      ? 'manager'
-      : raw?.role === 'super_admin' || raw?.role === 'admin'
-        ? 'manager'
-        : 'employee');
+    (raw?.role === "manager"
+      ? "manager"
+      : raw?.role === "super_admin" || raw?.role === "admin"
+        ? "manager"
+        : "employee");
 
   return {
     ...raw,
@@ -68,10 +80,10 @@ export async function fetchEmployeeById(
   const headers: Record<string, string> = {};
 
   if (cookieHeader) {
-    headers['Cookie'] = cookieHeader;
+    headers["Cookie"] = cookieHeader;
     const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
     if (tokenMatch) {
-      headers['Authorization'] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+      headers["Authorization"] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
     }
   }
 
@@ -87,7 +99,8 @@ export async function fetchEmployeeById(
   // and nested on the employee — surface it explicitly (normalizeEmployee
   // spreads unknown fields, but the UI should not rely on that).
   const rawInvite: string | undefined =
-    data.data?.inviteUrl || (typeof raw?.inviteUrl === 'string' ? raw.inviteUrl : undefined);
+    data.data?.inviteUrl ||
+    (typeof raw?.inviteUrl === "string" ? raw.inviteUrl : undefined);
   const inviteUrl = rawInvite ? frontendInviteUrl(rawInvite) : undefined;
   return { employee: normalizeEmployee<AdminEmployee>(raw), inviteUrl };
 }
@@ -96,14 +109,14 @@ export async function fetchEmployees(
   opts: EmployeeFilterOptions = {},
   cookieHeader?: string,
 ): Promise<{ employees: AdminEmployee[] }> {
-  const status = opts.status ?? 'all';
+  const status = opts.status ?? "all";
   const headers: Record<string, string> = {};
 
   if (cookieHeader) {
-    headers['Cookie'] = cookieHeader;
+    headers["Cookie"] = cookieHeader;
     const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
     if (tokenMatch) {
-      headers['Authorization'] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+      headers["Authorization"] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
     }
   }
 
@@ -113,7 +126,7 @@ export async function fetchEmployees(
   }>(EMPLOYEES_ENDPOINTS.LIST, {
     headers: Object.keys(headers).length ? headers : undefined,
     params: {
-      status: status !== 'all' ? status : undefined,
+      status: status !== "all" ? status : undefined,
       // Backend paginates (default 10) — ask for the whole roster: the
       // dashboard counts and People filters need every row to be correct.
       limit: 200,
@@ -137,16 +150,16 @@ export async function createEmployee(
     name: input.name,
     email: input.email,
     locationId: input.locationId,
-    role: input.accessLevel === 'manager' ? 'manager' : 'employee',
+    role: input.accessLevel === "manager" ? "manager" : "employee",
     jobIds: input.roleIds,
     stationIds: input.stationIds ?? [],
     employeeCode: input.employeeCode || undefined,
-    languagePref: input.languagePref ?? 'en',
+    languagePref: input.languagePref ?? "en",
   });
 
   const invite: InviteResult = {
-    url: frontendInviteUrl(data.data?.inviteUrl || ''),
-    code: '',
+    url: frontendInviteUrl(data.data?.inviteUrl || ""),
+    code: "",
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   };
 
@@ -165,8 +178,8 @@ export async function resendInvite(
 
   return {
     invite: {
-      url: frontendInviteUrl(data.data?.inviteUrl || ''),
-      code: '',
+      url: frontendInviteUrl(data.data?.inviteUrl || ""),
+      code: "",
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     },
   };
@@ -198,6 +211,30 @@ export async function reactivateEmployee(
   return { employee: normalizeEmployee<AdminEmployee>(data.data.employee) };
 }
 
+export async function fetchEmployeeTraining(
+  id: string,
+  cookieHeader?: string,
+): Promise<EmployeeTrainingRow[]> {
+  const headers: Record<string, string> = {};
+
+  if (cookieHeader) {
+    headers["Cookie"] = cookieHeader;
+    const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
+    if (tokenMatch) {
+      headers["Authorization"] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+    }
+  }
+
+  const { data } = await http.get<{
+    success: boolean;
+    data: { assignments: EmployeeTrainingRow[] };
+  }>(EMPLOYEES_ENDPOINTS.TRAINING(id), {
+    headers: Object.keys(headers).length ? headers : undefined,
+  });
+
+  return data.data?.assignments ?? [];
+}
+
 /** Full-body update (backend validates against the create schema minus
  *  employeeCode — every field required). The caller must send the current
  *  `status`/`languagePref` explicitly: the backend defaults an omitted
@@ -206,18 +243,18 @@ export interface UpdateEmployeeRequest {
   name: string;
   email: string;
   locationId: string;
-  role: 'super_admin' | 'manager' | 'employee';
+  role: "super_admin" | "manager" | "employee";
   jobIds: string[];
   stationIds: string[];
-  languagePref: 'en' | 'es';
-  status: 'pending' | 'active' | 'deactivated';
+  languagePref: "en" | "es";
+  status: "pending" | "active" | "deactivated";
 }
 
 export async function updateEmployee(
   employeeId: string,
   input: UpdateEmployeeRequest,
 ): Promise<{ employee: AdminEmployee; inviteUrl?: string }> {
-  const { data } = await http.put<{
+  const { data } = await http.patch<{
     success: boolean;
     data: {
       employee: AdminEmployee;
@@ -234,4 +271,3 @@ export async function updateEmployee(
     inviteUrl: rawInvite ? frontendInviteUrl(rawInvite) : undefined,
   };
 }
-

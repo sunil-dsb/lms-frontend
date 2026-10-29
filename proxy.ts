@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import createIntlMiddleware from 'next-intl/middleware';
-import { routing } from './i18n/routing';
+import { NextRequest, NextResponse } from "next/server";
+import createIntlMiddleware from "next-intl/middleware";
+import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
 export default function proxy(request: NextRequest): NextResponse {
@@ -14,12 +14,12 @@ export default function proxy(request: NextRequest): NextResponse {
     return NextResponse.redirect(normalizedUrl, 308);
   }
 
-  const asParam = request.nextUrl.searchParams.get('as');
-  const viewAs = asParam === 'admin' || asParam === 'employee' ? asParam : null;
+  const asParam = request.nextUrl.searchParams.get("as");
+  const viewAs = asParam === "admin" || asParam === "employee" ? asParam : null;
   let intlRequest: NextRequest = request;
   if (viewAs) {
     const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-lms-view-as', viewAs);
+    requestHeaders.set("x-lms-view-as", viewAs);
     intlRequest = new NextRequest(request.nextUrl, { headers: requestHeaders });
   }
 
@@ -28,15 +28,15 @@ export default function proxy(request: NextRequest): NextResponse {
   // Stamp the cookie on the response so the choice survives navigation
   // through links that don't carry `?as=` (relative links, redirects, etc).
   if (viewAs) {
-    intlResponse.cookies.set('lms_view_as', viewAs, {
-      path: '/',
+    intlResponse.cookies.set("lms_view_as", viewAs, {
+      path: "/",
       maxAge: 60 * 60 * 24,
-      sameSite: 'lax',
+      sameSite: "lax",
     });
   }
   return intlResponse;
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)', '/:locale/invite/:path*'],
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)", "/:locale/invite/:path*"],
 };

@@ -1,4 +1,3 @@
-
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
@@ -13,14 +12,14 @@ export async function POST(request: Request) {
     } catch {
       return NextResponse.json(
         { error: "Invalid JSON request body" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!body || typeof body !== "object") {
       return NextResponse.json(
         { error: "Invalid translation request" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,21 +39,21 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Invalid translation request" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const source =
-      sourceLanguage === "en" ? "English" : "Spanish";
-    const target =
-      targetLanguage === "en" ? "English" : "Spanish";
+    const source = sourceLanguage === "en" ? "English" : "Spanish";
+    const target = targetLanguage === "en" ? "English" : "Spanish";
 
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      console.error("Translation provider is not configured: OPENROUTER_API_KEY is missing");
+      console.error(
+        "Translation provider is not configured: OPENROUTER_API_KEY is missing",
+      );
       return NextResponse.json(
         { error: "Translation service is not configured" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -81,7 +80,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { error: "Translation provider request failed" },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }

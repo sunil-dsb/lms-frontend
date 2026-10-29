@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   LuArchive,
   LuArchiveRestore,
@@ -11,14 +11,22 @@ import {
   LuCircleCheck,
   LuPencil,
   LuTrash2,
-} from 'react-icons/lu';
-import { ApiException, canPublishProcedure, deleteProcedure, fetchQuizById, getQuizById, setProcedureState, updateQuiz } from '@/lib/api';
-import type { Employee, Procedure, ProcedureStatus } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { RowActions, type RowActionItem } from '@/components/ui/row-actions';
-import { ProcedureArticleBody } from '@/components/doc/procedure-article-body';
-import { CookBarAction } from '@/components/doc/cook-bar-action';
-import type { ProcedureBlock } from '@/lib/types';
+} from "react-icons/lu";
+import {
+  ApiException,
+  canPublishProcedure,
+  deleteProcedure,
+  fetchQuizById,
+  getQuizById,
+  setProcedureState,
+  updateQuiz,
+} from "@/lib/api";
+import type { Employee, Procedure, ProcedureStatus } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
+import { ProcedureArticleBody } from "@/components/doc/procedure-article-body";
+import { CookBarAction } from "@/components/doc/cook-bar-action";
+import type { ProcedureBlock } from "@/lib/types";
 
 interface AdminProcedureViewProps {
   locale: string;
@@ -26,14 +34,13 @@ interface AdminProcedureViewProps {
   employee: Employee;
 }
 
-
 export function AdminProcedureView({
   locale,
   procedure: initial,
   employee,
 }: AdminProcedureViewProps): React.ReactElement {
-  const t = useTranslations('admin.library.detail');
-  const tRow = useTranslations('admin');
+  const t = useTranslations("admin.library.detail");
+  const tRow = useTranslations("admin");
   const router = useRouter();
 
   const [proc, setProc] = React.useState<Procedure>(initial);
@@ -58,16 +65,19 @@ export function AdminProcedureView({
   }, [proc?.quizId]);
 
   const transition = React.useCallback(
-    async (change: { status?: ProcedureStatus; isArchived?: boolean }): Promise<void> => {
+    async (change: {
+      status?: ProcedureStatus;
+      isArchived?: boolean;
+    }): Promise<void> => {
       setError(null);
       try {
         const updated = await setProcedureState(proc.id, change, { row: proc });
         setProc(updated);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('lms_procedures_updated'));
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("lms_procedures_updated"));
         }
       } catch (err) {
-        setError(t('errorTransition'));
+        setError(t("errorTransition"));
         if (!(err instanceof ApiException)) throw err;
       }
     },
@@ -78,13 +88,13 @@ export function AdminProcedureView({
     setError(null);
     try {
       await deleteProcedure(proc.id);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('lms_procedures_updated'));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("lms_procedures_updated"));
       }
       router.push(`/${locale}/admin/library`);
       router.refresh();
     } catch (err) {
-      setError(t('errorDelete'));
+      setError(t("errorDelete"));
       if (!(err instanceof ApiException)) throw err;
     }
   }, [proc.id, locale, router, t]);
@@ -97,8 +107,8 @@ export function AdminProcedureView({
     try {
       await updateQuiz(proc.quizId, { attached: true });
       setProc({ ...proc, updatedAt: new Date().toISOString() });
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('lms_procedures_updated'));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("lms_procedures_updated"));
       }
     } finally {
       setIsAttaching(false);
@@ -117,34 +127,36 @@ export function AdminProcedureView({
       //    guard in setProcedureState backs this up for direct callers.
       proc.isArchived
         ? null
-        : proc.status === 'draft'
+        : proc.status === "draft"
           ? {
-              label: t('actionsPublish'),
+              label: t("actionsPublish"),
               icon: LuCircleCheck,
               onSelect: () => {
                 if (!publishable) {
-                  router.push(`/${locale}/admin/library/${proc.slug || proc.id}/edit?step=access&publishBlocked=1`);
+                  router.push(
+                    `/${locale}/admin/library/${proc.slug || proc.id}/edit?step=access&publishBlocked=1`,
+                  );
                   return;
                 }
-                void transition({ status: 'published' });
+                void transition({ status: "published" });
               },
             }
           : null,
       // 2. Archive / Restore
       proc.isArchived
         ? {
-            label: t('actionsRestore'),
+            label: t("actionsRestore"),
             icon: LuArchiveRestore,
             onSelect: () => void transition({ isArchived: false }),
           }
         : {
-            label: t('actionsArchive'),
+            label: t("actionsArchive"),
             icon: LuArchive,
             onSelect: () => void transition({ isArchived: true }),
           },
       // 3. Delete — destructive, gets the inline-confirm panel from RowActions.
       {
-        label: t('actionsDelete'),
+        label: t("actionsDelete"),
         icon: LuTrash2,
         destructive: true,
         onSelect: () => void handleDelete(),
@@ -157,10 +169,16 @@ export function AdminProcedureView({
   // recipe block. We compute it from the loaded `proc` so a freshly-edited
   // procedure re-evaluates on save without unmounting the chrome.
   const cookBlockId = React.useMemo<string | null>(() => {
-    const blocks = (proc?.bodyEn?.blocks?.length ?? 0) > 0 ? proc.bodyEn!.blocks : (proc?.bodyEs?.blocks ?? []);
-    const recipe = blocks.find((b): b is Extract<ProcedureBlock, { kind: 'recipe' }> => b.kind === 'recipe');
+    const blocks =
+      (proc?.bodyEn?.blocks?.length ?? 0) > 0
+        ? proc.bodyEn!.blocks
+        : (proc?.bodyEs?.blocks ?? []);
+    const recipe = blocks.find(
+      (b): b is Extract<ProcedureBlock, { kind: "recipe" }> =>
+        b.kind === "recipe",
+    );
     if (recipe) return recipe.id ?? `recipe-${recipe.factors?.length ?? 0}`;
-    const hasMethod = blocks.some((b) => b.kind === 'method');
+    const hasMethod = blocks.some((b) => b.kind === "method");
     if (hasMethod) return `steps-${proc.id}`;
     return null;
   }, [proc]);
@@ -173,7 +191,7 @@ export function AdminProcedureView({
           <Button
             variant="ghost"
             size="icon"
-            aria-label={t('back')}
+            aria-label={t("back")}
             onClick={() => router.push(`/${locale}/admin/library`)}
           >
             <LuArrowLeft aria-hidden="true" />
@@ -182,7 +200,7 @@ export function AdminProcedureView({
             href={`/${locale}/admin/library`}
             className="hidden sm:inline text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
           >
-            {t('eyebrow')}
+            {t("eyebrow")}
           </Link>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
@@ -190,7 +208,7 @@ export function AdminProcedureView({
             <CookBarAction
               procedureId={proc.id}
               recipeBlockId={cookBlockId}
-              locale={locale === 'es' ? 'es' : 'en'}
+              locale={locale === "es" ? "es" : "en"}
             />
           ) : null}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -198,13 +216,22 @@ export function AdminProcedureView({
               variant="secondary"
               icon={LuPencil}
               onClick={() => {
-                window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
-                router.push(`/${locale}/admin/library/${proc.slug || proc.id}/edit`);
+                window.scrollTo({
+                  top: 0,
+                  left: 0,
+                  behavior: "instant" as ScrollBehavior,
+                });
+                router.push(
+                  `/${locale}/admin/library/${proc.slug || proc.id}/edit`,
+                );
               }}
             >
-              <span className="hidden sm:inline">{t('actionsEdit')}</span>
+              <span className="hidden sm:inline">{t("actionsEdit")}</span>
             </Button>
-            <RowActions triggerLabel={tRow('rowActionsLabel')} items={actionItems} />
+            <RowActions
+              triggerLabel={tRow("rowActionsLabel")}
+              items={actionItems}
+            />
           </div>
         </div>
       </div>
@@ -221,9 +248,9 @@ export function AdminProcedureView({
       {/* Why Publish is missing from the kebab: drafts without stations that
           aren't General can't go live. Shown instead of silence so the
           manager knows what to fix (assign a station in the editor). */}
-      {!proc.isArchived && proc.status === 'draft' && !publishable ? (
+      {!proc.isArchived && proc.status === "draft" && !publishable ? (
         <p className="rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-2 text-sm text-[var(--color-ink-2)]">
-          {t('publishBlocked')}
+          {t("publishBlocked")}
         </p>
       ) : null}
 

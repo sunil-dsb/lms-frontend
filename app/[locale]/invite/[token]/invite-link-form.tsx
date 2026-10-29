@@ -1,42 +1,46 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
-import { LuLoader } from 'react-icons/lu';
-import { backendApiUrl } from '@/lib/http';
-import { Button } from '@/components/ui/button';
+import * as React from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { LuLoader } from "react-icons/lu";
+import { backendApiUrl } from "@/lib/http";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 
-type VerifyState = 'verifying' | 'verified' | 'error';
+type VerifyState = "verifying" | "verified" | "error";
 
 interface InviteLinkFormProps {
   locale: string;
   token: string;
 }
 
-export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.ReactElement {
-  const t = useTranslations('inviteLink');
-  const tActivate = useTranslations('activate');
+export function InviteLinkForm({
+  locale,
+  token,
+}: InviteLinkFormProps): React.ReactElement {
+  const t = useTranslations("inviteLink");
+  const tActivate = useTranslations("activate");
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [state, setState] = useState<VerifyState>('verifying');
+  const [state, setState] = useState<VerifyState>("verifying");
   const redirectStarted = React.useRef(false);
 
   useEffect(() => {
     if (redirectStarted.current) return;
 
-    const queryToken = searchParams.get('token');
-    const rawToken = (token && token !== 'token' ? token : queryToken) || queryToken || token;
+    const queryToken = searchParams.get("token");
+    const rawToken =
+      (token && token !== "token" ? token : queryToken) || queryToken || token;
     let actualToken = rawToken;
 
     // Older invite links could accidentally include the backend URL and API
@@ -44,11 +48,15 @@ export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.Re
     if (rawToken) {
       try {
         const parsed = new URL(rawToken, window.location.origin);
-        const inviteMatch = parsed.pathname.match(/\/auth\/invites\/[^/]+\/([^/]+)\/?$/);
+        const inviteMatch = parsed.pathname.match(
+          /\/auth\/invites\/[^/]+\/([^/]+)\/?$/,
+        );
         if (inviteMatch) actualToken = inviteMatch[1];
-        else if (parsed.pathname.includes('/')) actualToken = parsed.pathname.split('/').filter(Boolean).at(-1) || rawToken;
+        else if (parsed.pathname.includes("/"))
+          actualToken =
+            parsed.pathname.split("/").filter(Boolean).at(-1) || rawToken;
       } catch {
-        actualToken = rawToken.split('/').filter(Boolean).at(-1) || rawToken;
+        actualToken = rawToken.split("/").filter(Boolean).at(-1) || rawToken;
       }
     }
 
@@ -65,13 +73,13 @@ export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.Re
     }
   }, [locale, token, searchParams, router]);
 
-  if (state === 'verifying' || state === 'verified') {
+  if (state === "verifying" || state === "verified") {
     return (
       <Card
         className="flex-1 w-full border-t border-x sm:border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xl flex flex-col justify-between rounded-b-none sm:rounded-b-[32px] overflow-hidden pb-1 mb-0 sm:mb-20 text-center"
         style={{
-          borderTopLeftRadius: '32px',
-          borderTopRightRadius: '32px',
+          borderTopLeftRadius: "32px",
+          borderTopRightRadius: "32px",
         }}
       >
         <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
@@ -80,10 +88,10 @@ export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.Re
             <LuLoader className="h-6 w-6 animate-spin text-[var(--color-brand-700)]" />
           </div>
           <CardTitle className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight">
-            {t('verifyingTitle')}
+            {t("verifyingTitle")}
           </CardTitle>
           <CardDescription className="text-sm text-[var(--color-ink-2)] mt-2">
-            {t('verifyingSubtitle')}
+            {t("verifyingSubtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent className="px-6 sm:px-8 pb-8" />
@@ -95,23 +103,23 @@ export function InviteLinkForm({ locale, token }: InviteLinkFormProps): React.Re
     <Card
       className="flex-1 w-full border-t border-x sm:border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xl flex flex-col justify-between rounded-b-none sm:rounded-b-[32px] overflow-hidden pb-1 mb-0 sm:mb-20 text-center"
       style={{
-        borderTopLeftRadius: '32px',
-        borderTopRightRadius: '32px',
+        borderTopLeftRadius: "32px",
+        borderTopRightRadius: "32px",
       }}
     >
       <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-bad)] to-[var(--color-bad-fill)] shrink-0" />
       <CardHeader className="pt-8 pb-3 px-6 sm:px-8">
         <CardTitle className="font-[family-name:var(--font-display)] text-2xl font-bold">
-          {tActivate('invalidHeading')}
+          {tActivate("invalidHeading")}
         </CardTitle>
         <CardDescription className="text-sm text-[var(--color-ink-2)] mt-2">
-          {t('errorGeneric')}
+          {t("errorGeneric")}
         </CardDescription>
       </CardHeader>
       <CardContent className="mt-4 px-6 sm:px-8">
         <Link href={`/${locale}/login`} className="w-full">
           <Button className="w-full h-12 rounded-full font-semibold">
-            {tActivate('backToLogin')}
+            {tActivate("backToLogin")}
           </Button>
         </Link>
       </CardContent>

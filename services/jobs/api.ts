@@ -1,19 +1,40 @@
-import http from '@/lib/http';
-import { JOBS_ENDPOINTS } from './endpoints';
-import { ApiException } from '@/lib/errors';
-import type { Job, Role, JobWithStations, CreateRoleInput, UpdateRoleInput } from './types';
+import http from "@/lib/http";
+import { JOBS_ENDPOINTS } from "./endpoints";
+import { ApiException } from "@/lib/errors";
+import type {
+  Job,
+  Role,
+  JobWithStations,
+  CreateRoleInput,
+  UpdateRoleInput,
+} from "./types";
 
 const cacheTtlMs = 5 * 60 * 1000;
-const jobsCache = new Map<string, { value: { jobs: Job[] }; expiresAt: number }>();
+const jobsCache = new Map<
+  string,
+  { value: { jobs: Job[] }; expiresAt: number }
+>();
 const jobsRequests = new Map<string, Promise<{ jobs: Job[] }>>();
-const stationsCache = new Map<string, { value: { stations: Array<{ id: string; name: string }> }; expiresAt: number }>();
-const stationsRequests = new Map<string, Promise<{ stations: Array<{ id: string; name: string }> }>>();
+const stationsCache = new Map<
+  string,
+  {
+    value: { stations: Array<{ id: string; name: string }> };
+    expiresAt: number;
+  }
+>();
+const stationsRequests = new Map<
+  string,
+  Promise<{ stations: Array<{ id: string; name: string }> }>
+>();
 
-function requestHeaders(cookieHeader?: string): Record<string, string> | undefined {
+function requestHeaders(
+  cookieHeader?: string,
+): Record<string, string> | undefined {
   if (!cookieHeader) return undefined;
   const headers: Record<string, string> = { Cookie: cookieHeader };
   const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
-  if (tokenMatch) headers.Authorization = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+  if (tokenMatch)
+    headers.Authorization = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
   return headers;
 }
 
@@ -24,30 +45,37 @@ export function clearJobsCache(): void {
   stationsRequests.clear();
 }
 
-export async function fetchJobs(cookieHeader?: string): Promise<{ jobs: Job[] }> {
-
-  if (typeof window === 'undefined') {
-    const { data } = await http.get<{ success: boolean; data: { jobs: Job[] } }>(JOBS_ENDPOINTS.LIST, {
+export async function fetchJobs(
+  cookieHeader?: string,
+): Promise<{ jobs: Job[] }> {
+  if (typeof window === "undefined") {
+    const { data } = await http.get<{
+      success: boolean;
+      data: { jobs: Job[] };
+    }>(JOBS_ENDPOINTS.LIST, {
       headers: requestHeaders(cookieHeader),
       // Backend paginates (default 10) — org scale fits one page.
       params: { page: 1, limit: 200 },
     });
     return { jobs: data.data?.jobs ?? [] };
   }
-  const key = cookieHeader || 'client';
+  const key = cookieHeader || "client";
   const cached = jobsCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   const pending = jobsRequests.get(key);
   if (pending) return pending;
-  const request = http.get<{ success: boolean; data: { jobs: Job[] } }>(JOBS_ENDPOINTS.LIST, {
-    headers: requestHeaders(cookieHeader),
-    // Backend paginates (default 10) — org scale fits one page.
-    params: { page: 1, limit: 200 },
-  }).then(({ data }) => {
-    const value = { jobs: data.data?.jobs ?? [] };
-    jobsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
-    return value;
-  }).finally(() => jobsRequests.delete(key));
+  const request = http
+    .get<{ success: boolean; data: { jobs: Job[] } }>(JOBS_ENDPOINTS.LIST, {
+      headers: requestHeaders(cookieHeader),
+      // Backend paginates (default 10) — org scale fits one page.
+      params: { page: 1, limit: 200 },
+    })
+    .then(({ data }) => {
+      const value = { jobs: data.data?.jobs ?? [] };
+      jobsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
+      return value;
+    })
+    .finally(() => jobsRequests.delete(key));
   jobsRequests.set(key, request);
   return request;
 }
@@ -70,7 +98,7 @@ export async function fetchRoles(
   const roles: Role[] = jobs.map((j) => ({
     id: j.id,
     name: j.name,
-    clearanceLevel: 'general',
+    clearanceLevel: "general",
     stationIds: j.stationIds ?? [],
     createdAt: j.createdAt || new Date().toISOString(),
   }));
@@ -84,42 +112,46 @@ export async function fetchJobStations(
   if (!jobIds.length) return { stations: [] };
   const ids = [...new Set(jobIds)].sort();
   // Browser-only cache (see fetchJobs) — the server always reads fresh.
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     const { data } = await http.request<{
       success: boolean;
       data: { stations: Array<{ id: string; name: string }> };
     }>({
-      method: 'QUERY',
+      method: "QUERY",
       url: JOBS_ENDPOINTS.STATIONS,
-      params: { jobIds: ids.join(',') },
+      params: { jobIds: ids.join(",") },
       headers: requestHeaders(cookieHeader),
     });
     return { stations: data.data?.stations ?? [] };
   }
-  const key = `${cookieHeader || 'client'}:${ids.join(',')}`;
+  const key = `${cookieHeader || "client"}:${ids.join(",")}`;
   const cached = stationsCache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   const pending = stationsRequests.get(key);
   if (pending) return pending;
-  const request = http.request<{
-    success: boolean;
-    data: { stations: Array<{ id: string; name: string }> };
-  }>({
-    method: 'QUERY',
-    url: JOBS_ENDPOINTS.STATIONS,
-    params: { jobIds: ids.join(',') },
-    headers: requestHeaders(cookieHeader),
-  }).then(({ data }) => {
-    const value = { stations: data.data?.stations ?? [] };
-    stationsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
-    return value;
-  }).finally(() => stationsRequests.delete(key));
+  const request = http
+    .request<{
+      success: boolean;
+      data: { stations: Array<{ id: string; name: string }> };
+    }>({
+      method: "QUERY",
+      url: JOBS_ENDPOINTS.STATIONS,
+      params: { jobIds: ids.join(",") },
+      headers: requestHeaders(cookieHeader),
+    })
+    .then(({ data }) => {
+      const value = { stations: data.data?.stations ?? [] };
+      stationsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
+      return value;
+    })
+    .finally(() => stationsRequests.delete(key));
   stationsRequests.set(key, request);
   return request;
 }
-export async function createJob(
-  input: { name: string; stationIds?: string[] },
-): Promise<{ job: Job }> {
+export async function createJob(input: {
+  name: string;
+  stationIds?: string[];
+}): Promise<{ job: Job }> {
   // Backend `jobCreateSchema` = `{ name, stationIds?: uuid[] }` — no
   // clearance tier. `clearanceLevel` must not be sent.
   const payload: { name: string; stationIds?: string[] } = { name: input.name };
@@ -141,7 +173,7 @@ export async function updateJob(
   if (patch.name !== undefined) payload.name = patch.name;
   if (patch.stationIds !== undefined) payload.stationIds = patch.stationIds;
   if (Object.keys(payload).length === 0) {
-    throw new ApiException(400, 'INVALID_INPUT', 'Nothing to update');
+    throw new ApiException(400, "INVALID_INPUT", "Nothing to update");
   }
   const { data } = await http.patch<{
     success: boolean;

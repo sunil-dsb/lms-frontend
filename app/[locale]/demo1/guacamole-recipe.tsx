@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useTranslations } from 'next-intl';
+import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   RiAlertLine,
   RiArrowDownSLine,
@@ -23,10 +23,10 @@ import {
   RiTempColdLine,
   RiTimeLine,
   RiTimerLine,
-} from 'react-icons/ri';
-import { DocBehaviour } from '@/components/doc/doc-behaviour';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
-import './recipe.css';
+} from "react-icons/ri";
+import { DocBehaviour } from "@/components/doc/doc-behaviour";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import "./recipe.css";
 
 /**
  * The recipe template, "Guacamole Fresco", reworked for someone making it for
@@ -53,19 +53,51 @@ import './recipe.css';
  * proximity rail. /demo2 keeps its own copy, in the original shape.
  */
 
-const IMG = '/demo/guacamole';
-const STORE = 'demo1-guacamole-progress';
+const IMG = "/demo/guacamole";
+const STORE = "demo1-guacamole-progress";
 
-type IngredientKey = 'avocado' | 'lime' | 'onion' | 'cilantro' | 'serrano' | 'salt' | 'sesame';
+type IngredientKey =
+  "avocado" | "lime" | "onion" | "cilantro" | "serrano" | "salt" | "sesame";
 
-const INGREDIENTS: { key: IngredientKey; name: string; form?: string; base: string; allergen?: boolean }[] = [
-  { key: 'avocado', name: 'Avocado, Hass', form: 'Whole fruit, about 2 kg of flesh. Ripe: gives slightly at the neck', base: '2.8 kg' },
-  { key: 'lime', name: 'Lime juice', form: 'Fresh, strained', base: '100 ml' },
-  { key: 'onion', name: 'White onion', form: 'Small dice, 5 mm', base: '200 g' },
-  { key: 'cilantro', name: 'Cilantro', form: 'Leaves and fine stem, chopped', base: '30 g' },
-  { key: 'serrano', name: 'Serrano chilli', form: 'Seeded, minced', base: '20 g' },
-  { key: 'salt', name: 'Salt, kosher', base: '20 g' },
-  { key: 'sesame', name: 'Sesame finishing oil', base: '15 ml', allergen: true },
+const INGREDIENTS: {
+  key: IngredientKey;
+  name: string;
+  form?: string;
+  base: string;
+  allergen?: boolean;
+}[] = [
+  {
+    key: "avocado",
+    name: "Avocado, Hass",
+    form: "Whole fruit, about 2 kg of flesh. Ripe: gives slightly at the neck",
+    base: "2.8 kg",
+  },
+  { key: "lime", name: "Lime juice", form: "Fresh, strained", base: "100 ml" },
+  {
+    key: "onion",
+    name: "White onion",
+    form: "Small dice, 5 mm",
+    base: "200 g",
+  },
+  {
+    key: "cilantro",
+    name: "Cilantro",
+    form: "Leaves and fine stem, chopped",
+    base: "30 g",
+  },
+  {
+    key: "serrano",
+    name: "Serrano chilli",
+    form: "Seeded, minced",
+    base: "20 g",
+  },
+  { key: "salt", name: "Salt, kosher", base: "20 g" },
+  {
+    key: "sesame",
+    name: "Sesame finishing oil",
+    base: "15 ml",
+    allergen: true,
+  },
 ];
 
 const FACTORS = [1, 2, 4] as const;
@@ -76,32 +108,54 @@ const METHOD_COUNT = 11;
 const fmt = (n: number): string => String(Math.round(n * 100) / 100);
 function scale(amount: string, f: number): string {
   const m = /^([0-9.]+)\s*(.*)$/.exec(amount.trim());
-  return m ? fmt(parseFloat(m[1]) * f) + (m[2] ? ` ${m[2]}` : '') : amount;
+  return m ? fmt(parseFloat(m[1]) * f) + (m[2] ? ` ${m[2]}` : "") : amount;
 }
 
-function Warn({ children, kind = 'warn' }: { children: React.ReactNode; kind?: 'warn' | 'allergen' }): React.ReactElement {
+function Warn({
+  children,
+  kind = "warn",
+}: {
+  children: React.ReactNode;
+  kind?: "warn" | "allergen";
+}): React.ReactElement {
   return (
     <div className={`note-block n-${kind}`}>
       <span className="ico">
-        {kind === 'allergen' ? (
+        {kind === "allergen" ? (
           <RiErrorWarningFill className="i" aria-hidden="true" />
         ) : (
           <RiAlertLine className="i" aria-hidden="true" />
         )}
       </span>
       <div>
-        <span className="label">{kind === 'allergen' ? 'Allergen' : 'Warning'}</span>
+        <span className="label">
+          {kind === "allergen" ? "Allergen" : "Warning"}
+        </span>
         <p>{children}</p>
       </div>
     </div>
   );
 }
 
-function Shot({ src, alt, caption }: { src: string; alt: string; caption?: string }): React.ReactElement {
+function Shot({
+  src,
+  alt,
+  caption,
+}: {
+  src: string;
+  alt: string;
+  caption?: string;
+}): React.ReactElement {
   return (
     <figure className="shot">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`${IMG}/${src}`} width={1200} height={900} loading="lazy" alt={alt} />
+      <img
+        src={`${IMG}/${src}`}
+        width={1200}
+        height={900}
+        loading="lazy"
+        alt={alt}
+      />
       {caption ? <figcaption>{caption}</figcaption> : null}
     </figure>
   );
@@ -126,12 +180,16 @@ function Step({
   children?: React.ReactNode;
 }): React.ReactElement {
   return (
-    <li className={['step', crit ? 'is-crit' : '', done ? 'is-done' : ''].filter(Boolean).join(' ')}>
+    <li
+      className={["step", crit ? "is-crit" : "", done ? "is-done" : ""]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <button
         type="button"
         className="step-num step-check"
         aria-pressed={done}
-        aria-label={`Step ${n}${crit ? ', critical' : ''}: ${done ? 'done, tap to undo' : 'mark done'}`}
+        aria-label={`Step ${n}${crit ? ", critical" : ""}: ${done ? "done, tap to undo" : "mark done"}`}
         onClick={onToggle}
       />
       <div className="step-body">
@@ -143,7 +201,11 @@ function Step({
         ) : null}
         <p className="step-line">
           {text}
-          <button className="step-play" type="button" aria-label={`Watch step ${n} in the video, at ${watch}`}>
+          <button
+            className="step-play"
+            type="button"
+            aria-label={`Watch step ${n} in the video, at ${watch}`}
+          >
             <RiPlayFill className="i i-sm" aria-hidden="true" />
             {watch}
           </button>
@@ -155,27 +217,36 @@ function Step({
 }
 
 export function GuacamoleRecipe(): React.ReactElement {
-  const tApp = useTranslations('app');
+  const tApp = useTranslations("app");
   const [factor, setFactor] = React.useState<number>(1);
-  const [prepDone, setPrepDone] = React.useState<boolean[]>(() => Array(PREP_COUNT).fill(false));
-  const [stepDone, setStepDone] = React.useState<boolean[]>(() => Array(METHOD_COUNT).fill(false));
+  const [prepDone, setPrepDone] = React.useState<boolean[]>(() =>
+    Array(PREP_COUNT).fill(false),
+  );
+  const [stepDone, setStepDone] = React.useState<boolean[]>(() =>
+    Array(METHOD_COUNT).fill(false),
+  );
   const [loaded, setLoaded] = React.useState(false);
   const radios = React.useRef<(HTMLButtonElement | null)[]>([]);
   const ctlRef = React.useRef<HTMLDetailsElement>(null);
 
   /** An ingredient's amount at the chosen batch, as the step says it. */
   const q = (k: IngredientKey): React.ReactElement => (
-    <b className="qty">{scale(INGREDIENTS.find((i) => i.key === k)!.base, factor)}</b>
+    <b className="qty">
+      {scale(INGREDIENTS.find((i) => i.key === k)!.base, factor)}
+    </b>
   );
 
   // Where the cook was: the batch and every tick, kept on this device.
   React.useEffect(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORE) ?? 'null') as
-        | { factor: number; prep: boolean[]; steps: boolean[] }
-        | null;
+      const saved = JSON.parse(localStorage.getItem(STORE) ?? "null") as {
+        factor: number;
+        prep: boolean[];
+        steps: boolean[];
+      } | null;
       if (saved) {
-        if ((FACTORS as readonly number[]).includes(saved.factor)) setFactor(saved.factor);
+        if ((FACTORS as readonly number[]).includes(saved.factor))
+          setFactor(saved.factor);
         if (saved.prep?.length === PREP_COUNT) setPrepDone(saved.prep);
         if (saved.steps?.length === METHOD_COUNT) setStepDone(saved.steps);
       }
@@ -187,7 +258,10 @@ export function GuacamoleRecipe(): React.ReactElement {
   React.useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORE, JSON.stringify({ factor, prep: prepDone, steps: stepDone }));
+      localStorage.setItem(
+        STORE,
+        JSON.stringify({ factor, prep: prepDone, steps: stepDone }),
+      );
     } catch {
       /* nothing to keep it in */
     }
@@ -207,17 +281,22 @@ export function GuacamoleRecipe(): React.ReactElement {
     const after = (): void => {
       ctl.open = wasOpen;
     };
-    window.addEventListener('beforeprint', before);
-    window.addEventListener('afterprint', after);
+    window.addEventListener("beforeprint", before);
+    window.addEventListener("afterprint", after);
     return () => {
-      window.removeEventListener('beforeprint', before);
-      window.removeEventListener('afterprint', after);
+      window.removeEventListener("beforeprint", before);
+      window.removeEventListener("afterprint", after);
     };
   }, []);
 
   // One stop in the tab order, arrow keys between the options.
   function onScalerKey(e: React.KeyboardEvent): void {
-    const d = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[e.key];
+    const d = (
+      { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<
+        string,
+        number
+      >
+    )[e.key];
     if (!d) return;
     e.preventDefault();
     const i = FACTORS.indexOf(factor as (typeof FACTORS)[number]);
@@ -232,47 +311,54 @@ export function GuacamoleRecipe(): React.ReactElement {
     onToggle: () => setStepDone((s) => s.map((v, j) => (j === n - 1 ? !v : v))),
   });
 
-  const prep: { id: string; label: React.ReactNode; body?: React.ReactNode }[] = [
-    { id: 'prep-1', label: 'Wash your hands.' },
-    {
-      id: 'prep-2',
-      label: (
-        <>
-          Sanitise the <span lang="es">molcajete</span>, the board and the bench.
-        </>
-      ),
-    },
-    {
-      id: 'prep-3',
-      label: (
-        <>
-          Put out the tools: <span lang="es">molcajete</span> and <span lang="es">tejolote</span>, bench scraper,
-          quarter pan, digital scale, probe thermometer.
-        </>
-      ),
-      body: (
-        <Shot
-          src="equipment.jpg"
-          alt="Everything needed laid out: four Hass avocados, two limes, half a white onion, a bunch of cilantro, two serrano chillies, a stone molcajete and tejolote, a digital scale, a stainless quarter pan and a bench scraper."
-          caption="Everything on the bench before you start."
-        />
-      ),
-    },
-    {
-      id: 'prep-4',
-      label: 'Prep every ingredient as the table says: dice, chop, seed, juice, strain.',
-      body: (
-        <>
-          <p className="step-note">Do all of it before you open an avocado. Cut avocado starts browning within minutes.</p>
+  const prep: { id: string; label: React.ReactNode; body?: React.ReactNode }[] =
+    [
+      { id: "prep-1", label: "Wash your hands." },
+      {
+        id: "prep-2",
+        label: (
+          <>
+            Sanitise the <span lang="es">molcajete</span>, the board and the
+            bench.
+          </>
+        ),
+      },
+      {
+        id: "prep-3",
+        label: (
+          <>
+            Put out the tools: <span lang="es">molcajete</span> and{" "}
+            <span lang="es">tejolote</span>, bench scraper, quarter pan, digital
+            scale, probe thermometer.
+          </>
+        ),
+        body: (
           <Shot
-            src="step-5-dice.jpg"
-            alt="A pile of finely diced white onion beside a steel ruler, one cube held against the scale showing five millimetres."
-            caption="Onion at 5 mm. Bigger than this and it reads as raw onion, not seasoning."
+            src="equipment.jpg"
+            alt="Everything needed laid out: four Hass avocados, two limes, half a white onion, a bunch of cilantro, two serrano chillies, a stone molcajete and tejolote, a digital scale, a stainless quarter pan and a bench scraper."
+            caption="Everything on the bench before you start."
           />
-        </>
-      ),
-    },
-  ];
+        ),
+      },
+      {
+        id: "prep-4",
+        label:
+          "Prep every ingredient as the table says: dice, chop, seed, juice, strain.",
+        body: (
+          <>
+            <p className="step-note">
+              Do all of it before you open an avocado. Cut avocado starts
+              browning within minutes.
+            </p>
+            <Shot
+              src="step-5-dice.jpg"
+              alt="A pile of finely diced white onion beside a steel ruler, one cube held against the scale showing five millimetres."
+              caption="Onion at 5 mm. Bigger than this and it reads as raw onion, not seasoning."
+            />
+          </>
+        ),
+      },
+    ];
 
   return (
     <main>
@@ -280,7 +366,11 @@ export function GuacamoleRecipe(): React.ReactElement {
         <DocBehaviour />
 
         <div className="doc-bar" id="bar">
-          <a className="btn btn-ghost btn-icon btn-lg" href="#" aria-label="Back to Recipes">
+          <a
+            className="btn btn-ghost btn-icon btn-lg"
+            href="#"
+            aria-label="Back to Recipes"
+          >
             <RiArrowLeftLine className="i" aria-hidden="true" />
           </a>
           <div className="where">
@@ -288,8 +378,17 @@ export function GuacamoleRecipe(): React.ReactElement {
             <span>Recipes</span>
           </div>
           {/* Light or dark, the app's own control, before the menu. */}
-          <ThemeToggle labels={{ toDark: tApp('themeToDark'), toLight: tApp('themeToLight') }} />
-          <button className="btn btn-ghost btn-icon btn-lg" type="button" aria-label="More options">
+          <ThemeToggle
+            labels={{
+              toDark: tApp("themeToDark"),
+              toLight: tApp("themeToLight"),
+            }}
+          />
+          <button
+            className="btn btn-ghost btn-icon btn-lg"
+            type="button"
+            aria-label="More options"
+          >
             <RiMore2Fill className="i" aria-hidden="true" />
           </button>
         </div>
@@ -304,7 +403,10 @@ export function GuacamoleRecipe(): React.ReactElement {
           </h1>
           <div className="qr print-only" aria-hidden="true">
             <span className="code">QR</span>
-            <span>Scan to open this procedure on a phone: photos, video, and the current version.</span>
+            <span>
+              Scan to open this procedure on a phone: photos, video, and the
+              current version.
+            </span>
           </div>
         </header>
 
@@ -312,11 +414,17 @@ export function GuacamoleRecipe(): React.ReactElement {
           <RiErrorWarningFill className="i i-lg" aria-hidden="true" />
           <div>
             <b>Contains sesame</b>
-            <p>In the finishing oil, step 8. Check the ticket before it leaves the pass.</p>
+            <p>
+              In the finishing oil, step 8. Check the ticket before it leaves
+              the pass.
+            </p>
           </div>
         </div>
 
-        <p className="doc-purpose">To make guacamole that holds its colour and texture through a full service.</p>
+        <p className="doc-purpose">
+          To make guacamole that holds its colour and texture through a full
+          service.
+        </p>
 
         {/* The cook's facts. Owner and review dates are the document's, and live
             in document control at the foot. */}
@@ -357,7 +465,12 @@ export function GuacamoleRecipe(): React.ReactElement {
             <span className="lbl" id="batch-lbl">
               Batch
             </span>
-            <div className="choices" role="radiogroup" aria-labelledby="batch-lbl" onKeyDown={onScalerKey}>
+            <div
+              className="choices"
+              role="radiogroup"
+              aria-labelledby="batch-lbl"
+              onKeyDown={onScalerKey}
+            >
               {FACTORS.map((f, i) => (
                 <button
                   key={f}
@@ -396,8 +509,10 @@ export function GuacamoleRecipe(): React.ReactElement {
             </div>
           </dl>
 
-          <table className={factor === 1 ? 'ing is-base' : 'ing'}>
-            <caption className="vh">Ingredients, at the base batch and at the selected batch size</caption>
+          <table className={factor === 1 ? "ing is-base" : "ing"}>
+            <caption className="vh">
+              Ingredients, at the base batch and at the selected batch size
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Ingredient</th>
@@ -416,9 +531,12 @@ export function GuacamoleRecipe(): React.ReactElement {
                     {ing.name}
                     {ing.allergen ? (
                       <>
-                        {' '}
+                        {" "}
                         <span className="flag">
-                          <RiErrorWarningFill className="i i-sm" aria-hidden="true" />
+                          <RiErrorWarningFill
+                            className="i i-sm"
+                            aria-hidden="true"
+                          />
                           Allergen
                         </span>
                       </>
@@ -443,7 +561,9 @@ export function GuacamoleRecipe(): React.ReactElement {
                   className="tick"
                   id={p.id}
                   checked={prepDone[i]}
-                  onChange={() => setPrepDone((s) => s.map((v, j) => (j === i ? !v : v)))}
+                  onChange={() =>
+                    setPrepDone((s) => s.map((v, j) => (j === i ? !v : v)))
+                  }
                 />
                 <div className="step-body">
                   <label htmlFor={p.id}>{p.label}</label>
@@ -477,8 +597,8 @@ export function GuacamoleRecipe(): React.ReactElement {
             </p>
           ) : null}
           <p className="print-only qr-note">
-            <RiQrCodeLine className="i i-sm" aria-hidden="true" /> Step photos and the video are on the phone. Scan the
-            code on this sheet.
+            <RiQrCodeLine className="i i-sm" aria-hidden="true" /> Step photos
+            and the video are on the phone. Scan the code on this sheet.
           </p>
 
           <figure className="shot video">
@@ -491,12 +611,19 @@ export function GuacamoleRecipe(): React.ReactElement {
                 loading="lazy"
                 alt="Finished guacamole in a stone molcajete, surrounded by avocados, limes, onion, cilantro and serrano chillies."
               />
-              <button className="play" type="button" aria-label="Play the full procedure, 1 minute 34 seconds">
+              <button
+                className="play"
+                type="button"
+                aria-label="Play the full procedure, 1 minute 34 seconds"
+              >
                 <RiPlayFill className="i i-lg" aria-hidden="true" />
               </button>
               <span className="dur">1:34</span>
             </div>
-            <figcaption>Full procedure, 1:34. The play mark beside each step jumps to its moment.</figcaption>
+            <figcaption>
+              Full procedure, 1:34. The play mark beside each step jumps to its
+              moment.
+            </figcaption>
           </figure>
 
           <ol className="steps">
@@ -504,7 +631,12 @@ export function GuacamoleRecipe(): React.ReactElement {
               n={1}
               watch="0:04"
               {...step(1)}
-              text={<>Cut each avocado ({q('avocado')} in all) lengthwise, all the way round the stone. Twist the halves apart.</>}
+              text={
+                <>
+                  Cut each avocado ({q("avocado")} in all) lengthwise, all the
+                  way round the stone. Twist the halves apart.
+                </>
+              }
             />
 
             <Step
@@ -518,8 +650,9 @@ export function GuacamoleRecipe(): React.ReactElement {
                 alt="A chef's knife blade resting against the stone of a halved avocado, one hand steadying the fruit and the other on the handle, ready to strike."
               />
               <Warn>
-                A blade that slips off a stone goes into your hand. Strike once with the heel, then twist. A second strike
-                at a stone that is already loose is how the blade slips.
+                A blade that slips off a stone goes into your hand. Strike once
+                with the heel, then twist. A second strike at a stone that is
+                already loose is how the blade slips.
               </Warn>
             </Step>
 
@@ -529,13 +662,19 @@ export function GuacamoleRecipe(): React.ReactElement {
               {...step(3)}
               text={
                 <>
-                  Scoop the flesh into the <span lang="es">molcajete</span>. Scrape the skin clean; the flesh nearest the
-                  skin is the greenest.
+                  Scoop the flesh into the <span lang="es">molcajete</span>.
+                  Scrape the skin clean; the flesh nearest the skin is the
+                  greenest.
                 </>
               }
             />
 
-            <Step n={4} watch="0:31" {...step(4)} text="Mash to a coarse texture. Stop while pieces are still visible.">
+            <Step
+              n={4}
+              watch="0:31"
+              {...step(4)}
+              text="Mash to a coarse texture. Stop while pieces are still visible."
+            >
               <div className="compare">
                 <figure className="ok">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -572,7 +711,12 @@ export function GuacamoleRecipe(): React.ReactElement {
               n={5}
               watch="0:48"
               {...step(5)}
-              text={<>Fold in all of the lime juice ({q('lime')}) straight away. Without it, the avocado browns within minutes.</>}
+              text={
+                <>
+                  Fold in all of the lime juice ({q("lime")}) straight away.
+                  Without it, the avocado browns within minutes.
+                </>
+              }
             />
 
             <Step
@@ -581,7 +725,8 @@ export function GuacamoleRecipe(): React.ReactElement {
               {...step(6)}
               text={
                 <>
-                  Fold in the onion ({q('onion')}), cilantro ({q('cilantro')}) and serrano ({q('serrano')}).
+                  Fold in the onion ({q("onion")}), cilantro ({q("cilantro")})
+                  and serrano ({q("serrano")}).
                 </>
               }
             />
@@ -590,17 +735,28 @@ export function GuacamoleRecipe(): React.ReactElement {
               n={7}
               watch="1:05"
               {...step(7)}
-              text={<>Add the salt ({q('salt')}). Taste with a clean spoon, and use a fresh spoon every time you taste again.</>}
+              text={
+                <>
+                  Add the salt ({q("salt")}). Taste with a clean spoon, and use
+                  a fresh spoon every time you taste again.
+                </>
+              }
             />
 
             <Step
               n={8}
               watch="1:12"
               {...step(8)}
-              text={<>Add the sesame oil ({q('sesame')}). Fold once, so it streaks rather than blends.</>}
+              text={
+                <>
+                  Add the sesame oil ({q("sesame")}). Fold once, so it streaks
+                  rather than blends.
+                </>
+              }
             >
               <Warn kind="allergen">
-                Sesame enters here. Anything plated for an allergy ticket is made without it, in a clean molcajete.
+                Sesame enters here. Anything plated for an allergy ticket is
+                made without it, in a clean molcajete.
               </Warn>
             </Step>
 
@@ -623,8 +779,9 @@ export function GuacamoleRecipe(): React.ReactElement {
               {...step(10)}
               text={
                 <>
-                  Label the pan with today&apos;s date, the time, and the discard time: <b>48 hours later</b>. Colour is
-                  not the test. The label is.
+                  Label the pan with today&apos;s date, the time, and the
+                  discard time: <b>48 hours later</b>. Colour is not the test.
+                  The label is.
                 </>
               }
             />
@@ -648,18 +805,30 @@ export function GuacamoleRecipe(): React.ReactElement {
                 </h3>
                 <div className="crit-b">
                   <p className="crit-num">4&nbsp;°C (39&nbsp;°F) or below</p>
-                  <p className="crit-sub">Into the walk-in within 30 minutes of finishing. Check before service.</p>
+                  <p className="crit-sub">
+                    Into the walk-in within 30 minutes of finishing. Check
+                    before service.
+                  </p>
                   <dl className="crit-parts">
                     <div className="crit-part">
                       <dt className="crit-lbl">How to check</dt>
-                      <dd>Probe the centre of the pan with a sanitised thermometer. Record on the Cold Holding Log.</dd>
+                      <dd>
+                        Probe the centre of the pan with a sanitised
+                        thermometer. Record on the Cold Holding Log.
+                      </dd>
                     </div>
                     <div className="crit-part breach">
                       <dt className="crit-lbl">
-                        <RiErrorWarningLine className="i i-sm" aria-hidden="true" />
+                        <RiErrorWarningLine
+                          className="i i-sm"
+                          aria-hidden="true"
+                        />
                         If it is above 4&nbsp;°C
                       </dt>
-                      <dd>Discard. Guacamole is not reheated, so there is no way to bring it back. Tell the chef on duty.</dd>
+                      <dd>
+                        Discard. Guacamole is not reheated, so there is no way
+                        to bring it back. Tell the chef on duty.
+                      </dd>
                     </div>
                   </dl>
                 </div>

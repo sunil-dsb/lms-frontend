@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { Button } from '@/components/ui/button';
+import * as React from "react";
+import { Button } from "@/components/ui/button";
 
 /**
  * The next step once the home says someone is overdue: nudge them, in one tap.
@@ -28,7 +28,14 @@ export function RemindButton({
   onSend: () => void;
 }): React.ReactElement {
   return (
-    <Button type="button" variant="neutral" size="sm" disabled={sent} onClick={onSend} className="shrink-0">
+    <Button
+      type="button"
+      variant="neutral"
+      size="sm"
+      disabled={sent}
+      onClick={onSend}
+      className="shrink-0"
+    >
       {sent ? sentLabel : label}
       <span className="sr-only">: {name}</span>
     </Button>

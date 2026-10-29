@@ -9,12 +9,14 @@ button.step-check {
   padding: 0;
   font: inherit;
   cursor: pointer;
-  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
 }
 
 /* The disc is 30px; the target is 48px, the employee minimum. */
 button.step-check::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: -9px;
 }
@@ -38,7 +40,7 @@ button.step-check:focus-visible {
 }
 
 .step.is-done .step-num::before {
-  content: '';
+  content: "";
 }
 
 /* Done work steps back without disappearing. */
@@ -71,7 +73,7 @@ button.step-check:focus-visible {
 
 /* 36px drawn, 48px to hit. */
 .step-play::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: -6px;
 }
