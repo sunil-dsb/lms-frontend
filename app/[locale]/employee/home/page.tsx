@@ -4,7 +4,6 @@ import { EmployeeHomeClient } from "./employee-home-client";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ view?: string }>;
 }
 
 /**
@@ -19,11 +18,9 @@ interface PageProps {
  */
 export default async function EmployeeHomePage({
   params,
-  searchParams,
 }: PageProps): Promise<React.ReactElement> {
   const { locale } = await params;
-  const { view = "" } = await searchParams;
   setRequestLocale(locale);
 
-  return <EmployeeHomeClient locale={locale} initialView={view} />;
+  return <EmployeeHomeClient locale={locale} />;
 }

@@ -5,24 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMe } from "@/services/auth/hooks";
 import { useAssignedProcedures } from "@/services/library/hooks";
-import type {
-  Procedure,
-  ProcedureBlock,
-  TrainingAssignmentRow,
-} from "@/lib/types";
+import type { Procedure, ProcedureBlock } from "@/lib/types";
+import type { EmployeeTrainingAssignment } from "@/services/courses/types";
+import { useMyTraining } from "@/services/courses/hooks";
 import { parseAsParam, withAs } from "@/lib/view-as";
 import { TabBar } from "@/components/employee/tab-bar";
-import {
-  getOnboardingChapters,
-  getTrainingRowsForEmployee,
-  mockTrainingEmployees,
-} from "@/lib/mock-training";
 import {
   EmployeeHome,
   type HomeRow,
   type TrainingSummary,
 } from "./components/EmployeeHome";
-import { HomeViewToggle } from "./components/HomeViewToggle";
 import { allergenWords, factsOf } from "./components/procedure-facts";
 import { pickPromoProcedures } from "@/lib/promos";
 import EmployeeHomeLoading from "./loading";
@@ -42,12 +34,31 @@ function dueLabel(
   t: (k: string, v?: Record<string, string | number>) => string,
 ): string {
   // Rounded up, as the Training tab counts, so both say the same number.
-  const d = Math.ceil((new Date(dueAt).getTime() - now) / DAY);
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueAt);
+  const dueDate = dateOnly
+    ? new Date(
+        Number(dateOnly[1]),
+        Number(dateOnly[2]) - 1,
+        Number(dateOnly[3]),
+      )
+    : new Date(dueAt);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const dueDay = new Date(dueDate);
+  dueDay.setHours(0, 0, 0, 0);
+  const d = Math.ceil((dueDay.getTime() - today.getTime()) / DAY);
   if (d < -1) return t("trainingOverdueBy", { days: -d });
   if (d === -1) return t("trainingOverdueSince");
   if (d === 0) return t("trainingDueToday");
   if (d === 1) return t("trainingDueTomorrow");
   return t("trainingDueInDays", { days: d });
+}
+
+interface HomeTrainingRow {
+  course: { id: string; titleEn: string; titleEs: string };
+  assignment: { dueAt: string };
+  effectiveStatus:
+    "not_started" | "in_progress" | "complete" | "overdue" | "due";
 }
 
 /**
@@ -58,18 +69,16 @@ function dueLabel(
  */
 export function EmployeeHomeClient({
   locale,
-  initialView,
 }: {
   locale: string;
-  initialView?: string;
 }): React.ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("employee.home");
-  const tTraining = useTranslations("employee.training");
 
   const { employee, isLoading: meLoading, error: meError } = useMe();
   const assignedProceduresQuery = useAssignedProcedures({ limit: 100 });
+  const trainingQuery = useMyTraining(employee?.id);
 
   React.useEffect(() => {
     if (!meLoading && (meError || !employee))
@@ -118,10 +127,10 @@ export function EmployeeHomeClient({
       employee={employee}
       procedures={procedures}
       proceduresLoading={proceduresLoading}
+      trainingAssignments={trainingQuery.data}
+      trainingFailed={trainingQuery.isError}
       viewAs={viewAs}
-      initialView={initialView ?? ""}
       t={t}
-      tTraining={tTraining}
     />
   );
 }
@@ -133,10 +142,10 @@ function HomeContent({
   employee,
   procedures,
   proceduresLoading,
+  trainingAssignments,
+  trainingFailed,
   viewAs,
-  initialView,
   t,
-  tTraining,
 }: {
   locale: string;
   isEs: boolean;
@@ -144,10 +153,10 @@ function HomeContent({
   employee: NonNullable<ReturnType<typeof useMe>["employee"]>;
   procedures: Procedure[];
   proceduresLoading: boolean;
+  trainingAssignments?: EmployeeTrainingAssignment[];
+  trainingFailed: boolean;
   viewAs: ReturnType<typeof parseAsParam>;
-  initialView: string;
   t: (k: string, v?: Record<string, string | number>) => string;
-  tTraining: (k: string, v?: Record<string, string | number>) => string;
 }): React.ReactElement {
   const stationIds =
     employee.stationIds ??
@@ -182,31 +191,27 @@ function HomeContent({
         : "greetingEvening";
   const greeting = t(greetingKey, { name: employee.name });
 
-  const trainingId =
-    mockTrainingEmployees.find((e) => e.id === employee.id)?.id ??
-    mockTrainingEmployees.find(
-      (e) => e.name.toLowerCase() === employee.name.toLowerCase(),
-    )?.id ??
-    employee.id;
-  const rows = getTrainingRowsForEmployee(trainingId, new Date(now));
-  const onboarding = getOnboardingChapters(trainingId, new Date(now));
-  const onboardingNotDone = !onboarding.onboardingDone;
-
-  const cookieView =
-    typeof document !== "undefined"
-      ? document.cookie.match(/(?:^|;\s*)lms_demo_view=([^;]+)/)?.[1]
-      : undefined;
-  const effectiveView: "onboarding" | "regular" =
-    initialView === "onboarding" || initialView === "regular"
-      ? initialView
-      : cookieView === "onboarding" || cookieView === "regular"
-        ? cookieView
-        : onboardingNotDone
-          ? "onboarding"
-          : "regular";
-  const showOnboardingView = effectiveView === "onboarding";
-  const lockedHref = `/${locale}/employee/training`;
-  const lockedReason = t("lockedRowReason");
+  const today = new Date(now).toISOString().slice(0, 10);
+  const rows: HomeTrainingRow[] = trainingFailed
+    ? []
+    : trainingAssignments
+      ? trainingAssignments.map((assignment) => ({
+          course: {
+            id: assignment.courseId,
+            titleEn: assignment.titleEn,
+            titleEs: assignment.titleEs,
+          },
+          assignment: { dueAt: assignment.dueDate },
+          effectiveStatus:
+            assignment.status === "complete"
+              ? "complete"
+              : assignment.dueDate < today
+                ? "overdue"
+                : assignment.completedChapterCount > 0
+                  ? "in_progress"
+                  : "not_started",
+        }))
+      : [];
 
   const open = rows.filter((r) => r.effectiveStatus !== "complete");
   const overdue = open.filter((r) => r.effectiveStatus === "overdue");
@@ -214,7 +219,7 @@ function HomeContent({
   const inFirstWeeks =
     now - new Date(employee.createdAt ?? 0).getTime() < FIRST_WEEKS;
 
-  const rank = (r: TrainingAssignmentRow): number =>
+  const rank = (r: HomeTrainingRow): number =>
     r.effectiveStatus === "overdue"
       ? 0
       : r.effectiveStatus === "in_progress"
@@ -228,59 +233,40 @@ function HomeContent({
   )[0];
 
   const training: TrainingSummary | null = rows.length
-    ? onboardingNotDone
-      ? {
-          heading: t("orientationHeading"),
-          overdueLine: undefined,
-          done: onboarding.done,
-          total: onboarding.total,
-          next: {
-            href: lockedHref,
-            title: tTraining("orientationHeading"),
-            pill: { tone: "warn", text: t("orientationChip") },
-            when: tTraining("orientationRequired"),
-            action:
-              onboarding.done > 0
-                ? t("orientationResumeAction")
-                : t("orientationStartAction"),
-          },
-          caughtUp: t("orientationResumeAction"),
-          all: { href: lockedHref, label: t("trainingSeeAll") },
-        }
-      : {
-          heading:
-            inFirstWeeks && open.length
-              ? t("firstWeeksHeading")
-              : t("trainingAttentionHeading"),
-          doneLine: t("trainingDoneLine", { done, total: rows.length }),
-          overdueLine: overdue.length
-            ? t("trainingOverdueLine", { count: overdue.length })
-            : undefined,
-          done,
-          total: rows.length,
-          next: next
-            ? {
-                href: `/${locale}/employee/training/${next.course.id}`,
-                title: titleOf(next.course),
-                pill:
-                  next.effectiveStatus === "overdue"
-                    ? { tone: "bad", text: t("trainingOverdueChip") }
-                    : next.effectiveStatus === "in_progress"
-                      ? { tone: "progress", text: t("trainingInProgressChip") }
-                      : { tone: "neutral", text: t("trainingNotStarted") },
-                when: dueLabel(next.assignment.dueAt, now, t),
-                action:
-                  next.effectiveStatus === "in_progress"
-                    ? t("continueAction")
-                    : t("startAction"),
-              }
-            : undefined,
-          caughtUp: t("trainingCatchUpTitle"),
-          all: {
-            href: `/${locale}/employee/training`,
-            label: t("trainingSeeAll"),
-          },
-        }
+    ? {
+        heading:
+          inFirstWeeks && open.length
+            ? t("firstWeeksHeading")
+            : t("trainingAttentionHeading"),
+        doneLine: t("trainingDoneLine", { done, total: rows.length }),
+        overdueLine: overdue.length
+          ? t("trainingOverdueLine", { count: overdue.length })
+          : undefined,
+        done,
+        total: rows.length,
+        next: next
+          ? {
+              href: `/${locale}/employee/training/${next.course.id}`,
+              title: titleOf(next.course),
+              pill:
+                next.effectiveStatus === "overdue"
+                  ? { tone: "bad", text: t("trainingOverdueChip") }
+                  : next.effectiveStatus === "in_progress"
+                    ? { tone: "progress", text: t("trainingInProgressChip") }
+                    : { tone: "neutral", text: t("trainingNotStarted") },
+              when: dueLabel(next.assignment.dueAt, now, t),
+              action:
+                next.effectiveStatus === "in_progress"
+                  ? t("continueAction")
+                  : t("startAction"),
+            }
+          : undefined,
+        caughtUp: t("trainingCatchUpTitle"),
+        all: {
+          href: `/${locale}/employee/training`,
+          label: t("trainingSeeAll"),
+        },
+      }
     : null;
 
   const forMyStation = (p: Procedure): boolean =>
@@ -326,9 +312,7 @@ function HomeContent({
         ...facts,
         allergens: allergenWords(facts.allergens, isEs ? "es" : "en"),
       },
-      locked: showOnboardingView,
-      lockedHref: showOnboardingView ? lockedHref : undefined,
-      lockedReason: showOnboardingView ? lockedReason : undefined,
+      locked: false,
     };
   };
   const categoryOf = (p: Procedure): string =>
@@ -390,10 +374,6 @@ function HomeContent({
           >
             {t("tabHome")}
           </h1>
-          <HomeViewToggle
-            value={effectiveView}
-            aria={t("orientationToggleAria")}
-          />
         </div>
         <EmployeeHome
           locale={locale}
@@ -407,7 +387,7 @@ function HomeContent({
             rows: promoRows,
           }}
           assigned={
-            !showOnboardingView && assignedRows.length > 0
+            assignedRows.length > 0
               ? {
                   heading: t("assignedHeading"),
                   rows: assignedRows.map((p) => toRow(p, categoryOf(p))),
@@ -422,10 +402,7 @@ function HomeContent({
                   ? t("stationsHeading")
                   : t("stationHeading", { station: stationName })
                 : t("forYouHeading"),
-            rows: (showOnboardingView
-              ? [...assignedRows, ...stationRows]
-              : stationRows
-            ).map((p) => toRow(p, categoryOf(p))),
+            rows: stationRows.map((p) => toRow(p, categoryOf(p))),
             all: { href: `/${locale}/procedures`, label: t("browseAll") },
             empty: t("noProceduresBody"),
           }}
@@ -435,7 +412,7 @@ function HomeContent({
             critical: t("flagCritical"),
             english: t("flagEnglishOnly"),
           }}
-          isOnboarding={showOnboardingView}
+          isOnboarding={false}
         />
       </main>
 

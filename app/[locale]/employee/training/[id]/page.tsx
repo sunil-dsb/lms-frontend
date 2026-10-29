@@ -2,24 +2,12 @@ import * as React from "react";
 import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
+import { ApiException, getProcedureBySlug } from "@/lib/api";
 import {
-  ApiException,
-  fetchMe,
-  getQuizById,
-  getProcedureBySlug,
-} from "@/lib/api";
-import { fetchCourseById } from "@/services/courses/api";
-import {
-  getCourseById,
-  listTrainingAssignments,
-  listTrainingAssignmentsForEmployee,
-  mockTrainingEmployees,
-} from "@/lib/mock-training";
-import type {
-  Procedure,
-  ProcedureBlock,
-  TrainingAssignment,
-} from "@/lib/types";
+  fetchEmployeeQuiz,
+  fetchMyTrainingCourse,
+} from "@/services/courses/api";
+import type { Procedure, TrainingAssignment } from "@/lib/types";
 import {
   getCourseChaptersViewData,
   getChapterDetail,
@@ -51,56 +39,7 @@ export default async function EmployeeTrainingCoursePage({
   const { locale, id } = await params;
   const { chapter, mode } = await searchParams;
   setRequestLocale(locale);
-
-  let course: Procedure | null = null;
-
-  if (isUuid(id)) {
-    try {
-      const backendCourse = await fetchCourseById(id);
-      if (backendCourse) {
-        course = {
-          id: backendCourse.id,
-          slug: backendCourse.id,
-          titleEn: backendCourse.titleEn,
-          titleEs: backendCourse.titleEs,
-          purposeEn: backendCourse.purposeEn,
-          purposeEs: backendCourse.purposeEs,
-          status: backendCourse.status as any,
-          createdAt: backendCourse.createdAt,
-          updatedAt: backendCourse.updatedAt,
-          attachedToTraining: true,
-          chapterCount: backendCourse.chapters?.length ?? 0,
-        } as unknown as Procedure;
-
-        if (backendCourse.chapters && backendCourse.chapters.length > 0) {
-          const chapterDefs: ChapterDefinition[] = backendCourse.chapters.map(
-            (ch) => ({
-              id: ch.id,
-              number: ch.number,
-              titleEn: ch.titleEn,
-              titleEs: ch.titleEs,
-              contentEn: ch.subtitleEn || "",
-              contentEs: ch.subtitleEs || "",
-              blocks: (ch.blocks as any[]) || [],
-              procedureId: ch.procedureId ?? undefined,
-              quizId: ch.quizId ?? undefined,
-              quiz: (ch.quiz as any) ?? null,
-              minCorrectAnswers: ch.minCorrectAnswers ?? undefined,
-            }),
-          );
-          registerCourseChapters(backendCourse.id, chapterDefs);
-        }
-      }
-    } catch (err) {
-      console.warn("Could not fetch course from backend for employee:", err);
-    }
-  }
-
-  if (!course) {
-    course = getCourseById(id) ?? null;
-  }
-
-  if (!course) notFound();
+  if (!isUuid(id)) notFound();
 
   const cookieStore = await cookies();
   const cookieHeader = cookieStore
@@ -108,47 +47,70 @@ export default async function EmployeeTrainingCoursePage({
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
 
-  let employee;
+  let employeeTraining: Awaited<ReturnType<typeof fetchMyTrainingCourse>>;
   try {
-    const me = await fetchMe(cookieHeader);
-    employee = me.employee;
+    employeeTraining = await fetchMyTrainingCourse(id, cookieHeader);
   } catch (err) {
-    if (
-      err instanceof ApiException &&
-      (err.status === 401 || err.code === "SESSION_INVALID")
-    ) {
+    if (err instanceof ApiException && err.status === 401) {
       redirect(`/${locale}/login`);
     }
-    // Fall back to demo employee on transient server or network hiccups rather than breaking the session
-    employee = {
-      id: "emp-maria",
-      name: "María González",
-      role: "employee" as const,
-      locationId: "loc-roma",
-      roleIds: [],
-      stationIds: [],
-      languagePref: "en" as const,
-    };
+    if (err instanceof ApiException && err.status === 404) notFound();
+    console.error("Could not fetch assigned course from backend:", err);
+    throw err;
   }
 
-  const matched =
-    mockTrainingEmployees.find((e) => e.id === employee.id) ??
-    mockTrainingEmployees.find(
-      (e) => e.name.toLowerCase() === employee.name.toLowerCase(),
-    );
-  const mockEmployeeId = matched?.id ?? employee.id;
+  const backendCourse = employeeTraining.course;
+  if (!backendCourse || backendCourse.chapters.length === 0) notFound();
 
-  // Find assignment for this employee or fallback to demo assignment for the course
-  const assignment =
-    listTrainingAssignmentsForEmployee(mockEmployeeId).find(
-      (a: TrainingAssignment) => a.courseId === id,
-    ) ??
-    listTrainingAssignmentsForEmployee("emp-maria").find(
-      (a: TrainingAssignment) => a.courseId === id,
-    ) ??
-    listTrainingAssignments().find(
-      (a: TrainingAssignment) => a.courseId === id,
-    );
+  const course = {
+    id: backendCourse.id,
+    slug: backendCourse.id,
+    titleEn: backendCourse.titleEn,
+    titleEs: backendCourse.titleEs,
+    purposeEn: backendCourse.purposeEn,
+    purposeEs: backendCourse.purposeEs,
+    status: "published" as any,
+    createdAt: employeeTraining.assignment.assignedAt,
+    updatedAt: employeeTraining.assignment.assignedAt,
+    attachedToTraining: true,
+    chapterCount: backendCourse.chapters.length,
+  } as unknown as Procedure;
+
+  const chapterDefs: ChapterDefinition[] = backendCourse.chapters.map((ch) => ({
+    id: ch.id,
+    number: ch.number,
+    titleEn: ch.titleEn,
+    titleEs: ch.titleEs,
+    contentEn: ch.subtitleEn || "",
+    contentEs: ch.subtitleEs || "",
+    blocks: (ch.blocks as any[]) || [],
+    procedureId: ch.procedureId ?? undefined,
+    quizId: ch.quizId ?? undefined,
+    quizQuestionsCount: ch.quizQuestionsCount,
+    quiz: (ch.quiz as any) ?? null,
+    minCorrectAnswers: ch.minCorrectAnswers ?? undefined,
+  }));
+  registerCourseChapters(backendCourse.id, chapterDefs);
+
+  const chapterIndex = backendCourse.chapters.findIndex(
+    (item) => item.id === employeeTraining.assignment.currentChapterId,
+  );
+  const completedChapterIds = employeeTraining.assignment.courseCompletedAt
+    ? backendCourse.chapters.map((item) => item.id)
+    : backendCourse.chapters
+        .slice(0, Math.max(chapterIndex, 0))
+        .map((item) => item.id);
+  const assignment = {
+    id: employeeTraining.assignment.id,
+    courseId: backendCourse.id,
+    employeeId: "",
+    assignedAt: employeeTraining.assignment.assignedAt,
+    dueAt: employeeTraining.assignment.dueDate,
+    status: employeeTraining.assignment.status,
+    completedStepIds: completedChapterIds,
+    quizPassedAt: employeeTraining.assignment.courseCompletedAt,
+    acknowledgedAt: null,
+  } as TrainingAssignment;
 
   const isEs = locale === "es";
   const courseTitle =
@@ -158,10 +120,38 @@ export default async function EmployeeTrainingCoursePage({
 
   const chapterNumber = chapter ? parseInt(chapter, 10) : null;
 
+  if (
+    chapterNumber &&
+    !employeeTraining.course.chapters.some(
+      (item) => item.number === chapterNumber,
+    )
+  ) {
+    notFound();
+  }
+
   // 1. Chapter Quiz View: matches reference Image 2
   if (chapterNumber && !isNaN(chapterNumber) && mode === "quiz") {
     const chapterDetail = getChapterDetail(id, chapterNumber, locale);
     let chapterQuiz = chapterDetail.quiz;
+
+    if (chapterDetail.quizId) {
+      try {
+        const loadedQuiz = await fetchEmployeeQuiz(
+          chapterDetail.quizId,
+          cookieHeader,
+        );
+        if (loadedQuiz?.questions?.length) {
+          chapterQuiz = {
+            attached: true,
+            questions: loadedQuiz.questions,
+            minCorrectAnswers:
+              chapterDetail.minCorrectAnswers ?? loadedQuiz.minCorrectAnswers,
+          } as any;
+        }
+      } catch (err) {
+        console.warn("Could not load chapter quiz from backend:", err);
+      }
+    }
 
     // If chapter doesn't have an inline quiz, resolve from linked procedure
     if ((!chapterQuiz || !chapterQuiz.questions?.length) && chapterDetail) {
@@ -172,8 +162,10 @@ export default async function EmployeeTrainingCoursePage({
           const { fetchProcedureById } = await import("@/services/library/api");
           const proc = await fetchProcedureById(procId, true);
           if (proc?.quizId) {
-            const { fetchQuizById } = await import("@/lib/api/library");
-            const loadedQuiz = await fetchQuizById(proc.quizId);
+            const loadedQuiz = await fetchEmployeeQuiz(
+              proc.quizId,
+              cookieHeader,
+            );
             if (loadedQuiz?.questions?.length) {
               chapterQuiz = {
                 attached: true,
@@ -191,15 +183,11 @@ export default async function EmployeeTrainingCoursePage({
     }
 
     // Prefer chapter/linked procedure quiz questions, otherwise course quizId or fallback
-    const fallbackQuiz =
-      (course.quizId ? getQuizById(course.quizId) : null) ??
-      getQuizById("quiz-handwashing");
     const questions =
       chapterQuiz?.questions && chapterQuiz.questions.length > 0
         ? chapterQuiz.questions
-        : fallbackQuiz?.questions && fallbackQuiz.questions.length > 0
-          ? fallbackQuiz.questions
-          : (getQuizById("quiz-handwashing")?.questions ?? []);
+        : [];
+    if (questions.length === 0) notFound();
 
     const minCorrectAnswers =
       chapterDetail.minCorrectAnswers ??
@@ -209,10 +197,14 @@ export default async function EmployeeTrainingCoursePage({
     return (
       <ChapterQuizView
         courseId={id}
+        chapterId={
+          employeeTraining.course.chapters.find(
+            (item) => item.number === chapterNumber,
+          )!.id
+        }
         courseTitle={courseTitle}
         chapterNumber={chapterNumber}
         totalChapters={chapterDetail.totalChapters}
-        assignmentId={assignment?.id}
         locale={locale}
         questions={questions}
         minCorrectAnswers={minCorrectAnswers}
@@ -223,9 +215,20 @@ export default async function EmployeeTrainingCoursePage({
   // 2. Chapter Learn View: matches reference Image 1
   if (chapterNumber && !isNaN(chapterNumber)) {
     const chapterDetail = getChapterDetail(id, chapterNumber, locale);
+
+    // Check if blocks already contain linked_procedures — if so, use blocks directly
+    // (BlockRenderer will handle rendering all procedure IDs in the block)
+    const hasLinkedProceduresBlock = (chapterDetail.blocks ?? []).some(
+      (b: any) =>
+        b.kind === "linked_procedures" &&
+        Array.isArray(b.procedureIds) &&
+        b.procedureIds.length > 0,
+    );
+
     let linkedProcedure = null;
 
-    if (chapterDetail.procedureSlug) {
+    // Only fetch a single procedure when there's exactly one and no linked_procedures block
+    if (!hasLinkedProceduresBlock && chapterDetail.procedureSlug) {
       try {
         const res = await getProcedureBySlug(
           chapterDetail.procedureSlug,
@@ -248,7 +251,6 @@ export default async function EmployeeTrainingCoursePage({
         locale={locale}
         blocks={chapterDetail.blocks}
         procedure={linkedProcedure}
-        employee={employee}
       />
     );
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -16,14 +17,15 @@ import {
   LuTarget,
 } from "react-icons/lu";
 import type { ProcedureQuizQuestion } from "@/lib/types";
-import { tickStep } from "../actions";
+import { completeMyTrainingChapter } from "@/services/courses/api";
+import { MY_TRAINING_QUERY_KEY } from "@/services/courses/hooks";
 
 interface ChapterQuizViewProps {
   courseId: string;
+  chapterId?: string;
   courseTitle?: string;
   chapterNumber: number;
   totalChapters?: number;
-  assignmentId?: string;
   locale: string;
   questions: ProcedureQuizQuestion[];
   minCorrectAnswers?: number;
@@ -42,10 +44,10 @@ interface ChapterQuizViewProps {
  */
 export function ChapterQuizView({
   courseId,
+  chapterId,
   courseTitle,
   chapterNumber,
   totalChapters = 3,
-  assignmentId,
   locale,
   questions,
   minCorrectAnswers,
@@ -54,6 +56,7 @@ export function ChapterQuizView({
   sidebarOffsetPx = 0,
 }: ChapterQuizViewProps): React.ReactElement {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const t = useTranslations("employee.training");
   const isEs = locale === "es";
   const effectiveBasePath =
@@ -73,6 +76,7 @@ export function ChapterQuizView({
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [score, setScore] = React.useState(0);
   const [hasPassed, setHasPassed] = React.useState(false);
+  const [submissionError, setSubmissionError] = React.useState(false);
 
   const currentQuestion = questions[currentIndex] || questions[0];
 
@@ -121,45 +125,27 @@ export function ChapterQuizView({
     });
 
     const passed = calculatedScore >= passingRequirement;
+    if (passed) {
+      if (chapterId) {
+        try {
+          await completeMyTrainingChapter(courseId, chapterId);
+          await queryClient.invalidateQueries({
+            queryKey: MY_TRAINING_QUERY_KEY,
+          });
+          router.refresh();
+        } catch {
+          setSubmissionError(true);
+          return;
+        }
+      } else {
+        setSubmissionError(true);
+        return;
+      }
+    }
+
     setScore(calculatedScore);
     setHasPassed(passed);
     setIsSubmitted(true);
-
-    if (passed) {
-      // 1. Persist to local storage for instant client unlock across views
-      if (typeof window !== "undefined") {
-        try {
-          const storageKey = `lms_completed_chapters_${courseId}`;
-          const current: number[] = JSON.parse(
-            localStorage.getItem(storageKey) || "[]",
-          );
-          if (!current.includes(chapterNumber)) {
-            current.push(chapterNumber);
-            localStorage.setItem(storageKey, JSON.stringify(current));
-          }
-          localStorage.setItem(
-            `lms_chapter_passed_${courseId}_${chapterNumber}`,
-            "true",
-          );
-        } catch {
-          // ignore
-        }
-      }
-
-      // 2. Persist to server assignment if present
-      if (assignmentId) {
-        try {
-          await tickStep(
-            assignmentId,
-            `ch-${chapterNumber}-step`,
-            true,
-            locale,
-          );
-        } catch {
-          // ignore error in demo
-        }
-      }
-    }
   };
 
   const handleRetryQuiz = (): void => {
@@ -168,6 +154,7 @@ export function ChapterQuizView({
     setIsSubmitted(false);
     setScore(0);
     setHasPassed(false);
+    setSubmissionError(false);
   };
 
   // ---------------------------------------------------------------------------
@@ -388,6 +375,16 @@ export function ChapterQuizView({
         className="mx-auto w-full max-w-doc space-y-5 px-4 pt-5 sm:px-6 sm:pt-6"
         style={{ paddingBottom: "120px" }}
       >
+        {submissionError ? (
+          <p
+            role="alert"
+            className="rounded-xl bg-red-50 p-3 text-sm text-red-700"
+          >
+            {isEs
+              ? "No se pudo guardar tu progreso. Inténtalo de nuevo."
+              : "Could not save your progress. Please try again."}
+          </p>
+        ) : null}
         {/* Top Back Header */}
         <div className="flex items-center justify-between">
           <Link
