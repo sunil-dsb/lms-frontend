@@ -8,9 +8,11 @@ import type { ProcedureBlock } from "@/lib/types";
 export function BilingualRichTextEditor({
   block,
   onPatch,
+  maxWords,
 }: {
   block: Extract<ProcedureBlock, { kind: "rich_text" }>;
   onPatch: (block: Extract<ProcedureBlock, { kind: "rich_text" }>) => void;
+  maxWords?: number;
 }): React.ReactElement {
   const [activeLanguage, setActiveLanguage] = useState<"en" | "es">("en");
   return (
@@ -47,6 +49,7 @@ export function BilingualRichTextEditor({
                     : "Texto enriquecido en español"
                 }
                 value={block.body[language]}
+                maxWords={maxWords}
                 onFocus={() => setActiveLanguage(language)}
                 onChange={(value) =>
                   onPatch({

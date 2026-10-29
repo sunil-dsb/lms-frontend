@@ -180,6 +180,20 @@ interface RichTextEditorProps {
   minHeight?: number;
   embedded?: boolean;
   onFocus?: () => void;
+  /** Maximum word count. When set, typing beyond the limit is blocked and a counter is shown. */
+  maxWords?: number;
+}
+
+/** Extract plain text from a Tiptap JSON doc node */
+function extractText(node: JSONContent): string {
+  if (node.type === "text") return node.text ?? "";
+  return (node.content ?? []).map(extractText).join(" ");
+}
+
+/** Count words in a Tiptap JSON doc */
+function countWords(doc: JSONContent): number {
+  const text = extractText(doc).trim();
+  return text === "" ? 0 : text.split(/\s+/).length;
 }
 
 export function RichTextEditor({
@@ -189,12 +203,16 @@ export function RichTextEditor({
   minHeight = 130,
   embedded = false,
   onFocus,
+  maxWords,
 }: RichTextEditorProps): React.ReactElement {
   const linkId = React.useId();
   const [linkOpen, setLinkOpen] = React.useState(false);
   const [linkHref, setLinkHref] = React.useState("");
   const [linkError, setLinkError] = React.useState("");
   const linkInputRef = React.useRef<HTMLInputElement>(null);
+  const [wordCount, setWordCount] = React.useState<number>(() =>
+    value ? countWords(safeInitialContent(value)) : 0,
+  );
   const editor = useEditor({
     extensions,
     content: safeInitialContent(value),
@@ -206,8 +224,16 @@ export function RichTextEditor({
       },
       transformPastedHTML: cleanPastedHtml,
     },
-    onUpdate: ({ editor: current }) =>
-      onChange(current.getJSON() as RichTextDocument),
+    onUpdate: ({ editor: current }) => {
+      const doc = current.getJSON() as RichTextDocument;
+      const wc = countWords(doc);
+      if (maxWords && wc > maxWords) {
+        // Roll back to last valid state — don't emit change
+        return;
+      }
+      setWordCount(wc);
+      onChange(doc);
+    },
   });
 
   React.useEffect(() => {
@@ -219,6 +245,7 @@ export function RichTextEditor({
       editor.commands.setContent(safeInitialContent(value), {
         emitUpdate: false,
       });
+      setWordCount(countWords(safeInitialContent(value)));
     }
   }, [editor, value]);
 
@@ -422,6 +449,31 @@ export function RichTextEditor({
         style={{ minHeight: embedded ? undefined : minHeight }}
         className={`${embedded ? "p-2" : "p-3"} text-sm text-[var(--color-ink)]`}
       />
+      {maxWords ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            padding: "4px 10px 6px",
+            borderTop: "1px solid var(--color-line-2)",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "11px",
+              fontVariantNumeric: "tabular-nums",
+              color:
+                wordCount > maxWords
+                  ? "var(--color-bad)"
+                  : wordCount >= maxWords * 0.9
+                    ? "var(--color-warn)"
+                    : "var(--color-ink-3)",
+            }}
+          >
+            {wordCount} / {maxWords} words
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
