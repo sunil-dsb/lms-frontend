@@ -20,7 +20,14 @@ export function DueDateBadge({
   if (!dueAt) return null;
 
   const isEs = locale === "es";
-  const dueDate = new Date(dueAt);
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueAt);
+  const dueDate = dateOnly
+    ? new Date(
+        Number(dateOnly[1]),
+        Number(dateOnly[2]) - 1,
+        Number(dateOnly[3]),
+      )
+    : new Date(dueAt);
   if (isNaN(dueDate.getTime())) return null;
 
   const now = new Date();

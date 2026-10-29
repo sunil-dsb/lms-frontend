@@ -56,54 +56,7 @@ export function CourseChaptersView({
   const effectiveBasePath =
     basePath ?? `/${locale}/employee/training/${courseId}`;
 
-  // Read locally recorded completed chapters for real-time unlock feedback
-  const [completedList, setCompletedList] = React.useState<number[]>([]);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(
-          `lms_completed_chapters_${courseId}`,
-        );
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setCompletedList(parsed);
-          }
-        }
-      } catch {
-        // ignore
-      }
-    }
-  }, [courseId]);
-
-  // Compute effective chapters with unlocked states
-  const effectiveChapters = React.useMemo(() => {
-    if (completedList.length === 0) return chapters;
-    const mapped = chapters.map((ch, idx) => {
-      const isCompleteLocally =
-        completedList.includes(ch.number) || completedList.includes(idx + 1);
-      if (isCompleteLocally || ch.status === "complete") {
-        return {
-          ...ch,
-          status: "complete" as const,
-          subtitle:
-            ch.subtitle || (locale === "es" ? "Completado" : "Completed"),
-        };
-      }
-      return ch;
-    });
-
-    // Second pass to ensure chronological unlock
-    return mapped.map((ch, idx, arr) => {
-      if (ch.status === "complete") return ch;
-      const prevComplete = idx === 0 || arr[idx - 1].status === "complete";
-      return {
-        ...ch,
-        status: prevComplete ? ("active" as const) : ("locked" as const),
-      };
-    });
-  }, [chapters, completedList, locale]);
+  const effectiveChapters = chapters;
 
   const effectiveCompletedCount = effectiveChapters.filter(
     (c) => c.status === "complete",
@@ -164,7 +117,7 @@ export function CourseChaptersView({
 
         {/* Course Chapters Cards List */}
         <section aria-label="Course chapters" className="pt-2">
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-3.5">
             {effectiveChapters.map((ch) => (
               <CourseChapterItem
                 key={ch.id}
