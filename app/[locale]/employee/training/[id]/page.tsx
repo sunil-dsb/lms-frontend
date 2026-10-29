@@ -194,20 +194,26 @@ export default async function EmployeeTrainingCoursePage({
       chapterQuiz?.minCorrectAnswers ??
       Math.max(1, Math.ceil(questions.length * 0.7));
 
+    const currentChapterObj = employeeTraining.course.chapters.find(
+      (item) => item.number === chapterNumber,
+    );
+    const isCurrentChapterCompleted =
+      Boolean(employeeTraining.assignment.courseCompletedAt) ||
+      (currentChapterObj
+        ? completedChapterIds.includes(currentChapterObj.id)
+        : false);
+
     return (
       <ChapterQuizView
         courseId={id}
-        chapterId={
-          employeeTraining.course.chapters.find(
-            (item) => item.number === chapterNumber,
-          )!.id
-        }
+        chapterId={currentChapterObj?.id}
         courseTitle={courseTitle}
         chapterNumber={chapterNumber}
         totalChapters={chapterDetail.totalChapters}
         locale={locale}
         questions={questions}
         minCorrectAnswers={minCorrectAnswers}
+        isCompleted={isCurrentChapterCompleted}
       />
     );
   }

@@ -19,6 +19,8 @@ import {
 import type { ProcedureQuizQuestion } from "@/lib/types";
 import { completeMyTrainingChapter } from "@/services/courses/api";
 import { MY_TRAINING_QUERY_KEY } from "@/services/courses/hooks";
+import { ApiException } from "@/lib/api";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 interface ChapterQuizViewProps {
@@ -33,6 +35,7 @@ interface ChapterQuizViewProps {
   basePath?: string;
   backHref?: string;
   sidebarOffsetPx?: number;
+  isCompleted?: boolean;
 }
 
 /**
@@ -42,6 +45,8 @@ interface ChapterQuizViewProps {
  * - Evaluates against admin-configured passing answers threshold (e.g. 4 of 6)
  * - On pass: records completion, unlocks next chapter, and offers direct navigation
  * - On fail: requires retrying or reviewing without giving away the correct answers
+ * - If already passed (isCompleted): informs the employee that the quiz was completed,
+ *   allows reviewing questions without re-attempting or re-submitting to the backend.
  */
 export function ChapterQuizView({
   courseId,
@@ -55,6 +60,7 @@ export function ChapterQuizView({
   basePath,
   backHref,
   sidebarOffsetPx = 0,
+  isCompleted = false,
 }: ChapterQuizViewProps): React.ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -126,7 +132,9 @@ export function ChapterQuizView({
     });
 
     const passed = calculatedScore >= passingRequirement;
-    if (passed) {
+
+    // Only record completion on backend if chapter is not already completed!
+    if (passed && !isCompleted) {
       if (chapterId) {
         try {
           await completeMyTrainingChapter(courseId, chapterId);
@@ -134,11 +142,24 @@ export function ChapterQuizView({
             queryKey: MY_TRAINING_QUERY_KEY,
           });
           router.refresh();
-        } catch {
+        } catch (err: unknown) {
+          const apiMsg =
+            err instanceof ApiException
+              ? err.message
+              : (err as any)?.response?.data?.message || (err as any)?.message;
+          const fallbackMsg = isEs
+            ? "No se pudo guardar tu progreso. Inténtalo de nuevo."
+            : "Could not save your progress. Please try again.";
+          const finalMsg = apiMsg || fallbackMsg;
+          toast.error(finalMsg);
           setSubmissionError(true);
           return;
         }
       } else {
+        const msg = isEs
+          ? "ID del capítulo no encontrado"
+          : "Chapter ID not found";
+        toast.error(msg);
         setSubmissionError(true);
         return;
       }
@@ -217,8 +238,8 @@ export function ChapterQuizView({
               <p className="text-xs text-[var(--color-ink-2)] leading-relaxed">
                 {nextChapterNumber
                   ? isEs
-                    ? `Tu progreso ha sido registrado. El Capítulo ${nextChapterNumber} ya está desbloqueado para continuar.`
-                    : `Your progress has been recorded. Chapter ${nextChapterNumber} is now unlocked and ready.`
+                    ? `Tu progreso ha sido registrado. El Capítulo ${nextChapterNumber} ya está disponible para continuar.`
+                    : `Your progress has been recorded. Chapter ${nextChapterNumber} is available.`
                   : isEs
                     ? "¡Has completado todos los capítulos de este curso!"
                     : "You have successfully completed all chapters for this course!"}
@@ -280,45 +301,38 @@ export function ChapterQuizView({
       );
     }
 
-    // FAILED SCREEN (Answers remain concealed!)
+    // Failed State Screen
     return (
       <div className="relative min-h-screen bg-[var(--color-bg)] flex flex-col justify-between">
         <main className="mx-auto w-full max-w-doc space-y-6 px-4 pt-12 text-center sm:px-6">
-          {/* Warning Icon */}
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-500 text-white shadow-lg animate-in zoom-in-90 duration-300">
             <LuCircleAlert className="text-4xl" aria-hidden="true" />
           </div>
 
           <div className="space-y-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200">
-              <LuCircleAlert className="w-3.5 h-3.5" />
-              {isEs ? "Cuestionario no aprobado" : "Quiz not passed"}
+              {isEs ? "Reintentar necesario" : "Retry needed"}
             </span>
             <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-[var(--color-ink)] sm:text-3xl">
-              {isEs ? "Puntuación insuficiente" : "Passing score not met"}
+              {isEs ? "Casi lo logras" : "Almost there"}
             </h1>
             <p className="text-base text-[var(--color-ink-2)] max-w-md mx-auto">
               {isEs
-                ? `Obtuviste ${score} de ${totalQuestions} respuestas correctas. Se requieren al menos ${passingRequirement} correctas para completar este capítulo.`
-                : `You scored ${score} of ${totalQuestions} correct. You need at least ${passingRequirement} correct answers to complete this chapter.`}
+                ? `Obtuviste ${score} de ${totalQuestions} respuestas correctas. Necesitas al menos ${passingRequirement} correctas para aprobar.`
+                : `You got ${score} of ${totalQuestions} questions correct. You need at least ${passingRequirement} correct to pass.`}
             </p>
           </div>
 
-          {/* Details & Integrity Note */}
+          {/* Tips card */}
           <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 text-left space-y-3 shadow-xs max-w-lg mx-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--color-line-2)]">
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-3)]">
-                {isEs ? "Requisito de aprobación" : "Passing requirement"}
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
-                {passingRequirement} / {totalQuestions} (
-                {Math.round((passingRequirement / totalQuestions) * 100)}%)
-              </span>
+            <div className="flex items-center gap-2 text-sm font-bold text-[var(--color-ink)]">
+              <LuBookOpen className="text-lg text-[var(--color-brand-600)]" />
+              <span>{isEs ? "Sugerencia de estudio" : "Study tip"}</span>
             </div>
             <p className="text-xs text-[var(--color-ink-2)] leading-relaxed">
               {isEs
-                ? "Para garantizar la seguridad y los estándares de cocina, las respuestas correctas no se revelan. Revisa el contenido del capítulo y vuelve a intentarlo cuando estés listo."
-                : "To maintain kitchen excellence and safety, answers are not revealed. Review the chapter content and try the quiz again."}
+                ? "Repasa las secciones clave del capítulo antes de volver a intentarlo para reforzar tu comprensión de los procedimientos."
+                : "Review the key sections in this chapter before retrying to strengthen your understanding of standard procedures."}
             </p>
           </div>
         </main>
@@ -368,7 +382,6 @@ export function ChapterQuizView({
   // ---------------------------------------------------------------------------
   const isLastQuestion = currentIndex === totalQuestions - 1;
   const isCurrentAnswered = Boolean(selectedChoiceId);
-  const totalAnsweredCount = Object.keys(answers).length;
 
   return (
     <div className="relative min-h-screen bg-[var(--color-bg)]">
@@ -386,6 +399,7 @@ export function ChapterQuizView({
               : "Could not save your progress. Please try again."}
           </p>
         ) : null}
+
         {/* Top Back Header */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Link
@@ -400,16 +414,63 @@ export function ChapterQuizView({
             </span>
           </Link>
 
-          {/* Passing requirement pill */}
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-3 py-1.5 shadow-2xs">
-            <LuTarget className="w-4 h-4 text-[var(--color-brand-600)] shrink-0" />
-            <span className="leading-none">
-              {isEs
-                ? `${passingRequirement} de ${totalQuestions} para aprobar`
-                : `${passingRequirement} of ${totalQuestions} to pass`}
+          {/* Status pill: Passed or Passing requirement */}
+          {isCompleted ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 shadow-2xs">
+              <LuCheck className="w-3.5 h-3.5 stroke-[3]" />
+              <span>{isEs ? "Aprobado" : "Passed"}</span>
             </span>
-          </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-3 py-1.5 shadow-2xs">
+              <LuTarget className="w-4 h-4 text-[var(--color-brand-600)] shrink-0" />
+              <span className="leading-none">
+                {isEs
+                  ? `${passingRequirement} de ${totalQuestions} para aprobar`
+                  : `${passingRequirement} of ${totalQuestions} to pass`}
+              </span>
+            </span>
+          )}
         </div>
+
+        {/* Already Passed Banner */}
+        {isCompleted && (
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/90 dark:border-emerald-900/60 dark:bg-emerald-950/40 p-4 text-emerald-900 dark:text-emerald-200 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+                <LuCheck className="h-5 w-5 stroke-[3]" />
+              </div>
+              <div>
+                <div className="text-sm font-bold">
+                  {isEs ? "Cuestionario completado" : "Quiz completed"}
+                </div>
+                <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80">
+                  {isEs
+                    ? "Ya has aprobado este cuestionario. Puedes repasar las preguntas; no es necesario volver a enviarlo."
+                    : "You've already passed this quiz. You can review questions; no need to reattempt."}
+                </p>
+              </div>
+            </div>
+            {chapterNumber < totalChapters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  router.push(
+                    `${effectiveBasePath}?chapter=${chapterNumber + 1}`,
+                  );
+                  router.refresh();
+                }}
+                className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <span>
+                  {isEs
+                    ? `Capítulo ${chapterNumber + 1}`
+                    : `Chapter ${chapterNumber + 1}`}
+                </span>
+                <LuArrowRight className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
+        )}
 
         {/* Multi-question Segmented Progress Bar (only shown when there are 2 or more questions) */}
         {totalQuestions > 1 ? (
@@ -448,54 +509,53 @@ export function ChapterQuizView({
         <div
           className={`space-y-2.5 ${totalQuestions > 1 ? "pt-2" : "pt-4 sm:pt-6"}`}
         >
-          {currentQuestion?.sourceProcedureTitle ? (
-            <div
-              className="inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-brand-tint-2)]/50 text-[var(--color-brand-700)] dark:text-[var(--color-brand-300)] border border-[var(--color-brand-600)]/20"
-              style={{ padding: "6px 14px", gap: "8px" }}
-            >
-              <LuBookOpen className="w-4 h-4 text-[var(--color-brand-600)] shrink-0" />
-              <span>
-                {isEs
-                  ? "Relacionado al procedimiento:"
-                  : "Related to procedure:"}{" "}
-                <strong>
-                  {typeof currentQuestion.sourceProcedureTitle === "string"
-                    ? currentQuestion.sourceProcedureTitle
-                    : isEs
-                      ? (currentQuestion.sourceProcedureTitle as any)?.es ||
-                        (currentQuestion.sourceProcedureTitle as any)?.en
-                      : (currentQuestion.sourceProcedureTitle as any)?.en ||
-                        (currentQuestion.sourceProcedureTitle as any)?.es}
-                </strong>
-              </span>
-            </div>
-          ) : (
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-brand-700)]">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-wider text-[var(--color-brand-600)]">
               {t("eyebrowCheckUnderstanding")}
-            </p>
-          )}
+            </span>
 
-          <h1 className="font-[family-name:var(--font-ui)] text-xl font-medium leading-snug tracking-tight text-[var(--color-ink)] sm:text-2xl">
+            {/* If question originates from a linked procedure */}
+            {((currentQuestion as { procedureTitle?: string }).procedureTitle ||
+              currentQuestion.sourceProcedureTitle) && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-ink-2)] bg-[var(--color-panel-2)] px-2.5 py-0.5 rounded-md">
+                <LuBookOpen className="text-xs shrink-0" />
+                <span className="truncate max-w-[200px]">
+                  {(currentQuestion as { procedureTitle?: string })
+                    .procedureTitle || currentQuestion.sourceProcedureTitle}
+                </span>
+              </span>
+            )}
+          </div>
+
+          <h2 className="font-[family-name:var(--font-display)] text-xl font-bold tracking-tight text-[var(--color-ink)] sm:text-2xl leading-snug">
             {questionPrompt}
-          </h1>
+          </h2>
         </div>
 
-        {/* Radio Option Choices (Without revealing answers) */}
-        <fieldset className="space-y-3 pt-2" aria-label={questionPrompt}>
+        {/* Answer Choices List */}
+        <fieldset
+          className="space-y-3 pt-2"
+          aria-label={t("questionOfN", {
+            current: currentIndex + 1,
+            total: totalQuestions,
+          })}
+        >
           <legend className="sr-only">{questionPrompt}</legend>
+
           {choices.map((choice, cIdx) => {
             const isSelected = selectedChoiceId === choice.id;
-            const letter = String.fromCharCode(65 + cIdx); // A, B, C, D
-            const rawLabel =
-              (choice as any)?.label ??
+            const letter = String.fromCharCode(65 + cIdx); // A, B, C, D...
+
+            const rawText =
               (choice as any)?.text ??
+              (choice as any)?.label ??
               (choice as any)?.title;
             const choiceLabel =
-              typeof rawLabel === "string"
-                ? rawLabel
+              typeof rawText === "string"
+                ? rawText
                 : isEs
-                  ? rawLabel?.es || rawLabel?.en || ""
-                  : rawLabel?.en || rawLabel?.es || "";
+                  ? rawText?.es || rawText?.en || ""
+                  : rawText?.en || rawText?.es || "";
 
             return (
               <label
@@ -572,14 +632,14 @@ export function ChapterQuizView({
             </button>
           )}
 
-          {/* Next Question OR Submit Quiz Button */}
+          {/* Next Question OR Action Button */}
           {!isLastQuestion ? (
             <button
               type="button"
               onClick={handleNext}
-              disabled={!isCurrentAnswered}
+              disabled={!isCurrentAnswered && !isCompleted}
               className={`flex-1 flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold transition-all duration-[var(--dur)] ease-[var(--ease)] ${
-                isCurrentAnswered
+                isCurrentAnswered || isCompleted
                   ? "bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)] active:scale-[0.99] shadow-md cursor-pointer"
                   : "bg-[var(--color-panel)] text-[var(--color-ink-3)] cursor-not-allowed"
               }`}
@@ -587,6 +647,51 @@ export function ChapterQuizView({
               <span>{isEs ? "Siguiente pregunta" : "Next question"}</span>
               <LuChevronRight className="w-4 h-4" />
             </button>
+          ) : isCompleted ? (
+            <>
+              {chapterNumber < totalChapters ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push(
+                      `${effectiveBasePath}?chapter=${chapterNumber + 1}`,
+                    );
+                    router.refresh();
+                  }}
+                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+                >
+                  <span>
+                    {isEs
+                      ? `Continuar al Capítulo ${chapterNumber + 1}`
+                      : `Continue to Chapter ${chapterNumber + 1}`}
+                  </span>
+                  <LuArrowRight className="w-5 h-5" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push(backHref ?? effectiveBasePath);
+                    router.refresh();
+                  }}
+                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+                >
+                  <span>{t("backToChapters")}</span>
+                </button>
+              )}
+
+              {isCurrentAnswered && (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  title={isEs ? "Revisar respuestas" : "Review score"}
+                  className="flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3.5 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:scale-[0.99] transition-all cursor-pointer"
+                >
+                  <LuCheck className="w-4 h-4 stroke-[2.5]" />
+                  <span>{isEs ? "Verificar" : "Score"}</span>
+                </button>
+              )}
+            </>
           ) : (
             <button
               type="button"

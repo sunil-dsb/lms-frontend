@@ -8,12 +8,7 @@ import { readViewAs } from "@/lib/view-as-server";
 import { withAs } from "@/lib/view-as";
 import { LuArrowLeft } from "react-icons/lu";
 import { TabBar } from "@/components/employee/tab-bar";
-import {
-  getOnboardingChapters,
-  mockTrainingEmployees,
-} from "@/lib/mock-training";
 import { ProceduresClientList } from "./procedures-client-list";
-import { HomeViewToggle } from "@/app/[locale]/employee/home/components/HomeViewToggle";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -27,7 +22,7 @@ export default async function ProceduresPage({
   searchParams,
 }: PageProps): Promise<React.ReactElement> {
   const { locale } = await params;
-  const { q = "", category = "", view = "" } = await searchParams;
+  const { q = "", category = "" } = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("employee.browse");
 
@@ -67,10 +62,10 @@ export default async function ProceduresPage({
   const viewAs = await readViewAs();
   const effectiveRole = viewAs ?? "employee";
 
-  // Onboarding gate — when the cook hasn't cleared orientation, every row on
-  // this tab is locked and tapping pushes them back to /employee/training.
-  // Admins reading the library (effectiveRole === 'admin') skip the gate.
-  // The demo view toggle (?view=regular or cookie lms_demo_view) unlocks procedures.
+  // Note: Onboarding gate & demo view toggle commented out for now.
+  // When an actual onboarding course is completed from backend data,
+  // this can be hooked up dynamically.
+  /*
   const onboardingEmployeeId =
     mockTrainingEmployees.find((e) => e.id === employee.id)?.id ??
     mockTrainingEmployees.find(
@@ -87,13 +82,7 @@ export default async function ProceduresPage({
         : !getOnboardingChapters(onboardingEmployeeId, new Date())
             .onboardingDone;
   const onboardingDone = effectiveRole === "admin" || !isOrientationPending;
-  const lockedHref = `/${locale}/employee/training`;
-  let lockedReason = "Locked until orientation is done";
-  try {
-    lockedReason = t("lockedRowReason");
-  } catch {
-    // fallback
-  }
+  */
 
   // The list itself (categories + procedures) is fetched by
   // ProceduresClientList through TanStack Query — the shell above
@@ -141,13 +130,10 @@ export default async function ProceduresPage({
           </Link>
         ) : null}
 
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-2">
           <h1 className="font-[family-name:var(--font-display)] text-xl font-bold leading-display tracking-tight text-[var(--color-ink)] sm:text-2xl">
             {t("heading")}
           </h1>
-          {!isAdmin ? (
-            <HomeViewToggle value={onboardingDone ? "regular" : "onboarding"} />
-          ) : null}
         </div>
 
         <ProceduresClientList
@@ -160,9 +146,7 @@ export default async function ProceduresPage({
           stationId={resolvedStationIds[0] ?? null}
           stationIds={resolvedStationIds}
           employeeId={employee.id}
-          locked={!onboardingDone}
-          lockedHref={lockedHref}
-          lockedReason={lockedReason}
+          locked={false}
         />
       </main>
 

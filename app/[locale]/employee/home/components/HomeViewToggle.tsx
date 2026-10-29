@@ -10,10 +10,12 @@ import { LuLock, LuCircleCheck } from "react-icons/lu";
 export function HomeViewToggle({
   value,
   aria,
+  className,
 }: {
   value: "onboarding" | "regular";
   /** Localised aria-label for the button */
   aria?: string;
+  className?: string;
 }): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
@@ -35,6 +37,7 @@ export function HomeViewToggle({
     <div
       role="group"
       aria-label={aria || "Demo view switcher"}
+      className={className}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -52,7 +55,7 @@ export function HomeViewToggle({
           display: "inline-flex",
           alignItems: "center",
           gap: "5px",
-          padding: "5px 12px",
+          padding: "5px 10px",
           borderRadius: "9999px",
           fontSize: "12px",
           fontWeight: 600,
@@ -76,7 +79,7 @@ export function HomeViewToggle({
           display: "inline-flex",
           alignItems: "center",
           gap: "5px",
-          padding: "5px 12px",
+          padding: "5px 10px",
           borderRadius: "9999px",
           fontSize: "12px",
           fontWeight: 600,
