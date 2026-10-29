@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import {
   LuArchive,
   LuCheck,
+  LuChevronLeft,
+  LuChevronRight,
   LuFilePen,
   LuGraduationCap,
   LuPlus,
@@ -17,6 +19,7 @@ import {
   LuX,
 } from "react-icons/lu";
 import type { Procedure, TrainingCourseRow } from "@/lib/types";
+import type { CoursesFilterOptions } from "@/services/courses/types";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterChips } from "@/components/ui/filter-chips";
@@ -49,16 +52,54 @@ export function TrainingCourseExplorer({
   const router = useRouter();
   const isEs = locale === "es";
 
-  const { data: coursesData, isLoading, refetch } = useCourses({ limit: 100 });
-  const archiveMutation = useArchiveCourse();
-  const unarchiveMutation = useUnarchiveCourse();
-  const deleteMutation = useDeleteCourse();
+  // Server-driven filters + pagination: the chip filter, the debounced
+  // search box and the page number are all query params of GET /api/v1/courses
+  // (search, status, assignment, page, limit), so each change is one fresh
+  // API call (React Query keys per option set) instead of scanning a
+  // fully-fetched list client-side.
+  const PAGE_SIZE = 10;
 
+  const [searchInput, setSearchInput] = React.useState("");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [filter, setFilter] = React.useState<AssignmentFilter>("all");
+  const [page, setPage] = React.useState(1);
   const [assigningCourse, setAssigningCourse] =
     React.useState<Procedure | null>(null);
   const [successToast, setSuccessToast] = React.useState<string | null>(null);
+
+  // Debounce the search box so typing fires one API call, not one per char.
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  const options = React.useMemo(() => {
+    // "all"/"assigned"/"unassigned" look at non-archived courses only — the
+    // chips show archived as its own bucket, both server-side.
+    const opts: CoursesFilterOptions = { limit: PAGE_SIZE, page };
+    if (filter === "archived") {
+      opts.status = "archived";
+    } else {
+      opts.status = "published";
+      if (filter === "assigned") opts.assignment = "assigned";
+      if (filter === "unassigned") opts.assignment = "unassigned";
+    }
+    if (searchQuery.trim()) opts.search = searchQuery.trim();
+    return opts;
+  }, [filter, page, searchQuery]);
+
+  const {
+    data: coursesData,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useCourses(options);
+  const archiveMutation = useArchiveCourse();
+  const unarchiveMutation = useUnarchiveCourse();
+  const deleteMutation = useDeleteCourse();
 
   const courseRows = React.useMemo<TrainingCourseRow[]>(() => {
     if (!coursesData?.items) return [];
@@ -80,6 +121,8 @@ export function TrainingCourseExplorer({
           updatedAt: bc.updatedAt,
           attachedToTraining: true,
           chapterCount: bc.chapterCount ?? 0,
+          quizCount: bc.quizCount ?? 0,
+          hasQuiz: bc.hasQuiz ?? Boolean(bc.quizCount && bc.quizCount > 0),
           quizId:
             bc.hasQuiz || (bc.quizCount && bc.quizCount > 0)
               ? "attached-quiz"
@@ -87,12 +130,13 @@ export function TrainingCourseExplorer({
         } as unknown as Procedure,
         chapterCount: bc.chapterCount ?? 0,
         assignmentCount: assignCount,
-        completeCount: 0,
-        inProgressCount: 0,
-        overdueCount: 0,
       };
     });
   }, [coursesData?.items]);
+
+  // Chips read the server-computed bucket counts (GET /courses meta.counts)
+  // — they cover the whole table, not just the visible page/bucket.
+  const filterCounts = coursesData?.counts;
 
   React.useEffect(() => {
     if (!successToast) return;
@@ -110,33 +154,9 @@ export function TrainingCourseExplorer({
     [isEs],
   );
 
-  const filterCounts = React.useMemo(() => {
-    const active = courseRows.filter((r) => !r.course.isArchived);
-    const archived = courseRows.filter((r) => Boolean(r.course.isArchived));
-    return {
-      all: active.length,
-      assigned: active.filter((r) => r.assignmentCount > 0).length,
-      unassigned: active.filter((r) => r.assignmentCount === 0).length,
-      archived: archived.length,
-    };
-  }, [courseRows]);
-
-  const filteredRows = React.useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return courseRows.filter((row) => {
-      const isArchived = Boolean(row.course.isArchived);
-      if (filter === "archived") {
-        if (!isArchived) return false;
-      } else {
-        if (isArchived) return false;
-        if (filter === "assigned" && row.assignmentCount === 0) return false;
-        if (filter === "unassigned" && row.assignmentCount > 0) return false;
-      }
-
-      if (!q) return true;
-      return titleOf(row).toLowerCase().includes(q);
-    });
-  }, [courseRows, searchQuery, filter, titleOf]);
+  const filteredRows = courseRows;
+  const totalPages = coursesData?.meta.totalPages ?? 1;
+  const canPage = totalPages > 1;
 
   async function handleArchive(courseId: string): Promise<void> {
     try {
@@ -233,27 +253,30 @@ export function TrainingCourseExplorer({
       <FilterChips
         label={t("filterAssignment")}
         value={filter}
-        onChange={(v) => setFilter(v as AssignmentFilter)}
+        onChange={(v) => {
+          setFilter(v as AssignmentFilter);
+          setPage(1);
+        }}
         chips={[
           {
             value: "all",
             label: tCommon("filterAll"),
-            count: filterCounts.all,
+            count: filterCounts?.all,
           },
           {
             value: "assigned",
             label: isEs ? "Asignados" : "Assigned",
-            count: filterCounts.assigned,
+            count: filterCounts?.assigned,
           },
           {
             value: "unassigned",
             label: isEs ? "No asignados" : "Unassigned",
-            count: filterCounts.unassigned,
+            count: filterCounts?.unassigned,
           },
           {
             value: "archived",
             label: isEs ? "Archivados" : "Archived",
-            count: filterCounts.archived,
+            count: filterCounts?.archived,
           },
         ]}
       />
@@ -268,14 +291,14 @@ export function TrainingCourseExplorer({
           <input
             id="training-search"
             type="search"
-            value={searchQuery}
+            value={searchInput}
             placeholder={t("searchPlaceholder")}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
-          {searchQuery ? (
+          {searchInput ? (
             <button
               type="button"
-              onClick={() => setSearchQuery("")}
+              onClick={() => setSearchInput("")}
               aria-label={t("clearSearch")}
               className="shrink-0 text-[var(--color-ink-3)] hover:text-[var(--color-ink)]"
             >
@@ -286,8 +309,8 @@ export function TrainingCourseExplorer({
 
         <p className="text-sm leading-meta text-[var(--color-ink-2)]">
           {t("countSummary", {
-            total: courseRows.length,
-            shown: filteredRows.length,
+            total: coursesData?.meta.total ?? 0,
+            shown: courseRows.length,
           })}
         </p>
       </div>
@@ -296,62 +319,66 @@ export function TrainingCourseExplorer({
       {isLoading ? (
         <TrainingCoursesListSkeleton count={5} />
       ) : courseRows.length === 0 ? (
-        <EmptyState
-          icon={LuGraduationCap}
-          title={t("emptyHeading")}
-          body={t("emptyBody")}
-          action={
-            <Button
-              icon={LuPlus}
-              onClick={() => router.push(`/${locale}/admin/training/new`)}
-            >
-              {t("newCourse")}
-            </Button>
-          }
-        />
-      ) : filteredRows.length === 0 ? (
-        filter === "archived" ? (
-          <EmptyState
-            icon={LuArchive}
-            title={isEs ? "No hay cursos archivados" : "No archived courses"}
-            body={
-              isEs
-                ? "Los cursos que archives aparecerán aquí para restaurarlos o eliminarlos."
-                : "Courses you archive will appear here where you can restore or delete them."
-            }
-            action={
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setSearchQuery("");
-                  setFilter("all");
-                }}
-              >
-                {tCommon("clearFilters")}
-              </Button>
-            }
-          />
+        filter === "archived" ||
+        filter !== "all" ||
+        searchQuery.trim() !== "" ? (
+          filter === "archived" ? (
+            <EmptyState
+              icon={LuArchive}
+              title={isEs ? "No hay cursos archivados" : "No archived courses"}
+              body={
+                isEs
+                  ? "Los cursos que archives aparecerán aquí para restaurarlos o eliminarlos."
+                  : "Courses you archive will appear here where you can restore or delete them."
+              }
+              action={
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setSearchInput("");
+                    setFilter("all");
+                  }}
+                >
+                  {tCommon("clearFilters")}
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={LuSearch}
+              title={t("noMatchHeading")}
+              body={t("noMatchBody")}
+              action={
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setSearchInput("");
+                    setFilter("all");
+                  }}
+                >
+                  {tCommon("clearFilters")}
+                </Button>
+              }
+            />
+          )
         ) : (
           <EmptyState
-            icon={LuSearch}
-            title={t("noMatchHeading")}
-            body={t("noMatchBody")}
+            icon={LuGraduationCap}
+            title={t("emptyHeading")}
+            body={t("emptyBody")}
             action={
               <Button
-                variant="secondary"
-                onClick={() => {
-                  setSearchQuery("");
-                  setFilter("all");
-                }}
+                icon={LuPlus}
+                onClick={() => router.push(`/${locale}/admin/training/new`)}
               >
-                {tCommon("clearFilters")}
+                {t("newCourse")}
               </Button>
             }
           />
         )
       ) : (
         <ul className="divide-y divide-[var(--color-line)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)]">
-          {filteredRows.map((row) => {
+          {courseRows.map((row) => {
             const title = titleOf(row);
             const purpose = isEs
               ? row.course.purposeEs || row.course.purposeEn
@@ -419,13 +446,6 @@ export function TrainingCourseExplorer({
                       {hasQuiz ? null : (
                         <StatusPill tone="warn">{t("noQuiz")}</StatusPill>
                       )}
-
-                      {/* Overdue Pill */}
-                      {row.overdueCount > 0 ? (
-                        <StatusPill tone="bad" withDot>
-                          {t("countOverdue", { count: row.overdueCount })}
-                        </StatusPill>
-                      ) : null}
                     </div>
 
                     {purpose ? (
@@ -439,20 +459,6 @@ export function TrainingCourseExplorer({
                       <span>
                         {t("totalAssigned", { count: row.assignmentCount })}
                       </span>
-                      {row.assignmentCount > 0 ? (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <span>
-                            {t("countInProgress", {
-                              count: row.inProgressCount,
-                            })}
-                          </span>
-                          <span aria-hidden="true">·</span>
-                          <span>
-                            {t("countComplete", { count: row.completeCount })}
-                          </span>
-                        </>
-                      ) : null}
                       <span aria-hidden="true">·</span>
                       <span>
                         {isEs
@@ -543,6 +549,44 @@ export function TrainingCourseExplorer({
           })}
         </ul>
       )}
+
+      {/* Pagination — Prev / Next over the server pages (GET /courses
+          page param). Only when the active bucket has more than one page. */}
+      {canPage ? (
+        <div className="flex items-center justify-between border-t border-[var(--color-line)] px-4 py-3 text-xs font-medium text-[var(--color-ink-3)]">
+          <span>
+            {t("pageSummary", {
+              page: coursesData?.meta.page ?? 1,
+              total: totalPages,
+            })}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              aria-label={isEs ? "Página anterior" : "Previous page"}
+              type="button"
+              disabled={(coursesData?.meta.page ?? 1) <= 1 || isFetching}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-2 py-0.5 rounded border border-[var(--color-line-2)] disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-[var(--color-panel)] text-xs"
+            >
+              <LuChevronLeft aria-hidden="true" />
+            </button>
+            <span className="px-2 py-0.5 rounded bg-[var(--color-panel)] font-bold text-[var(--color-ink)] text-xs tabular-nums">
+              {coursesData?.meta.page ?? 1}
+            </span>
+            <button
+              aria-label={isEs ? "Página siguiente" : "Next page"}
+              type="button"
+              disabled={
+                (coursesData?.meta.page ?? 1) >= totalPages || isFetching
+              }
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="px-2 py-0.5 rounded border border-[var(--color-line-2)] disabled:opacity-40 disabled:cursor-not-allowed enabled:hover:bg-[var(--color-panel)] text-xs"
+            >
+              <LuChevronRight aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* Pop-up Assignment Modal */}
       <CourseAssignmentModal
