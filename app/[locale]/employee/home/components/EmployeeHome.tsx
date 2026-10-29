@@ -5,12 +5,9 @@ import type {
   ProcedureFlags,
 } from "@/components/employee/procedure-row";
 import type { Category, Subcategory } from "@/lib/types";
-import type { OnboardingSummary } from "@/lib/mock-training";
 import { Greeting } from "./Greeting";
-import { TrainingCard } from "./TrainingCard";
 import { PromoSection } from "./PromoSection";
 import { StationSection } from "./StationSection";
-import { OnboardingState } from "./OnboardingState";
 import { LockedProceduresPreview } from "./LockedProceduresPreview";
 
 /**
@@ -59,6 +56,9 @@ export interface TrainingSummary {
   overdueLine?: string;
   done: number;
   total: number;
+  completedChapters?: number;
+  totalChapters?: number;
+  progressPercent?: number;
   /** The one thing to do next; absent when everything is done. */
   next?: {
     href: string;

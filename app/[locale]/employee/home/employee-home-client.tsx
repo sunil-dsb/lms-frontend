@@ -232,6 +232,22 @@ function HomeContent({
         new Date(b.assignment.dueAt).getTime(),
   )[0];
 
+  const totalChapters = trainingAssignments
+    ? trainingAssignments.reduce((acc, a) => acc + (a.chapterCount || 0), 0)
+    : 0;
+  const completedChapters = trainingAssignments
+    ? trainingAssignments.reduce(
+        (acc, a) => acc + (a.completedChapterCount || 0),
+        0,
+      )
+    : 0;
+  const progressPercent =
+    totalChapters > 0
+      ? Math.min(100, Math.round((completedChapters / totalChapters) * 100))
+      : rows.length > 0
+        ? Math.round((done / rows.length) * 100)
+        : 0;
+
   const training: TrainingSummary | null = rows.length
     ? {
         heading:
@@ -244,6 +260,9 @@ function HomeContent({
           : undefined,
         done,
         total: rows.length,
+        completedChapters,
+        totalChapters,
+        progressPercent,
         next: next
           ? {
               href: `/${locale}/employee/training/${next.course.id}`,
