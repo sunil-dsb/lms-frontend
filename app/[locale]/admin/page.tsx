@@ -1,5 +1,4 @@
 import * as React from "react";
-import { cookies } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   ApiException,
@@ -10,15 +9,22 @@ import {
   listRoles,
   listStations,
 } from "@/lib/api";
-import type { AdminEmployee, Procedure, Role, Station } from "@/lib/types";
-import {
-  findMockEmployee,
-  getCourseById,
-  listTrainingAssignments,
-} from "@/lib/mock-training";
+import type {
+  AdminEmployee,
+  Procedure,
+  Role,
+  Station,
+  TrainingProgressData,
+} from "@/lib/types";
+import { fetchTrainingProgress } from "@/lib/api/training-progress";
+import { serverCookieHeader } from "@/lib/server-cookies";
+import { fetchCourses } from "@/services/courses/api";
+import { getCategoryIcon } from "@/lib/category-icons";
 import {
   buildAttention,
-  buildTrainingSummary,
+  buildTrainingHome,
+  coverOf,
+  categoryName,
   missingSpanish,
   recentProcedures,
   relativeDays,
@@ -29,15 +35,17 @@ import {
 import {
   AttentionList,
   HomeHeader,
-  RecentProcedures,
+  RecentSection,
   StatStrip,
   TeamTraining,
   type GroupCopy,
+  type RecentCard,
   type Stat,
 } from "./components/home/HomeSections";
 import {
   LuBookOpen,
   LuClock,
+  LuFileText,
   LuGraduationCap,
   LuPlus,
   LuUsers,
@@ -64,17 +72,18 @@ export default async function AdminHomePage({
   setRequestLocale(locale);
   const t = await getTranslations("admin.home");
 
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join("; ");
+  // Server components call the API client directly, so the browser's auth
+  // cookie has to be forwarded explicitly (lib/http.ts's interceptor only
+  // sees client-side cookies).
+  const cookieHeader = await serverCookieHeader();
 
   let meId: string | null = null;
   let employees: AdminEmployee[] = [];
   let procedures: Procedure[] = [];
   let roles: Role[] = [];
   let stations: Station[] = [];
+  let trainingProgress: TrainingProgressData | null = null;
+  let recentCourses: Awaited<ReturnType<typeof fetchCourses>> | null = null;
 
   try {
     // Auth + workspace resolve together: listLocations does not depend on
@@ -88,13 +97,26 @@ export default async function AdminHomePage({
     const location =
       locations.find((l) => l.id === me.employee.locationId) ?? locations[0];
     const locationId = location?.id ?? me.employee.locationId;
-    [{ employees }, { procedures }, { roles }, { stations }] =
-      await Promise.all([
-        listEmployees({ status: "all" }, cookieHeader),
-        listProcedures({}, cookieHeader),
-        listRoles(cookieHeader),
-        listStations(locationId, cookieHeader),
-      ]);
+    [
+      { employees },
+      { procedures },
+      { roles },
+      { stations },
+      trainingProgress,
+      recentCourses,
+    ] = await Promise.all([
+      listEmployees({ status: "all" }, cookieHeader),
+      listProcedures({}, cookieHeader),
+      listRoles(cookieHeader),
+      listStations(locationId, cookieHeader),
+      // The training card + stat share the admin/progress payload (with a
+      // local catch so a backend blip empties the card instead of 500ing).
+      fetchTrainingProgress(cookieHeader).then((r) => r.data),
+      // Recently updated courses: only the first page matters here.
+      fetchCourses({ limit: 8, status: "published" }, cookieHeader).catch(
+        () => null,
+      ),
+    ]);
   } catch (err) {
     if (err instanceof ApiException) return <HomeError message={err.message} />;
     throw err;
@@ -126,23 +148,17 @@ export default async function AdminHomePage({
     },
   });
 
-  // Training comes from the same mock selectors the Training page reads until
-  // the training API lands; swap these three calls for it then.
-  // One name per person: the employee list first, the training mock's own
-  // list for anyone it has that the API does not.
+  // The Team training card and the Training stat read the live admin/progress
+  // payload — the same rows the Progress tab renders, so the two never disagree.
   const nameById = new Map(employees.map((e) => [e.id, e.name]));
-  const employeeName = (id: string): string | null =>
-    nameById.get(id) ?? findMockEmployee(id)?.name ?? null;
-  const courseTitle = (id: string): string | null => {
-    const c = getCourseById(id);
-    return c ? titleOf(c, locale) : null;
-  };
-  const training = buildTrainingSummary({
-    assignments: listTrainingAssignments(),
-    now,
+  const training = buildTrainingHome({
+    progress: trainingProgress ?? {
+      summary: { completed: 0, inProgress: 0, overdue: 0 },
+      employees: [],
+      courses: [],
+    },
     locale,
-    courseTitle,
-    employeeName,
+    now,
     lineLabel: (state, at) => {
       const when = relativeDays(at, locale, now);
       if (state === "complete") return t("training.doneAgo", { when });
@@ -217,8 +233,20 @@ export default async function AdminHomePage({
     },
   ];
 
-  const total =
-    training.overdueCount + groups.reduce((n, g) => n + g.items.length, 0);
+  // Cap "Needs attention" at ten rows: past that the card outgrows the page
+  // and the count badge alone tells the manager the size of the backlog.
+  const ATTENTION_MAX = 10;
+  const cappedGroups: AttentionGroup[] = [];
+  let attentionQuota = ATTENTION_MAX;
+  for (const g of groups) {
+    if (attentionQuota <= 0) break;
+    const items = g.items.slice(0, attentionQuota);
+    attentionQuota -= items.length;
+    cappedGroups.push({ ...g, items });
+  }
+  const attentionTotal = cappedGroups.reduce((n, g) => n + g.items.length, 0);
+
+  const total = training.overdueCount + attentionTotal;
   const dateLabel = new Intl.DateTimeFormat(locale, {
     weekday: "long",
     day: "numeric",
@@ -243,6 +271,48 @@ export default async function AdminHomePage({
       tone: "ink",
     },
   };
+
+  // Recently updated: procedures and courses together, newest first, three
+  // cards regardless of kind.
+  const updatedAgoOf = (iso: string, authorId?: string): string => {
+    const when = relativeDays(iso, locale, now);
+    const name = authorId ? nameById.get(authorId) : undefined;
+    return name ? t("updatedAgoBy", { when, name }) : t("updatedAgo", { when });
+  };
+  const courseTitleOf = (c: { titleEn: string; titleEs: string }): string =>
+    (locale === "es" ? c.titleEs || c.titleEn : c.titleEn || c.titleEs) || "";
+  const recentCards: RecentCard[] = [
+    ...recentProcedures(procedures, 3).map((p) => ({
+      key: `proc-${p.id}`,
+      updatedAt: new Date(p.updatedAt).getTime(),
+      href: `/${locale}/procedures/${p.slug}`,
+      title: titleOf(p, locale),
+      cover: coverOf(p, locale),
+      icon: p.category ? getCategoryIcon(p.category) : LuFileText,
+      statusLabel:
+        p.status === "draft" ? t("statusDraft") : t("statusPublished"),
+      statusTone: (p.status === "published" ? "ok" : "neutral") as
+        "ok" | "neutral",
+      badgeLabel: categoryName(p.category, locale),
+      badgeIcon: p.category ? getCategoryIcon(p.category) : undefined,
+      meta: updatedAgoOf(p.updatedAt, p.createdBy),
+    })),
+    ...(recentCourses?.items ?? []).map((c) => ({
+      key: `course-${c.id}`,
+      updatedAt: new Date(c.updatedAt).getTime(),
+      href: `/${locale}/admin/training/${c.id}`,
+      title: courseTitleOf(c),
+      icon: LuGraduationCap,
+      statusLabel: t("statusPublished"),
+      statusTone: "ok" as const,
+      badgeLabel: t("badgeCourse"),
+      badgeIcon: LuGraduationCap,
+      meta: updatedAgoOf(c.updatedAt),
+    })),
+  ]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, 3)
+    .map(({ updatedAt: _u, ...card }) => card);
 
   return (
     <div className="mx-auto max-w-page space-y-8 pb-12">
@@ -295,31 +365,22 @@ export default async function AdminHomePage({
 
       {/* With nothing in it, the card was a large box saying so. The headline
           already says whether anything needs the manager. */}
-      {groups.length > 0 ? (
+      {cappedGroups.length > 0 ? (
         <AttentionList
           heading={t("attentionHeading")}
-          groups={groups}
+          groups={cappedGroups}
           copy={groupCopy}
           empty={{ title: t("clearTitle"), body: t("clearBody") }}
         />
       ) : null}
 
-      {/* The library's latest, with its photographs, across the page. */}
-      <RecentProcedures
-        locale={locale}
+      {/* The library's and courses' latest, with its photographs, across the
+          page — whichever was touched last, both kinds in one recent list. */}
+      <RecentSection
         heading={t("recentHeading")}
         seeAll={t("recentSeeAll")}
-        procedures={recentProcedures(procedures, 3)}
-        statusLabel={(p) =>
-          p.status === "draft" ? t("statusDraft") : t("statusPublished")
-        }
-        metaFor={(p) => {
-          const when = relativeDays(p.updatedAt, locale, now);
-          const name = nameById.get(p.createdBy);
-          return name
-            ? t("updatedAgoBy", { when, name })
-            : t("updatedAgo", { when });
-        }}
+        seeAllHref={`/${locale}/admin/library`}
+        cards={recentCards}
       />
     </div>
   );

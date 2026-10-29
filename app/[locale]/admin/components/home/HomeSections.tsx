@@ -1,15 +1,10 @@
 import * as React from "react";
 import Link from "next/link";
-import { getCategoryIcon } from "@/lib/category-icons";
-import type { Procedure } from "@/lib/types";
-import {
-  categoryName,
-  coverOf,
-  titleOf,
-  type AttentionGroup,
-  type AttentionItem,
-  type TrainingPerson,
-  type TrainingSummary,
+import type {
+  AttentionGroup,
+  AttentionItem,
+  TrainingPerson,
+  TrainingSummary,
 } from "./home-data";
 import {
   LuArrowRight,
@@ -536,27 +531,40 @@ export function AttentionList({
 
 /* ---------------------------------------------------------------- recent -- */
 
+/** One card in "Recently updated" — a procedure or a course, normalized to
+ *  the same chrome so the section reads as one list of things, not two. */
+export interface RecentCard {
+  key: string;
+  href: string;
+  title: string;
+  meta: string;
+  statusLabel: string;
+  statusTone?: "ok" | "neutral";
+  cover?: { src: string; alt: string };
+  icon?: IconType;
+  /** The small badge above the title (category for procedures, "Course" for
+   *  courses). Null/undefined = no badge. */
+  badgeLabel?: string | null;
+  badgeIcon?: IconType;
+}
+
 /**
- * The library at a glance, with its photographs: the one part of the home that
- * shows the restaurant rather than a to-do list. Last on the page, because
- * nothing in it asks anything of the manager.
+ * The library and courses at a glance, with their photographs: the one part of
+ * the home that shows the restaurant rather than a to-do list. Last on the
+ * page, because nothing in it asks anything of the manager.
  */
-export function RecentProcedures({
-  locale,
+export function RecentSection({
   heading,
   seeAll,
-  procedures,
-  metaFor,
-  statusLabel,
+  seeAllHref,
+  cards,
 }: {
-  locale: string;
   heading: string;
   seeAll: string;
-  procedures: Procedure[];
-  metaFor: (p: Procedure) => string;
-  statusLabel: (p: Procedure) => string;
+  seeAllHref: string;
+  cards: RecentCard[];
 }): React.ReactElement | null {
-  if (procedures.length === 0) return null;
+  if (cards.length === 0) return null;
   return (
     <section aria-labelledby="recent-h">
       <div className="flex items-center justify-between gap-3">
@@ -567,7 +575,7 @@ export function RecentProcedures({
           {heading}
         </h2>
         <Link
-          href={`/${locale}/admin/library`}
+          href={seeAllHref}
           className="inline-flex min-h-tap-admin shrink-0 items-center gap-1 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
         >
           {seeAll}
@@ -575,60 +583,55 @@ export function RecentProcedures({
         </Link>
       </div>
       <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {procedures.map((p) => {
-          const cover = coverOf(p, locale);
+        {cards.map((c) => {
           return (
-            <li key={p.id}>
+            <li key={c.key}>
               <Link
-                href={`/${locale}/procedures/${p.slug}`}
+                href={c.href}
                 className="flex h-full flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-e1"
               >
                 <span className="relative flex aspect-video items-center justify-center overflow-hidden bg-[var(--color-panel)]">
-                  {cover ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+                  {c.cover ? (
                     // Fills the card, anchored to the top: these covers carry their
                     // own title across the top, so what gets cropped is the floor,
                     // not the heading.
                     <img
-                      src={cover.src}
+                      src={c.cover.src}
                       alt=""
                       className="size-full object-cover object-top"
                     />
                   ) : (
                     <Icon
-                      icon={
-                        p.category ? getCategoryIcon(p.category) : LuFileText
-                      }
+                      icon={c.icon ?? LuFileText}
                       className="text-3xl text-[var(--color-ink-3)]"
                     />
                   )}
                   <StatusPill
-                    tone={p.status === "published" ? "ok" : "neutral"}
+                    tone={c.statusTone === "ok" ? "ok" : "neutral"}
                     withDot
                     className="absolute left-3 top-3 font-semibold shadow-e1"
                   >
-                    {statusLabel(p)}
+                    {c.statusLabel}
                   </StatusPill>
                 </span>
                 <span className="flex flex-1 flex-col p-4">
-                  {/* On a card the category stands alone above the title, so it is
+                  {/* On a card the badge stands alone above the title, so it is
                       a badge and wears the badge shape. In a list row it sits in a
                       meta sentence — "Station Procedures · EN/ES · Updated Sep 4" —
                       where a badge would be a box around one word of a line. */}
-                  {p.category ? (
+                  {c.badgeLabel ? (
                     <StatusPill tone="info" className="self-start gap-2">
-                      <Icon
-                        icon={getCategoryIcon(p.category)}
-                        className="text-base"
-                      />
-                      {categoryName(p.category, locale)}
+                      {c.badgeIcon ? (
+                        <Icon icon={c.badgeIcon} className="text-base" />
+                      ) : null}
+                      {c.badgeLabel}
                     </StatusPill>
                   ) : null}
                   <span className="mt-3 block text-md font-semibold leading-heading text-[var(--color-ink)]">
-                    {titleOf(p, locale)}
+                    {c.title}
                   </span>
                   <span className="mt-auto block pt-2 text-sm text-[var(--color-ink-2)]">
-                    {metaFor(p)}
+                    {c.meta}
                   </span>
                 </span>
               </Link>

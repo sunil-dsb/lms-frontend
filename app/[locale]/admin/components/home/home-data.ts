@@ -2,10 +2,12 @@ import { getCategoryIcon } from "@/lib/category-icons";
 import type {
   AdminEmployee,
   Category,
+  EmployeeProgressAssignment,
+  EmployeeProgressRow,
   Procedure,
   Role,
   Station,
-  TrainingAssignment,
+  TrainingProgressData,
 } from "@/lib/types";
 import { LuFileText, LuLanguages } from "react-icons/lu";
 import type { IconType } from "react-icons";
@@ -271,99 +273,107 @@ export interface TrainingSummary {
 
 /**
  * What the owner opens the admin for: is the team trained, and who do I chase
- * today. Built from the same assignments the Training page reads, so the two
- * never disagree. Grouped by person, because the owner follows up with people,
- * not with assignment rows.
+ * today. Built from the live `admin/progress` payload — the same data the
+ * Training Progress tab renders, so the two never disagree. Grouped by person,
+ * because the owner follows up with people, not with assignment rows.
  */
-export function buildTrainingSummary({
-  assignments,
-  now,
+export function buildTrainingHome({
+  progress,
   locale,
-  courseTitle,
-  employeeName,
+  now,
   lineLabel,
 }: {
-  assignments: TrainingAssignment[];
-  now: number;
+  progress: TrainingProgressData;
   locale: string;
-  courseTitle: (courseId: string) => string | null;
-  employeeName: (employeeId: string) => string | null;
+  now: number;
   /** "Due in 2 days", "Due 8 days ago", "Done 9 days ago". */
   lineLabel: (state: TrainingState, at: string) => string;
 }): TrainingSummary {
   const weekOut = now + 7 * DAY;
-  const open = assignments.filter((a) => a.status !== "complete");
-  const due = (a: TrainingAssignment): number => new Date(a.dueAt).getTime();
-  const overdue = open.filter((a) => due(a) < now);
-  const dueThisWeek = open.filter((a) => due(a) >= now && due(a) <= weekOut);
+  const rows = progress.employees ?? [];
+  const due = (a: EmployeeProgressAssignment): number =>
+    new Date(a.dueDate).getTime();
+  const courseTitle = (a: EmployeeProgressAssignment): string =>
+    (locale === "es"
+      ? a.courseTitleEs || a.courseTitleEn
+      : a.courseTitleEn || a.courseTitleEs) || a.courseId;
 
   const order: Record<TrainingState, number> = {
     overdue: 0,
     open: 1,
     complete: 2,
   };
-  const recordOf = (employeeId: string): TrainingLine[] =>
-    assignments
-      .filter((a) => a.employeeId === employeeId)
-      .flatMap((a) => {
-        const course = courseTitle(a.courseId);
-        if (!course) return [];
-        const state: TrainingState =
-          a.status === "complete"
-            ? "complete"
-            : due(a) < now
-              ? "overdue"
-              : "open";
-        const at =
-          state === "complete"
-            ? (a.acknowledgedAt ?? a.quizPassedAt ?? a.dueAt)
-            : a.dueAt;
-        return [
-          {
-            key: a.id,
-            course,
-            href: `/${locale}/admin/training/${a.courseId}/assign`,
-            state,
-            label: lineLabel(state, at),
-            at,
-          },
-        ];
-      })
-      .sort(
-        (x, y) =>
-          order[x.state] - order[y.state] ||
-          new Date(x.at).getTime() - new Date(y.at).getTime(),
-      )
-      .map(({ at: _at, ...line }) => line);
-
-  // Earliest deadline first, so the person left longest goes to the top.
-  const byPerson = (list: TrainingAssignment[]): TrainingPerson[] => {
-    const people = new Map<string, TrainingPerson>();
-    for (const a of [...list].sort((x, y) => due(x) - due(y))) {
-      const name = employeeName(a.employeeId);
-      const course = courseTitle(a.courseId);
-      if (!name || !course) continue;
-      const p = people.get(a.employeeId);
-      if (p) p.courses.push(course);
-      else
-        people.set(a.employeeId, {
-          key: a.employeeId,
-          name,
-          initials: initialsOf(name),
-          courses: [course],
-          dueAt: a.dueAt,
-          trainings: recordOf(a.employeeId),
-        });
-    }
-    return [...people.values()];
+  const lineOf = (
+    employeeId: string,
+    a: EmployeeProgressAssignment,
+  ): TrainingLine => {
+    const state: TrainingState = a.isComplete
+      ? "complete"
+      : a.isOverdue
+        ? "overdue"
+        : "open";
+    const at = a.isComplete ? (a.courseCompletedAt ?? a.dueDate) : a.dueDate;
+    return {
+      key: `${employeeId}-${a.courseId}`,
+      course: courseTitle(a),
+      href: `/${locale}/admin/training/progress/course/${a.courseId}`,
+      state,
+      label: lineLabel(state, at),
+    };
   };
+  const recordOf = (row: EmployeeProgressRow): TrainingLine[] =>
+    (row.assignments ?? [])
+      .sort((x, y) => order[stateOf(x)] - order[stateOf(y)] || due(x) - due(y))
+      .map((a) => lineOf(row.employeeId, a));
+  const stateOf = (a: EmployeeProgressAssignment): TrainingState =>
+    a.isComplete ? "complete" : a.isOverdue ? "overdue" : "open";
+
+  /** One person, once: the courses in the group on the row, every course in
+   *  the drawer. Earliest deadline first, so the person left longest is on top. */
+  const earliestDue = (
+    row: EmployeeProgressRow,
+    qualifies: (a: EmployeeProgressAssignment) => boolean,
+  ): number => {
+    const dues = (row.assignments ?? []).filter(qualifies).map(due);
+    return dues.length ? Math.min(...dues) : Number.POSITIVE_INFINITY;
+  };
+  const byPerson = (
+    list: EmployeeProgressRow[],
+    qualifies: (a: EmployeeProgressAssignment) => boolean,
+  ): TrainingPerson[] =>
+    list
+      .filter((row) => (row.assignments ?? []).some(qualifies))
+      .sort((r1, r2) => earliestDue(r1, qualifies) - earliestDue(r2, qualifies))
+      .map((row) => {
+        const group = (row.assignments ?? []).filter(qualifies);
+        return {
+          key: row.employeeId,
+          name: row.name,
+          initials: initialsOf(row.name),
+          courses: group.map(courseTitle),
+          dueAt:
+            group.slice().sort((x, y) => due(x) - due(y))[0]?.dueDate ??
+            new Date().toISOString(),
+          trainings: recordOf(row),
+        };
+      });
+
+  const overdue = byPerson(rows, (a) => !a.isComplete && a.isOverdue);
+  const overdueIds = new Set(overdue.map((p) => p.key));
+  const dueThisWeek = byPerson(
+    rows.filter((row) => !overdueIds.has(row.employeeId)),
+    (a) => !a.isComplete && !a.isOverdue && due(a) >= now && due(a) <= weekOut,
+  );
 
   return {
-    complete: assignments.length - open.length,
-    total: assignments.length,
-    overdueCount: overdue.length,
-    overdue: byPerson(overdue),
-    dueThisWeek: byPerson(dueThisWeek),
+    complete: progress.summary.completed,
+    total:
+      progress.summary.completed +
+      progress.summary.inProgress +
+      progress.summary.overdue,
+    overdueCount: progress.summary.overdue,
+    overdue,
+    dueThisWeek,
   };
 }
 
