@@ -10,7 +10,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import type { TrainingProgressData } from "@/lib/types";
 import { CourseProgressTable } from "./course-progress-table";
 import { EmployeeProgressTable } from "./employee-progress-table";
-import { ProgressStatStrip } from "./progress-stat-strip";
 
 type GroupBy = "employee" | "course";
 
@@ -54,8 +53,6 @@ export function ProgressOverview({
         title={t("title")}
         subtitle={t("subtitle")}
       />
-
-      <ProgressStatStrip summary={data.summary} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CapsuleTabs

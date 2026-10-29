@@ -1,0 +1,221 @@
+"use client";
+
+import * as React from "react";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { LuArrowLeft, LuGraduationCap, LuCircleCheck } from "react-icons/lu";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import type { CourseProgressRow } from "@/lib/types";
+import type { CourseAssignmentRow } from "@/services/courses/types";
+import {
+  PROGRESS_STATUS_LABEL_KEY,
+  ProgressStatusPill,
+  courseTitle,
+} from "../../components/progress-row";
+import { ProgressTableShell } from "../../components/progress-table-shell";
+
+interface CourseProgressDetailProps {
+  locale: string;
+  /** The row this course shows as on the "By course" table — the meta card
+   *  up top is built from it so both surfaces stay consistent. */
+  meta: CourseProgressRow | null;
+  /** One row per assigned employee, from GET /api/v1/courses/:id/assignments. */
+  assignments: CourseAssignmentRow[];
+}
+
+/** The "By course" Progress rows drill-down: the course's meta up top, then
+ *  every person it is assigned to with their progress — how many chapters
+ *  are done, which chapter they sit on, when it is due. */
+export function CourseProgressDetail({
+  locale,
+  meta,
+  assignments,
+}: CourseProgressDetailProps): React.ReactElement {
+  const t = useTranslations("admin.training.progress");
+  const tTraining = useTranslations("admin.training");
+
+  const title = meta ? courseTitle(meta.course, locale) : "—";
+
+  return (
+    <div className="space-y-6">
+      <Link
+        href={`/${locale}/admin/training/progress`}
+        className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)] transition-colors hover:text-[var(--color-ink)]"
+      >
+        <LuArrowLeft className="size-4" aria-hidden="true" />
+        <span>{t("backToProgress")}</span>
+      </Link>
+
+      {/* Course meta — the same facts the list row showed, minus the filter. */}
+      <Card>
+        <CardContent className="flex flex-wrap items-start gap-4 p-6 sm:flex-nowrap">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold leading-display tracking-tight text-[var(--color-ink)]">
+              {title}
+            </h1>
+            <p className="mt-2 text-sm text-[var(--color-ink-2)]">
+              {[
+                meta
+                  ? tTraining("totalAssigned", { count: meta.peopleTotal })
+                  : null,
+                meta
+                  ? t("doneOfTotal", {
+                      done: meta.peopleDone,
+                      total: meta.peopleTotal,
+                    })
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            <p className="mt-1 text-sm text-[var(--color-ink-3)]">
+              {meta
+                ? meta.currentChapter !== null
+                  ? t("whereChapter", { chapter: meta.currentChapter })
+                  : t("allFinished")
+                : "—"}
+            </p>
+          </div>
+          {meta && (
+            <div className="shrink-0">
+              <ProgressStatusPill
+                status={meta.status}
+                label={t(PROGRESS_STATUS_LABEL_KEY[meta.status])}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {assignments.length === 0 ? (
+        <EmptyState
+          icon={LuGraduationCap}
+          title={t("emptyCourseHeading")}
+          body={t("emptyCourseBody")}
+          action={
+            <Button type="button" variant="secondary">
+              <Link href={`/${locale}/admin/training/progress`}>
+                {t("backToProgress")}
+              </Link>
+            </Button>
+          }
+        />
+      ) : (
+        <ProgressTableShell
+          label={t("detailCourseTableLabel")}
+          columns={[
+            t("thEmployee"),
+            t("thChapters"),
+            t("thCurrentChapter"),
+            t("thDue"),
+            t("thStatus"),
+          ]}
+        >
+          {assignments.map((row) => {
+            const isInProgress =
+              row.status === "in_progress" || row.status === "overdue";
+            const done = isInProgress
+              ? row.completedChapterCount
+              : row.status === "complete"
+                ? row.chapterCount
+                : 0;
+            return (
+              <tr key={row.id}>
+                <td>
+                  <Link
+                    href={`/${locale}/admin/training/progress/${row.employeeId}`}
+                    className="font-medium text-[var(--color-ink)] underline-offset-2 hover:text-[var(--color-brand-700)] hover:underline"
+                  >
+                    {row.employee.name}
+                  </Link>
+                  <div className="text-sm text-[var(--color-ink-3)]">
+                    {row.employee.email}
+                  </div>
+                </td>
+                <td className="tabular-nums text-[var(--color-ink-2)]">
+                  {row.chapterCount > 0
+                    ? t("doneOfTotal", {
+                        done,
+                        total: row.chapterCount,
+                      })
+                    : "—"}
+                </td>
+                <td className="text-[var(--color-ink-2)]">
+                  {row.status === "complete" ? (
+                    <span className="inline-flex items-center gap-1.5 text-[var(--color-ok)]">
+                      <LuCircleCheck
+                        className="size-4 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {row.courseCompletedAt
+                        ? t("completedOn", {
+                            when: formatDate(row.courseCompletedAt, locale),
+                          })
+                        : "—"}
+                    </span>
+                  ) : row.currentChapterNumber && row.chapterCount > 0 ? (
+                    <span>
+                      {t("chapterAt", {
+                        chapter: row.currentChapterNumber,
+                        total: row.chapterCount,
+                      })}
+                      {currentChapterTitle(row, locale) ? (
+                        <span className="mt-0.5 block text-sm text-[var(--color-ink-3)]">
+                          {currentChapterTitle(row, locale)}
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <span className="text-[var(--color-ink-3)]">
+                      {t("chapterNone")}
+                    </span>
+                  )}
+                </td>
+                <td
+                  className={
+                    row.status === "overdue"
+                      ? "tabular-nums text-[var(--color-bad)]"
+                      : "tabular-nums text-[var(--color-ink-2)]"
+                  }
+                >
+                  {formatDate(row.dueDate, locale)}
+                </td>
+                <td>
+                  <ProgressStatusPill
+                    status={row.status}
+                    label={t(PROGRESS_STATUS_LABEL_KEY[row.status])}
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </ProgressTableShell>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Small helpers local to the detail page.
+// ---------------------------------------------------------------------------
+
+/** A chapter's title in the reader's language, other language as fallback —
+ *  the same picking the training lists are built on. */
+function currentChapterTitle(row: CourseAssignmentRow, locale: string): string {
+  return (
+    (locale === "es"
+      ? row.currentChapterTitleEs || row.currentChapterTitleEn
+      : row.currentChapterTitleEn || row.currentChapterTitleEs) ?? ""
+  );
+}
+
+function formatDate(iso: string, locale: string): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}

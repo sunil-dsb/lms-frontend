@@ -34,7 +34,10 @@ import { EditRolesModal } from "./edit-roles-modal";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { fetchEmployeeById } from "@/services/employees/api";
+import {
+  fetchEmployeeById,
+  fetchEmployeeTraining,
+} from "@/services/employees/api";
 import { useRoles } from "@/services/jobs/hooks";
 import { useStations } from "@/services/stations/hooks";
 import { useLocations } from "@/services/locations/hooks";
@@ -42,9 +45,9 @@ import {
   EMPLOYEES_UPDATED_EVENT,
   type UpdateEmployeeInput,
 } from "@/services/employees/types";
-import { getTrainingRowsForEmployee } from "@/lib/mock-training";
 import type {
   AdminEmployee,
+  Procedure,
   TrainingAssignmentRow,
   TrainingAssignmentStatus,
 } from "@/lib/types";
@@ -90,6 +93,9 @@ export function EmployeeDetailClient({
     if (!id) return;
     const refresh = (): void => {
       void queryClient.invalidateQueries({ queryKey: ["employee", id] });
+      void queryClient.invalidateQueries({
+        queryKey: ["employee", "training", id],
+      });
     };
     window.addEventListener("storage", refresh);
     window.addEventListener(EMPLOYEES_UPDATED_EVENT, refresh);
@@ -214,10 +220,46 @@ export function EmployeeDetailClient({
     return "";
   }, [employee?.locationName, employee?.locationId, locations]);
 
+  // Training for this person — dedicated admin endpoint
+  // (GET /api/v1/employees/:id/training). Separate query from the employee
+  // record so it refetches independently and stays cached keyed by id.
+  const trainingQuery = useQuery({
+    queryKey: ["employee", "training", id],
+    enabled: Boolean(id),
+    queryFn: () => fetchEmployeeTraining(id),
+    staleTime: 60_000,
+  });
+
+  // The API returns one raw row per assigned course; the view consumes the
+  // shared TrainingAssignmentRow shape (same picking logic as the employee
+  // list), so adapt here. Only course title + chapter counts are rendered —
+  // the rest of the Procedure surface is not part of this view, hence the
+  // narrowed cast.
   const trainingRows: TrainingAssignmentRow[] = useMemo(() => {
-    if (!employee?.id) return [];
-    return getTrainingRowsForEmployee(employee.id);
-  }, [employee?.id]);
+    return (trainingQuery.data ?? []).map((row) => ({
+      assignment: {
+        id: row.assignmentId,
+        courseId: row.courseId,
+        employeeId: id ?? "",
+        assignedAt: row.assignedAt,
+        dueAt: row.dueDate,
+        status: row.status === "overdue" ? "in_progress" : row.status,
+        completedStepIds: [],
+        quizPassedAt: null,
+        acknowledgedAt: row.courseCompletedAt,
+      },
+      course: {
+        id: row.courseId,
+        titleEn: row.titleEn,
+        titleEs: row.titleEs,
+        purposeEn: row.purposeEn,
+        purposeEs: row.purposeEs,
+        chapterCount: row.chapterCount,
+        completedChapterCount: row.completedChapterCount,
+      } as unknown as Procedure,
+      effectiveStatus: row.status,
+    }));
+  }, [trainingQuery.data, id]);
   const trainingSummary = summariseTraining(trainingRows);
 
   const statusTone: StatusTone =
@@ -456,15 +498,19 @@ export function EmployeeDetailClient({
         }
       >
         {trainingSummary.total === 0 ? (
-          <p className="text-sm text-[var(--color-ink-2)]">
-            {t("detailTrainingEmpty")}
-          </p>
+          trainingQuery.isLoading ? (
+            <p className="text-sm text-[var(--color-ink-3)]">…</p>
+          ) : (
+            <p className="text-sm text-[var(--color-ink-2)]">
+              {t("detailTrainingEmpty")}
+            </p>
+          )
         ) : (
           <div className="flex flex-wrap items-center gap-6">
             <Meter
               value={trainingSummary.complete}
               total={trainingSummary.total}
-              size={64}
+              size={70}
               stroke={7}
               tone={trainingSummary.overdue > 0 ? "warn" : "ok"}
               label={`${trainingSummary.share}%`}
@@ -502,40 +548,61 @@ export function EmployeeDetailClient({
         subtitle={t("detailAssignedHint")}
       >
         {trainingRows.length === 0 ? (
-          <p className="text-sm text-[var(--color-ink-2)]">
-            {t("detailAssignedEmpty")}
-          </p>
+          trainingQuery.isLoading ? (
+            <p className="text-sm text-[var(--color-ink-3)]">…</p>
+          ) : (
+            <p className="text-sm text-[var(--color-ink-2)]">
+              {t("detailAssignedEmpty")}
+            </p>
+          )
         ) : (
           <ul className="divide-y divide-[var(--color-line)]">
-            {trainingRows.map((row) => (
-              <li
-                key={row.assignment.id}
-                className="flex flex-wrap items-center justify-between gap-3 py-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="font-[family-name:var(--font-ui)] text-base font-semibold text-[var(--color-ink)]">
-                    {row.course.titleEn}
-                  </p>
-                  <p className="mt-0.5 text-sm text-[var(--color-ink-3)]">
-                    {row.assignment.status === "complete"
-                      ? t("detailAssignedCompleted", {
-                          when: formatDate(
-                            row.assignment.acknowledgedAt ??
-                              row.assignment.quizPassedAt ??
-                              row.assignment.dueAt,
-                            locale,
-                          ),
-                        })
-                      : t("detailAssignedDueAt", {
-                          when: formatDate(row.assignment.dueAt, locale),
-                        })}
-                  </p>
-                </div>
-                <StatusPill tone={trainingStatusTone(row.effectiveStatus)}>
-                  {t(trainingStatusKey(row.effectiveStatus))}
-                </StatusPill>
-              </li>
-            ))}
+            {trainingRows.map((row) => {
+              const chapterCount =
+                (row.course as { chapterCount?: number }).chapterCount ?? 0;
+              const completedCount =
+                (row.course as { completedChapterCount?: number })
+                  .completedChapterCount ?? 0;
+              const subtitle =
+                row.effectiveStatus === "complete"
+                  ? t("detailAssignedCompleted", {
+                      when: formatDate(
+                        row.assignment.acknowledgedAt ?? row.assignment.dueAt,
+                        locale,
+                      ),
+                    })
+                  : [
+                      chapterCount > 0
+                        ? t("detailAssignedProgress", {
+                            done: completedCount,
+                            total: chapterCount,
+                          })
+                        : null,
+                      t("detailAssignedDueAt", {
+                        when: formatDate(row.assignment.dueAt, locale),
+                      }),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ");
+              return (
+                <li
+                  key={row.assignment.id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-[family-name:var(--font-ui)] text-base font-semibold text-[var(--color-ink)]">
+                      {row.course.titleEn}
+                    </p>
+                    <p className="mt-0.5 text-sm text-[var(--color-ink-3)]">
+                      {subtitle}
+                    </p>
+                  </div>
+                  <StatusPill tone={trainingStatusTone(row.effectiveStatus)}>
+                    {t(trainingStatusKey(row.effectiveStatus))}
+                  </StatusPill>
+                </li>
+              );
+            })}
           </ul>
         )}
       </FormSection>

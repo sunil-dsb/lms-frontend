@@ -17,6 +17,11 @@ export interface MockEmployee {
   id: string;
   name: string;
   station: string;
+  stations?: string[];
+  status?: "active" | "pending" | "deactivated";
+  role?: "manager" | "employee";
+  avatar?: string;
+  locationId?: string;
 }
 
 export const mockTrainingEmployees: MockEmployee[] = [

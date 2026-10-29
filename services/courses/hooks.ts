@@ -9,6 +9,7 @@ import {
   deleteCourse,
   saveCourse,
   assignCourseApi,
+  fetchMyTraining,
   type SaveCourseInput,
 } from "./api";
 import type {
@@ -18,6 +19,15 @@ import type {
 } from "./types";
 
 export const COURSES_QUERY_KEY = ["courses"] as const;
+export const MY_TRAINING_QUERY_KEY = ["employee", "my-training"] as const;
+
+export function useMyTraining(employeeId?: string | null) {
+  return useQuery({
+    queryKey: [...MY_TRAINING_QUERY_KEY, employeeId],
+    queryFn: () => fetchMyTraining(),
+    enabled: Boolean(employeeId),
+  });
+}
 
 export function useCourses(options: CoursesFilterOptions = {}) {
   return useQuery({

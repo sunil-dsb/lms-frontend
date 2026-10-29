@@ -6,6 +6,7 @@ import type {
   CreateEmployeeInput,
   InviteResult,
   EmployeeFilterOptions,
+  EmployeeTrainingRow,
 } from "./types";
 
 function frontendInviteUrl(inviteUrl: string): string {
@@ -208,6 +209,30 @@ export async function reactivateEmployee(
   }>(EMPLOYEES_ENDPOINTS.REACTIVATE(employeeId));
 
   return { employee: normalizeEmployee<AdminEmployee>(data.data.employee) };
+}
+
+export async function fetchEmployeeTraining(
+  id: string,
+  cookieHeader?: string,
+): Promise<EmployeeTrainingRow[]> {
+  const headers: Record<string, string> = {};
+
+  if (cookieHeader) {
+    headers["Cookie"] = cookieHeader;
+    const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
+    if (tokenMatch) {
+      headers["Authorization"] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+    }
+  }
+
+  const { data } = await http.get<{
+    success: boolean;
+    data: { assignments: EmployeeTrainingRow[] };
+  }>(EMPLOYEES_ENDPOINTS.TRAINING(id), {
+    headers: Object.keys(headers).length ? headers : undefined,
+  });
+
+  return data.data?.assignments ?? [];
 }
 
 /** Full-body update (backend validates against the create schema minus

@@ -77,7 +77,7 @@ export function AssignPeopleModalView({
   return (
     <div className="flex flex-col h-full justify-between">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -105,14 +105,8 @@ export function AssignPeopleModalView({
         <div className="relative flex items-center w-full">
           <LuSearch
             aria-hidden="true"
-            color="#767571"
-            size={17}
-            className="absolute pointer-events-none"
-            style={{
-              left: "14px",
-              color: "#767571",
-              stroke: "#767571",
-            }}
+            size={16}
+            className="ml-1 absolute pointer-events-none left-3.5 text-[var(--color-ink-3)]"
           />
           <input
             type="text"
@@ -124,11 +118,11 @@ export function AssignPeopleModalView({
                 : "Search by name or station"
             }
             style={{
-              paddingLeft: "42px",
-              paddingRight: peopleSearch ? "38px" : "16px",
-              height: "42px",
+              paddingLeft: "38px",
+              paddingRight: peopleSearch ? "36px" : "14px",
+              height: "38px",
             }}
-            className="w-full text-sm rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)]/70 text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none focus:border-[var(--color-brand)] focus:bg-[var(--color-surface)] focus:ring-1 focus:ring-[var(--color-brand)] transition-colors"
+            className="w-full text-xs rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)]/70 text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none focus:border-[var(--color-brand)] focus:bg-[var(--color-surface)] focus:ring-1 focus:ring-[var(--color-brand)] transition-colors"
           />
           {peopleSearch ? (
             <button
@@ -144,13 +138,14 @@ export function AssignPeopleModalView({
         </div>
 
         {/* Station Filter Chips + Select All */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
+          <div className="flex flex-wrap items-center" style={{ gap: "8px" }}>
             <button
               type="button"
               onClick={() => setStationFilter("all")}
+              style={{ padding: "4px 12px" }}
               className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium transition-colors border cursor-pointer",
+                "rounded-full text-xs font-medium transition-colors border cursor-pointer",
                 stationFilter === "all"
                   ? "border-[var(--color-brand-600)] text-[var(--color-brand-700)] bg-[var(--color-brand-tint)] font-semibold shadow-2xs"
                   : "border-[var(--color-line)] text-[var(--color-ink-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)]",
@@ -165,8 +160,9 @@ export function AssignPeopleModalView({
                   key={st}
                   type="button"
                   onClick={() => setStationFilter(st)}
+                  style={{ padding: "4px 12px" }}
                   className={cn(
-                    "px-3 py-1 rounded-full text-xs font-medium transition-colors border cursor-pointer",
+                    "rounded-full text-xs font-medium transition-colors border cursor-pointer",
                     isActive
                       ? "border-[var(--color-brand-600)] text-[var(--color-brand-700)] bg-[var(--color-brand-tint)] font-semibold shadow-2xs"
                       : "border-[var(--color-line)] text-[var(--color-ink-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)]",
@@ -196,7 +192,7 @@ export function AssignPeopleModalView({
         </div>
 
         {/* Unified Employee List (Both unassigned and already assigned in the same block) */}
-        <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-surface)] divide-y divide-[var(--color-line)] h-[240px] overflow-y-auto">
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-surface)] divide-y divide-[var(--color-line)] h-[185px] overflow-y-auto">
           {filteredPeople.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-[var(--color-ink-3)]">
               {isEs
@@ -215,26 +211,16 @@ export function AssignPeopleModalView({
                     key={emp.id}
                     className="flex w-full items-center justify-between gap-3 px-4 py-2.5 bg-[var(--color-wash)]/40 text-left select-none"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Checkmark indicator with clear green color */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Checkmark indicator with design system token */}
                       <span
                         aria-hidden="true"
-                        style={{
-                          backgroundColor: "#dcfce7",
-                          borderColor: "#86efac",
-                          color: "#16a34a",
-                        }}
-                        className="inline-flex size-5 shrink-0 items-center justify-center rounded-md border"
+                        className="inline-flex size-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-ok-tint-2)] bg-[var(--color-ok-tint)] text-[var(--color-ok)]"
                       >
                         <LuCheck
                           aria-hidden="true"
-                          color="#16a34a"
                           size={13}
-                          style={{
-                            color: "#16a34a",
-                            stroke: "#16a34a",
-                            strokeWidth: 3,
-                          }}
+                          style={{ strokeWidth: 3 }}
                           className="text-xs shrink-0"
                         />
                       </span>
@@ -244,16 +230,35 @@ export function AssignPeopleModalView({
                         <p className="truncate text-sm font-semibold text-[var(--color-ink)] leading-snug">
                           {emp.name}
                         </p>
-                        <p className="truncate text-xs text-[var(--color-ink-3)] leading-snug">
+                        <p className="truncate text-xs text-[var(--color-ink-3)] leading-snug mt-0.5">
                           {emp.station}
                         </p>
                       </div>
                     </div>
 
-                    {/* Assigned Badge */}
-                    <span className="shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-[var(--radius-sm)] bg-[var(--color-panel)] text-[var(--color-ink-2)] border border-[var(--color-line)]">
-                      {isEs ? "Asignado" : "Assigned"}
-                    </span>
+                    <div
+                      className="flex items-center gap-2 shrink-0"
+                      style={{ marginRight: "6px" }}
+                    >
+                      {emp.status === "pending" ? (
+                        <span
+                          style={{
+                            padding: "4px 12px",
+                            minWidth: "64px",
+                            textAlign: "center",
+                          }}
+                          className="text-xs font-semibold rounded-full bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn)]/30"
+                        >
+                          {isEs ? "Pendiente" : "Pending"}
+                        </span>
+                      ) : null}
+                      <span
+                        style={{ padding: "4px 10px" }}
+                        className="text-xs font-semibold rounded-[var(--radius-sm)] bg-[var(--color-panel)] text-[var(--color-ink-2)] border border-[var(--color-line)]"
+                      >
+                        {isEs ? "Asignado" : "Assigned"}
+                      </span>
+                    </div>
                   </div>
                 );
               }
@@ -264,88 +269,129 @@ export function AssignPeopleModalView({
                   key={emp.id}
                   type="button"
                   onClick={() => togglePerson(emp.id)}
+                  style={{ padding: "10px 16px" }}
                   className={cn(
-                    "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 cursor-pointer",
+                    "flex w-full items-center justify-between gap-3 text-left transition-colors duration-150 cursor-pointer",
                     isSelected
                       ? "bg-[var(--color-brand-tint)]/60"
                       : "hover:bg-[var(--color-wash)]",
                   )}
                 >
-                  {/* Interactive Checkbox with vivid terracotta background when selected */}
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      backgroundColor: isSelected ? "#c94327" : "transparent",
-                      borderColor: isSelected
-                        ? "#c94327"
-                        : "var(--color-line-3)",
-                      color: "#ffffff",
-                    }}
-                    className="inline-flex size-5 shrink-0 items-center justify-center rounded-md border transition-all duration-150"
-                  >
-                    <LuCheck
-                      style={{ strokeWidth: 3 }}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {/* Interactive Checkbox with design system token */}
+                    <span
+                      aria-hidden="true"
                       className={cn(
-                        "text-xs",
-                        isSelected ? "opacity-100" : "opacity-0",
+                        "inline-flex size-5 shrink-0 items-center justify-center rounded-md border transition-all duration-150",
+                        isSelected
+                          ? "bg-[var(--color-brand-600)] border-[var(--color-brand-600)] text-[var(--color-white)]"
+                          : "border-[var(--color-line-3)] bg-transparent",
                       )}
-                    />
-                  </span>
+                    >
+                      <LuCheck
+                        style={{ strokeWidth: 3 }}
+                        className={cn(
+                          "text-xs",
+                          isSelected ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                    </span>
 
-                  {/* Name & Station */}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-[var(--color-ink)] leading-snug">
-                      {emp.name}
-                    </p>
-                    <p className="truncate text-xs text-[var(--color-ink-2)] leading-snug">
-                      {emp.station}
-                    </p>
+                    {/* Name & Station */}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-[var(--color-ink)] leading-snug">
+                        {emp.name}
+                      </p>
+                      <p className="truncate text-xs text-[var(--color-ink-2)] leading-snug mt-0.5">
+                        {emp.station}
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Status badge on the right with generous padding */}
+                  {emp.status === "pending" ? (
+                    <span
+                      style={{
+                        padding: "4px 12px",
+                        marginRight: "6px",
+                        minWidth: "64px",
+                        textAlign: "center",
+                      }}
+                      className="shrink-0 text-xs font-semibold rounded-full bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn)]/30"
+                    >
+                      {isEs ? "Pendiente" : "Pending"}
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        padding: "4px 12px",
+                        marginRight: "6px",
+                        minWidth: "64px",
+                        textAlign: "center",
+                      }}
+                      className="shrink-0 text-xs font-semibold rounded-full bg-[var(--color-ok-tint)] text-[var(--color-ok-700)] border border-[var(--color-ok)]/30"
+                    >
+                      {isEs ? "Activo" : "Active"}
+                    </span>
+                  )}
                 </button>
               );
             })
           )}
         </div>
 
-        {/* Due date + Quick Presets (Now optional, doesn't block assignment) */}
-        <div className="space-y-2 pt-2 border-t border-[var(--color-line)]">
+        {/* Due date + Quick Presets (Always visible at first view without scrolling) */}
+        <div
+          className="border-t border-[var(--color-line)]"
+          style={{ paddingTop: "14px", marginTop: "14px" }}
+        >
           <Label
             htmlFor="people-due-at"
-            className="text-sm font-semibold text-[var(--color-ink)]"
+            className="text-xs font-semibold text-[var(--color-ink)]"
+            style={{ marginBottom: "8px", display: "block" }}
           >
-            {isEs ? "Fecha de vencimiento (opcional)" : "Due date (optional)"}
+            {isEs ? "Fecha de vencimiento" : "Due date"}
           </Label>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center" style={{ gap: "10px" }}>
             <Input
               id="people-due-at"
               type="date"
               value={dueAt}
               min={new Date().toISOString().slice(0, 10)}
               onChange={(e) => setDueAt(e.target.value)}
-              className="h-10 text-sm border-[var(--color-line-2)] rounded-[var(--radius-md)] bg-[var(--color-surface)] w-[200px] px-3"
+              style={{
+                width: "170px",
+                height: "36px",
+                paddingLeft: "10px",
+                paddingRight: "10px",
+              }}
+              className="text-xs border-[var(--color-line-2)] rounded-[var(--radius-md)] bg-[var(--color-surface)] text-[var(--color-ink)]"
             />
 
             {/* Quick Presets */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center flex-wrap" style={{ gap: "8px" }}>
               <button
                 type="button"
                 onClick={() => setDueAt(getPresetDate("1week"))}
-                className="px-3 py-1 rounded-full text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                style={{ padding: "6px 14px" }}
+                className="rounded-full text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
               >
                 {isEs ? "En 1 sem." : "In 1 week"}
               </button>
               <button
                 type="button"
                 onClick={() => setDueAt(getPresetDate("2weeks"))}
-                className="px-3 py-1 rounded-full text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                style={{ padding: "6px 14px" }}
+                className="rounded-full text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
               >
                 {isEs ? "En 2 sem." : "In 2 weeks"}
               </button>
               <button
                 type="button"
                 onClick={() => setDueAt(getPresetDate("endOfMonth"))}
-                className="px-3 py-1 rounded-full text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                style={{ padding: "6px 14px" }}
+                className="rounded-full text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
               >
                 {isEs ? "Fin de mes" : "End of month"}
               </button>
@@ -389,7 +435,12 @@ export function AssignPeopleModalView({
             type="button"
             variant="primary"
             size="sm"
-            disabled={selectedPeopleIds.size === 0 || isSubmitting}
+            disabled={
+              selectedPeopleIds.size === 0 ||
+              !dueAt ||
+              !dueAt.trim() ||
+              isSubmitting
+            }
             onClick={onExecuteAssign}
             className="text-sm font-semibold px-5 py-2 rounded-full shadow-xs cursor-pointer"
           >

@@ -6,7 +6,85 @@ import type {
   UpdateCourseInput,
   CoursesFilterOptions,
   PaginatedCoursesResponse,
+  EmployeeTrainingAssignment,
+  EmployeeTrainingCourseDetail,
+  CourseAssignmentRow,
 } from "./types";
+
+function authHeaders(
+  cookieHeader?: string,
+): Record<string, string> | undefined {
+  if (!cookieHeader) return undefined;
+  const headers: Record<string, string> = { Cookie: cookieHeader };
+  const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
+  if (tokenMatch) {
+    headers.Authorization = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+  }
+  return headers;
+}
+
+/** Fetch only the current employee's assigned courses. */
+export async function fetchMyTraining(
+  cookieHeader?: string,
+): Promise<EmployeeTrainingAssignment[]> {
+  const { data } = await http.get<{
+    success: boolean;
+    data: { assignments: EmployeeTrainingAssignment[] };
+  }>(COURSES_ENDPOINTS.MY_TRAINING, {
+    headers: authHeaders(cookieHeader),
+  });
+  return data.data.assignments;
+}
+
+/** Fetch chapter content and progress for one course assigned to this employee. */
+export async function fetchMyTrainingCourse(
+  courseId: string,
+  cookieHeader?: string,
+): Promise<EmployeeTrainingCourseDetail> {
+  const { data } = await http.get<{
+    success: boolean;
+    data: EmployeeTrainingCourseDetail;
+  }>(COURSES_ENDPOINTS.MY_TRAINING_COURSE(courseId), {
+    headers: authHeaders(cookieHeader),
+  });
+  return data.data;
+}
+
+/** Load the quiz through the existing quiz endpoint for the quiz runner. */
+export async function fetchEmployeeQuiz(
+  quizId: string,
+  cookieHeader?: string,
+): Promise<any | null> {
+  const { data } = await http.get<{
+    success: boolean;
+    data: { quiz: any };
+  }>(`/api/v1/quizzes/${quizId}`, {
+    headers: authHeaders(cookieHeader),
+  });
+  return data.data.quiz;
+}
+
+/** Mark the employee's current chapter quiz complete and advance progress. */
+export async function completeMyTrainingChapter(
+  courseId: string,
+  chapterId: string,
+): Promise<{
+  courseId: string;
+  completedChapterId: string;
+  currentChapterId: string | null;
+  courseCompletedAt: string | null;
+}> {
+  const { data } = await http.post<{
+    success: boolean;
+    data: {
+      courseId: string;
+      completedChapterId: string;
+      currentChapterId: string | null;
+      courseCompletedAt: string | null;
+    };
+  }>(COURSES_ENDPOINTS.COMPLETE_CHAPTER(courseId, chapterId), {});
+  return data.data;
+}
 
 export function isUuid(val: string | null | undefined): boolean {
   if (!val) return false;
@@ -20,6 +98,7 @@ export function isUuid(val: string | null | undefined): boolean {
  */
 export async function fetchCourses(
   options: CoursesFilterOptions = {},
+  cookieHeader?: string,
 ): Promise<PaginatedCoursesResponse> {
   const params: Record<string, string | number> = {};
   if (options.search) params.search = options.search;
@@ -32,7 +111,7 @@ export async function fetchCourses(
     success: boolean;
     message: string;
     data: PaginatedCoursesResponse;
-  }>(COURSES_ENDPOINTS.LIST, { params });
+  }>(COURSES_ENDPOINTS.LIST, { params, headers: authHeaders(cookieHeader) });
 
   return data.data;
 }
@@ -173,13 +252,74 @@ export async function deleteCourse(id: string): Promise<void> {
 export async function assignCourseApi(
   courseId: string,
   employeeIds: string[],
+  dueDate?: string,
   mode: "add" | "replace" = "add",
 ): Promise<{ courseId: string; assignedCount: number; assignUsers: string[] }> {
+  const payload: {
+    employeeIds: string[];
+    mode: "add" | "replace";
+    dueDate?: string;
+  } = {
+    employeeIds,
+    mode,
+  };
+  if (dueDate) {
+    payload.dueDate = dueDate;
+  }
+
   const { data } = await http.post<{
     success: boolean;
     message: string;
     data: { courseId: string; assignedCount: number; assignUsers: string[] };
-  }>(COURSES_ENDPOINTS.ASSIGN(courseId), { employeeIds, mode });
+  }>(COURSES_ENDPOINTS.ASSIGN(courseId), payload);
+
+  return data.data;
+}
+
+/**
+ * GET /api/v1/courses/:id/assignments — Lists all assigned employees for a training course
+ */
+export async function fetchCourseAssignmentsApi(
+  courseId: string,
+  cookieHeader?: string,
+): Promise<CourseAssignmentRow[]> {
+  const { data } = await http.get<{
+    success: boolean;
+    message: string;
+    data: CourseAssignmentRow[];
+  }>(COURSES_ENDPOINTS.ASSIGNMENTS(courseId), {
+    headers: authHeaders(cookieHeader),
+  });
+
+  return data.data ?? [];
+}
+
+/**
+ * GET /api/v1/courses/admin/progress — Aggregated training progress for Admin Progress tab
+ */
+export async function fetchTrainingProgressApi(
+  cookieHeader?: string,
+): Promise<any> {
+  const headers: Record<string, string> = {};
+
+  // The axios auth interceptor only sees the browser's cookies — server
+  // components pass the request's Cookie header here explicitly, the same
+  // way every other server-capable call does (makeHeaders / authHeaders).
+  if (cookieHeader) {
+    headers["Cookie"] = cookieHeader;
+    const tokenMatch = cookieHeader.match(/(?:^|;\s*)lms_token=([^;]+)/);
+    if (tokenMatch) {
+      headers["Authorization"] = `Bearer ${decodeURIComponent(tokenMatch[1])}`;
+    }
+  }
+
+  const { data } = await http.get<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(COURSES_ENDPOINTS.PROGRESS, {
+    headers: Object.keys(headers).length ? headers : undefined,
+  });
 
   return data.data;
 }

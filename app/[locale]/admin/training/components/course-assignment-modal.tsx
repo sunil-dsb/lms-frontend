@@ -4,7 +4,12 @@ import * as React from "react";
 import type { Procedure, TrainingAssignment } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 import { getQuizById } from "@/lib/api";
-import { listLinkedSops, type MockEmployee } from "@/lib/mock-training";
+import type { MockEmployee } from "@/lib/mock-training";
+import type { CourseAssignmentRow } from "@/services/courses/types";
+import { getChapterDefinitions } from "@/lib/course-chapters-data";
+import { fetchCourseById } from "@/services/courses/api";
+import type { BackendCourse } from "@/services/courses/types";
+import { fetchStations } from "@/services/stations/api";
 import {
   assignCourse,
   fetchAssignableEmployees,
@@ -55,11 +60,15 @@ export function CourseAssignmentModal({
   // Modal Views: "main" (Image 1) or "people" (Image 2)
   const [view, setView] = React.useState<ModalView>("main");
 
-  // API Data States (simulating real async API response hydration)
+  // API Data States
   const [employees, setEmployees] = React.useState<MockEmployee[]>([]);
+  const [dbStations, setDbStations] = React.useState<string[]>([]);
   const [existingAssignments, setExistingAssignments] = React.useState<
-    TrainingAssignment[]
+    CourseAssignmentRow[]
   >([]);
+  const [courseDetail, setCourseDetail] = React.useState<BackendCourse | null>(
+    null,
+  );
   const [isLoadingData, setIsLoadingData] = React.useState(false);
 
   // Main modal state
@@ -79,16 +88,20 @@ export function CourseAssignmentModal({
   const [dueAt, setDueAt] = React.useState<string>(defaultDueDate());
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // Available unique stations from employees (excluding any invalid station like "Saucier")
+  // Available unique stations from backend stations API and active employees
   const availableStations = React.useMemo(() => {
-    return Array.from(
-      new Set(
-        employees
-          .map((e) => e.station)
-          .filter((st) => Boolean(st) && st.toLowerCase() !== "saucier"),
-      ),
+    const set = new Set<string>(dbStations);
+    for (const e of employees) {
+      if (e.stations && Array.isArray(e.stations)) {
+        e.stations.forEach((s) => set.add(s));
+      } else if (e.station) {
+        set.add(e.station);
+      }
+    }
+    return Array.from(set).filter(
+      (st) => Boolean(st) && st.toLowerCase() !== "saucier",
     );
-  }, [employees]);
+  }, [dbStations, employees]);
 
   // Load API data whenever modal opens
   React.useEffect(() => {
@@ -97,23 +110,41 @@ export function CourseAssignmentModal({
     let isMounted = true;
     setIsLoadingData(true);
 
-    Promise.all([fetchAssignableEmployees(), fetchCourseAssignments(course.id)])
-      .then(([empRes, assignRes]) => {
+    Promise.all([
+      fetchAssignableEmployees(),
+      fetchCourseAssignments(course.id),
+      fetchCourseById(course.id).catch(() => null),
+      fetchStations().catch(() => ({ stations: [] })),
+    ])
+      .then(([empRes, assignRes, detailRes, stationsRes]) => {
         if (!isMounted) return;
         if (empRes.success) {
           setEmployees(empRes.data);
-          const stations = Array.from(
-            new Set(
-              empRes.data
-                .map((e) => e.station)
-                .filter((st) => Boolean(st) && st.toLowerCase() !== "saucier"),
-            ),
-          );
-          setSelectedStations(new Set(stations));
         }
         if (assignRes.success) {
           setExistingAssignments(assignRes.data);
         }
+        if (detailRes) {
+          setCourseDetail(detailRes);
+        }
+
+        const realStations = (stationsRes?.stations || [])
+          .map((s) => s.name.trim())
+          .filter(Boolean);
+        setDbStations(realStations);
+
+        // Pre-select all available stations by default
+        const allSt = new Set<string>(realStations);
+        if (empRes.success) {
+          for (const e of empRes.data) {
+            if (e.stations && Array.isArray(e.stations)) {
+              e.stations.forEach((s) => allSt.add(s));
+            } else if (e.station) {
+              allSt.add(e.station);
+            }
+          }
+        }
+        setSelectedStations(allSt);
       })
       .finally(() => {
         if (isMounted) setIsLoadingData(false);
@@ -126,6 +157,8 @@ export function CourseAssignmentModal({
     setPeopleSearch("");
     setStationFilter("all");
     setDueAt(defaultDueDate());
+    setCourseDetail(null);
+    setDbStations([]);
     setIsSubmitting(false);
 
     return () => {
@@ -143,11 +176,12 @@ export function CourseAssignmentModal({
   }, [employees, assignedEmployeeIds]);
 
   // Filtered employees for People modal: Show ALL employees matching station and search
-  // (Both unassigned and already assigned in the same unified employee block)
   const filteredPeople = React.useMemo(() => {
     return employees.filter((e) => {
       const matchesStation =
-        stationFilter === "all" || e.station === stationFilter;
+        stationFilter === "all" ||
+        e.station === stationFilter ||
+        Boolean(e.stations?.includes(stationFilter));
       const q = peopleSearch.trim().toLowerCase();
       const matchesQuery =
         !q || (e.name + " " + e.station).toLowerCase().includes(q);
@@ -162,18 +196,77 @@ export function CourseAssignmentModal({
     }
     if (scope === "station") {
       return unassignedEmployees
-        .filter((e) => selectedStations.has(e.station))
+        .filter((e) => {
+          if (selectedStations.has(e.station)) return true;
+          if (e.stations?.some((s) => selectedStations.has(s))) return true;
+          return false;
+        })
         .map((e) => e.id);
     }
     return Array.from(selectedPeopleIds);
   }, [scope, unassignedEmployees, selectedStations, selectedPeopleIds]);
 
+  // Map of all employees belonging to each station (for preview and status counts)
+  const stationEmployees = React.useMemo(() => {
+    const map: Record<string, MockEmployee[]> = {};
+    for (const st of availableStations) {
+      map[st] = employees.filter((e) => {
+        if (e.station === st) return true;
+        if (e.stations?.includes(st)) return true;
+        return false;
+      });
+    }
+    return map;
+  }, [availableStations, employees]);
+
+  // Count of assignable (unassigned) employees per station
+  const stationEmployeeCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const st of availableStations) {
+      counts[st] = unassignedEmployees.filter((e) => {
+        if (e.station === st) return true;
+        if (e.stations?.includes(st)) return true;
+        return false;
+      }).length;
+    }
+    return counts;
+  }, [availableStations, unassignedEmployees]);
+
   if (!open || !course) return null;
 
-  const linkedSops = listLinkedSops(course);
-  const chapterCount = linkedSops.length > 0 ? linkedSops.length + 1 : 1;
+  const registeredChapters = getChapterDefinitions(course.id);
+  const chapterCount =
+    courseDetail?.chapterCount ??
+    courseDetail?.chapters?.length ??
+    (course as unknown as { chapterCount?: number }).chapterCount ??
+    (registeredChapters?.length || 1);
+
+  const linkedSopsCount =
+    courseDetail?.chapters?.filter((ch) => Boolean(ch.procedureId)).length ?? 0;
+
   const hasQuiz = Boolean(
-    course.quizId && getQuizById(course.quizId)?.questions?.length,
+    // 1. From course summary metadata (from explore table)
+    (course as unknown as { hasQuiz?: boolean }).hasQuiz ||
+    Boolean(
+      (course as unknown as { quizCount?: number }).quizCount &&
+      (course as unknown as { quizCount?: number }).quizCount! > 0,
+    ) ||
+    course.quizId === "attached-quiz" ||
+    // 2. From real backend course detail with chapters & quizzes
+    courseDetail?.hasQuiz ||
+    Boolean(courseDetail?.quizCount && courseDetail.quizCount > 0) ||
+    courseDetail?.chapters?.some(
+      (ch) =>
+        Boolean(ch.quizId) ||
+        Boolean(
+          ch.quiz &&
+          (!Array.isArray(ch.quiz?.questions) || ch.quiz.questions.length > 0),
+        ),
+    ) ||
+    // 3. From locally registered chapter definitions
+    registeredChapters?.some((ch) => Boolean(ch.quizId || ch.quiz)) ||
+    // 4. Standalone quiz lookup
+    (course.quizId && Boolean(getQuizById(course.quizId)?.questions?.length)),
   );
 
   function toggleStation(st: string): void {
@@ -183,6 +276,14 @@ export function CourseAssignmentModal({
       else next.add(st);
       return next;
     });
+  }
+
+  function handleSelectAllStations(): void {
+    setSelectedStations(new Set(availableStations));
+  }
+
+  function handleDeselectAllStations(): void {
+    setSelectedStations(new Set());
   }
 
   function togglePerson(id: string): void {
@@ -260,14 +361,24 @@ export function CourseAssignmentModal({
             availableStations={availableStations}
             dueAt={dueAt}
             setDueAt={setDueAt}
+            getPresetDate={getPresetDate}
             targetEmployeeCount={mainScopeEmployeeIds.length}
+            selectedPeopleCount={selectedPeopleIds.size}
             chapterCount={chapterCount}
-            linkedSopsCount={linkedSops.length}
+            linkedSopsCount={linkedSopsCount}
             hasQuiz={hasQuiz}
             canAssign={
-              mainScopeEmployeeIds.length > 0 && !isSubmitting && !isLoadingData
+              mainScopeEmployeeIds.length > 0 &&
+              Boolean(dueAt && dueAt.trim()) &&
+              !isSubmitting &&
+              !isLoadingData
             }
             isSubmitting={isSubmitting}
+            stationEmployeeCounts={stationEmployeeCounts}
+            stationEmployees={stationEmployees}
+            allEmployees={employees}
+            onSelectAllStations={handleSelectAllStations}
+            onDeselectAllStations={handleDeselectAllStations}
             onOpenPeopleView={() => {
               setScope("people");
               setView("people");

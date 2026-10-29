@@ -703,9 +703,9 @@ export interface TrainingCourseRow {
   course: Procedure;
   chapterCount?: number;
   assignmentCount: number;
-  completeCount: number;
-  inProgressCount: number;
-  overdueCount: number;
+  completeCount?: number;
+  inProgressCount?: number;
+  overdueCount?: number;
 }
 
 /** Aggregated row used by `/employee/training`. `effectiveStatus` lifts
@@ -744,6 +744,21 @@ export interface TrainingProgressSummary {
   overdue: number;
 }
 
+/** One of a person's assigned courses: how far it stands and when it's due.
+ *  The Progress table reads the aggregates; the admin home card and drill-down
+ *  drawer read the per-assignment rows. */
+export interface EmployeeProgressAssignment {
+  courseId: string;
+  courseTitleEn: string;
+  courseTitleEs: string;
+  dueDate: string;
+  currentChapter: number | null;
+  isComplete: boolean;
+  isOverdue: boolean;
+  /** Null while the course is unfinished. */
+  courseCompletedAt: string | null;
+}
+
 /** "By employee" row — one per person with at least one assigned course. */
 export interface EmployeeProgressRow {
   employeeId: string;
@@ -757,6 +772,8 @@ export interface EmployeeProgressRow {
   /** 1-based chapter inside `currentCourse`; null whenever the course is. */
   currentChapter: number | null;
   status: ProgressStatus;
+  /** Every assigned course, for grouping people on the admin home card. */
+  assignments?: EmployeeProgressAssignment[];
 }
 
 /** "By course" row — one per course somebody is actually taking (a course
