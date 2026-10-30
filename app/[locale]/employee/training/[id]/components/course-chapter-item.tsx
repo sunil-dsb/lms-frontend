@@ -14,6 +14,7 @@ import {
 } from "react-icons/lu";
 import type { CourseChapter } from "@/lib/course-chapters-data";
 import { ChapterStatusIndicator } from "./chapter-status-indicator";
+import { getCachedProcedure } from "@/services/library/api";
 
 interface CourseChapterItemProps {
   chapter: CourseChapter;
@@ -43,67 +44,178 @@ export function CourseChapterItem({
   const isActive = chapter.status === "active";
   const isLocked = chapter.status === "locked";
   const blocks = chapter.blocks ?? [];
-  const hasVideo =
+  const hasVideoDirect =
     chapter.contentType === "video" ||
     blocks.some((block) => block.kind === "video");
-  const hasChecklist =
+  const hasChecklistDirect =
     chapter.contentType === "checklist" ||
     blocks.some(
-      (block) => block.kind === "checklist" || block.kind === "method",
+      (block) =>
+        block.kind === "checklist" &&
+        Array.isArray((block as any).items) &&
+        (block as any).items.length > 0,
     );
-  const hasRecipe = blocks.some(
+  const hasRecipeDirect = blocks.some(
     (block) => block.kind === "ingredients" || block.kind === "recipe",
   );
 
-  // Single linked procedure title resolution
+  // Collect all procedure IDs linked to this chapter (from procedureId, procedureSlug, and linked_procedures blocks)
+  const linkedProcedureIds = React.useMemo(() => {
+    const ids: string[] = [];
+    if (chapter.procedureId && !ids.includes(chapter.procedureId)) {
+      ids.push(chapter.procedureId);
+    }
+    if (chapter.procedureSlug && !ids.includes(chapter.procedureSlug)) {
+      ids.push(chapter.procedureSlug);
+    }
+    for (const b of chapter.blocks ?? []) {
+      if (b.kind === "linked_procedures" && Array.isArray(b.procedureIds)) {
+        for (const pid of b.procedureIds) {
+          if (pid && !ids.includes(pid)) ids.push(pid);
+        }
+      }
+    }
+    return ids;
+  }, [chapter.procedureId, chapter.procedureSlug, chapter.blocks]);
+
+  // Synchronously inspect any already-cached procedures
+  const initialLinkedInspection = React.useMemo(() => {
+    let checklist = false;
+    let video = false;
+    let recipe = false;
+    let title: string | null = null;
+
+    for (const pid of linkedProcedureIds) {
+      const cached = getCachedProcedure(pid);
+      if (cached) {
+        if (
+          !title &&
+          (linkedProcedureIds.length === 1 || chapter.hasProcedure)
+        ) {
+          title = isEs
+            ? cached.titleEs || cached.titleEn
+            : cached.titleEn || cached.titleEs;
+        }
+        const allBlocks = [
+          ...(cached.bodyEn?.blocks ?? []),
+          ...(cached.bodyEs?.blocks ?? []),
+        ];
+        if (
+          allBlocks.some(
+            (b) =>
+              b.kind === "checklist" &&
+              Array.isArray((b as any).items) &&
+              (b as any).items.length > 0,
+          )
+        ) {
+          checklist = true;
+        }
+        if (allBlocks.some((b) => b.kind === "video")) {
+          video = true;
+        }
+        if (
+          allBlocks.some((b) => b.kind === "ingredients" || b.kind === "recipe")
+        ) {
+          recipe = true;
+        }
+      }
+    }
+    return { checklist, video, recipe, title };
+  }, [linkedProcedureIds, chapter.hasProcedure, isEs]);
+
   const [singleProcTitle, setSingleProcTitle] = React.useState<string | null>(
-    null,
+    () => initialLinkedInspection.title,
+  );
+  const [linkedHasChecklist, setLinkedHasChecklist] = React.useState(
+    () => initialLinkedInspection.checklist,
+  );
+  const [linkedHasVideo, setLinkedHasVideo] = React.useState(
+    () => initialLinkedInspection.video,
+  );
+  const [linkedHasRecipe, setLinkedHasRecipe] = React.useState(
+    () => initialLinkedInspection.recipe,
   );
 
   React.useEffect(() => {
-    const isSingle =
-      chapter.linkedProceduresCount === 1 ||
-      (!chapter.linkedProceduresCount && chapter.hasProcedure);
+    if (linkedProcedureIds.length === 0) return;
 
-    if (isSingle) {
-      const procId =
-        chapter.procedureId ||
-        chapter.procedureSlug ||
-        (
-          chapter.blocks?.find(
-            (b: any) =>
-              b.kind === "linked_procedures" &&
-              Array.isArray(b.procedureIds) &&
-              b.procedureIds.length > 0,
-          ) as any
-        )?.procedureIds?.[0];
+    let isMounted = true;
 
-      if (procId) {
-        import("@/services/library/api")
-          .then(({ getCachedProcedure, fetchProcedureById }) => {
-            const cached = getCachedProcedure(procId);
-            if (cached) {
-              const title = isEs
-                ? cached.titleEs || cached.titleEn
-                : cached.titleEn || cached.titleEs;
-              if (title) setSingleProcTitle(title);
-            } else {
-              fetchProcedureById(procId, true)
-                .then((p) => {
-                  if (p) {
-                    const title = isEs
-                      ? p.titleEs || p.titleEn
-                      : p.titleEn || p.titleEs;
-                    if (title) setSingleProcTitle(title);
-                  }
-                })
-                .catch(() => {});
+    import("@/services/library/api")
+      .then(async ({ getCachedProcedure: getCached, fetchProcedureById }) => {
+        let foundChecklist = initialLinkedInspection.checklist;
+        let foundVideo = initialLinkedInspection.video;
+        let foundRecipe = initialLinkedInspection.recipe;
+        let resolvedTitle = initialLinkedInspection.title;
+
+        for (const procId of linkedProcedureIds) {
+          try {
+            let proc = getCached(procId);
+            const needsFetch =
+              !proc ||
+              ((proc.bodyEn?.blocks?.length ?? 0) === 0 &&
+                (proc.bodyEs?.blocks?.length ?? 0) === 0);
+
+            if (needsFetch) {
+              proc = await fetchProcedureById(procId, true);
             }
-          })
-          .catch(() => {});
-      }
-    }
-  }, [chapter, isEs]);
+            if (!proc) continue;
+
+            if (
+              !resolvedTitle &&
+              (linkedProcedureIds.length === 1 || chapter.hasProcedure)
+            ) {
+              resolvedTitle = isEs
+                ? proc.titleEs || proc.titleEn
+                : proc.titleEn || proc.titleEs;
+            }
+
+            const procBlocks = [
+              ...(proc.bodyEn?.blocks ?? []),
+              ...(proc.bodyEs?.blocks ?? []),
+            ];
+            if (
+              procBlocks.some(
+                (b) =>
+                  b.kind === "checklist" &&
+                  Array.isArray((b as any).items) &&
+                  (b as any).items.length > 0,
+              )
+            ) {
+              foundChecklist = true;
+            }
+            if (procBlocks.some((b) => b.kind === "video")) {
+              foundVideo = true;
+            }
+            if (
+              procBlocks.some(
+                (b) => b.kind === "ingredients" || b.kind === "recipe",
+              )
+            ) {
+              foundRecipe = true;
+            }
+          } catch {
+            // Ignore fetch errors
+          }
+        }
+
+        if (isMounted) {
+          if (resolvedTitle) setSingleProcTitle(resolvedTitle);
+          setLinkedHasChecklist(foundChecklist);
+          setLinkedHasVideo(foundVideo);
+          setLinkedHasRecipe(foundRecipe);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [linkedProcedureIds, chapter.hasProcedure, isEs, initialLinkedInspection]);
+
+  const hasVideo = hasVideoDirect || linkedHasVideo;
+  const hasChecklist = hasChecklistDirect || linkedHasChecklist;
+  const hasRecipe = hasRecipeDirect || linkedHasRecipe;
 
   const linkedProcedureLabel = React.useMemo(() => {
     if (chapter.linkedProceduresCount && chapter.linkedProceduresCount > 1) {
@@ -304,7 +416,7 @@ export function CourseChapterItem({
         href={`${basePath ?? `/${locale}/employee/training/${courseId}`}?chapter=${chapter.number}`}
         className={`group block rounded-2xl p-4 sm:p-5 transition-all duration-[var(--dur)] ease-[var(--ease)] focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2 ${
           isActive
-            ? "mt-2 border-2 border-[var(--color-brand-600)] bg-[var(--color-surface)] shadow-xs hover:shadow-sm "
+            ? "border-2 border-[var(--color-brand-600)] bg-[var(--color-surface)] shadow-xs hover:shadow-sm "
             : "border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line)] hover:shadow-xs"
         }`}
       >

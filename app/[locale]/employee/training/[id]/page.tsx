@@ -187,7 +187,16 @@ export default async function EmployeeTrainingCoursePage({
       chapterQuiz?.questions && chapterQuiz.questions.length > 0
         ? chapterQuiz.questions
         : [];
-    if (questions.length === 0) notFound();
+    if (questions.length === 0) {
+      // If chapter has no quiz questions, advance directly to next chapter or course overview
+      if (chapterNumber < chapterDetail.totalChapters) {
+        redirect(
+          `/${locale}/employee/training/${id}?chapter=${chapterNumber + 1}`,
+        );
+      } else {
+        redirect(`/${locale}/employee/training/${id}`);
+      }
+    }
 
     const minCorrectAnswers =
       chapterDetail.minCorrectAnswers ??
@@ -221,6 +230,18 @@ export default async function EmployeeTrainingCoursePage({
   // 2. Chapter Learn View: matches reference Image 1
   if (chapterNumber && !isNaN(chapterNumber)) {
     const chapterDetail = getChapterDetail(id, chapterNumber, locale);
+    const currentChapterObj = employeeTraining.course.chapters.find(
+      (item) => item.number === chapterNumber,
+    );
+
+    const hasQuiz =
+      typeof (currentChapterObj as any)?.quizQuestionsCount === "number"
+        ? (currentChapterObj as any).quizQuestionsCount > 0
+        : Boolean(
+            ((currentChapterObj as any)?.quiz?.questions &&
+              (currentChapterObj as any).quiz.questions.length > 0) ||
+            chapterDetail.quiz?.questions?.length,
+          );
 
     // Check if blocks already contain linked_procedures — if so, use blocks directly
     // (BlockRenderer will handle rendering all procedure IDs in the block)
@@ -249,6 +270,7 @@ export default async function EmployeeTrainingCoursePage({
     return (
       <ChapterLearnView
         courseId={id}
+        chapterId={currentChapterObj?.id}
         courseTitle={courseTitle}
         chapterNumber={chapterNumber}
         totalChapters={chapterDetail.totalChapters}
@@ -257,6 +279,7 @@ export default async function EmployeeTrainingCoursePage({
         locale={locale}
         blocks={chapterDetail.blocks}
         procedure={linkedProcedure}
+        hasQuiz={hasQuiz}
       />
     );
   }

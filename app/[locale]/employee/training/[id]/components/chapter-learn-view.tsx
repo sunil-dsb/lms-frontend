@@ -2,16 +2,25 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LuChevronLeft, LuPlay } from "react-icons/lu";
+import {
+  LuChevronLeft,
+  LuPlay,
+  LuArrowRight,
+  LuCheck,
+  LuLoader,
+} from "react-icons/lu";
 import { BlockRenderer } from "@/components/doc/block-renderer";
 import { ProcedureArticleBody } from "@/components/doc/procedure-article-body";
 import { CookModeLauncher } from "@/components/doc/cook-mode-launcher";
+import { completeMyTrainingChapter } from "@/services/courses/api";
 import { cn } from "@/lib/utils";
 import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
 
 interface ChapterLearnViewProps {
   courseId: string;
+  chapterId?: string;
   courseTitle: string;
   chapterNumber: number;
   totalChapters: number;
@@ -25,6 +34,7 @@ interface ChapterLearnViewProps {
   backHref?: string;
   /** Sidebar width in px to offset the fixed sticky button (admin layout). Default 0. */
   sidebarOffsetPx?: number;
+  hasQuiz?: boolean;
 }
 
 /**
@@ -42,6 +52,7 @@ interface ChapterLearnViewProps {
  */
 export function ChapterLearnView({
   courseId,
+  chapterId,
   courseTitle,
   chapterNumber,
   totalChapters,
@@ -54,17 +65,65 @@ export function ChapterLearnView({
   basePath,
   backHref,
   sidebarOffsetPx = 0,
+  hasQuiz = true,
 }: ChapterLearnViewProps): React.ReactElement {
+  const router = useRouter();
   const t = useTranslations("employee.training");
+  const [isAdvancing, setIsAdvancing] = React.useState(false);
   const effectiveBasePath =
     basePath ?? `/${locale}/employee/training/${courseId}`;
 
+  const handleAdvance = React.useCallback(async () => {
+    if (isAdvancing) return;
+    setIsAdvancing(true);
+    try {
+      if (chapterId && !basePath?.includes("/admin/")) {
+        await completeMyTrainingChapter(courseId, chapterId).catch((err) => {
+          console.warn("Could not record chapter completion:", err);
+        });
+      }
+      if (chapterNumber < totalChapters) {
+        router.push(`${effectiveBasePath}?chapter=${chapterNumber + 1}`);
+      } else {
+        router.push(backHref ?? effectiveBasePath);
+      }
+    } finally {
+      setIsAdvancing(false);
+    }
+  }, [
+    isAdvancing,
+    chapterId,
+    basePath,
+    courseId,
+    chapterNumber,
+    totalChapters,
+    effectiveBasePath,
+    backHref,
+    router,
+  ]);
+
+  const hasLinkedProceduresBlock = React.useMemo(
+    () =>
+      (blocks ?? []).some(
+        (b: any) =>
+          b.kind === "linked_procedures" &&
+          Array.isArray(b.procedureIds) &&
+          b.procedureIds.length > 0,
+      ),
+    [blocks],
+  );
+
+  const hasBlocks = Boolean(blocks && blocks.length > 0);
+  const standaloneProcedure = hasLinkedProceduresBlock ? null : procedure;
+
   // Determine whether this chapter has cooking method steps / recipe
-  const targetBlocks = procedure
-    ? ((locale === "es" && procedure.bodyEs?.blocks?.length
-        ? procedure.bodyEs.blocks
-        : procedure.bodyEn?.blocks) ?? [])
-    : (blocks ?? []);
+  const targetBlocks = hasBlocks
+    ? (blocks ?? [])
+    : standaloneProcedure
+      ? ((locale === "es" && standaloneProcedure.bodyEs?.blocks?.length
+          ? standaloneProcedure.bodyEs.blocks
+          : standaloneProcedure.bodyEn?.blocks) ?? [])
+      : [];
 
   const recipeBlocks = targetBlocks.filter(
     (b): b is Extract<ProcedureBlock, { kind: "recipe" }> =>
@@ -98,14 +157,14 @@ export function ChapterLearnView({
   // card further down the page) ignore the event instead of all opening at
   // once.
   const handleOpenCookMode = React.useCallback(() => {
-    if (procedure) {
+    if (standaloneProcedure && !hasBlocks) {
       const firstRecipe = recipeBlocks[0];
       const recipeBlockId = firstRecipe
         ? (firstRecipe.id ?? `recipe-${firstRecipe.factors?.length ?? 0}`)
-        : `steps-${procedure.id}`;
+        : `steps-${standaloneProcedure.id}`;
       window.dispatchEvent(
         new CustomEvent("cook-mode:open", {
-          detail: { procedureId: procedure.id, recipeBlockId, at: 1 },
+          detail: { procedureId: standaloneProcedure.id, recipeBlockId, at: 1 },
         }),
       );
     } else if (cookModeBlockId) {
@@ -119,7 +178,7 @@ export function ChapterLearnView({
         }),
       );
     }
-  }, [procedure, recipeBlocks, courseId, cookModeBlockId]);
+  }, [standaloneProcedure, hasBlocks, recipeBlocks, courseId, cookModeBlockId]);
 
   const cookModeBlock = React.useMemo(() => {
     if (recipeBlocks.length > 0) {
@@ -161,21 +220,23 @@ export function ChapterLearnView({
           </Link>
         </div>
 
-        {/* 2-Segment Progress Bar (Step 1: Learn, Step 2: Quiz) */}
+        {/* Progress Bar (2-Segment if quiz exists, 1-segment if no quiz) */}
         <div
           role="progressbar"
-          aria-label="Chapter progress: Learn"
+          aria-label={hasQuiz ? "Chapter progress: Learn" : "Chapter progress"}
           aria-valuenow={1}
           aria-valuemin={1}
-          aria-valuemax={2}
+          aria-valuemax={hasQuiz ? 2 : 1}
           className="flex items-center gap-2 pt-1"
         >
           <div className="h-1.5 flex-1 rounded-full bg-[var(--color-brand-600)]" />
-          <div className="h-1.5 flex-1 rounded-full bg-[var(--color-panel-2)]" />
+          {hasQuiz && (
+            <div className="h-1.5 flex-1 rounded-full bg-[var(--color-panel-2)]" />
+          )}
         </div>
 
         {/* Chapter Eyebrow, Title & Subtitle */}
-        <div className="space-y-1.5 pt-1">
+        <div className="space-y-1.5 pt-1 pb-2">
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-brand-700)]">
             {t("eyebrowLearn")}
           </p>
@@ -189,11 +250,47 @@ export function ChapterLearnView({
           ) : null}
         </div>
 
-        {/* If a real procedure is linked, render it in full detailed view with CookMode */}
-        {procedure ? (
+        {/* Render chapter blocks if available */}
+        {hasBlocks ? (
+          <div className="doc pt-2 pb-1 space-y-5">
+            {hasCookMode && (
+              <div className="doc-sec-cta flex justify-end pb-1">
+                <button
+                  type="button"
+                  onClick={handleOpenCookMode}
+                  className="btn btn-primary cook-start inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer"
+                >
+                  <LuPlay
+                    aria-hidden="true"
+                    className="i fill-current text-xs"
+                  />
+                  <span>
+                    {locale === "es" ? "Empezar a cocinar" : "Start cooking"}
+                  </span>
+                </button>
+              </div>
+            )}
+            <BlockRenderer
+              blocks={blocks!}
+              locale={locale === "es" ? "es" : "en"}
+            />
+            {standaloneProcedure ? (
+              <div className="pt-4">
+                <ProcedureArticleBody
+                  proc={standaloneProcedure}
+                  employee={employee}
+                  effectiveRole="employee"
+                  locale={locale}
+                  hideQuiz={true}
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : standaloneProcedure ? (
+          /* When there are no custom chapter blocks, render the procedure in full */
           <div className="pt-2">
             <ProcedureArticleBody
-              proc={procedure}
+              proc={standaloneProcedure}
               employee={employee}
               effectiveRole="employee"
               locale={locale}
@@ -218,34 +315,10 @@ export function ChapterLearnView({
               }
             />
           </div>
-        ) : blocks && blocks.length > 0 ? (
-          <div className="doc py-1 space-y-4">
-            {hasCookMode && (
-              <div className="doc-sec-cta flex justify-end pb-1">
-                <button
-                  type="button"
-                  onClick={handleOpenCookMode}
-                  className="btn btn-primary cook-start inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer"
-                >
-                  <LuPlay
-                    aria-hidden="true"
-                    className="i fill-current text-xs"
-                  />
-                  <span>
-                    {locale === "es" ? "Empezar a cocinar" : "Start cooking"}
-                  </span>
-                </button>
-              </div>
-            )}
-            <BlockRenderer
-              blocks={blocks}
-              locale={locale === "es" ? "es" : "en"}
-            />
-          </div>
         ) : null}
 
-        {/* Cook Mode Modal Launcher (when procedure wasn't already rendering via ProcedureArticleBody) */}
-        {!procedure && cookModeBlock && (
+        {/* Cook Mode Modal Launcher (when standaloneProcedure wasn't already rendering via ProcedureArticleBody without blocks) */}
+        {(!standaloneProcedure || hasBlocks) && cookModeBlock && (
           <CookModeLauncher
             key={`cook-mode-${courseId}-${chapterNumber}`}
             block={cookModeBlock}
@@ -257,7 +330,7 @@ export function ChapterLearnView({
         )}
       </main>
 
-      {/* Sticky Bottom CTA Button: Continue to quiz */}
+      {/* Sticky Bottom CTA Button: Continue to quiz or Advance to next chapter */}
       <div
         className={cn(
           "fixed bottom-0 right-0 z-30 flex justify-center left-0",
@@ -272,12 +345,42 @@ export function ChapterLearnView({
               "linear-gradient(to top, var(--color-bg) 60%, color-mix(in srgb, var(--color-bg) 95%, transparent) 80%, transparent 100%)",
           }}
         >
-          <Link
-            href={`${effectiveBasePath}?chapter=${chapterNumber}&mode=quiz`}
-            className="flex w-full min-h-[52px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
-          >
-            {t("continueToQuiz")}
-          </Link>
+          {hasQuiz ? (
+            <Link
+              href={`${effectiveBasePath}?chapter=${chapterNumber}&mode=quiz`}
+              className="flex w-full min-h-[52px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
+            >
+              {t("continueToQuiz")}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAdvance}
+              disabled={isAdvancing}
+              className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
+            >
+              {isAdvancing ? (
+                <LuLoader className="animate-spin text-xl" />
+              ) : (
+                <>
+                  <span>
+                    {chapterNumber < totalChapters
+                      ? locale === "es"
+                        ? `Continuar al Capítulo ${chapterNumber + 1}`
+                        : `Continue to Chapter ${chapterNumber + 1}`
+                      : locale === "es"
+                        ? "Completar curso"
+                        : "Complete course"}
+                  </span>
+                  {chapterNumber < totalChapters ? (
+                    <LuArrowRight className="text-lg" />
+                  ) : (
+                    <LuCheck className="text-lg" />
+                  )}
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

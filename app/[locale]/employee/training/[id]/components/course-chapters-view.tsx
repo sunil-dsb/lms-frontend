@@ -117,7 +117,7 @@ export function CourseChaptersView({
 
         {/* Course Chapters Cards List */}
         <section aria-label="Course chapters" className="pt-2">
-          <ul className="flex flex-col gap-3.5">
+          <ul className="flex flex-col gap-4">
             {effectiveChapters.map((ch) => (
               <CourseChapterItem
                 key={ch.id}

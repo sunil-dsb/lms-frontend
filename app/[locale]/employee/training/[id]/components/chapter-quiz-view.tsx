@@ -15,6 +15,8 @@ import {
   LuRotateCcw,
   LuArrowRight,
   LuTarget,
+  LuLoader,
+  LuEye,
 } from "react-icons/lu";
 import type { ProcedureQuizQuestion } from "@/lib/types";
 import { completeMyTrainingChapter } from "@/services/courses/api";
@@ -36,6 +38,7 @@ interface ChapterQuizViewProps {
   backHref?: string;
   sidebarOffsetPx?: number;
   isCompleted?: boolean;
+  isAdmin?: boolean;
 }
 
 /**
@@ -61,6 +64,7 @@ export function ChapterQuizView({
   backHref,
   sidebarOffsetPx = 0,
   isCompleted = false,
+  isAdmin = false,
 }: ChapterQuizViewProps): React.ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -81,6 +85,7 @@ export function ChapterQuizView({
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [answers, setAnswers] = React.useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [score, setScore] = React.useState(0);
   const [hasPassed, setHasPassed] = React.useState(false);
   const [submissionError, setSubmissionError] = React.useState(false);
@@ -122,52 +127,61 @@ export function ChapterQuizView({
   };
 
   const handleSubmit = async (): Promise<void> => {
-    // Calculate final score
-    let calculatedScore = 0;
-    questions.forEach((q, idx) => {
-      const selected = answers[idx];
-      if (selected && selected === q.correctChoiceId) {
-        calculatedScore += 1;
-      }
-    });
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmissionError(false);
 
-    const passed = calculatedScore >= passingRequirement;
+    try {
+      // Calculate final score
+      let calculatedScore = 0;
+      questions.forEach((q, idx) => {
+        const selected = answers[idx];
+        if (selected && selected === q.correctChoiceId) {
+          calculatedScore += 1;
+        }
+      });
 
-    // Only record completion on backend if chapter is not already completed!
-    if (passed && !isCompleted) {
-      if (chapterId) {
-        try {
-          await completeMyTrainingChapter(courseId, chapterId);
-          await queryClient.invalidateQueries({
-            queryKey: MY_TRAINING_QUERY_KEY,
-          });
-          router.refresh();
-        } catch (err: unknown) {
-          const apiMsg =
-            err instanceof ApiException
-              ? err.message
-              : (err as any)?.response?.data?.message || (err as any)?.message;
-          const fallbackMsg = isEs
-            ? "No se pudo guardar tu progreso. Inténtalo de nuevo."
-            : "Could not save your progress. Please try again.";
-          const finalMsg = apiMsg || fallbackMsg;
-          toast.error(finalMsg);
+      const passed = calculatedScore >= passingRequirement;
+
+      // Only record completion on backend if chapter is not already completed!
+      if (passed && !isCompleted) {
+        if (chapterId) {
+          try {
+            await completeMyTrainingChapter(courseId, chapterId);
+            await queryClient.invalidateQueries({
+              queryKey: MY_TRAINING_QUERY_KEY,
+            });
+            router.refresh();
+          } catch (err: unknown) {
+            const apiMsg =
+              err instanceof ApiException
+                ? err.message
+                : (err as any)?.response?.data?.message ||
+                  (err as any)?.message;
+            const fallbackMsg = isEs
+              ? "No se pudo guardar tu progreso. Inténtalo de nuevo."
+              : "Could not save your progress. Please try again.";
+            const finalMsg = apiMsg || fallbackMsg;
+            toast.error(finalMsg);
+            setSubmissionError(true);
+            return;
+          }
+        } else {
+          const msg = isEs
+            ? "ID del capítulo no encontrado"
+            : "Chapter ID not found";
+          toast.error(msg);
           setSubmissionError(true);
           return;
         }
-      } else {
-        const msg = isEs
-          ? "ID del capítulo no encontrado"
-          : "Chapter ID not found";
-        toast.error(msg);
-        setSubmissionError(true);
-        return;
       }
-    }
 
-    setScore(calculatedScore);
-    setHasPassed(passed);
-    setIsSubmitted(true);
+      setScore(calculatedScore);
+      setHasPassed(passed);
+      setIsSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRetryQuiz = (): void => {
@@ -270,7 +284,7 @@ export function ChapterQuizView({
                     );
                     router.refresh();
                   }}
-                  className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+                  className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
                 >
                   <span>
                     {isEs
@@ -287,7 +301,7 @@ export function ChapterQuizView({
                   router.push(backHref ?? effectiveBasePath);
                   router.refresh();
                 }}
-                className={`flex w-full min-h-[46px] items-center justify-center rounded-2xl px-6 py-2.5 text-center font-[family-name:var(--font-ui)] text-sm font-semibold transition-all cursor-pointer ${
+                className={`flex w-full min-h-[46px] items-center justify-center rounded-2xl px-6 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold transition-all cursor-pointer ${
                   nextChapterNumber
                     ? "bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]"
                     : "bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)] shadow-md"
@@ -353,7 +367,7 @@ export function ChapterQuizView({
             <button
               type="button"
               onClick={handleRetryQuiz}
-              className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+              className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
             >
               <LuRotateCcw className="w-5 h-5" />
               <span>{isEs ? "Reintentar cuestionario" : "Retry quiz"}</span>
@@ -365,7 +379,7 @@ export function ChapterQuizView({
                 router.push(`${effectiveBasePath}?chapter=${chapterNumber}`);
                 router.refresh();
               }}
-              className="flex w-full min-h-[46px] items-center justify-center rounded-2xl bg-[var(--color-panel)] px-6 py-2.5 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel-2)] transition-all cursor-pointer"
+              className="flex w-full min-h-[46px] items-center justify-center rounded-2xl bg-[var(--color-panel)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel-2)] transition-all cursor-pointer"
             >
               {isEs
                 ? "Repasar contenido del capítulo"
@@ -414,14 +428,21 @@ export function ChapterQuizView({
             </span>
           </Link>
 
-          {/* Status pill: Passed or Passing requirement */}
-          {isCompleted ? (
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 shadow-2xs">
+          {/* Status pill: Admin preview vs Passed vs Passing requirement */}
+          {isAdmin ? (
+            <span className="inline-flex items-center gap-2 text-xs font-semibold rounded-full bg-[var(--color-wash)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-4 py-2 shadow-2xs">
+              <LuEye className="w-4 h-4 text-[var(--color-ink-2)]" />
+              <span>
+                {isEs ? "Vista previa de preguntas" : "Questions preview"}
+              </span>
+            </span>
+          ) : isCompleted ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-4 py-2 shadow-2xs">
               <LuCheck className="w-3.5 h-3.5 stroke-[3]" />
               <span>{isEs ? "Aprobado" : "Passed"}</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-3 py-1.5 shadow-2xs">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-4 py-2 shadow-2xs">
               <LuTarget className="w-4 h-4 text-[var(--color-brand-600)] shrink-0" />
               <span className="leading-none">
                 {isEs
@@ -459,7 +480,7 @@ export function ChapterQuizView({
                   );
                   router.refresh();
                 }}
-                className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 <span>
                   {isEs
@@ -517,7 +538,7 @@ export function ChapterQuizView({
             {/* If question originates from a linked procedure */}
             {((currentQuestion as { procedureTitle?: string }).procedureTitle ||
               currentQuestion.sourceProcedureTitle) && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--color-ink-2)] bg-[var(--color-panel-2)] px-2.5 py-0.5 rounded-md">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--color-ink-2)] bg-[var(--color-panel-2)] px-3 py-1 rounded-full">
                 <LuBookOpen className="text-xs shrink-0" />
                 <span className="truncate max-w-[200px]">
                   {(currentQuestion as { procedureTitle?: string })
@@ -544,6 +565,8 @@ export function ChapterQuizView({
 
           {choices.map((choice, cIdx) => {
             const isSelected = selectedChoiceId === choice.id;
+            const isCorrect =
+              isAdmin && choice.id === currentQuestion.correctChoiceId;
             const letter = String.fromCharCode(65 + cIdx); // A, B, C, D...
 
             const rawText =
@@ -563,9 +586,11 @@ export function ChapterQuizView({
                 onClick={() => handleSelectOption(choice.id)}
                 style={{ gap: "14px", padding: "14px 18px" }}
                 className={`group flex items-center rounded-2xl transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer select-none ${
-                  isSelected
-                    ? "border-2 border-[var(--color-brand-600)] bg-[var(--color-brand-tint-2)]/30 shadow-xs"
-                    : "border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line)] hover:shadow-xs"
+                  isCorrect
+                    ? "border-2 border-[var(--color-ok)] bg-[var(--color-ok-tint)] text-[var(--color-ink)] shadow-xs"
+                    : isSelected
+                      ? "border-2 border-[var(--color-brand-600)] bg-[var(--color-brand-tint-2)]/30 shadow-xs"
+                      : "border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line)] hover:shadow-xs"
                 }`}
               >
                 <input
@@ -581,9 +606,11 @@ export function ChapterQuizView({
                   aria-hidden="true"
                   style={{ marginRight: "12px" }}
                   className={`flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
-                    isSelected
-                      ? "bg-[var(--color-brand-600)] text-white shadow-xs"
-                      : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] group-hover:bg-[var(--color-panel)]"
+                    isCorrect
+                      ? "bg-[var(--color-ok)] text-white shadow-xs"
+                      : isSelected
+                        ? "bg-[var(--color-brand-600)] text-white shadow-xs"
+                        : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] group-hover:bg-[var(--color-panel)]"
                   }`}
                 >
                   {letter}
@@ -592,9 +619,11 @@ export function ChapterQuizView({
                 {/* Label text */}
                 <span
                   className={`text-sm leading-snug flex-1 ${
-                    isSelected
-                      ? "font-bold text-[var(--color-ink)]"
-                      : "font-medium text-[var(--color-ink)]"
+                    isCorrect
+                      ? "font-semibold text-[var(--color-ink)]"
+                      : isSelected
+                        ? "font-bold text-[var(--color-ink)]"
+                        : "font-medium text-[var(--color-ink)]"
                   }`}
                 >
                   {choiceLabel}
@@ -625,7 +654,7 @@ export function ChapterQuizView({
             <button
               type="button"
               onClick={handlePrev}
-              className="flex min-h-[50px] items-center justify-center gap-1 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3.5 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:scale-[0.99] transition-all cursor-pointer"
+              className="flex min-h-[50px] items-center justify-center gap-1 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:scale-[0.99] transition-all cursor-pointer"
             >
               <LuChevronLeft className="w-4 h-4" />
               <span>{isEs ? "Anterior" : "Previous"}</span>
@@ -633,12 +662,52 @@ export function ChapterQuizView({
           )}
 
           {/* Next Question OR Action Button */}
-          {!isLastQuestion ? (
+          {isAdmin ? (
+            !isLastQuestion ? (
+              <button
+                type="button"
+                onClick={handleNext}
+                className="flex-1 flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md hover:bg-[var(--color-brand-700)] active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <span>{isEs ? "Siguiente pregunta" : "Next question"}</span>
+                <LuChevronRight className="w-4 h-4" />
+              </button>
+            ) : chapterNumber < totalChapters ? (
+              <button
+                type="button"
+                onClick={() => {
+                  router.push(
+                    `${effectiveBasePath}?chapter=${chapterNumber + 1}`,
+                  );
+                  router.refresh();
+                }}
+                className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg hover:bg-[var(--color-brand-700)] active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <span>
+                  {isEs
+                    ? `Continuar al Capítulo ${chapterNumber + 1}`
+                    : `Continue to Chapter ${chapterNumber + 1}`}
+                </span>
+                <LuArrowRight className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  router.push(backHref ?? effectiveBasePath);
+                  router.refresh();
+                }}
+                className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg hover:bg-[var(--color-brand-700)] active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <span>{isEs ? "Volver al curso" : "Back to course"}</span>
+              </button>
+            )
+          ) : !isLastQuestion ? (
             <button
               type="button"
               onClick={handleNext}
               disabled={!isCurrentAnswered && !isCompleted}
-              className={`flex-1 flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold transition-all duration-[var(--dur)] ease-[var(--ease)] ${
+              className={`flex-1 flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold transition-all duration-[var(--dur)] ease-[var(--ease)] ${
                 isCurrentAnswered || isCompleted
                   ? "bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)] active:scale-[0.99] shadow-md cursor-pointer"
                   : "bg-[var(--color-panel)] text-[var(--color-ink-3)] cursor-not-allowed"
@@ -658,7 +727,7 @@ export function ChapterQuizView({
                     );
                     router.refresh();
                   }}
-                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
                 >
                   <span>
                     {isEs
@@ -674,7 +743,7 @@ export function ChapterQuizView({
                     router.push(backHref ?? effectiveBasePath);
                     router.refresh();
                   }}
-                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
                 >
                   <span>{t("backToChapters")}</span>
                 </button>
@@ -684,11 +753,24 @@ export function ChapterQuizView({
                 <button
                   type="button"
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                   title={isEs ? "Revisar respuestas" : "Review score"}
-                  className="flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3.5 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:scale-[0.99] transition-all cursor-pointer"
+                  className="flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <LuCheck className="w-4 h-4 stroke-[2.5]" />
-                  <span>{isEs ? "Verificar" : "Score"}</span>
+                  {isSubmitting ? (
+                    <LuLoader className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <LuCheck className="w-4 h-4 stroke-[2.5]" />
+                  )}
+                  <span>
+                    {isSubmitting
+                      ? isEs
+                        ? "Calculando..."
+                        : "Calculating..."
+                      : isEs
+                        ? "Verificar"
+                        : "Score"}
+                  </span>
                 </button>
               )}
             </>
@@ -696,17 +778,30 @@ export function ChapterQuizView({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={!isCurrentAnswered}
-              className={`flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl px-6 py-3.5 text-center font-[family-name:var(--font-ui)] text-base font-semibold transition-all duration-[var(--dur)] ease-[var(--ease)] ${
-                isCurrentAnswered
+              disabled={!isCurrentAnswered || isSubmitting}
+              className={`flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold transition-all duration-[var(--dur)] ease-[var(--ease)] ${
+                isCurrentAnswered && !isSubmitting
                   ? "bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)] active:scale-[0.99] shadow-lg cursor-pointer"
-                  : "bg-[var(--color-panel)] text-[var(--color-ink-3)] cursor-not-allowed"
+                  : isSubmitting
+                    ? "bg-[var(--color-brand-600)] text-white opacity-80 cursor-wait shadow-lg"
+                    : "bg-[var(--color-panel)] text-[var(--color-ink-3)] cursor-not-allowed"
               }`}
             >
-              <LuCheck className="w-5 h-5 stroke-[2.5]" />
-              <span>
-                {isEs ? "Finalizar y calificar" : "Submit & check score"}
-              </span>
+              {isSubmitting ? (
+                <>
+                  <LuLoader className="w-5 h-5 animate-spin" />
+                  <span>
+                    {isEs ? "Calculando puntuación..." : "Calculating score..."}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <LuCheck className="w-5 h-5 stroke-[2.5]" />
+                  <span>
+                    {isEs ? "Finalizar y calificar" : "Submit & check score"}
+                  </span>
+                </>
+              )}
             </button>
           )}
         </div>
