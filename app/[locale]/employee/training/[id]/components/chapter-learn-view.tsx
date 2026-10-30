@@ -200,7 +200,7 @@ export function ChapterLearnView({
   return (
     <div className="relative min-h-screen bg-[var(--color-bg)]">
       <main
-        className="mx-auto w-full max-w-doc space-y-5 px-4 pt-5 sm:px-6 sm:pt-6"
+        className="mx-auto w-full max-w-doc space-y-5 px-3 pt-5 sm:px-6 sm:pt-6"
         style={{ paddingBottom: "120px" }}
       >
         {/* Top Back Header */}
@@ -338,7 +338,7 @@ export function ChapterLearnView({
         )}
       >
         <div
-          className="w-full max-w-doc px-4 sm:px-6 pt-4"
+          className="w-full max-w-doc px-3 sm:px-6 pt-4"
           style={{
             paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
             background:

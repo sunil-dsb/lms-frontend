@@ -54,6 +54,11 @@ export default async function EmployeeTrainingCoursePage({
     if (err instanceof ApiException && err.status === 401) {
       redirect(`/${locale}/login`);
     }
+    if (err instanceof ApiException && err.status === 403) {
+      redirect(
+        `/${locale}/admin/training/${id}${chapter ? `?chapter=${chapter}` : ""}${mode ? `&mode=${mode}` : ""}`,
+      );
+    }
     if (err instanceof ApiException && err.status === 404) notFound();
     console.error("Could not fetch assigned course from backend:", err);
     throw err;

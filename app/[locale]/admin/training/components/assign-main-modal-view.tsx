@@ -526,9 +526,7 @@ export function AssignMainModalView({
           type="button"
           variant="surface"
           size="sm"
-          onClick={() =>
-            router.push(`/${locale}/employee/training/${course.id}`)
-          }
+          onClick={() => router.push(`/${locale}/admin/training/${course.id}`)}
           className="text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] rounded-full px-4 py-2 shadow-2xs hover:bg-[var(--color-wash)] cursor-pointer justify-center"
         >
           <LuEye className="mr-1.5 text-sm" />
