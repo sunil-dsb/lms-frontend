@@ -235,6 +235,75 @@ button.step-check:focus-visible {
   }
 }
 
+/* --- mobile: content first, no number column -------------------------------- */
+/* On a phone the 30px disc column — sometimes the disc, sometimes a blank pill —
+   buys a number the prose already carries, and costs every line a third of its
+   width: instructions wrap to a handful of words and each step reads as a tall
+   Sliver column. Here the column goes away entirely. The number becomes an
+   inline "25." prefix on the sentence (the <ol> counter keeps numbering
+   correct across multi-part methods), the instruction runs the full row, and a
+   step photo sits on its own line beneath the text. Desktop is untouched. */
+@media (max-width: 599px) {
+  .steps.compact .step {
+    grid-template-columns: minmax(0, 1fr);
+    counter-increment: step;
+  }
+
+  .steps.compact .step-num {
+    display: none;
+    counter-increment: none;
+  }
+
+  .steps.compact .step-line::before {
+    content: counter(step) ". ";
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+
+  .steps.compact .step-body {
+    padding-top: 0;
+  }
+
+  /* .step-extra defaults to grid-column 2 / -1; with one column that resolves
+     to an empty track and would hide the note entirely. */
+  .steps.compact .step-extra {
+    grid-column: 1 / -1;
+  }
+
+  .steps.compact .step.has-media {
+    grid-template-areas:
+      "body"
+      "thumb";
+    row-gap: var(--s-2);
+  }
+
+  .steps.compact .step.has-media .step-body {
+    grid-area: body;
+  }
+
+  .steps.compact .step.has-media .step-thumb {
+    grid-area: thumb;
+    justify-self: start;
+    width: 108px;
+    height: 72px;
+  }
+
+  /* A compare pair or photo grid earns its own line's worth of room. */
+  .steps.compact .step.has-media .step-thumb.is-pair,
+  .steps.compact .step.has-media .step-thumb.is-grid {
+    width: 100%;
+    max-width: 15rem;
+  }
+
+  /* The whole instruction row becomes the tick: with the disc gone, marking a
+     step done still needs a target on the phone. */
+  .steps.compact .step.is-done .step-line::before {
+    content: "✓ ";
+    color: var(--ok);
+  }
+}
+
 /* --- the thumbnail --------------------------------------------------------- */
 
 .step-thumb {

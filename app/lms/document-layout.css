@@ -184,6 +184,18 @@
   }
 }
 
+/* On a phone the cover sits a finger's width inside the sheet. Once the
+   document hugged the screen edges, a full-bleed photo read as glued to the
+   glass, with no air between it and the chrome around it. The straddling
+   doc-icon still overlaps its lower edge, and the radius keeps the corners
+   from reading as a cropped print. */
+@media (max-width: 599px) {
+  .cover {
+    margin: 0 var(--s-2);
+    border-radius: var(--r-md);
+  }
+}
+
 /* The page icon straddles the cover's lower edge, the way a document with both a
    cover and an icon is laid out. It carries the category, so a cook recognises the
    kind of document before reading the title. */

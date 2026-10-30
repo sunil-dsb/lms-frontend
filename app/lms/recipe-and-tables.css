@@ -5,6 +5,27 @@
   margin-top: var(--s-10);
 }
 
+/* A phone shows the document edge to edge. The document stacks its own side
+   padding on the page's, and on a 320px screen the two together cost a third of
+   the width: an ingredient table reads "Prepared shrimp" on two lines with a
+   blank strip on either side of the sheet. Under 600px the document's chrome
+   thins to a finger's width — content, not matting, owns the screen. ≥600px
+   keeps the wider margins. Lives here rather than in document-layout.css
+   because that file imports first; the base rule above would win on order. */
+@media (max-width: 599px) {
+  .doc-sec,
+  .doc-head,
+  .doc-purpose {
+    padding-left: var(--s-2);
+    padding-right: var(--s-2);
+  }
+
+  .allergen {
+    margin-left: var(--s-2);
+    margin-right: var(--s-2);
+  }
+}
+
 .doc-sec > h2 {
   font-size: var(--t-lg);
   font-weight: 600;
