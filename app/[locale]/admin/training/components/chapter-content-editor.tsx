@@ -1102,7 +1102,7 @@ export function ChapterContentEditor({
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-28 animate-in fade-in duration-200">
+    <div className="mx-auto max-w-4xl space-y-6 pb-48 sm:pb-32 animate-in fade-in duration-200">
       {/* Top Header */}
       <div>
         <button
@@ -1354,7 +1354,7 @@ export function ChapterContentEditor({
       )}
 
       {/* Floating Preview button — single button hovering above footer, exactly like in procedure editor */}
-      <div className="pointer-events-none fixed bottom-[76px] right-5 z-30 lg:right-8">
+      <div className="pointer-events-none fixed bottom-[68px] right-4 z-30 sm:bottom-[76px] sm:right-8">
         <Button
           type="button"
           variant="surface"
@@ -1367,14 +1367,19 @@ export function ChapterContentEditor({
       </div>
 
       {/* Sticky wizard footer bar like in procedure editor */}
-      <footer className="fixed bottom-0 left-0 right-0 z-20 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 shadow-e2 sm:px-8">
-        <Button type="button" variant="ghost" onClick={onCancel}>
+      <footer className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-between gap-2 border-t border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2.5 shadow-e2 sm:px-8 sm:py-3">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          className="px-2.5 sm:px-4 text-xs sm:text-sm"
+        >
           {isEs ? "Cancelar" : "Cancel"}
         </Button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {step === "content" ? (
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               {initialChapter && (
                 <Button
                   type="button"
@@ -1382,14 +1387,26 @@ export function ChapterContentEditor({
                   icon={LuCheck}
                   disabled={isSaving || !hasTitle || !hasPurpose}
                   onClick={handleSave}
+                  className="px-2.5 sm:px-4 text-xs sm:text-sm"
                 >
-                  {isSaving
-                    ? isEs
-                      ? "Guardando..."
-                      : "Saving..."
-                    : isEs
-                      ? "Guardar cambios"
-                      : "Save changes"}
+                  <span className="sm:hidden">
+                    {isSaving
+                      ? isEs
+                        ? "..."
+                        : "..."
+                      : isEs
+                        ? "Guardar"
+                        : "Save"}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {isSaving
+                      ? isEs
+                        ? "Guardando..."
+                        : "Saving..."
+                      : isEs
+                        ? "Guardar cambios"
+                        : "Save changes"}
+                  </span>
                 </Button>
               )}
               <Button
@@ -1398,18 +1415,20 @@ export function ChapterContentEditor({
                 icon={LuChevronRight}
                 disabled={isSaving || !hasTitle || !hasPurpose}
                 onClick={handleNext}
+                className="px-3 sm:px-4 text-xs sm:text-sm"
               >
                 {isEs ? "Siguiente" : "Next"}
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Button
                 type="button"
                 variant="surface"
                 icon={LuArrowLeft}
                 disabled={isSaving}
                 onClick={() => setStep("content")}
+                className="px-2.5 sm:px-4 text-xs sm:text-sm"
               >
                 {isEs ? "Anterior" : "Back"}
               </Button>
@@ -1419,14 +1438,26 @@ export function ChapterContentEditor({
                 icon={LuCheck}
                 disabled={isSaving}
                 onClick={handleSave}
+                className="px-3 sm:px-4 text-xs sm:text-sm"
               >
-                {isSaving
-                  ? isEs
-                    ? "Guardando..."
-                    : "Saving..."
-                  : isEs
-                    ? "Guardar cambios"
-                    : "Save changes"}
+                <span className="sm:hidden">
+                  {isSaving
+                    ? isEs
+                      ? "..."
+                      : "..."
+                    : isEs
+                      ? "Guardar"
+                      : "Save"}
+                </span>
+                <span className="hidden sm:inline">
+                  {isSaving
+                    ? isEs
+                      ? "Guardando..."
+                      : "Saving..."
+                    : isEs
+                      ? "Guardar cambios"
+                      : "Save changes"}
+                </span>
               </Button>
             </div>
           )}

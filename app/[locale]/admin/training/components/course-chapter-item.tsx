@@ -109,14 +109,8 @@ export function CourseChapterItem({
           {/* Chapter Metadata: linked procedures, quiz, blocks */}
           <div className="mt-1.5 flex items-center gap-3 text-xs text-[var(--color-ink-3)] flex-wrap">
             {linkedProcedures.length > 0 && (
-              <span
-                className="inline-flex items-center font-medium text-[var(--color-brand-600)]"
-                style={{ gap: "6px" }}
-              >
-                <LuBookOpen
-                  className="w-3.5 h-3.5 shrink-0"
-                  style={{ marginRight: "6px" }}
-                />
+              <span className="inline-flex items-center gap-1.5 font-medium text-[var(--color-brand-600)]">
+                <LuBookOpen className="w-3.5 h-3.5 shrink-0" />
                 <span>
                   {linkedProcedures.length === 1
                     ? linkedProcedures[0].title
@@ -132,14 +126,8 @@ export function CourseChapterItem({
                 {linkedProcedures.length > 0 && (
                   <span className="inline-block h-1 w-1 rounded-full bg-[var(--color-line-2)]" />
                 )}
-                <span
-                  className="inline-flex items-center font-medium text-amber-600 dark:text-amber-400"
-                  style={{ gap: "6px" }}
-                >
-                  <LuSparkles
-                    className="w-3.5 h-3.5 shrink-0"
-                    style={{ marginRight: "6px" }}
-                  />
+                <span className="inline-flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400">
+                  <LuSparkles className="w-3.5 h-3.5 shrink-0" />
                   <span>
                     {quizQuestionsCount}{" "}
                     {quizQuestionsCount === 1

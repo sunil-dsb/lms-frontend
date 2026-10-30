@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { Procedure, TrainingAssignment } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
-import { getQuizById } from "@/lib/api";
+import { getQuizById, isQuizQuestionAuthored } from "@/lib/api";
 import type { MockEmployee } from "@/lib/mock-training";
 import type { CourseAssignmentRow } from "@/services/courses/types";
 import { getChapterDefinitions } from "@/lib/course-chapters-data";
@@ -232,13 +232,14 @@ export function CourseAssignmentModal({
     return counts;
   }, [availableStations, unassignedEmployees]);
 
-  if (!open || !course) return null;
-
-  const registeredChapters = getChapterDefinitions(course.id);
+  const registeredChapters = React.useMemo(
+    () => (course ? getChapterDefinitions(course.id) : []),
+    [course],
+  );
   const chapterCount =
     courseDetail?.chapterCount ??
     courseDetail?.chapters?.length ??
-    (course as unknown as { chapterCount?: number }).chapterCount ??
+    (course as unknown as { chapterCount?: number })?.chapterCount ??
     (registeredChapters?.length || 1);
 
   const linkedSopsCount =
@@ -246,12 +247,11 @@ export function CourseAssignmentModal({
 
   const hasQuiz = Boolean(
     // 1. From course summary metadata (from explore table)
-    (course as unknown as { hasQuiz?: boolean }).hasQuiz ||
+    (course as unknown as { hasQuiz?: boolean })?.hasQuiz ||
     Boolean(
-      (course as unknown as { quizCount?: number }).quizCount &&
-      (course as unknown as { quizCount?: number }).quizCount! > 0,
+      Number((course as unknown as { quizCount?: number })?.quizCount ?? 0) > 0,
     ) ||
-    course.quizId === "attached-quiz" ||
+    course?.quizId === "attached-quiz" ||
     // 2. From real backend course detail with chapters & quizzes
     courseDetail?.hasQuiz ||
     Boolean(courseDetail?.quizCount && courseDetail.quizCount > 0) ||
@@ -266,8 +266,60 @@ export function CourseAssignmentModal({
     // 3. From locally registered chapter definitions
     registeredChapters?.some((ch) => Boolean(ch.quizId || ch.quiz)) ||
     // 4. Standalone quiz lookup
-    (course.quizId && Boolean(getQuizById(course.quizId)?.questions?.length)),
+    (course?.quizId && Boolean(getQuizById(course.quizId)?.questions?.length)),
   );
+
+  // Check whether every chapter has at least one valid authored quiz question
+  const chaptersWithoutQuestions = React.useMemo(() => {
+    const chapters = courseDetail?.chapters ?? [];
+    if (chapters.length > 0) {
+      return chapters.filter((ch) => {
+        const authored = (ch.quiz?.questions ?? []).filter(
+          isQuizQuestionAuthored,
+        );
+        if (authored.length > 0) return false;
+        if (ch.quizId) {
+          const loadedQuiz = getQuizById(ch.quizId);
+          if (
+            (loadedQuiz?.questions ?? []).filter(isQuizQuestionAuthored)
+              .length > 0
+          ) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    if (registeredChapters && registeredChapters.length > 0) {
+      return registeredChapters.filter((ch) => {
+        const authored = (ch.quiz?.questions ?? []).filter(
+          isQuizQuestionAuthored,
+        );
+        if (authored.length > 0) return false;
+        if (ch.quizId) {
+          const loadedQuiz = getQuizById(ch.quizId);
+          if (
+            (loadedQuiz?.questions ?? []).filter(isQuizQuestionAuthored)
+              .length > 0
+          ) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    if (!hasQuiz) {
+      return [{ number: 1, titleEn: "Chapter 1", titleEs: "Capítulo 1" }];
+    }
+
+    return [];
+  }, [courseDetail?.chapters, registeredChapters, hasQuiz]);
+
+  const hasMissingQuizQuestions = chaptersWithoutQuestions.length > 0;
+
+  if (!open || !course) return null;
 
   function toggleStation(st: string): void {
     setSelectedStations((prev) => {
@@ -367,9 +419,15 @@ export function CourseAssignmentModal({
             chapterCount={chapterCount}
             linkedSopsCount={linkedSopsCount}
             hasQuiz={hasQuiz}
+            hasMissingQuizQuestions={hasMissingQuizQuestions}
+            missingChapterNumbers={chaptersWithoutQuestions.map(
+              (c) => c.number,
+            )}
+            isLoadingData={isLoadingData}
             canAssign={
               mainScopeEmployeeIds.length > 0 &&
               Boolean(dueAt && dueAt.trim()) &&
+              !hasMissingQuizQuestions &&
               !isSubmitting &&
               !isLoadingData
             }

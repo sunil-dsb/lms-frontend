@@ -68,6 +68,7 @@ export async function fetchEmployeeQuiz(
 export async function completeMyTrainingChapter(
   courseId: string,
   chapterId: string,
+  cookieHeader?: string,
 ): Promise<{
   courseId: string;
   completedChapterId: string;
@@ -82,7 +83,11 @@ export async function completeMyTrainingChapter(
       currentChapterId: string | null;
       courseCompletedAt: string | null;
     };
-  }>(COURSES_ENDPOINTS.COMPLETE_CHAPTER(courseId, chapterId), {});
+  }>(
+    COURSES_ENDPOINTS.COMPLETE_CHAPTER(courseId, chapterId),
+    {},
+    { headers: authHeaders(cookieHeader) },
+  );
   return data.data;
 }
 

@@ -537,14 +537,30 @@ function isUuidLike(v: string | undefined): boolean {
 
 /** A question the manager actually wrote — prompt or any choice has text.
  *  Blank seeded rows never travel to the backend. */
-export function isQuizQuestionAuthored(q: Quiz["questions"][number]): boolean {
-  return Boolean(
-    q.prompt?.en?.trim() ||
-    q.prompt?.es?.trim() ||
-    (q as { question?: { en?: string; es?: string } }).question?.en?.trim() ||
-    (q as { question?: { en?: string; es?: string } }).question?.es?.trim() ||
-    q.choices?.some((c) => c.label?.en?.trim() || c.label?.es?.trim()),
-  );
+export function isQuizQuestionAuthored(
+  q: Quiz["questions"][number] | any,
+): boolean {
+  if (!q || typeof q !== "object") return false;
+  const rawPrompt = q.prompt ?? q.question ?? q.title;
+  const promptText =
+    typeof rawPrompt === "string"
+      ? rawPrompt.trim()
+      : String(rawPrompt?.en ?? rawPrompt?.es ?? "").trim();
+
+  const choices = q.choices;
+  const hasChoices =
+    Array.isArray(choices) &&
+    choices.some((c: any) => {
+      if (!c) return false;
+      if (typeof c === "string") return c.trim().length > 0;
+      const lbl = c.label ?? c.text;
+      if (typeof lbl === "string") return lbl.trim().length > 0;
+      return Boolean(
+        String(lbl?.en ?? "").trim() || String(lbl?.es ?? "").trim(),
+      );
+    });
+
+  return Boolean(promptText || hasChoices);
 }
 
 /** Editor questions → backend payload. New rows drop their client `id`;

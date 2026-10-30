@@ -2,15 +2,17 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { LuCircleCheck, LuGraduationCap } from "react-icons/lu";
+import { LuCircleCheck, LuGraduationCap, LuSearch, LuX } from "react-icons/lu";
 import { PageHeader } from "@/components/admin/page-header";
 import { Button } from "@/components/ui/button";
 import { CapsuleTabs } from "@/components/ui/capsule-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { TrainingProgressData } from "@/lib/types";
 import { CourseProgressTable } from "./course-progress-table";
 import { EmployeeProgressTable } from "./employee-progress-table";
+import { courseTitle } from "./progress-row";
 
 type GroupBy = "employee" | "course";
 
@@ -36,6 +38,8 @@ export function ProgressOverview({
 
   const [groupBy, setGroupBy] = React.useState<GroupBy>("employee");
   const [overdueOnly, setOverdueOnly] = React.useState(false);
+  const [employeeSearch, setEmployeeSearch] = React.useState("");
+  const [courseSearch, setCourseSearch] = React.useState("");
 
   const employeeRows = overdueOnly
     ? data.employees.filter((row) => row.status === "overdue")
@@ -43,8 +47,21 @@ export function ProgressOverview({
   const courseRows = overdueOnly
     ? data.courses.filter((row) => row.status === "overdue")
     : data.courses;
+  const search = groupBy === "employee" ? employeeSearch : courseSearch;
+  const visibleEmployeeRows = employeeRows.filter((row) =>
+    row.name
+      .toLocaleLowerCase()
+      .includes(employeeSearch.trim().toLocaleLowerCase()),
+  );
+  const visibleCourseRows = courseRows.filter((row) =>
+    courseTitle(row.course, locale)
+      .toLocaleLowerCase()
+      .includes(courseSearch.trim().toLocaleLowerCase()),
+  );
   const visibleCount =
-    groupBy === "employee" ? employeeRows.length : courseRows.length;
+    groupBy === "employee"
+      ? visibleEmployeeRows.length
+      : visibleCourseRows.length;
 
   return (
     <div className="space-y-6">
@@ -86,8 +103,78 @@ export function ProgressOverview({
         </Button>
       </div>
 
+      <div className="relative w-full">
+        <LuSearch
+          aria-hidden="true"
+          size={16}
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-3)]"
+        />
+
+        <Input
+          type="text"
+          value={search}
+          onChange={(event) => {
+            if (groupBy === "employee") {
+              setEmployeeSearch(event.target.value);
+            } else {
+              setCourseSearch(event.target.value);
+            }
+          }}
+          aria-label={
+            groupBy === "employee"
+              ? t("searchEmployeesLabel")
+              : t("searchCoursesLabel")
+          }
+          placeholder={
+            groupBy === "employee"
+              ? t("searchEmployeesPlaceholder")
+              : t("searchCoursesPlaceholder")
+          }
+          className="h-9 w-full !pl-10 !pr-10"
+        />
+
+        {search && (
+          <button
+            type="button"
+            aria-label={t("clearSearch")}
+            onClick={() => {
+              if (groupBy === "employee") {
+                setEmployeeSearch("");
+              } else {
+                setCourseSearch("");
+              }
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]"
+          >
+            <LuX aria-hidden="true" size={16} />
+          </button>
+        )}
+      </div>
+
       {visibleCount === 0 ? (
-        overdueOnly ? (
+        search.trim() ? (
+          <EmptyState
+            icon={LuSearch}
+            title={t("noSearchResultsHeading")}
+            body={
+              groupBy === "employee"
+                ? t("noEmployeeSearchResultsBody", { query: search.trim() })
+                : t("noCourseSearchResultsBody", { query: search.trim() })
+            }
+            action={
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  if (groupBy === "employee") setEmployeeSearch("");
+                  else setCourseSearch("");
+                }}
+              >
+                {t("clearSearch")}
+              </Button>
+            }
+          />
+        ) : overdueOnly ? (
           <EmptyState
             icon={LuCircleCheck}
             title={t("noOverdueHeading")}
@@ -110,9 +197,9 @@ export function ProgressOverview({
           />
         )
       ) : groupBy === "employee" ? (
-        <EmployeeProgressTable locale={locale} rows={employeeRows} />
+        <EmployeeProgressTable locale={locale} rows={visibleEmployeeRows} />
       ) : (
-        <CourseProgressTable locale={locale} rows={courseRows} />
+        <CourseProgressTable locale={locale} rows={visibleCourseRows} />
       )}
     </div>
   );

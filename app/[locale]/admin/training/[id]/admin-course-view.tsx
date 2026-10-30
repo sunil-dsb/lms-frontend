@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { LuPencil } from "react-icons/lu";
+import { LuPencil, LuUserPlus } from "react-icons/lu";
 import type {
   Procedure,
   ProcedureBlock,
@@ -23,6 +23,7 @@ import { CourseDetailSkeleton } from "@/components/admin/training-courses-skelet
 import { CourseChaptersView } from "@/app/[locale]/employee/training/[id]/components/course-chapters-view";
 import { ChapterLearnView } from "@/app/[locale]/employee/training/[id]/components/chapter-learn-view";
 import { ChapterQuizView } from "@/app/[locale]/employee/training/[id]/components/chapter-quiz-view";
+import { CourseAssignmentModal } from "../components/course-assignment-modal";
 
 interface AdminCourseViewProps {
   locale: string;
@@ -31,6 +32,30 @@ interface AdminCourseViewProps {
   chapterNumber?: number | null;
   mode?: string | null;
   linkedProcedure?: Procedure | null;
+}
+
+function isQuestionAuthored(q: any): boolean {
+  if (!q || typeof q !== "object") return false;
+  const rawPrompt = q.prompt ?? q.question ?? q.title;
+  const promptText =
+    typeof rawPrompt === "string"
+      ? rawPrompt.trim()
+      : String(rawPrompt?.en ?? rawPrompt?.es ?? "").trim();
+
+  const choices = q.choices;
+  const hasChoices =
+    Array.isArray(choices) &&
+    choices.some((c: any) => {
+      if (!c) return false;
+      if (typeof c === "string") return c.trim().length > 0;
+      const lbl = c.label ?? c.text;
+      if (typeof lbl === "string") return lbl.trim().length > 0;
+      return Boolean(
+        String(lbl?.en ?? "").trim() || String(lbl?.es ?? "").trim(),
+      );
+    });
+
+  return Boolean(promptText || hasChoices);
 }
 
 export function AdminCourseView({
@@ -62,6 +87,7 @@ export function AdminCourseView({
     ProcedureQuizQuestion[] | null
   >(null);
   const [mounted, setMounted] = React.useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
@@ -139,6 +165,20 @@ export function AdminCourseView({
       chapterNumber ?? 1,
       locale,
     );
+    const blocks =
+      (apiChapter?.blocks as ProcedureBlock[]) || chapterDetail.blocks;
+    const hasLinkedProceduresBlock = (blocks ?? []).some(
+      (b: any) =>
+        b.kind === "linked_procedures" &&
+        Array.isArray(b.procedureIds) &&
+        b.procedureIds.length > 0,
+    );
+
+    // If blocks already contain linked_procedures, BlockRenderer handles them directly
+    if (hasLinkedProceduresBlock) {
+      return;
+    }
+
     const procId =
       apiChapter?.procedureId ||
       chapterDetail?.procedureId ||
@@ -158,6 +198,7 @@ export function AdminCourseView({
         .catch(() => {});
     }
   }, [
+    apiChapter?.blocks,
     apiChapter?.procedureId,
     linkedProcedure,
     courseId,
@@ -258,19 +299,78 @@ export function AdminCourseView({
     }
 
     const chapterDetail = getChapterDetail(courseId, chapterNumber, locale);
-    const chapterQuiz = apiChapter?.quiz || chapterDetail.quiz;
-    const fallbackQuiz =
-      (activeCourse.quizId ? getQuizById(activeCourse.quizId) : null) ??
-      getQuizById("quiz-handwashing");
-
-    const questions: ProcedureQuizQuestion[] =
+    const courseChapter = apiCourse?.chapters?.find(
+      (ch: any) =>
+        ch.number === chapterNumber ||
+        (apiChapter?.id && String(ch.id) === String(apiChapter.id)),
+    );
+    const chapterQuiz =
+      apiChapter?.quiz || courseChapter?.quiz || chapterDetail.quiz;
+    const quizId =
+      apiChapter?.quizId || courseChapter?.quizId || chapterDetail?.quizId;
+    const fallbackQuiz = quizId ? getQuizById(quizId) : null;
+    const rawQuestions: ProcedureQuizQuestion[] =
       localQuizQuestions && localQuizQuestions.length > 0
         ? localQuizQuestions
         : chapterQuiz?.questions && chapterQuiz.questions.length > 0
           ? (chapterQuiz.questions as ProcedureQuizQuestion[])
           : fallbackQuiz?.questions && fallbackQuiz.questions.length > 0
-            ? fallbackQuiz.questions
-            : (getQuizById("quiz-handwashing")?.questions ?? []);
+            ? (fallbackQuiz.questions as ProcedureQuizQuestion[])
+            : [];
+    const questions = rawQuestions.filter(isQuestionAuthored);
+
+    if (questions.length === 0) {
+      return (
+        <div className="pt-12 lg:pt-0">
+          <main className="mx-auto w-full max-w-doc space-y-6 px-4 pt-8 text-center sm:px-6">
+            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel)] p-8">
+              <h2 className="font-[family-name:var(--font-ui)] text-xl font-bold text-[var(--color-ink)]">
+                {isEs
+                  ? "Este capítulo no tiene preguntas de evaluación"
+                  : "This chapter has no quiz questions"}
+              </h2>
+              <p className="mt-2 text-sm text-[var(--color-ink-2)]">
+                {isEs
+                  ? "Puedes agregar preguntas en el editor del curso o continuar con el siguiente capítulo."
+                  : "You can add questions in the course editor or continue to the next chapter."}
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href={`${basePath}?chapter=${chapterNumber}`}
+                  className="rounded-full border border-[var(--color-line-2)] bg-[var(--color-surface)] px-5 py-2 text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-wash)] transition-colors shadow-2xs"
+                >
+                  {isEs ? "Volver al capítulo" : "Back to chapter learn"}
+                </Link>
+                {chapterNumber <
+                (apiCourse?.chapters?.length || chapterDetail.totalChapters) ? (
+                  <Link
+                    href={`${basePath}?chapter=${chapterNumber + 1}`}
+                    className="rounded-full bg-[var(--color-brand-600)] px-6 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-brand-700)] transition-colors"
+                  >
+                    {isEs
+                      ? `Continuar al Capítulo ${chapterNumber + 1}`
+                      : `Continue to Chapter ${chapterNumber + 1}`}
+                  </Link>
+                ) : (
+                  <Link
+                    href={basePath}
+                    className="rounded-full bg-[var(--color-brand-600)] px-6 py-2 text-sm font-semibold text-white shadow-xs hover:bg-[var(--color-brand-700)] transition-colors"
+                  >
+                    {isEs ? "Volver al curso" : "Back to course"}
+                  </Link>
+                )}
+                <Link
+                  href={`/${locale}/admin/training/${courseId}/edit`}
+                  className="rounded-full border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] px-5 py-2 text-sm font-semibold hover:bg-[var(--color-brand-tint-2)] transition-colors shadow-2xs"
+                >
+                  {isEs ? "Editar y agregar preguntas" : "Edit & add questions"}
+                </Link>
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    }
 
     const minCorrectAnswers =
       apiChapter?.minCorrectAnswers ??
@@ -293,6 +393,7 @@ export function AdminCourseView({
           basePath={basePath}
           backHref={basePath}
           sidebarOffsetPx={280}
+          isAdmin={true}
         />
       </div>
     );
@@ -301,10 +402,21 @@ export function AdminCourseView({
   // 2. Chapter Learn View (Admin Preview)
   if (chapterNumber && !isNaN(chapterNumber)) {
     const chapterDetail = getChapterDetail(courseId, chapterNumber, locale);
-    const targetProcId =
-      apiChapter?.procedureId ||
-      chapterDetail?.procedureId ||
-      chapterDetail?.procedureSlug;
+    const effectiveBlocks =
+      (apiChapter?.blocks as ProcedureBlock[]) || chapterDetail.blocks;
+
+    const hasLinkedProceduresBlock = (effectiveBlocks ?? []).some(
+      (b: any) =>
+        b.kind === "linked_procedures" &&
+        Array.isArray(b.procedureIds) &&
+        b.procedureIds.length > 0,
+    );
+
+    const targetProcId = !hasLinkedProceduresBlock
+      ? apiChapter?.procedureId ||
+        chapterDetail?.procedureId ||
+        chapterDetail?.procedureSlug
+      : undefined;
 
     const isProcedureLoading = Boolean(
       targetProcId &&
@@ -332,8 +444,28 @@ export function AdminCourseView({
         : apiChapter?.subtitleEn || apiChapter?.subtitleEs) ||
       chapterDetail.subtitle;
 
-    const effectiveBlocks =
-      (apiChapter?.blocks as ProcedureBlock[]) || chapterDetail.blocks;
+    const courseChapter = apiCourse?.chapters?.find(
+      (ch: any) =>
+        ch.number === chapterNumber ||
+        (apiChapter?.id && String(ch.id) === String(apiChapter.id)),
+    );
+    const chapterQuiz =
+      apiChapter?.quiz || courseChapter?.quiz || chapterDetail.quiz;
+    const quizId =
+      apiChapter?.quizId || courseChapter?.quizId || chapterDetail?.quizId;
+    const fallbackQuiz = quizId ? getQuizById(quizId) : null;
+    const rawQuestions: ProcedureQuizQuestion[] =
+      localQuizQuestions && localQuizQuestions.length > 0
+        ? localQuizQuestions
+        : chapterQuiz?.questions && chapterQuiz.questions.length > 0
+          ? (chapterQuiz.questions as ProcedureQuizQuestion[])
+          : fallbackQuiz?.questions && fallbackQuiz.questions.length > 0
+            ? (fallbackQuiz.questions as ProcedureQuizQuestion[])
+            : [];
+    const hasQuiz =
+      rawQuestions.some(isQuestionAuthored) ||
+      rawQuestions.length > 0 ||
+      Boolean(quizId);
 
     return (
       <div className="pt-12 lg:pt-0">
@@ -348,10 +480,15 @@ export function AdminCourseView({
           chapterSubtitle={effectiveSubtitle}
           locale={locale}
           blocks={effectiveBlocks}
-          procedure={linkedProcedure || fetchedProcedure}
+          procedure={
+            hasLinkedProceduresBlock
+              ? null
+              : linkedProcedure || fetchedProcedure
+          }
           basePath={basePath}
           backHref={basePath}
           sidebarOffsetPx={280}
+          hasQuiz={hasQuiz}
         />
       </div>
     );
@@ -369,17 +506,34 @@ export function AdminCourseView({
         sidebarOffsetPx={280}
         showProgress={false}
         extraHeaderActions={
-          <Link href={`/${locale}/admin/training/${courseId}/edit`}>
+          <div className="flex items-center gap-2">
             <Button
               size="sm"
               variant="surface"
-              icon={LuPencil}
+              icon={LuUserPlus}
               className="cursor-pointer"
+              onClick={() => setIsAssignModalOpen(true)}
             >
-              {isEs ? "Editar curso" : "Edit course"}
+              {isEs ? "Asignar" : "Assign"}
             </Button>
-          </Link>
+            <Link href={`/${locale}/admin/training/${courseId}/edit`}>
+              <Button
+                size="sm"
+                variant="surface"
+                icon={LuPencil}
+                className="cursor-pointer"
+              >
+                {isEs ? "Editar curso" : "Edit course"}
+              </Button>
+            </Link>
+          </div>
         }
+      />
+      <CourseAssignmentModal
+        open={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        locale={locale}
+        course={activeCourse}
       />
     </div>
   );

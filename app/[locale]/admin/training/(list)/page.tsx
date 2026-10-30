@@ -1,6 +1,6 @@
 import * as React from "react";
 import { setRequestLocale } from "next-intl/server";
-import { TrainingCourseExplorer } from "./training-course-explorer";
+import { TrainingCourseExplorer } from "../training-course-explorer";
 
 interface PageProps {
   params: Promise<{ locale: string }>;

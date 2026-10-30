@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { LuCheck, LuEye, LuTriangleAlert, LuX } from "react-icons/lu";
+import { LuCheck, LuEye, LuLoader, LuTriangleAlert, LuX } from "react-icons/lu";
 import type { Procedure } from "@/lib/types";
 import type { MockEmployee } from "@/lib/mock-training";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,9 @@ interface AssignMainModalViewProps {
   chapterCount: number;
   linkedSopsCount: number;
   hasQuiz: boolean;
+  hasMissingQuizQuestions?: boolean;
+  missingChapterNumbers?: number[];
+  isLoadingData?: boolean;
   canAssign: boolean;
   isSubmitting: boolean;
   onOpenPeopleView: () => void;
@@ -57,6 +60,9 @@ export function AssignMainModalView({
   chapterCount,
   linkedSopsCount,
   hasQuiz,
+  hasMissingQuizQuestions = false,
+  missingChapterNumbers = [],
+  isLoadingData = false,
   canAssign,
   isSubmitting,
   onOpenPeopleView,
@@ -111,74 +117,110 @@ export function AssignMainModalView({
             {isEs ? "Revisión rápida" : "Quick check"}
           </p>
 
-          <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2.5 text-[var(--color-ink)]">
-              <LuCheck
-                aria-hidden="true"
-                size={18}
-                className="mr-1 shrink-0 text-[var(--color-ok)]"
-                style={{ strokeWidth: 3 }}
-              />
-              <span>
-                {chapterCount}{" "}
-                {chapterCount === 1
-                  ? isEs
-                    ? "capítulo"
-                    : "chapter"
-                  : isEs
-                    ? "capítulos"
-                    : "chapters"}
-                {linkedSopsCount > 0
-                  ? `, ${linkedSopsCount} ${
-                      isEs ? "SOPs vinculados" : "procedures linked"
-                    }`
-                  : ""}
-              </span>
-            </li>
-
-            {hasQuiz ? (
-              <li className="flex items-center gap-2.5 text-[var(--color-ink)]">
-                <LuCheck
-                  aria-hidden="true"
-                  size={18}
-                  className="mr-1 shrink-0 text-[var(--color-ok)]"
-                  style={{ strokeWidth: 3 }}
-                />
-                <span>
-                  {chapterCount === 1
-                    ? isEs
-                      ? "Cuestionario incluido"
-                      : "Quiz included"
-                    : isEs
-                      ? "Cuestionario de prueba incluido"
-                      : "Chapters have a quiz"}
-                </span>
-              </li>
-            ) : (
-              <li className="flex items-center gap-2.5 text-sm text-[var(--color-warn-ink)]">
-                <LuTriangleAlert
-                  aria-hidden="true"
-                  size={18}
-                  className="mr-1 shrink-0 text-[var(--color-warn)]"
-                  style={{ strokeWidth: 2.2 }}
-                />
+          {isLoadingData ? (
+            <div className="space-y-2.5 py-1">
+              <div className="flex items-center gap-2.5 text-sm text-[var(--color-ink-2)]">
+                <LuLoader className="animate-spin text-sm text-[var(--color-brand-600)] shrink-0" />
                 <span>
                   {isEs
-                    ? "Este curso no tiene cuestionario. Los empleados pueden completarlo sin prueba."
-                    : "Course has no quiz. Employees can finish it without a test."}{" "}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      router.push(`/${locale}/admin/training/${course.id}/edit`)
-                    }
-                    className="font-bold underline hover:opacity-80 transition-opacity cursor-pointer ml-1 text-[var(--color-brand-600)]"
-                  >
-                    {isEs ? "Agregar quiz" : "Add quiz"}
-                  </button>
+                    ? "Verificando capítulos y preguntas..."
+                    : "Checking chapters & questions..."}
                 </span>
-              </li>
-            )}
-          </ul>
+              </div>
+              <div className="h-3.5 w-44 rounded-md bg-[var(--color-wash)] animate-pulse" />
+            </div>
+          ) : (
+            <>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2.5 text-[var(--color-ink)]">
+                  <LuCheck
+                    aria-hidden="true"
+                    size={18}
+                    className="mr-1 shrink-0 text-[var(--color-ok)]"
+                    style={{ strokeWidth: 3 }}
+                  />
+                  <span>
+                    {chapterCount}{" "}
+                    {chapterCount === 1
+                      ? isEs
+                        ? "capítulo"
+                        : "chapter"
+                      : isEs
+                        ? "capítulos"
+                        : "chapters"}
+                    {linkedSopsCount > 0
+                      ? `, ${linkedSopsCount} ${
+                          isEs ? "SOPs vinculados" : "procedures linked"
+                        }`
+                      : ""}
+                  </span>
+                </li>
+
+                {hasQuiz && !hasMissingQuizQuestions && (
+                  <li className="flex items-center gap-2.5 text-[var(--color-ink)]">
+                    <LuCheck
+                      aria-hidden="true"
+                      size={18}
+                      className="mr-1 shrink-0 text-[var(--color-ok)]"
+                      style={{ strokeWidth: 3 }}
+                    />
+                    <span>
+                      {chapterCount === 1
+                        ? isEs
+                          ? "Cuestionario incluido"
+                          : "Quiz included"
+                        : isEs
+                          ? "Cuestionario de prueba incluido"
+                          : "Chapters have a quiz"}
+                    </span>
+                  </li>
+                )}
+              </ul>
+
+              {hasMissingQuizQuestions && (
+                <div className="mt-2 rounded-2xl border border-amber-300 bg-amber-50/90 dark:border-amber-900/60 dark:bg-amber-950/40 p-4 sm:p-5 space-y-1 shadow-xs">
+                  <div className="flex items-start gap-3">
+                    <LuTriangleAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1 flex-1">
+                      <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                        {isEs
+                          ? "Se requiere al menos una pregunta por capítulo"
+                          : "At least one quiz question required per chapter"}
+                      </h4>
+                      <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                        {isEs
+                          ? `No puedes asignar este curso porque ${
+                              missingChapterNumbers.length === 1
+                                ? `el capítulo ${missingChapterNumbers[0]} no tiene`
+                                : `los capítulos ${missingChapterNumbers.join(", ")} no tienen`
+                            } preguntas de cuestionario. Agrega al menos una pregunta por capítulo para poder verificar el progreso del empleado.`
+                          : `Cannot assign course: ${
+                              missingChapterNumbers.length === 1
+                                ? `Chapter ${missingChapterNumbers[0]} does not have`
+                                : `Chapters ${missingChapterNumbers.join(", ")} do not have`
+                            } any quiz questions. Every chapter must have at least one question to track employee progress.`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          `/${locale}/admin/training/${course.id}/edit`,
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-brand-600)] hover:underline cursor-pointer"
+                    >
+                      {isEs
+                        ? "Editar curso y agregar preguntas →"
+                        : "Edit course & add questions →"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Assign to: Tabs [Everyone] [By station] [People] */}
@@ -348,28 +390,36 @@ export function AssignMainModalView({
                     : "Assign to all employees"}
                 </p>
                 <p className="text-xs text-[var(--color-ink-2)]">
-                  {isEs
-                    ? `Todos los empleados activos y pendientes recibirán este curso (${
-                        allEmployees?.filter((e) => e.status === "active")
-                          .length || 0
-                      } activos, ${
-                        allEmployees?.filter((e) => e.status === "pending")
-                          .length || 0
-                      } pendientes).`
-                    : `All active and pending employees will receive this course (${
-                        allEmployees?.filter((e) => e.status === "active")
-                          .length || 0
-                      } active, ${
-                        allEmployees?.filter((e) => e.status === "pending")
-                          .length || 0
-                      } pending).`}
+                  {isLoadingData
+                    ? isEs
+                      ? "Cargando empleados disponibles..."
+                      : "Loading available employees..."
+                    : isEs
+                      ? `Todos los empleados activos y pendientes recibirán este curso (${
+                          allEmployees?.filter((e) => e.status === "active")
+                            .length || 0
+                        } activos, ${
+                          allEmployees?.filter((e) => e.status === "pending")
+                            .length || 0
+                        } pendientes).`
+                      : `All active and pending employees will receive this course (${
+                          allEmployees?.filter((e) => e.status === "active")
+                            .length || 0
+                        } active, ${
+                          allEmployees?.filter((e) => e.status === "pending")
+                            .length || 0
+                        } pending).`}
                 </p>
               </div>
               <span
                 style={{ padding: "6px 14px" }}
-                className="text-sm font-bold text-[var(--color-brand-700)] bg-[var(--color-brand-tint)] rounded-full border border-[var(--color-brand-600)]/20 shrink-0"
+                className="text-sm font-bold text-[var(--color-brand-700)] bg-[var(--color-brand-tint)] rounded-full border border-[var(--color-brand-600)]/20 shrink-0 inline-flex items-center gap-1.5"
               >
-                {targetEmployeeCount} {isEs ? "empleados" : "employees"}
+                {isLoadingData ? (
+                  <LuLoader className="animate-spin text-sm" />
+                ) : (
+                  `${targetEmployeeCount} ${isEs ? "empleados" : "employees"}`
+                )}
               </span>
             </div>
           ) : scope === "people" ? (
@@ -502,15 +552,30 @@ export function AssignMainModalView({
             size="sm"
             disabled={!canAssign}
             onClick={onExecuteAssign}
-            className="text-sm font-semibold px-5 py-2 rounded-full shadow-xs cursor-pointer flex-1 sm:flex-none justify-center"
+            title={
+              hasMissingQuizQuestions
+                ? isEs
+                  ? "Agrega preguntas a cada capítulo para poder asignar el curso"
+                  : "Add quiz questions to each chapter to assign this course"
+                : undefined
+            }
+            className="text-sm font-semibold px-5 py-2 rounded-full shadow-xs cursor-pointer flex-1 sm:flex-none justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting
               ? isEs
                 ? "Asignando..."
                 : "Assigning..."
-              : isEs
-                ? "Asignar curso"
-                : "Assign course"}
+              : isLoadingData
+                ? isEs
+                  ? "Cargando..."
+                  : "Loading..."
+                : hasMissingQuizQuestions
+                  ? isEs
+                    ? "Preguntas requeridas"
+                    : "Questions required"
+                  : isEs
+                    ? "Asignar curso"
+                    : "Assign course"}
           </Button>
         </div>
       </div>

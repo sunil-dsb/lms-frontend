@@ -147,7 +147,7 @@ export function EmployeeProgressDetail({
                     : row.titleEn || row.titleEs;
 
                 return (
-                  <div key={row.assignmentId} className="p-4 space-y-2.5">
+                  <div key={row.assignmentId} className="p-4">
                     {/* Top: Course title + Status */}
                     <div className="flex items-start justify-between gap-3">
                       <Link
@@ -165,7 +165,7 @@ export function EmployeeProgressDetail({
                     </div>
 
                     {/* Details row: Chapters done & Current position */}
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-2)] border-t border-[var(--color-line-2)] pt-2.5">
+                    <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-2)] border-t border-[var(--color-line-2)]/80 pt-4">
                       <span className="font-semibold text-[var(--color-ink)] tabular-nums">
                         {row.chapterCount > 0
                           ? t("doneOfTotal", { done, total: row.chapterCount })

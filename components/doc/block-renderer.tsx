@@ -502,25 +502,46 @@ export function BlockRenderer({
         // same table, but these cells are sentences rather than quantities.
         add(
           key,
-          <div className="overflow-x-auto rounded-[var(--radius-lg)] my-2 border border-[var(--color-line)]">
+          <div className="overflow-x-auto rounded-[var(--radius-lg)] my-2 border border-[var(--color-line)] -mx-1 sm:mx-0">
             <table className="dtable min-w-full !border-0 !rounded-none">
               <thead>
                 <tr>
-                  {block.headers.map((h, j) => (
-                    <th key={j} scope="col" className="min-w-[140px]">
-                      {pickText(h, locale)}
-                    </th>
-                  ))}
+                  {block.headers.map((h, j) => {
+                    const textVal = pickText(h, locale);
+                    const isShort = textVal.length <= 4;
+                    return (
+                      <th
+                        key={j}
+                        scope="col"
+                        className={cn(
+                          "px-3 py-2.5 text-xs sm:text-sm font-semibold",
+                          isShort ? "w-12 text-center" : "min-w-[100px]",
+                        )}
+                      >
+                        {textVal}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
                 {block.rows.map((row, ri) => (
                   <tr key={ri}>
-                    {row.map((cell, j) => (
-                      <td key={j} className="align-top min-w-[140px]">
-                        {pickText(cell, locale)}
-                      </td>
-                    ))}
+                    {row.map((cell, j) => {
+                      const textVal = pickText(cell, locale);
+                      const isShort = textVal.length <= 4;
+                      return (
+                        <td
+                          key={j}
+                          className={cn(
+                            "align-top px-3 py-2.5 text-xs sm:text-sm",
+                            isShort ? "w-12 text-center" : "min-w-[100px]",
+                          )}
+                        >
+                          {textVal}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
@@ -779,7 +800,7 @@ function ChecklistBlock({
           {done}/{items.length}
         </span>
       </div>
-      <ul className="checklist space-y-2" role="list">
+      <ul className="checklist space-y-1.5" role="list">
         {items.map((it, i) => {
           const checked = !!picked[it.id];
           const label = it.text[locale] || it.text.en || it.text.es;
@@ -791,19 +812,15 @@ function ChecklistBlock({
                 aria-checked={checked}
                 onClick={() => toggle(it.id)}
                 className={cn(
-                  "checklist-row group flex w-full items-center gap-3 text-left transition-colors",
+                  "checklist-row group flex w-full items-start gap-2.5 sm:gap-3 text-left transition-colors rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 cursor-pointer",
                   checked
                     ? "checklist-row--done bg-[var(--color-ok-tint)]"
                     : "hover:bg-[var(--color-wash)]",
                 )}
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: 0,
-                }}
               >
                 <span
                   className={cn(
-                    "checklist-box flex size-5 shrink-0 items-center justify-center rounded border transition-colors",
+                    "checklist-box flex size-5 shrink-0 items-center justify-center rounded border transition-colors mt-0.5",
                     checked
                       ? "checklist-box--on border-[var(--color-ok-fill)] bg-[var(--color-ok-fill)] text-white"
                       : "checklist-box--off border-[var(--color-line-2)] bg-[var(--color-surface)] text-transparent group-hover:border-[var(--color-ink-3)]",
@@ -813,14 +830,14 @@ function ChecklistBlock({
                   <LuCheck className="size-3.5 stroke-[3]" />
                 </span>
                 <span
-                  className="checklist-num text-xs font-mono text-[var(--color-ink-3)]"
+                  className="checklist-num text-xs font-mono text-[var(--color-ink-3)] shrink-0 mt-0.5 min-w-[18px]"
                   aria-hidden="true"
                 >
                   {i + 1}
                 </span>
                 <span
                   className={cn(
-                    "checklist-text flex-1 text-sm font-medium transition-colors",
+                    "checklist-text flex-1 text-sm font-medium leading-relaxed transition-colors min-w-0 break-words",
                     checked
                       ? "text-[var(--color-ink-3)] line-through"
                       : "text-[var(--color-ink)]",
@@ -937,7 +954,7 @@ function LinkedProcedureDocItem({
     <div
       key={id}
       id={`linked-proc-${sop.id}`}
-      className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-7 shadow-xs space-y-5"
+      className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-7 shadow-xs space-y-4 sm:space-y-5"
     >
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 border-b border-[var(--color-line-2)]/60 pb-4">
         <div className="min-w-0 space-y-1.5">
