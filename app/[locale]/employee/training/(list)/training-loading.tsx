@@ -6,7 +6,7 @@ import { TrainingFilterTabsSkeleton } from "../components/training-filter-tabs";
  * Matches the canonical max-w-doc reading column, single header block,
  * design system pill chips, and card list while the data loads.
  */
-export default function EmployeeTrainingLoading(): React.ReactElement {
+export function EmployeeTrainingLoading(): React.ReactElement {
   return (
     <main
       className="mx-auto w-full max-w-doc px-4 pt-6 sm:px-6 sm:pt-8 flex flex-col gap-5"

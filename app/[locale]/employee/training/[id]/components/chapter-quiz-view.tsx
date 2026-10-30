@@ -225,8 +225,8 @@ export function ChapterQuizView({
             </div>
 
             {/* Score & unlock badge */}
-            <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 text-left space-y-3.5 shadow-xs max-w-lg mx-auto">
-              <div className="flex items-center justify-between pb-3 border-b border-[var(--color-line-2)]">
+            <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 text-left shadow-xs max-w-lg mx-auto">
+              <div className="flex items-center justify-between pb-4 border-b border-[var(--color-line-2)]">
                 <div className="flex items-center gap-2">
                   <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
                     <LuTarget className="w-4 h-4" />
@@ -240,24 +240,26 @@ export function ChapterQuizView({
                 </span>
               </div>
 
-              <div className="flex items-center gap-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                <LuCheck className="text-lg shrink-0 stroke-[3]" />
-                <span>
-                  {isEs
-                    ? `Requisitos del Capítulo ${chapterNumber} completados`
-                    : `Chapter ${chapterNumber} requirements cleared`}
-                </span>
-              </div>
+              <div className="pt-4 space-y-2">
+                <div className="flex items-center gap-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  <LuCheck className="text-lg shrink-0 stroke-[3]" />
+                  <span>
+                    {isEs
+                      ? `Requisitos del Capítulo ${chapterNumber} completados`
+                      : `Chapter ${chapterNumber} requirements cleared`}
+                  </span>
+                </div>
 
-              <p className="text-xs text-[var(--color-ink-2)] leading-relaxed">
-                {nextChapterNumber
-                  ? isEs
-                    ? `Tu progreso ha sido registrado. El Capítulo ${nextChapterNumber} ya está disponible para continuar.`
-                    : `Your progress has been recorded. Chapter ${nextChapterNumber} is available.`
-                  : isEs
-                    ? "¡Has completado todos los capítulos de este curso!"
-                    : "You have successfully completed all chapters for this course!"}
-              </p>
+                <p className="text-xs text-[var(--color-ink-2)] leading-relaxed">
+                  {nextChapterNumber
+                    ? isEs
+                      ? `Tu progreso ha sido registrado. El Capítulo ${nextChapterNumber} ya está disponible para continuar.`
+                      : `Your progress has been recorded. Chapter ${nextChapterNumber} is available.`
+                    : isEs
+                      ? "¡Has completado todos los capítulos de este curso!"
+                      : "You have successfully completed all chapters for this course!"}
+                </p>
+              </div>
             </div>
           </main>
 
@@ -267,7 +269,7 @@ export function ChapterQuizView({
             style={{ left: sidebarOffsetPx ? `${sidebarOffsetPx}px` : 0 }}
           >
             <div
-              className="w-full max-w-doc px-4 sm:px-6 pt-4 space-y-2.5"
+              className="w-full max-w-doc px-4 sm:px-6 pt-4 space-y-3"
               style={{
                 paddingBottom:
                   "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
@@ -357,7 +359,7 @@ export function ChapterQuizView({
           style={{ left: sidebarOffsetPx ? `${sidebarOffsetPx}px` : 0 }}
         >
           <div
-            className="w-full max-w-doc px-4 sm:px-6 pt-4 space-y-2.5"
+            className="w-full max-w-doc px-4 sm:px-6 pt-4 space-y-3"
             style={{
               paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
               background:
