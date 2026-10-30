@@ -47,9 +47,9 @@ import type { IconType } from "react-icons";
  * parent row holding a child also called `Library`, so the same word appeared
  * twice in a column and neither one said what it opened.
  *
- * What is not built yet (training, reports) is marked rather than hidden: a
- * manager who was promised it looks for it, and a row that says "Soon" answers
- * that, where an unmarked row that lands on an empty page does not.
+ * What is not built yet (training) is marked rather than hidden: a manager who
+ * was promised it looks for it, and a row that says "Soon" answers that, where
+ * an unmarked row that lands on an empty page does not.
  *
  * Active-state rules: the longest-prefix matching href wins. So when
  * the user is on /admin/library/categories, only `Categories` shows as
@@ -81,8 +81,7 @@ type NavGroup = {
     | "groupLibrary"
     | "groupTraining"
     | "groupPeople"
-    | "groupSettings"
-    | "groupSoon";
+    | "groupSettings";
   items: NavItem[];
 };
 
@@ -128,17 +127,6 @@ const NAV_GROUPS: NavGroup[] = [
       // three sub-resources (stations, roles, locations) are now inline
       // panels in that page rather than separate URLs.
       { href: "/settings", icon: LuChefHat, labelKey: "navSettings" },
-    ],
-  },
-  {
-    headingKey: "groupSoon",
-    items: [
-      {
-        href: "/reports",
-        icon: LuChartColumn,
-        labelKey: "navReports",
-        soon: true,
-      },
     ],
   },
 ];
@@ -606,13 +594,7 @@ function NavLink({
   return (
     <Link
       href={href}
-      onClick={(e) => {
-        if (active) {
-          e.preventDefault();
-          return;
-        }
-        onClick();
-      }}
+      onClick={onClick}
       aria-current={active ? "page" : undefined}
       className={cn(
         "group flex min-h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2",

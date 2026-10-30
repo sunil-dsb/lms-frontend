@@ -220,8 +220,8 @@ export function TrainingCourseExplorer({
       {successToast ? (
         <div className="animate-in fade-in slide-in-from-top-2 flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
           <div className="flex items-center gap-2">
-            <span className="flex size-5 items-center justify-center rounded-full bg-emerald-600 text-white">
-              <LuCheck className="text-xs stroke-[3]" />
+            <span className="flex size-6 items-center justify-center rounded-full border border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900 dark:text-emerald-100">
+              <LuCheck aria-hidden="true" className="size-4 stroke-[3]" />
             </span>
             <p className="font-medium">{successToast}</p>
           </div>

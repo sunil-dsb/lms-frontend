@@ -1,5 +1,5 @@
 /* ============================================================================
-   Cook mode â€” shared by the /[locale]/demo3 page and any procedure reader that
+   Cook mode — shared by the /[locale]/demo3 page and any procedure reader that
    mounts a recipe block. Tokens only (--ink, --brand-600, --ok, --bad, --line,
    --scrim, --glass, --on-fill, --r-*, --s-*, --t-*, --dur, --ease), so light
    and dark follow.
@@ -441,11 +441,11 @@ button.step-check:focus-visible {
 .checklist-row {
   display: flex;
   width: 100%;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--s-3);
-  padding: var(--s-3) var(--s-4) !important;
+  padding: 10px 12px !important;
   border: 0;
-  border-radius: 0 !important;
+  border-radius: 12px !important;
   background: transparent;
   cursor: pointer;
   text-align: left;
@@ -454,11 +454,16 @@ button.step-check:focus-visible {
 
 .checklist-row:hover {
   background: var(--wash) !important;
-  border-radius: 0 !important;
+  border-radius: 12px !important;
 }
 
 .checklist-row--done {
   background: var(--ok-tint) !important;
+}
+
+.checklist-row .checklist-box,
+.checklist-row .checklist-num {
+  margin-top: 2px;
 }
 
 /* --- shot with compare border (used by document view) ---------------------- */

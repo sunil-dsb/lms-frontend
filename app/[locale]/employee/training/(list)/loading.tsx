@@ -1,5 +1,5 @@
 import * as React from "react";
-import { TrainingFilterTabsSkeleton } from "./components/training-filter-tabs";
+import { TrainingFilterTabsSkeleton } from "../components/training-filter-tabs";
 
 /**
  * Loading skeleton for the employee training page.

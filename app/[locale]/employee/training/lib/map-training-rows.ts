@@ -9,38 +9,40 @@ export function mapEmployeeTrainingAssignments(
   const isEs = locale === "es";
   const today = new Date().toISOString().slice(0, 10);
 
-  const items: EmployeeTrainingItem[] = assignments.map((assignment) => {
-    const complete = assignment.status === "complete";
-    const title = isEs
-      ? assignment.titleEs || assignment.titleEn
-      : assignment.titleEn || assignment.titleEs;
-    const purpose = isEs
-      ? assignment.purposeEs || assignment.purposeEn
-      : assignment.purposeEn || assignment.purposeEs;
+  const items: EmployeeTrainingItem[] = assignments
+    .filter((assignment) => assignment.courseStatus !== "archived")
+    .map((assignment) => {
+      const complete = assignment.status === "complete";
+      const title = isEs
+        ? assignment.titleEs || assignment.titleEn
+        : assignment.titleEn || assignment.titleEs;
+      const purpose = isEs
+        ? assignment.purposeEs || assignment.purposeEn
+        : assignment.purposeEn || assignment.purposeEs;
 
-    return {
-      id: assignment.assignmentId,
-      courseId: assignment.courseId,
-      title,
-      purpose: purpose || undefined,
-      chapterCount: assignment.chapterCount,
-      completedCount: assignment.completedChapterCount,
-      progressPercent: assignment.progressPercent,
-      nextChapterIndex: complete
-        ? null
-        : (assignment.currentChapterNumber ?? 1),
-      status: complete
-        ? "complete"
-        : assignment.dueDate < today
-          ? "overdue"
-          : assignment.completedChapterCount > 0
-            ? "in_progress"
-            : "not_started",
-      dueAt: assignment.dueDate,
-      completedAt: assignment.courseCompletedAt,
-      estimatedMinutes: assignment.chapterCount * 5,
-    };
-  });
+      return {
+        id: assignment.assignmentId,
+        courseId: assignment.courseId,
+        title,
+        purpose: purpose || undefined,
+        chapterCount: assignment.chapterCount,
+        completedCount: assignment.completedChapterCount,
+        progressPercent: assignment.progressPercent,
+        nextChapterIndex: complete
+          ? null
+          : (assignment.currentChapterNumber ?? 1),
+        status: complete
+          ? "complete"
+          : assignment.dueDate < today
+            ? "overdue"
+            : assignment.completedChapterCount > 0
+              ? "in_progress"
+              : "not_started",
+        dueAt: assignment.dueDate,
+        completedAt: assignment.courseCompletedAt,
+        estimatedMinutes: assignment.chapterCount * 5,
+      };
+    });
 
   const pending = items
     .filter((item) => item.status !== "complete")

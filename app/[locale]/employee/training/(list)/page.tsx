@@ -5,8 +5,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ApiException } from "@/lib/api";
 import { fetchMyTraining } from "@/services/courses/api";
 import { TabBar } from "@/components/employee/tab-bar";
-import { mapEmployeeTrainingAssignments } from "./lib/map-training-rows";
-import { EmployeeTrainingView } from "./components/employee-training-view";
+import { mapEmployeeTrainingAssignments } from "../lib/map-training-rows";
+import { EmployeeTrainingView } from "../components/employee-training-view";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
