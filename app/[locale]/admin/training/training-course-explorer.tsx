@@ -115,6 +115,7 @@ export function TrainingCourseExplorer({
           titleEs: bc.titleEs,
           purposeEn: bc.purposeEn,
           purposeEs: bc.purposeEs,
+          isRequiredOrientation: bc.isRequiredOrientation ?? false,
           status: "published",
           isArchived: bc.status === "archived",
           createdAt: bc.createdAt,
@@ -441,6 +442,12 @@ export function TrainingCourseExplorer({
                           {t("statusUnassigned")}
                         </StatusPill>
                       )}
+
+                      {row.course.isRequiredOrientation ? (
+                        <StatusPill tone="warn">
+                          {isEs ? "Obligatorio" : "Required"}
+                        </StatusPill>
+                      ) : null}
 
                       {/* Quiz Pill */}
                       {hasQuiz ? null : (

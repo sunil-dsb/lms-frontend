@@ -35,6 +35,7 @@ interface CourseChaptersStepProps {
   initialCourseId?: string;
   courseTitle: BilingualValue;
   coursePurpose: BilingualValue;
+  isRequiredOrientation: boolean;
   chapters: EditorChapter[];
   proceduresMap: Map<string, Procedure>;
   fetchedProcedures: Record<string, Procedure>;
@@ -46,6 +47,7 @@ interface CourseChaptersStepProps {
   onSaveDetails: (
     nextTitle: BilingualValue,
     nextPurpose: BilingualValue,
+    nextIsRequiredOrientation: boolean,
   ) => Promise<void>;
   handlePreviewCourse: () => Promise<void>;
   handleSaveCourse: (opts?: {
@@ -65,6 +67,7 @@ export function CourseChaptersStep({
   initialCourseId,
   courseTitle,
   coursePurpose,
+  isRequiredOrientation,
   chapters,
   proceduresMap,
   fetchedProcedures,
@@ -86,6 +89,9 @@ export function CourseChaptersStep({
     React.useState<BilingualValue>(courseTitle);
   const [editPurposeDraft, setEditPurposeDraft] =
     React.useState<BilingualValue>(coursePurpose);
+  const [editRequiredDraft, setEditRequiredDraft] = React.useState(
+    isRequiredOrientation,
+  );
 
   const courseName =
     (isEs ? courseTitle.es : courseTitle.en) ||
@@ -120,11 +126,12 @@ export function CourseChaptersStep({
   const handleOpenEditDetails = () => {
     setEditTitleDraft({ ...courseTitle });
     setEditPurposeDraft({ ...coursePurpose });
+    setEditRequiredDraft(isRequiredOrientation);
     setIsEditingDetails(true);
   };
 
   const handleSaveDetailsEdit = async () => {
-    await onSaveDetails(editTitleDraft, editPurposeDraft);
+    await onSaveDetails(editTitleDraft, editPurposeDraft, editRequiredDraft);
     setIsEditingDetails(false);
   };
   return (
@@ -205,6 +212,25 @@ export function CourseChaptersStep({
                 es: "Describe el objetivo y lo que aprenderán los empleados...",
               }}
             />
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-line-2)] p-4">
+              <input
+                type="checkbox"
+                checked={editRequiredDraft}
+                onChange={(event) => setEditRequiredDraft(event.target.checked)}
+                className="mt-1 size-4 accent-[var(--color-brand-600)]"
+              />
+              <span>
+                <span className="block text-sm font-semibold text-[var(--color-ink)]">
+                  {isEs ? "Capacitación obligatoria" : "Required training"}
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed text-[var(--color-ink-2)]">
+                  {isEs
+                    ? "Los empleados deben completar este curso antes de que se desbloqueen sus otros cursos asignados."
+                    : "Employees must complete this course before their other assigned courses unlock."}
+                </span>
+              </span>
+            </label>
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--color-line-2)]">

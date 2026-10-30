@@ -84,6 +84,9 @@ export function CourseEditor({
     en: initialCourse?.purposeEn || initialCourse?.purposeEs || "",
     es: initialCourse?.purposeEs || initialCourse?.purposeEn || "",
   });
+  const [isRequiredOrientation, setIsRequiredOrientation] = React.useState(
+    initialCourse?.isRequiredOrientation ?? false,
+  );
 
   const courseName =
     (isEs
@@ -116,12 +119,14 @@ export function CourseEditor({
           es: initialCourse.purposeEs || initialCourse.purposeEn || "",
         });
       }
+      setIsRequiredOrientation(initialCourse.isRequiredOrientation ?? false);
     }
   }, [
     initialCourse?.titleEn,
     initialCourse?.titleEs,
     initialCourse?.purposeEn,
     initialCourse?.purposeEs,
+    initialCourse?.isRequiredOrientation,
   ]);
 
   // Sync initialChapters into state when refreshed from server
@@ -251,6 +256,7 @@ export function CourseEditor({
   const handleSaveDetails = async (
     nextTitle: BilingualValue,
     nextPurpose: BilingualValue,
+    nextIsRequiredOrientation: boolean,
   ) => {
     const nextTitleEn = nextTitle.en.trim() || nextTitle.es.trim();
     const nextTitleEs = nextTitle.es.trim() || nextTitle.en.trim();
@@ -260,6 +266,7 @@ export function CourseEditor({
 
     setCourseTitle({ en: nextTitleEn, es: nextTitleEs });
     setCoursePurpose({ en: nextPurposeEn, es: nextPurposeEs });
+    setIsRequiredOrientation(nextIsRequiredOrientation);
 
     const effectiveId = courseId || initialCourse?.id;
 
@@ -273,6 +280,7 @@ export function CourseEditor({
             titleEs: nextTitleEs,
             purposeEn: nextPurposeEn,
             purposeEs: nextPurposeEs,
+            isRequiredOrientation: nextIsRequiredOrientation,
           },
         });
         setSaveSuccess(true);
@@ -348,6 +356,7 @@ export function CourseEditor({
         titleEs: effectiveTitleEs,
         purposeEn: effectivePurposeEn,
         purposeEs: effectivePurposeEs,
+        isRequiredOrientation,
         linkedSops,
         chapters,
       });
@@ -446,6 +455,8 @@ export function CourseEditor({
         setCourseTitle={setCourseTitle}
         coursePurpose={coursePurpose}
         setCoursePurpose={setCoursePurpose}
+        isRequiredOrientation={isRequiredOrientation}
+        setIsRequiredOrientation={setIsRequiredOrientation}
         error={error}
         setError={setError}
         onProceed={handleProceedToAddChapter}
@@ -510,6 +521,7 @@ export function CourseEditor({
               titleEs: effectiveTitleEs,
               purposeEn: effectivePurposeEn,
               purposeEs: effectivePurposeEs,
+              isRequiredOrientation,
               chapters: next,
             })
             .then((savedCourse) => {
@@ -565,6 +577,7 @@ export function CourseEditor({
       initialCourseId={initialCourse?.id}
       courseTitle={courseTitle}
       coursePurpose={coursePurpose}
+      isRequiredOrientation={isRequiredOrientation}
       chapters={chapters}
       proceduresMap={proceduresMap}
       fetchedProcedures={fetchedProcedures}

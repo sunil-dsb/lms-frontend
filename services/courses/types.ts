@@ -23,6 +23,7 @@ export interface BackendCourse {
   titleEs: string;
   purposeEn: string;
   purposeEs: string;
+  isRequiredOrientation?: boolean;
   status: TrainingCourseStatus;
   assignUsers?: string[] | null;
   assignedCount?: number;
@@ -43,6 +44,9 @@ export interface EmployeeTrainingAssignment {
   purposeEn: string;
   purposeEs: string;
   courseStatus: TrainingCourseStatus;
+  isRequiredOrientation: boolean;
+  /** True while any required course is incomplete and this course is not one of them. */
+  locked?: boolean;
   dueDate: string;
   assignedAt: string;
   currentChapterId: string | null;
@@ -54,6 +58,18 @@ export interface EmployeeTrainingAssignment {
   completedChapterCount: number;
   progressPercent: number;
   status: "complete" | "in_progress";
+}
+
+export interface EmployeeRequiredTrainingStatus {
+  requiredCount: number;
+  completedCount: number;
+  lockedCount: number;
+  isComplete: boolean;
+}
+
+export interface EmployeeTrainingResponse {
+  assignments: EmployeeTrainingAssignment[];
+  requiredTraining: EmployeeRequiredTrainingStatus;
 }
 
 export interface EmployeeTrainingChapter extends Omit<
@@ -106,6 +122,7 @@ export interface CreateCourseInput {
   titleEs: string;
   purposeEn: string;
   purposeEs: string;
+  isRequiredOrientation?: boolean;
   assignUsers?: string[];
   chapters?: ChapterInput[];
 }
@@ -115,6 +132,7 @@ export interface UpdateCourseInput {
   titleEs?: string;
   purposeEn?: string;
   purposeEs?: string;
+  isRequiredOrientation?: boolean;
   assignUsers?: string[];
   chapters?: ChapterInput[];
 }

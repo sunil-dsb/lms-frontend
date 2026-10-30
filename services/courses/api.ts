@@ -6,8 +6,8 @@ import type {
   UpdateCourseInput,
   CoursesFilterOptions,
   PaginatedCoursesResponse,
-  EmployeeTrainingAssignment,
   EmployeeTrainingCourseDetail,
+  EmployeeTrainingResponse,
   CourseAssignmentRow,
 } from "./types";
 
@@ -26,14 +26,14 @@ function authHeaders(
 /** Fetch only the current employee's assigned courses. */
 export async function fetchMyTraining(
   cookieHeader?: string,
-): Promise<EmployeeTrainingAssignment[]> {
+): Promise<EmployeeTrainingResponse> {
   const { data } = await http.get<{
     success: boolean;
-    data: { assignments: EmployeeTrainingAssignment[] };
+    data: EmployeeTrainingResponse;
   }>(COURSES_ENDPOINTS.MY_TRAINING, {
     headers: authHeaders(cookieHeader),
   });
-  return data.data.assignments;
+  return data.data;
 }
 
 /** Fetch chapter content and progress for one course assigned to this employee. */
@@ -354,6 +354,7 @@ export interface SaveCourseInput {
   titleEs?: string;
   purposeEn?: string;
   purposeEs?: string;
+  isRequiredOrientation?: boolean;
   assignUsers?: string[];
   linkedSops?: string[];
   chapters?: SaveCourseChapterInput[];
@@ -455,6 +456,7 @@ export async function saveCourse(
       titleEs,
       purposeEn,
       purposeEs,
+      isRequiredOrientation: input.isRequiredOrientation,
       ...(input.assignUsers !== undefined
         ? { assignUsers: input.assignUsers }
         : {}),
@@ -466,6 +468,7 @@ export async function saveCourse(
       titleEs,
       purposeEn,
       purposeEs,
+      isRequiredOrientation: input.isRequiredOrientation,
       ...(input.assignUsers !== undefined
         ? { assignUsers: input.assignUsers }
         : {}),

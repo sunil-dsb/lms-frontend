@@ -488,6 +488,7 @@ export interface Procedure {
   titleEs: string;
   purposeEn: string;
   purposeEs: string;
+  isRequiredOrientation?: boolean;
   category: Category | null;
   status: ProcedureStatus;
   bodyEn: ProcedureBody;

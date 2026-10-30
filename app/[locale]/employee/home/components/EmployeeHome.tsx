@@ -1,4 +1,6 @@
 import * as React from "react";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { StatusTone } from "@/components/ui/status-pill";
 import type {
   FlagLabels,
@@ -9,6 +11,7 @@ import { Greeting } from "./Greeting";
 import { PromoSection } from "./PromoSection";
 import { StationSection } from "./StationSection";
 import { LockedProceduresPreview } from "./LockedProceduresPreview";
+import type { EmployeeRequiredTrainingStatus } from "@/services/courses/types";
 
 /**
  * The employee's home: greeting, training, promos, then station procedures.
@@ -84,6 +87,7 @@ export function EmployeeHome({
   flagLabels,
   locale = "en",
   isOnboarding = false,
+  requiredTraining,
   greetingTrailing,
 }: {
   greeting: string;
@@ -108,9 +112,11 @@ export function EmployeeHome({
   locale?: string;
   /** When true, renders Scenario A (onboarding pending, locked procedures) */
   isOnboarding?: boolean;
+  requiredTraining?: EmployeeRequiredTrainingStatus | null;
   /** Optional right-aligned slot inside the Greeting — the HomeViewToggle */
   greetingTrailing?: React.ReactNode;
 }): React.ReactElement {
+  const tTraining = useTranslations("employee.training");
   return (
     <>
       <Greeting
@@ -125,14 +131,38 @@ export function EmployeeHome({
       />
 
       {isOnboarding ? (
-        <LockedProceduresPreview
-          promo={promo}
-          station={station}
-          loading={loading}
-          lockedHref={`/${locale}/employee/training`}
-          lockedReason="Locked until orientation is done"
-          flagLabels={flagLabels}
-        />
+        <>
+          {requiredTraining ? (
+            <section className="mt-5 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 sm:p-5">
+              <h2 className="font-semibold text-[var(--color-ink)]">
+                {tTraining("requiredTrainingHeading")}
+              </h2>
+              <p className="mt-1 text-sm text-[var(--color-ink-2)]">
+                {tTraining("requiredTrainingProgress", {
+                  completed: requiredTraining.completedCount,
+                  total: requiredTraining.requiredCount,
+                })}
+                {requiredTraining.lockedCount > 0
+                  ? ` ${tTraining("requiredTrainingLocked", { count: requiredTraining.lockedCount })}`
+                  : ""}
+              </p>
+              <Link
+                href={`/${locale}/employee/training`}
+                className="mt-2 inline-flex min-h-11 items-center font-semibold text-[var(--color-brand-700)]"
+              >
+                {tTraining("requiredTrainingAction")}
+              </Link>
+            </section>
+          ) : null}
+          <LockedProceduresPreview
+            promo={promo}
+            station={station}
+            loading={loading}
+            lockedHref={`/${locale}/employee/training`}
+            lockedReason={tTraining("requiredTrainingLockReason")}
+            flagLabels={flagLabels}
+          />
+        </>
       ) : (
         <>
           <PromoSection

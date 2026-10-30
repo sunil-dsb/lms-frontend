@@ -15,6 +15,8 @@ interface CourseDetailsStepProps {
   setCourseTitle: (val: BilingualValue) => void;
   coursePurpose: BilingualValue;
   setCoursePurpose: (val: BilingualValue) => void;
+  isRequiredOrientation: boolean;
+  setIsRequiredOrientation: (value: boolean) => void;
   error: string | null;
   setError: (err: string | null) => void;
   onProceed: () => void;
@@ -27,6 +29,8 @@ export function CourseDetailsStep({
   setCourseTitle,
   coursePurpose,
   setCoursePurpose,
+  isRequiredOrientation,
+  setIsRequiredOrientation,
   error,
   setError,
   onProceed,
@@ -97,6 +101,25 @@ export function CourseDetailsStep({
             es: "Cómo preparamos tacos al pastor, desde el marinado hasta el emplatado.",
           }}
         />
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-line-2)] p-4">
+          <input
+            type="checkbox"
+            checked={isRequiredOrientation}
+            onChange={(event) => setIsRequiredOrientation(event.target.checked)}
+            className="mt-1 size-4 accent-[var(--color-brand-600)]"
+          />
+          <span>
+            <span className="block text-sm font-semibold text-[var(--color-ink)]">
+              {isEs ? "Capacitación obligatoria" : "Required training"}
+            </span>
+            <span className="mt-1 block text-xs leading-relaxed text-[var(--color-ink-2)]">
+              {isEs
+                ? "Los empleados deben completar este curso antes de que se desbloqueen sus otros cursos asignados."
+                : "Employees must complete this course before their other assigned courses unlock."}
+            </span>
+          </span>
+        </label>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">

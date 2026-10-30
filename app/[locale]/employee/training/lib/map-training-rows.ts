@@ -24,6 +24,8 @@ export function mapEmployeeTrainingAssignments(
         id: assignment.assignmentId,
         courseId: assignment.courseId,
         title,
+        isRequiredOrientation: assignment.isRequiredOrientation,
+        locked: assignment.locked ?? false,
         purpose: purpose || undefined,
         chapterCount: assignment.chapterCount,
         completedCount: assignment.completedChapterCount,

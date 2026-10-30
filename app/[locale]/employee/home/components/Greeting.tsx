@@ -91,62 +91,6 @@ export function Greeting({
             ) : null}
           </div>
         </div>
-
-        {/* Card 2: Orientation Required */}
-        <Link
-          href={`/${locale}/employee/training`}
-          className="group block rounded-2xl border-2 border-[var(--color-brand)] bg-[var(--color-surface)] shadow-xs transition-all duration-200 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-600)]"
-          style={{
-            marginTop: "10px",
-            padding: "14px 16px",
-            textDecoration: "none",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "12px",
-            }}
-          >
-            <div className="min-w-0 flex-1">
-              <p
-                className="text-xs font-bold uppercase tracking-wider text-[var(--color-brand)]"
-                style={{ marginBottom: "4px" }}
-              >
-                {isEs ? "OBLIGATORIO" : "REQUIRED"}
-              </p>
-              <h2
-                className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] tracking-tight"
-                style={{ fontSize: "16px", lineHeight: "1.25" }}
-              >
-                {isEs ? (
-                  <>Termina tu inducción</>
-                ) : (
-                  <>Complete your orientation training</>
-                )}
-              </h2>
-              <p
-                className="text-xs sm:text-sm text-[var(--color-ink-2)]"
-                style={{ marginTop: "4px" }}
-              >
-                {isEs
-                  ? `${training?.done ?? 0} de ${training?.total ?? 0} capítulos completados`
-                  : `${training?.done ?? 0} of ${training?.total ?? 0} chapters done`}
-              </p>
-            </div>
-
-            {/* Circular button matching app's brand terracotta color */}
-            <div
-              aria-hidden="true"
-              className="flex shrink-0 items-center justify-center rounded-full bg-[var(--color-brand)] text-white shadow-xs transition-all duration-200 group-hover:scale-105 group-hover:bg-[var(--color-brand-hover)]"
-              style={{ width: "38px", height: "38px" }}
-            >
-              <LuChevronRight className="text-xl" />
-            </div>
-          </div>
-        </Link>
       </>
     );
   }

@@ -36,6 +36,7 @@ export function EditCourseLoader({
       titleEs: course.titleEs,
       purposeEn: course.purposeEn,
       purposeEs: course.purposeEs,
+      isRequiredOrientation: course.isRequiredOrientation ?? false,
       status: course.status as any,
       createdAt: course.createdAt,
       updatedAt: course.updatedAt,
