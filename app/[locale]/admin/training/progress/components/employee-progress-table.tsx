@@ -65,9 +65,11 @@ export function EmployeeProgressTable({
                   <div className="font-semibold text-base text-[var(--color-ink)] truncate leading-snug">
                     {row.name}
                   </div>
-                  <div className="text-xs text-[var(--color-ink-3)] mt-0.5 truncate">
-                    {row.station}
-                  </div>
+                  {row.station ? (
+                    <div className="text-xs text-[var(--color-ink-3)] mt-1 truncate">
+                      {row.station}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="shrink-0">
                   <ProgressStatusPill
@@ -78,7 +80,7 @@ export function EmployeeProgressTable({
               </div>
 
               {/* Bottom: Progress details + Chevron */}
-              <div className="mt-3 flex items-center justify-between text-xs text-[var(--color-ink-2)] border-t border-[var(--color-line-2)] pt-2.5">
+              <div className="mt-4 flex items-center justify-between text-xs text-[var(--color-ink-2)] border-t border-[var(--color-line-2)]/80 pt-4">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <span className="font-semibold text-[var(--color-ink)] shrink-0 tabular-nums">
                     {t("doneOfTotal", {

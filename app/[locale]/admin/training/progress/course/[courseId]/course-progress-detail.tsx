@@ -121,7 +121,7 @@ export function CourseProgressDetail({
                     : 0;
 
                 return (
-                  <div key={row.id} className="p-4 space-y-2.5">
+                  <div key={row.id} className="p-4">
                     {/* Top: Employee name + Status */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -131,7 +131,7 @@ export function CourseProgressDetail({
                         >
                           {row.employee.name}
                         </Link>
-                        <div className="text-xs text-[var(--color-ink-3)] mt-0.5 truncate">
+                        <div className="text-xs text-[var(--color-ink-3)] mt-1 truncate">
                           {row.employee.email}
                         </div>
                       </div>
@@ -144,7 +144,7 @@ export function CourseProgressDetail({
                     </div>
 
                     {/* Details row: Chapters done & Current position */}
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-2)] border-t border-[var(--color-line-2)] pt-2.5">
+                    <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-2)] border-t border-[var(--color-line-2)]/80 pt-4">
                       <span className="font-semibold text-[var(--color-ink)] tabular-nums">
                         {row.chapterCount > 0
                           ? t("doneOfTotal", { done, total: row.chapterCount })

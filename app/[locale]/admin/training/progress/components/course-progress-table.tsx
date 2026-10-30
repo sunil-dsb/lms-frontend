@@ -68,7 +68,7 @@ export function CourseProgressTable({
                     <div className="font-semibold text-base text-[var(--color-ink)] truncate leading-snug">
                       {title}
                     </div>
-                    <div className="text-xs text-[var(--color-ink-3)] mt-0.5 truncate">
+                    <div className="text-xs text-[var(--color-ink-3)] mt-1 truncate">
                       {tTraining("totalAssigned", { count: row.peopleTotal })}
                     </div>
                   </div>
@@ -81,7 +81,7 @@ export function CourseProgressTable({
                 </div>
 
                 {/* Bottom: People done & Current chapter + Chevron */}
-                <div className="mt-3 flex items-center justify-between text-xs text-[var(--color-ink-2)] border-t border-[var(--color-line-2)] pt-2.5">
+                <div className="mt-4 flex items-center justify-between text-xs text-[var(--color-ink-2)] border-t border-[var(--color-line-2)]/80 pt-4">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <span className="font-semibold text-[var(--color-ink)] shrink-0 tabular-nums">
                       {t("doneOfTotal", {
