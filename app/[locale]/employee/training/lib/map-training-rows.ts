@@ -46,15 +46,29 @@ export function mapEmployeeTrainingAssignments(
       };
     });
 
+  // Required courses always float to the top of both tabs, then the
+  // existing order (most progress first, closest due date first).
+  const requiredFirst = (
+    a: EmployeeTrainingItem,
+    b: EmployeeTrainingItem,
+  ): number =>
+    Number(b.isRequiredOrientation) - Number(a.isRequiredOrientation);
+
   const pending = items
     .filter((item) => item.status !== "complete")
     .sort(
       (a, b) =>
-        b.progressPercent - a.progressPercent || a.dueAt.localeCompare(b.dueAt),
+        requiredFirst(a, b) ||
+        b.progressPercent - a.progressPercent ||
+        a.dueAt.localeCompare(b.dueAt),
     );
   const completed = items
     .filter((item) => item.status === "complete")
-    .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""));
+    .sort(
+      (a, b) =>
+        requiredFirst(a, b) ||
+        (b.completedAt ?? "").localeCompare(a.completedAt ?? ""),
+    );
 
   return { pending, completed };
 }
