@@ -26,6 +26,7 @@ import {
   LuChevronDown,
   LuChevronRight,
   LuPlus,
+  LuSparkles,
   LuX,
 } from "react-icons/lu";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -59,6 +60,7 @@ export interface ProcedureRow {
   stationIds: string[];
   stations: Array<{ id: string; name: string }>;
   updatedAt: string;
+  isPromo?: boolean;
 }
 
 /** Relative "Updated … ago" label from an ISO timestamp. */
@@ -381,6 +383,12 @@ export function ProcedureListItem({
                       : "Draft"}
                 </StatusPill>
               )}
+              {procedure.isPromo ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-brand-700)] shadow-2xs">
+                  <LuSparkles className="size-2.5" />
+                  {isEs ? "Plato en promoción" : "Promo dish"}
+                </span>
+              ) : null}
             </div>
             <p className="mt-0.5 truncate text-sm text-[var(--color-ink-2)]">
               {isEs ? procedure.titleEn : procedure.titleEs}

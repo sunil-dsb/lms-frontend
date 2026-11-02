@@ -165,6 +165,15 @@ export function useProcedureEditorModel({
   const [protection, setProtection] = React.useState<ProcedureProtection>(
     initial?.protection ?? "standard",
   );
+  const [isPromo, setIsPromo] = React.useState<boolean>(
+    initial?.isPromo ?? false,
+  );
+  const [promoExpiresAt, setPromoExpiresAt] = React.useState<string | null>(
+    initial?.promoExpiresAt ? initial.promoExpiresAt.slice(0, 10) : null,
+  );
+  const [promoAudience, setPromoAudience] = React.useState<
+    "station" | "everyone"
+  >(initial?.promoAudience ?? "station");
 
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [dirty, setDirty] = React.useState(false);
@@ -577,6 +586,9 @@ export function useProcedureEditorModel({
     body,
     iconImageUrl,
     protection,
+    isPromo,
+    promoExpiresAt,
+    promoAudience,
     setDirty,
     importedId,
     isEdit,
@@ -640,6 +652,12 @@ export function useProcedureEditorModel({
     setAudience,
     protection,
     setProtection,
+    isPromo,
+    setIsPromo,
+    promoExpiresAt,
+    setPromoExpiresAt,
+    promoAudience,
+    setPromoAudience,
     previewOpen,
     setPreviewOpen,
     dirty,

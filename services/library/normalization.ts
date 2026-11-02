@@ -652,5 +652,8 @@ export function normalizeBackendProcedure(raw: any): Procedure {
     quizId: raw.quizId ?? null,
     linkedTrainingId: raw.linkedTrainingId ?? null,
     quizMode: raw.quizMode ?? "training",
+    isPromo: Boolean(raw.isPromo),
+    promoExpiresAt: raw.promoExpiresAt ?? null,
+    promoAudience: raw.promoAudience ?? "station",
   };
 }

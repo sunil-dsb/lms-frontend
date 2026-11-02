@@ -13,6 +13,7 @@ import {
   LuPlus,
   LuRefreshCw,
   LuSearch,
+  LuSparkles,
   LuTrash2,
   LuX,
 } from "react-icons/lu";
@@ -290,6 +291,12 @@ export function ProcedureExplorerResults({
                                 ? "Borrador"
                                 : "Draft"}
                         </StatusPill>
+                        {p.isPromo ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] px-2 py-0.5 text-xs font-semibold text-[var(--color-brand-700)] shadow-2xs">
+                            <LuSparkles className="size-3" />
+                            {isEs ? "Plato en promoción" : "Promo dish"}
+                          </span>
+                        ) : null}
                       </div>
 
                       {purpose ? (

@@ -414,6 +414,13 @@ function buildProcedurePayload(
   }
   if (validUsers.length > 0) payload.assignUsers = validUsers;
 
+  if (typeof input.isPromo === "boolean") {
+    payload.isPromo = input.isPromo;
+    payload.promoExpiresAt =
+      input.isPromo && input.promoExpiresAt ? input.promoExpiresAt : null;
+    payload.promoAudience = input.promoAudience ?? "station";
+  }
+
   return payload;
 }
 
@@ -442,6 +449,16 @@ function normalizeWrittenProcedure(
     quizId: input.quizId ?? null,
     linkedTrainingId: input.linkedTrainingId ?? null,
     quizMode: input.quizMode ?? "training",
+    isPromo:
+      "isPromo" in input
+        ? (input.isPromo ?? false)
+        : (apiProcedure.isPromo ?? false),
+    promoExpiresAt:
+      "promoExpiresAt" in input
+        ? (input.promoExpiresAt ?? null)
+        : (apiProcedure.promoExpiresAt ?? null),
+    promoAudience:
+      input.promoAudience ?? apiProcedure.promoAudience ?? "station",
   };
 }
 

@@ -139,6 +139,23 @@ export function EmployeeHomeClient({
   );
 }
 
+function promoMeta(p: Procedure, isEs: boolean, fallback: string): string {
+  if (p.isPromo && p.promoExpiresAt) {
+    const expires = new Date(p.promoExpiresAt).getTime();
+    const days = Math.ceil((expires - Date.now()) / (1000 * 60 * 60 * 24));
+    if (days > 1) {
+      return isEs ? `Termina en ${days} días` : `Ends in ${days} days`;
+    }
+    if (days === 1) {
+      return isEs ? "Termina mañana" : "Ends tomorrow";
+    }
+    if (days === 0) {
+      return isEs ? "Termina hoy" : "Ends today";
+    }
+  }
+  return fallback;
+}
+
 function HomeContent({
   locale,
   isEs,
@@ -347,8 +364,8 @@ function HomeContent({
         : p.category.nameEn
       : t("uncategorised");
 
-  const promoRows = pickPromoProcedures(procedures).map((p) =>
-    toRow(p, categoryOf(p)),
+  const promoRows = pickPromoProcedures(procedures, now).map((p) =>
+    toRow(p, promoMeta(p, isEs, categoryOf(p))),
   );
   const promoIds = new Set(promoRows.map((p) => p.key));
 

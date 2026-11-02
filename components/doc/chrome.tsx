@@ -16,6 +16,7 @@ import {
   LuLightbulb,
   LuLock,
   LuPlay,
+  LuSparkles,
   LuTestTube,
   LuTriangleAlert,
   LuUtensils,
@@ -130,7 +131,7 @@ export function Cover({ src, alt }: { src?: string; alt?: string }) {
       </div>
     );
   }
-  // eslint-disable-next-line @next/next/no-img-element
+
   return (
     <div className="cover">
       <img src={src} alt={alt ?? ""} width={1600} height={900} />
@@ -145,12 +146,16 @@ export function DocHead({
   category,
   title,
   withCover = true,
+  isPromo = false,
+  isEs = false,
 }: {
   icon?: string;
   iconImageUrl?: string | null;
   category: string;
   title: React.ReactNode;
   withCover?: boolean;
+  isPromo?: boolean;
+  isEs?: boolean;
 }) {
   const [imgError, setImgError] = React.useState(false);
   const showImg = Boolean(iconImageUrl && !imgError);
@@ -167,8 +172,30 @@ export function DocHead({
           <Icon icon={iconByName(icon)} className="i" />
         </div>
       ) : null}
-      <div className="doc-crumb" suppressHydrationWarning>
-        {category}
+      <div
+        className="doc-crumb flex flex-wrap items-center gap-2"
+        suppressHydrationWarning
+      >
+        <span>{category}</span>
+        {isPromo ? (
+          <span
+            style={{
+              padding: "2px 8px",
+              borderRadius: "9999px",
+              backgroundColor: "var(--color-brand-tint)",
+              color: "var(--color-brand-700)",
+              border: "1px solid var(--color-brand-600)",
+              fontSize: "11px",
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            <LuSparkles style={{ width: "12px", height: "12px" }} />
+            {isEs ? "Plato en promoción" : "Promo dish"}
+          </span>
+        ) : null}
       </div>
       <h1 className="doc-title display">{title}</h1>
       {!withCover && (

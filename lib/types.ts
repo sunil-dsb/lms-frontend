@@ -580,6 +580,12 @@ export interface Procedure {
   contentTypes?: Array<"checklist" | "quiz" | "procedure" | "video" | "file">;
   /** Active seasons for seasonal recipes. */
   seasons?: ProcedureSeason[];
+  /** Whether this procedure is a promo dish featured on staff home. */
+  isPromo?: boolean;
+  /** Expiration timestamp for the promo status. After this time, reverts to regular procedure. */
+  promoExpiresAt?: string | null;
+  /** Who sees this promo: 'station' (only employees on this procedure's station) or 'everyone'. */
+  promoAudience?: "station" | "everyone";
 }
 
 /** Course acknowledgement — the `I have read and understood` checkbox at
@@ -653,6 +659,12 @@ export interface CreateProcedureInput {
   /** Procedure ids of SOPs / recipes referenced from this course.
    *  Legacy training-course shape. */
   linkedSops?: string[];
+  /** Whether this procedure is a promo dish featured on staff home. */
+  isPromo?: boolean;
+  /** Expiration timestamp for the promo status. After this time, reverts to regular procedure. */
+  promoExpiresAt?: string | null;
+  /** Who sees this promo: 'station' (only employees on this procedure's station) or 'everyone'. */
+  promoAudience?: "station" | "everyone";
   /** Acknowledgement statement shown on read; null/undefined disables.
    *  Legacy training-course shape. */
   acknowledgement?: ProcedureAcknowledgement | null;

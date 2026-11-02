@@ -34,7 +34,11 @@ import { cn } from "@/lib/utils";
 
 import type { ProcedureBlock } from "@/lib/types";
 
-import { AssignBlock, CategoryAccordion } from "./procedure-editor-fields";
+import {
+  AssignBlock,
+  CategoryAccordion,
+  PromoSection,
+} from "./procedure-editor-fields";
 
 import type { ProcedureEditorModel } from "./procedure-editor-model";
 import { ProcedureEditorImportPanel } from "./procedure-editor-import-panel";
@@ -158,6 +162,12 @@ export function ProcedureEditorView({
     category,
     subcategory,
     isRecipe,
+    isPromo,
+    setIsPromo,
+    promoExpiresAt,
+    setPromoExpiresAt,
+    promoAudience,
+    setPromoAudience,
     nameOf,
     titleValue,
     purposeValue,
@@ -464,6 +474,19 @@ export function ProcedureEditorView({
                   />
                 </div>
               </section>
+            ) : null}
+
+            {/* Promo Dish Section — only visible for recipe procedures */}
+            {isRecipe ? (
+              <PromoSection
+                isPromo={isPromo}
+                onChangeIsPromo={edit(setIsPromo)}
+                promoExpiresAt={promoExpiresAt}
+                onChangePromoExpiresAt={edit(setPromoExpiresAt)}
+                promoAudience={promoAudience}
+                onChangePromoAudience={edit(setPromoAudience)}
+                locale={locale}
+              />
             ) : null}
 
             {/* Block 3 — Assign. Lists employees filtered by the chosen
