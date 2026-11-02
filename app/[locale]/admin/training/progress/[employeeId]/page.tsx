@@ -58,6 +58,7 @@ export default async function EmployeeProgressDetailPage({
     <div className="mx-auto max-w-page space-y-6 pb-12">
       <EmployeeProgressDetail
         locale={locale}
+        employeeId={employeeId}
         meta={meta ?? null}
         assignments={assignments}
       />

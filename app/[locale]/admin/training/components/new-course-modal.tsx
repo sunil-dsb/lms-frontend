@@ -153,6 +153,7 @@ export function NewCourseModal({
               }}
               defaultLang={isEs ? "es" : "en"}
               required
+              maxLength={100}
               placeholder={{
                 en: "e.g. Tacos al Pastor",
                 es: "ej. Tacos al Pastor",
@@ -170,6 +171,7 @@ export function NewCourseModal({
               defaultLang={isEs ? "es" : "en"}
               multiline
               required
+              maxLength={500}
               placeholder={{
                 en: "How we make tacos al pastor, from marinade to plating.",
                 es: "Cómo preparamos tacos al pastor, desde el marinado hasta el emplatado.",

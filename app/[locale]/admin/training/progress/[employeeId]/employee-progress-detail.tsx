@@ -3,13 +3,20 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { LuArrowLeft, LuGraduationCap, LuCircleCheck } from "react-icons/lu";
+import {
+  LuArrowLeft,
+  LuGraduationCap,
+  LuCircleCheck,
+  LuUserMinus,
+  LuLoader,
+} from "react-icons/lu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import type { EmployeeProgressRow } from "@/lib/types";
 import type { EmployeeTrainingRow } from "@/services/employees/types";
+import { unassignCourseApi } from "@/services/courses/api";
 import {
   PROGRESS_STATUS_LABEL_KEY,
   ProgressStatusPill,
@@ -18,6 +25,8 @@ import {
 import { ProgressTableShell } from "../components/progress-table-shell";
 import { ProgressStatStrip } from "../components/progress-stat-strip";
 import type { TrainingProgressSummary } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface EmployeeProgressDetailProps {
   locale: string;
@@ -26,6 +35,7 @@ interface EmployeeProgressDetailProps {
   meta: EmployeeProgressRow | null;
   /** One row per assigned course, from GET /api/v1/employees/:id/training. */
   assignments: EmployeeTrainingRow[];
+  employeeId?: string;
 }
 
 /** The "By employee" Progress rows drill-down: the person's meta up top,
@@ -39,18 +49,51 @@ export function EmployeeProgressDetail({
   locale,
   meta,
   assignments,
+  employeeId,
 }: EmployeeProgressDetailProps): React.ReactElement {
   const t = useTranslations("admin.training.progress");
-  const tAdmin = useTranslations("admin");
+  const isEs = locale === "es";
+
+  const [assignmentList, setAssignmentList] =
+    React.useState<EmployeeTrainingRow[]>(assignments);
+  const [unassigningCourseId, setUnassigningCourseId] = React.useState<
+    string | null
+  >(null);
+  const [confirmUnassignCourse, setConfirmUnassignCourse] = React.useState<{
+    courseId: string;
+    title: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    setAssignmentList(assignments);
+  }, [assignments]);
+
+  const effectiveEmployeeId = meta?.employeeId || employeeId;
+
+  async function handleUnassign(courseId: string): Promise<void> {
+    if (!effectiveEmployeeId || unassigningCourseId) return;
+
+    setUnassigningCourseId(courseId);
+    try {
+      await unassignCourseApi(courseId, [effectiveEmployeeId]);
+      setAssignmentList((prev) =>
+        prev.filter((row) => row.courseId !== courseId),
+      );
+    } catch (err) {
+      console.error("Failed to unassign employee from course:", err);
+    } finally {
+      setUnassigningCourseId(null);
+    }
+  }
 
   // The three buckets the Progress tab speaks — `due` and `in_progress`
   // collapse into `in_progress`, exactly as the "By employee" row reads it.
   const summary: TrainingProgressSummary = {
-    completed: assignments.filter((row) => row.status === "complete").length,
-    inProgress: assignments.filter(
+    completed: assignmentList.filter((row) => row.status === "complete").length,
+    inProgress: assignmentList.filter(
       (row) => row.status === "in_progress" || row.status === "due",
     ).length,
-    overdue: assignments.filter((row) => row.status === "overdue").length,
+    overdue: assignmentList.filter((row) => row.status === "overdue").length,
   };
 
   const statusOf = (
@@ -113,7 +156,7 @@ export function EmployeeProgressDetail({
         </CardContent>
       </Card>
 
-      {assignments.length === 0 ? (
+      {assignmentList.length === 0 ? (
         <EmptyState
           icon={LuGraduationCap}
           title={t("emptyDetailHeading")}
@@ -135,7 +178,7 @@ export function EmployeeProgressDetail({
           {/* Mobile Card List (< md) */}
           <Card className="block md:hidden">
             <CardContent className="p-0 divide-y divide-[var(--color-line-2)]">
-              {assignments.map((row) => {
+              {assignmentList.map((row) => {
                 const status = statusOf(row);
                 const done =
                   row.status === "complete"
@@ -145,6 +188,8 @@ export function EmployeeProgressDetail({
                   locale === "es"
                     ? row.titleEs || row.titleEn
                     : row.titleEn || row.titleEs;
+
+                const isUnassigning = unassigningCourseId === row.courseId;
 
                 return (
                   <div key={row.assignmentId} className="p-4">
@@ -219,6 +264,35 @@ export function EmployeeProgressDetail({
                         </>
                       ) : null}
                     </div>
+
+                    {effectiveEmployeeId ? (
+                      <div className="mt-3 flex justify-end border-t border-[var(--color-line-2)]/80 pt-3">
+                        <button
+                          type="button"
+                          disabled={isUnassigning}
+                          onClick={() =>
+                            setConfirmUnassignCourse({
+                              courseId: row.courseId,
+                              title,
+                            })
+                          }
+                          className={cn(
+                            "inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
+                            "text-[var(--color-bad-700)] hover:text-[var(--color-bad-800)] hover:bg-[var(--color-bad-tint)] border border-[var(--color-bad)]/20",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
+                            isUnassigning && "opacity-60 cursor-not-allowed",
+                          )}
+                          title={isEs ? "Desasignar curso" : "Unassign course"}
+                        >
+                          {isUnassigning ? (
+                            <LuLoader className="size-3.5 animate-spin" />
+                          ) : (
+                            <LuUserMinus className="size-3.5" />
+                          )}
+                          <span>{t("unassign")}</span>
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 );
               })}
@@ -235,14 +309,20 @@ export function EmployeeProgressDetail({
                 t("thCurrentChapter"),
                 t("thDue"),
                 t("thStatus"),
+                t("thActions"),
               ]}
             >
-              {assignments.map((row) => {
+              {assignmentList.map((row) => {
                 const status = statusOf(row);
                 const done =
                   row.status === "complete"
                     ? row.chapterCount
                     : row.completedChapterCount;
+                const isUnassigning = unassigningCourseId === row.courseId;
+                const courseName =
+                  locale === "es"
+                    ? row.titleEs || row.titleEn
+                    : row.titleEn || row.titleEs;
                 return (
                   <tr key={row.assignmentId}>
                     <td>
@@ -309,6 +389,34 @@ export function EmployeeProgressDetail({
                         label={t(PROGRESS_STATUS_LABEL_KEY[status])}
                       />
                     </td>
+                    <td>
+                      {effectiveEmployeeId ? (
+                        <button
+                          type="button"
+                          disabled={isUnassigning}
+                          onClick={() =>
+                            setConfirmUnassignCourse({
+                              courseId: row.courseId,
+                              title: courseName,
+                            })
+                          }
+                          className={cn(
+                            "inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
+                            "text-[var(--color-bad-700)] hover:text-[var(--color-bad-800)] hover:bg-[var(--color-bad-tint)] border border-[var(--color-bad)]/20",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
+                            isUnassigning && "opacity-60 cursor-not-allowed",
+                          )}
+                          title={isEs ? "Desasignar curso" : "Unassign course"}
+                        >
+                          {isUnassigning ? (
+                            <LuLoader className="size-3.5 animate-spin" />
+                          ) : (
+                            <LuUserMinus className="size-3.5" />
+                          )}
+                          <span>{t("unassign")}</span>
+                        </button>
+                      ) : null}
+                    </td>
                   </tr>
                 );
               })}
@@ -316,6 +424,31 @@ export function EmployeeProgressDetail({
           </div>
         </>
       )}
+
+      <ConfirmModal
+        open={confirmUnassignCourse !== null}
+        title={t("unassignConfirmTitle")}
+        description={
+          confirmUnassignCourse
+            ? t("unassignConfirmCourseBody", {
+                course: confirmUnassignCourse.title,
+              })
+            : ""
+        }
+        confirmLabel={t("unassign")}
+        cancelLabel={t("cancel")}
+        isLoading={unassigningCourseId !== null}
+        onConfirm={async () => {
+          if (!confirmUnassignCourse) return;
+          await handleUnassign(confirmUnassignCourse.courseId);
+          setConfirmUnassignCourse(null);
+        }}
+        onClose={() => {
+          if (!unassigningCourseId) {
+            setConfirmUnassignCourse(null);
+          }
+        }}
+      />
     </div>
   );
 }

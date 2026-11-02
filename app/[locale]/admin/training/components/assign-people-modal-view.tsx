@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { LuCheck, LuSearch, LuUserPlus, LuX } from "react-icons/lu";
+import { LuCheck, LuLoader, LuSearch, LuUserPlus, LuX } from "react-icons/lu";
 import type { Procedure } from "@/lib/types";
 import type { MockEmployee } from "@/lib/mock-training";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,8 @@ interface AssignPeopleModalViewProps {
   onBack: () => void;
   onClose: () => void;
   onExecuteAssign: () => void;
+  onUnassignPerson?: (employeeId: string, name?: string) => void;
+  unassigningEmployeeId?: string | null;
 }
 
 export function AssignPeopleModalView({
@@ -57,6 +59,8 @@ export function AssignPeopleModalView({
   onBack,
   onClose,
   onExecuteAssign,
+  onUnassignPerson,
+  unassigningEmployeeId,
 }: AssignPeopleModalViewProps): React.ReactElement {
   const isEs = locale === "es";
   const title = (isEs ? course.titleEs : course.titleEn) || course.slug;
@@ -205,7 +209,9 @@ export function AssignPeopleModalView({
               const isSelected = selectedPeopleIds.has(emp.id);
 
               if (isAlreadyAssigned) {
-                // Already assigned row in the same block
+                // Already assigned row in the same block with Unassign action
+                const isCurrentlyUnassigning = unassigningEmployeeId === emp.id;
+
                 return (
                   <div
                     key={emp.id}
@@ -252,12 +258,39 @@ export function AssignPeopleModalView({
                           {isEs ? "Pendiente" : "Pending"}
                         </span>
                       ) : null}
+
                       <span
                         style={{ padding: "4px 10px" }}
                         className="text-xs font-semibold rounded-[var(--radius-sm)] bg-[var(--color-panel)] text-[var(--color-ink-2)] border border-[var(--color-line)]"
                       >
                         {isEs ? "Asignado" : "Assigned"}
                       </span>
+
+                      {onUnassignPerson ? (
+                        <button
+                          type="button"
+                          disabled={isCurrentlyUnassigning}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUnassignPerson(emp.id, emp.name);
+                          }}
+                          className={cn(
+                            "inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
+                            "text-[var(--color-bad-700)] hover:text-[var(--color-bad-800)] hover:bg-[var(--color-bad-tint)] border border-[var(--color-bad)]/20",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
+                            isCurrentlyUnassigning &&
+                              "opacity-60 cursor-not-allowed",
+                          )}
+                          title={
+                            isEs ? "Desasignar empleado" : "Unassign employee"
+                          }
+                        >
+                          {isCurrentlyUnassigning ? (
+                            <LuLoader className="size-3 animate-spin" />
+                          ) : null}
+                          <span>{isEs ? "Desasignar" : "Unassign"}</span>
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 );
