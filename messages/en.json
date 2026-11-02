@@ -563,7 +563,7 @@
         "importFileSizeError": "File must be 10 MB or smaller.",
         "importSuccess": "Draft created from document — review and edit below.",
         "importLoaded": "Draft loaded — review and edit.",
-        "importBannerText": "Drafted from \u201c{file}\u201d. Review and edit before continuing.",
+        "importBannerText": "Drafted from “{file}”. Review and edit before continuing.",
         "importBannerCta": "Re-upload / Start over",
         "reviewReadyHeading": "Ready to go live?",
         "reviewReadyBody": "Publish and assign saves the procedure to the library, drops it into every picked category / subcategory / station, notifies the assignees you picked, and lands you back on the full Procedures list. Save draft keeps it private until you’re ready.",
@@ -1559,7 +1559,13 @@
         "emptyHeading": "No progress yet",
         "emptyBody": "Assign a course to your team and everyone's progress shows up here.",
         "noOverdueHeading": "Nobody is overdue",
-        "noOverdueBody": "Everyone is inside their due dates. Turn off the filter to see the whole picture."
+        "noOverdueBody": "Everyone is inside their due dates. Turn off the filter to see the whole picture.",
+        "unassign": "Unassign",
+        "manageAssignments": "Manage assignments",
+        "unassignConfirmTitle": "Unassign from course",
+        "unassignConfirmEmployeeBody": "Are you sure you want to unassign {name} from {course}? Their current training progress will be removed.",
+        "unassignConfirmCourseBody": "Are you sure you want to unassign {course}? The current training progress will be removed.",
+        "cancel": "Cancel"
       },
       "pageEyebrow": "Training",
       "pageTitle": "Courses",
@@ -1619,7 +1625,11 @@
           "in_progress": "In progress",
           "complete": "Complete",
           "overdue": "Overdue"
-        }
+        },
+        "unassignConfirmTitle": "Unassign employee",
+        "unassignConfirmBody": "Are you sure you want to unassign {name}? Their current training progress will be removed.",
+        "cancel": "Cancel",
+        "unassign": "Unassign"
       },
       "form": {
         "titleEn": "Title (English)",

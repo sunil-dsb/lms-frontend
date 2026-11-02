@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { Procedure, TrainingAssignment } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { getQuizById, isQuizQuestionAuthored } from "@/lib/api";
 import type { MockEmployee } from "@/lib/mock-training";
 import type { CourseAssignmentRow } from "@/services/courses/types";
@@ -12,6 +13,7 @@ import type { BackendCourse } from "@/services/courses/types";
 import { fetchStations } from "@/services/stations/api";
 import {
   assignCourse,
+  unassignCourse,
   fetchAssignableEmployees,
   fetchCourseAssignments,
 } from "@/lib/api/training";
@@ -87,6 +89,13 @@ export function CourseAssignmentModal({
   // Due date & submission
   const [dueAt, setDueAt] = React.useState<string>(defaultDueDate());
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [unassigningEmployeeId, setUnassigningEmployeeId] = React.useState<
+    string | null
+  >(null);
+  const [confirmUnassignPerson, setConfirmUnassignPerson] = React.useState<{
+    employeeId: string;
+    name: string;
+  } | null>(null);
 
   // Available unique stations from backend stations API and active employees
   const availableStations = React.useMemo(() => {
@@ -160,6 +169,7 @@ export function CourseAssignmentModal({
     setCourseDetail(null);
     setDbStations([]);
     setIsSubmitting(false);
+    setUnassigningEmployeeId(null);
 
     return () => {
       isMounted = false;
@@ -319,6 +329,7 @@ export function CourseAssignmentModal({
 
   const hasMissingQuizQuestions = chaptersWithoutQuestions.length > 0;
 
+  const isEs = locale === "es";
   if (!open || !course) return null;
 
   function toggleStation(st: string): void {
@@ -394,85 +405,141 @@ export function CourseAssignmentModal({
     }
   }
 
+  async function handleUnassignPerson(employeeId: string): Promise<void> {
+    if (!course || unassigningEmployeeId) return;
+
+    setUnassigningEmployeeId(employeeId);
+    try {
+      const response = await unassignCourse({
+        courseId: course.id,
+        employeeIds: [employeeId],
+      });
+
+      if (response.success) {
+        setExistingAssignments((prev) =>
+          prev.filter((a) => a.employeeId !== employeeId),
+        );
+        if (onAssigned) {
+          onAssigned(response.data.remainingCount);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to unassign employee:", err);
+    } finally {
+      setUnassigningEmployeeId(null);
+    }
+  }
+
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      size="xl"
-      className="p-0 overflow-hidden w-full max-w-[720px] h-[640px] max-h-[90vh] rounded-[var(--radius-xl)] shadow-xl flex flex-col border border-[var(--color-line)] bg-[var(--color-surface)]"
-    >
-      <div className="flex flex-col h-full overflow-hidden">
-        {view === "main" ? (
-          <AssignMainModalView
-            course={course}
-            locale={locale}
-            scope={scope}
-            setScope={setScope}
-            selectedStations={selectedStations}
-            toggleStation={toggleStation}
-            availableStations={availableStations}
-            dueAt={dueAt}
-            setDueAt={setDueAt}
-            getPresetDate={getPresetDate}
-            targetEmployeeCount={mainScopeEmployeeIds.length}
-            selectedPeopleCount={selectedPeopleIds.size}
-            chapterCount={chapterCount}
-            linkedSopsCount={linkedSopsCount}
-            hasQuiz={hasQuiz}
-            hasMissingQuizQuestions={hasMissingQuizQuestions}
-            missingChapterNumbers={chaptersWithoutQuestions.map(
-              (c) => c.number,
-            )}
-            isLoadingData={isLoadingData}
-            canAssign={
-              mainScopeEmployeeIds.length > 0 &&
-              Boolean(dueAt && dueAt.trim()) &&
-              !hasMissingQuizQuestions &&
-              !isSubmitting &&
-              !isLoadingData
-            }
-            isSubmitting={isSubmitting}
-            stationEmployeeCounts={stationEmployeeCounts}
-            stationEmployees={stationEmployees}
-            allEmployees={employees}
-            onSelectAllStations={handleSelectAllStations}
-            onDeselectAllStations={handleDeselectAllStations}
-            onOpenPeopleView={() => {
-              setScope("people");
-              setView("people");
-            }}
-            onClose={onClose}
-            onExecuteAssign={() => executeAssignment(mainScopeEmployeeIds)}
-          />
-        ) : (
-          <AssignPeopleModalView
-            course={course}
-            locale={locale}
-            filteredPeople={filteredPeople}
-            assignedEmployeeIds={assignedEmployeeIds}
-            selectedPeopleIds={selectedPeopleIds}
-            togglePerson={togglePerson}
-            onSelectAllVisible={handleSelectAllVisiblePeople}
-            onClearSelected={() => setSelectedPeopleIds(new Set())}
-            peopleSearch={peopleSearch}
-            setPeopleSearch={setPeopleSearch}
-            stationFilter={stationFilter}
-            setStationFilter={setStationFilter}
-            availableStations={availableStations}
-            dueAt={dueAt}
-            setDueAt={setDueAt}
-            getPresetDate={getPresetDate}
-            chapterCount={chapterCount}
-            hasQuiz={hasQuiz}
-            isSubmitting={isSubmitting}
-            onBack={() => setView("main")}
-            onClose={onClose}
-            onExecuteAssign={() =>
-              executeAssignment(Array.from(selectedPeopleIds))
-            }
-          />
-        )}
-      </div>
-    </Modal>
+    <>
+      <Modal
+        open={open}
+        onClose={onClose}
+        size="xl"
+        className="p-0 overflow-hidden w-full max-w-[720px] h-[640px] max-h-[90vh] rounded-[var(--radius-xl)] shadow-xl flex flex-col border border-[var(--color-line)] bg-[var(--color-surface)]"
+      >
+        <div className="flex flex-col h-full overflow-hidden">
+          {view === "main" ? (
+            <AssignMainModalView
+              course={course}
+              locale={locale}
+              scope={scope}
+              setScope={setScope}
+              selectedStations={selectedStations}
+              toggleStation={toggleStation}
+              availableStations={availableStations}
+              dueAt={dueAt}
+              setDueAt={setDueAt}
+              getPresetDate={getPresetDate}
+              targetEmployeeCount={mainScopeEmployeeIds.length}
+              selectedPeopleCount={selectedPeopleIds.size}
+              chapterCount={chapterCount}
+              linkedSopsCount={linkedSopsCount}
+              hasQuiz={hasQuiz}
+              hasMissingQuizQuestions={hasMissingQuizQuestions}
+              missingChapterNumbers={chaptersWithoutQuestions.map(
+                (c) => c.number,
+              )}
+              isLoadingData={isLoadingData}
+              canAssign={
+                mainScopeEmployeeIds.length > 0 &&
+                Boolean(dueAt && dueAt.trim()) &&
+                !hasMissingQuizQuestions &&
+                !isSubmitting &&
+                !isLoadingData
+              }
+              isSubmitting={isSubmitting}
+              stationEmployeeCounts={stationEmployeeCounts}
+              stationEmployees={stationEmployees}
+              allEmployees={employees}
+              onSelectAllStations={handleSelectAllStations}
+              onDeselectAllStations={handleDeselectAllStations}
+              onOpenPeopleView={() => {
+                setScope("people");
+                setView("people");
+              }}
+              onClose={onClose}
+              onExecuteAssign={() => executeAssignment(mainScopeEmployeeIds)}
+            />
+          ) : (
+            <AssignPeopleModalView
+              course={course}
+              locale={locale}
+              filteredPeople={filteredPeople}
+              assignedEmployeeIds={assignedEmployeeIds}
+              selectedPeopleIds={selectedPeopleIds}
+              togglePerson={togglePerson}
+              onSelectAllVisible={handleSelectAllVisiblePeople}
+              onClearSelected={() => setSelectedPeopleIds(new Set())}
+              peopleSearch={peopleSearch}
+              setPeopleSearch={setPeopleSearch}
+              stationFilter={stationFilter}
+              setStationFilter={setStationFilter}
+              availableStations={availableStations}
+              dueAt={dueAt}
+              setDueAt={setDueAt}
+              getPresetDate={getPresetDate}
+              chapterCount={chapterCount}
+              hasQuiz={hasQuiz}
+              isSubmitting={isSubmitting}
+              onBack={() => setView("main")}
+              onClose={onClose}
+              onExecuteAssign={() =>
+                executeAssignment(Array.from(selectedPeopleIds))
+              }
+              onUnassignPerson={(employeeId, name) => {
+                setConfirmUnassignPerson({ employeeId, name: name || "" });
+              }}
+              unassigningEmployeeId={unassigningEmployeeId}
+            />
+          )}
+        </div>
+      </Modal>
+
+      <ConfirmModal
+        open={confirmUnassignPerson !== null}
+        title={isEs ? "Desasignar empleado" : "Unassign employee"}
+        description={
+          confirmUnassignPerson
+            ? isEs
+              ? `¿Seguro que deseas desasignar a ${confirmUnassignPerson.name}? Se eliminará su progreso actual.`
+              : `Are you sure you want to unassign ${confirmUnassignPerson.name}? Their current training progress will be removed.`
+            : ""
+        }
+        confirmLabel={isEs ? "Desasignar" : "Unassign"}
+        cancelLabel={isEs ? "Cancelar" : "Cancel"}
+        isLoading={unassigningEmployeeId !== null}
+        onConfirm={async () => {
+          if (!confirmUnassignPerson) return;
+          await handleUnassignPerson(confirmUnassignPerson.employeeId);
+          setConfirmUnassignPerson(null);
+        }}
+        onClose={() => {
+          if (!unassigningEmployeeId) {
+            setConfirmUnassignPerson(null);
+          }
+        }}
+      />
+    </>
   );
 }

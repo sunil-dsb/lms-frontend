@@ -25,7 +25,6 @@ import {
   LuX,
 } from "react-icons/lu";
 import { Icon } from "@/components/ui/icon";
-import { AdminSearch } from "@/components/admin/admin-search";
 import type { IconType } from "react-icons";
 
 /**
@@ -341,26 +340,15 @@ export function AdminShell({
 
       {/* Main column. Pad-top accounts for the fixed mobile header. */}
       <div className="flex min-w-0 max-w-full flex-1 flex-col overflow-x-hidden">
-        {/* The desktop bar. It holds the two things that belong to the whole admin
-            area rather than to one page: find anything, and which language you are
-            reading it in. The page's own title stays on the page — repeating it
-            here would be the same words twice on one screen.
+        {/* The desktop bar. It holds the link to what the cooks see, the theme
+            toggle, and which language you are reading it in — the things that
+            belong to the whole admin area rather than to one page. The page's
+            own title stays on the page — repeating it here would be the same
+            words twice on one screen.
 
             It is not shown below 900px: there the mobile header already occupies
             that row, and a phone has no space for a field this wide. */}
         <header className="sticky top-0 z-sticky hidden h-[75px] min-h-[75px] items-center gap-4 border-b border-[var(--color-line-2)] bg-[var(--color-surface)] px-10 shadow-[var(--e-1)] backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--color-surface)_80%,transparent)] lg:flex">
-          <AdminSearch
-            locale={locale}
-            labels={{
-              label: tShell("searchLabel"),
-              placeholder: tShell("searchPlaceholder"),
-              procedures: tShell("searchProcedures"),
-              people: tShell("searchPeople"),
-              empty: tShell("searchEmpty"),
-              hint: tShell("searchHint"),
-              results: (n: number) => tShell("searchResults", { count: n }),
-            }}
-          />
           <div className="ml-auto flex items-center gap-3">
             {/* The way across to what the cooks see. The employee bar has the same
                 link back, under the name of the area it opens — so this one is
