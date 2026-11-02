@@ -363,7 +363,7 @@ export function RichTextEditor({
     >
       <div
         aria-label="Text formatting"
-        className={`flex flex-wrap gap-1 border-b border-[var(--color-line)] ${embedded ? "px-1 py-0.5" : "p-2"}`}
+        className={`rich-text-toolbar flex flex-wrap gap-1 border-b border-[var(--color-line)] ${embedded ? "px-1 py-0.5" : "p-2"}`}
       >
         {buttons.map(({ label: buttonLabel, icon: Icon, active, run }) => (
           <button
@@ -447,11 +447,13 @@ export function RichTextEditor({
       <EditorContent
         editor={editor}
         style={{ minHeight: embedded ? undefined : minHeight }}
-        className={`${embedded ? "p-2" : "p-3"} text-sm text-[var(--color-ink)]`}
+        className={`rich-text-body ${embedded ? "" : "p-3"} text-sm text-[var(--color-ink)]`}
       />
       {maxWords ? (
         <div
+          className="rich-text-count"
           style={{
+            flex: "none",
             display: "flex",
             justifyContent: "flex-end",
             padding: "4px 10px 6px",

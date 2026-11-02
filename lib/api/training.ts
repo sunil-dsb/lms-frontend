@@ -3,6 +3,7 @@ import type { CourseAssignmentRow } from "@/services/courses/types";
 import type { MockEmployee } from "../mock-training";
 import {
   assignCourseApi,
+  unassignCourseApi,
   fetchCourseAssignmentsApi,
 } from "@/services/courses/api";
 import { fetchEmployees } from "@/services/employees/api";
@@ -29,6 +30,21 @@ export interface AssignCourseResponse {
     courseId: string;
     assignedCount: number;
     assignments: CourseAssignmentRow[];
+  };
+}
+
+export interface UnassignCoursePayload {
+  courseId: string;
+  employeeIds: string[];
+}
+
+export interface UnassignCourseResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    courseId: string;
+    unassignedCount: number;
+    remainingCount: number;
   };
 }
 
@@ -141,5 +157,20 @@ export async function assignCourse(
       assignedCount: result.assignedCount,
       assignments: [],
     },
+  };
+}
+
+/**
+ * Unassign employees from a training course.
+ */
+export async function unassignCourse(
+  payload: UnassignCoursePayload,
+): Promise<UnassignCourseResponse> {
+  const result = await unassignCourseApi(payload.courseId, payload.employeeIds);
+
+  return {
+    success: true,
+    message: `Successfully unassigned ${result.unassignedCount} employee(s)`,
+    data: result,
   };
 }

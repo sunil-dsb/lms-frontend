@@ -282,6 +282,30 @@ export async function assignCourseApi(
 }
 
 /**
+ * POST /api/v1/courses/:id/unassign — Unassigns employees from a training course
+ */
+export async function unassignCourseApi(
+  courseId: string,
+  employeeIds: string[],
+): Promise<{
+  courseId: string;
+  unassignedCount: number;
+  remainingCount: number;
+}> {
+  const { data } = await http.post<{
+    success: boolean;
+    message: string;
+    data: {
+      courseId: string;
+      unassignedCount: number;
+      remainingCount: number;
+    };
+  }>(COURSES_ENDPOINTS.UNASSIGN(courseId), { employeeIds });
+
+  return data.data;
+}
+
+/**
  * GET /api/v1/courses/:id/assignments — Lists all assigned employees for a training course
  */
 export async function fetchCourseAssignmentsApi(

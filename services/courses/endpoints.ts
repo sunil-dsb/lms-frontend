@@ -10,6 +10,7 @@ export const COURSES_ENDPOINTS = {
   ARCHIVE: (id: string) => `/api/v1/courses/${id}/archive`,
   UNARCHIVE: (id: string) => `/api/v1/courses/${id}/unarchive`,
   ASSIGN: (id: string) => `/api/v1/courses/${id}/assign`,
+  UNASSIGN: (id: string) => `/api/v1/courses/${id}/unassign`,
   ASSIGNMENTS: (id: string) => `/api/v1/courses/${id}/assignments`,
   PROGRESS: "/api/v1/courses/admin/progress",
   DELETE: (id: string) => `/api/v1/courses/${id}`,
