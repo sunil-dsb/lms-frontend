@@ -149,7 +149,7 @@ export function EmployeeTopBar({
             }}
             className="rounded-full object-cover shrink-0"
           />
-          <span className="font-[family-name:var(--font-ui)] font-normal text-[13px] sm:text-base tracking-tight text-[var(--color-ink)] leading-none truncate">
+          <span className="font-[family-name:var(--font-ui)] font-normal text-xs sm:text-base tracking-tight text-[var(--color-ink)] leading-none truncate">
             {restaurantName}
           </span>
         </Link>
@@ -173,7 +173,7 @@ export function EmployeeTopBar({
             aria-label={labels.signedInAs}
             onClick={() => setIsOpen((prev) => !prev)}
             style={{ width: "32px", height: "32px" }}
-            className="flex items-center justify-center rounded-full bg-[#1e1b18] text-white font-semibold text-xs sm:text-sm cursor-pointer transition-transform active:scale-95 ring-2 ring-[var(--color-brand-600)] ring-offset-2 ring-offset-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-ring)] shrink-0"
+            className="flex items-center justify-center rounded-full bg-[var(--color-ink)] text-white font-semibold text-xs sm:text-sm cursor-pointer transition-transform active:scale-95 ring-2 ring-[var(--color-brand-600)] ring-offset-2 ring-offset-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-ring)] shrink-0"
           >
             {initial}
           </button>
@@ -223,7 +223,7 @@ export function EmployeeTopBar({
                   className={`relative inline-flex shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] ${
                     isDark
                       ? "bg-[var(--color-brand-600)]"
-                      : "bg-[#e5dfd7] dark:bg-[var(--color-panel-2)]"
+                      : "bg-[var(--color-panel-2)]"
                   }`}
                   style={{
                     width: "44px",

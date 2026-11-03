@@ -124,7 +124,7 @@ export function ResendInviteModal({
             <button
               type="button"
               onClick={onClose}
-              className="absolute right-4 top-4 rounded-full p-1.5 text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors focus:outline-none"
+              className="absolute right-4 top-4 rounded-full p-2 text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors focus:outline-none"
               aria-label="Close"
             >
               <LuX className="size-5" />
@@ -173,7 +173,7 @@ export function ResendInviteModal({
                     email: employee.email ?? employee.name,
                   })}
                 </p>
-                <p className="text-[var(--color-ink-3)] text-[11px] mt-1 flex items-center gap-1">
+                <p className="text-[var(--color-ink-3)] text-xs mt-1 flex items-center gap-1">
                   <LuClock className="size-3" />
                   {t("resendModalExpires")}
                 </p>
@@ -210,14 +210,14 @@ export function ResendInviteModal({
       ) : (
         <>
           {/* Top Brand Gradient Stripe */}
-          <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
+          <div className="h-2 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
 
           {/* Centered Header with top-right Close button */}
           <div className="relative border-b border-[var(--color-line)] px-6 pt-6 pb-4 text-center">
             <button
               type="button"
               onClick={onClose}
-              className="absolute right-4 top-4 rounded-full p-1.5 text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors focus:outline-none"
+              className="absolute right-4 top-4 rounded-full p-2 text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors focus:outline-none"
               aria-label="Close"
             >
               <LuX className="size-5" />
@@ -233,7 +233,7 @@ export function ResendInviteModal({
           <ModalBody className="space-y-5 pt-5 pb-6">
             {/* Success notification banner */}
             <div className="rounded-[var(--radius-lg)] border border-[var(--color-ok-line,var(--color-line))] bg-[var(--color-ok-tint,#e8f8ed)] p-4 text-center space-y-1">
-              <p className="font-semibold text-[var(--color-ok,#1a7f37)] flex items-center justify-center gap-1.5 text-sm">
+              <p className="font-semibold text-[var(--color-ok,#1a7f37)] flex items-center justify-center gap-2 text-sm">
                 <LuCheck className="size-4 shrink-0 text-[var(--color-ok)]" />
                 {t("resendModalSuccessHeading")}
               </p>
@@ -270,8 +270,8 @@ export function ResendInviteModal({
               </div>
             </div>
 
-            <p className="text-xs text-center text-[var(--color-ink-3)] flex items-center justify-center gap-1.5 pt-1">
-              <LuClock className="size-3.5" />
+            <p className="text-xs text-center text-[var(--color-ink-3)] flex items-center justify-center gap-2 pt-1">
+              <LuClock className="size-4" />
               {t("resendModalExpires")}
             </p>
           </ModalBody>

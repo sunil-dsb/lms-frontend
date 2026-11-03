@@ -310,7 +310,7 @@ export function QuizEditor({
                 <h3 className="text-sm font-bold text-[var(--color-ink)]">
                   Passing requirement
                 </h3>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 shrink-0">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-[var(--radius-sm)] bg-[var(--color-ok-tint)] text-[var(--color-ok)] border border-[var(--color-ok-tint-2)] shrink-0">
                   {Math.round(
                     ((working.minCorrectAnswers ??
                       Math.max(1, Math.ceil(working.questions.length * 0.7))) /
@@ -357,7 +357,7 @@ export function QuizEditor({
                   aria-label="Decrease passing score"
                   className="flex size-8 items-center justify-center rounded-lg hover:bg-[var(--color-surface)] disabled:opacity-30 transition-colors text-[var(--color-ink)] cursor-pointer"
                 >
-                  <LuMinus className="w-3.5 h-3.5" />
+                  <LuMinus className="w-4 h-4" />
                 </button>
                 <div className="px-3 text-center min-w-[72px]">
                   <span className="text-sm font-bold text-[var(--color-ink)]">
@@ -392,7 +392,7 @@ export function QuizEditor({
                   aria-label="Increase passing score"
                   className="flex size-8 items-center justify-center rounded-lg hover:bg-[var(--color-surface)] disabled:opacity-30 transition-colors text-[var(--color-ink)] cursor-pointer"
                 >
-                  <LuPlus className="w-3.5 h-3.5" />
+                  <LuPlus className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -569,7 +569,7 @@ export function QuizEditor({
                               );
                             })}
                             {q.choices.length < MAX_CHOICES ? (
-                              <li className="pt-1.5">
+                              <li className="pt-2">
                                 <button
                                   type="button"
                                   onClick={() => addChoice(qi)}
@@ -612,7 +612,7 @@ export function QuizEditor({
                     }
                   >
                     <div className="flex w-full items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0">
                         <span className="truncate text-xs font-normal text-[var(--color-ink-2)]">
                           {q.prompt[lang]?.trim()
                             ? q.prompt[lang]

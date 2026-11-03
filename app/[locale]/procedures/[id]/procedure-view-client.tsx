@@ -496,7 +496,7 @@ export function ProcedureViewClient({
                           type="button"
                           role="menuitem"
                           onClick={handleCopyLink}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors"
+                          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors"
                         >
                           {copied ? (
                             <>
@@ -530,7 +530,7 @@ export function ProcedureViewClient({
                           <Link
                             href={`/${locale}/admin`}
                             role="menuitem"
-                            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors"
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] transition-colors"
                           >
                             <LuArrowUpRight
                               aria-hidden="true"
@@ -548,7 +548,7 @@ export function ProcedureViewClient({
                           type="button"
                           role="menuitem"
                           onClick={handleSignOut}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[var(--color-bad)] hover:bg-[var(--color-bad-tint)] transition-colors mt-1 border-t border-[var(--color-line)] pt-2"
+                          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--color-bad)] hover:bg-[var(--color-bad-tint)] transition-colors mt-1 border-t border-[var(--color-line)] pt-2"
                         >
                           <LuLogOut aria-hidden="true" className="text-base" />
                           <span>

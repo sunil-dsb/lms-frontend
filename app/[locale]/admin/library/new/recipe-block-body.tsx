@@ -193,16 +193,16 @@ export function RecipeYieldSection({
   }
 
   return (
-    <div className="space-y-2.5 pt-1.5">
+    <div className="space-y-3 pt-2">
       <div className="flex items-center justify-between gap-2">
-        <Label className="text-sm font-semibold text-[var(--color-ink)] flex items-center gap-1.5">
+        <Label className="text-sm font-semibold text-[var(--color-ink)] flex items-center gap-2">
           <Icon
             icon="ri-scales-3-line"
             className="text-base text-[var(--color-brand)]"
           />
           Yield &amp; Batch Metrics
           {yieldItems.length > 0 && (
-            <span className="inline-flex items-center justify-center rounded-full bg-[var(--color-wash)] border border-[var(--color-line-2)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-ink-2)]">
+            <span className="inline-flex items-center justify-center rounded-full bg-[var(--color-wash)] border border-[var(--color-line-2)] px-2 py-0.5 text-xs font-bold text-[var(--color-ink-2)]">
               {yieldItems.length}
             </span>
           )}
@@ -221,7 +221,7 @@ export function RecipeYieldSection({
 
       {/* Quick preset chips / pills with distinct spacing & states */}
       <div className="flex flex-wrap items-center gap-2 py-0.5">
-        <span className="text-[11px] font-semibold text-[var(--color-ink-3)] uppercase tracking-wider">
+        <span className="text-xs font-semibold text-[var(--color-ink-3)] uppercase tracking-wider">
           Presets:
         </span>
         {PRESETS.map((p) => {
@@ -235,7 +235,7 @@ export function RecipeYieldSection({
               disabled={exists}
               onClick={() => addPreset(p)}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all border",
+                "inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium transition-all border",
                 exists
                   ? "border-[var(--color-line-2)]/80 bg-[var(--color-wash)]/60 text-[var(--color-ink-3)] cursor-default select-none"
                   : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] hover:bg-[var(--color-brand)]/5 active:scale-95 cursor-pointer shadow-2xs",
@@ -259,7 +259,7 @@ export function RecipeYieldSection({
       </div>
 
       {yieldItems.length === 0 ? (
-        <p className="text-[11px] text-[var(--color-ink-3)] italic py-1">
+        <p className="text-xs text-[var(--color-ink-3)] italic py-1">
           Optional: Click a preset above (e.g. Total Batch Weight, Portion
           Count) to show batch yield metrics in the recipe header.
         </p>
@@ -268,18 +268,18 @@ export function RecipeYieldSection({
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[var(--color-line-2)] bg-[var(--color-wash)]/60 text-[var(--color-ink-2)]">
-                <th className="px-3.5 py-2.5 font-semibold">Metric Name</th>
-                <th className="w-28 px-3 py-2.5 font-semibold text-center">
+                <th className="px-4 py-3 font-semibold">Metric Name</th>
+                <th className="w-28 px-3 py-3 font-semibold text-center">
                   Value
                 </th>
-                <th className="w-28 px-3 py-2.5 font-semibold">Unit</th>
+                <th className="w-28 px-3 py-3 font-semibold">Unit</th>
                 <th
-                  className="w-20 px-2 py-2.5 font-semibold text-center"
+                  className="w-20 px-2 py-3 font-semibold text-center"
                   title="Scales when multiplying batch (1×, 2×, 4×)"
                 >
                   Scales?
                 </th>
-                <th className="w-12 px-2 py-2.5 text-center">
+                <th className="w-12 px-2 py-3 text-center">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -290,7 +290,7 @@ export function RecipeYieldSection({
                   key={idx}
                   className="hover:bg-[var(--color-wash)]/30 transition-colors"
                 >
-                  <td className="p-2.5 pl-3.5">
+                  <td className="p-3 pl-4">
                     <Input
                       value={item.label}
                       onChange={(e) =>
@@ -300,7 +300,7 @@ export function RecipeYieldSection({
                       className="h-8 text-xs font-medium placeholder:font-normal placeholder:text-[var(--color-ink-3)]/50"
                     />
                   </td>
-                  <td className="w-28 p-2.5">
+                  <td className="w-28 p-3">
                     <Input
                       value={item.value}
                       onChange={(e) =>
@@ -310,7 +310,7 @@ export function RecipeYieldSection({
                       className="h-8 text-xs text-center font-semibold placeholder:font-normal placeholder:text-[var(--color-ink-3)]/40"
                     />
                   </td>
-                  <td className="w-28 p-2.5">
+                  <td className="w-28 p-3">
                     <Input
                       value={item.unit ?? ""}
                       onChange={(e) =>
@@ -320,7 +320,7 @@ export function RecipeYieldSection({
                       className="h-8 text-xs font-medium placeholder:font-normal placeholder:text-[var(--color-ink-3)]/50"
                     />
                   </td>
-                  <td className="w-20 p-2.5 text-center">
+                  <td className="w-20 p-3 text-center">
                     <label
                       className="inline-flex items-center justify-center cursor-pointer p-1 rounded hover:bg-[var(--color-wash)] transition-colors"
                       title="Scales with batch factor"
@@ -335,7 +335,7 @@ export function RecipeYieldSection({
                       />
                     </label>
                   </td>
-                  <td className="w-12 p-2.5 text-center">
+                  <td className="w-12 p-3 text-center">
                     <button
                       type="button"
                       onClick={() => removeItem(idx)}
@@ -700,7 +700,7 @@ function RecipeAllergens({
           {customTags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-warn)] bg-[var(--color-warn-tint)] px-3 py-1 text-xs font-medium text-[var(--color-warn-ink)] shadow-[var(--e-1)]"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--color-warn)] bg-[var(--color-warn-tint)] px-3 py-1 text-xs font-medium text-[var(--color-warn-ink)] shadow-[var(--e-1)]"
             >
               <span>{tag}</span>
               <button

@@ -60,8 +60,8 @@ export function TrainingCard({
               aria-hidden="true"
             >
               {item.stationTag ? (
-                <div className="mb-1.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink-3)]">
+                <div className="mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-3)]">
                     {item.stationTag}
                   </span>
                 </div>
@@ -101,8 +101,8 @@ export function TrainingCard({
       >
         {/* Station tag if any */}
         {item.stationTag ? (
-          <div className="mb-1.5">
-            <span className="text-[11px] font-bold tracking-wider uppercase text-[var(--color-brand-700)]">
+          <div className="mb-2">
+            <span className="text-xs font-bold tracking-wider uppercase text-[var(--color-brand-700)]">
               {item.stationTag}
             </span>
           </div>
@@ -117,7 +117,7 @@ export function TrainingCard({
                 {item.title}
               </h2>
               {item.isRequiredOrientation ? (
-                <span className="shrink-0 rounded-full bg-[var(--color-brand-600)]/10 px-2 py-1 text-[11px] font-semibold text-[var(--color-brand-700)]">
+                <span className="shrink-0 rounded-full bg-[var(--color-brand-600)]/10 px-2 py-1 text-xs font-semibold text-[var(--color-brand-700)]">
                   {t("requiredCourseBadge")}
                 </span>
               ) : null}
@@ -130,7 +130,7 @@ export function TrainingCard({
 
             {/* Due Date Badge on its own line below the meta */}
             {item.dueAt ? (
-              <div className="mt-3.5">
+              <div className="mt-4">
                 <DueDateBadge dueAt={item.dueAt} locale={locale} />
               </div>
             ) : null}

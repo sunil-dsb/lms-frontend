@@ -24,7 +24,7 @@ export default function ProceduresLoading(): React.ReactElement {
         {[0, 1, 2, 3, 4].map((i) => (
           <li
             key={i}
-            className="animate-pulse flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3 sm:p-3.5 shadow-xs"
+            className="animate-pulse flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3 sm:p-4 shadow-xs"
           >
             <div className="size-12 shrink-0 rounded-lg bg-[var(--color-panel-2)]" />
             <div className="min-w-0 flex-1 space-y-2">

@@ -240,9 +240,9 @@ export function AttachmentEditor({
           className="mb-0.5 shrink-0"
         >
           {uploading ? (
-            <span className="spinner mr-1.5" />
+            <span className="spinner mr-2" />
           ) : (
-            <LuUpload className="mr-1.5" />
+            <LuUpload className="mr-2" />
           )}
           {uploading ? "Uploading…" : "Upload file"}
         </Button>

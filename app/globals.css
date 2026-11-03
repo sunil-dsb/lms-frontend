@@ -113,7 +113,7 @@
   --color-line-hover: var(--line-hover);
 
   /* Aliases used by components/ui/*. Each points at a canonical token. */
-  --color-background: var(--bg);
+  /* Aliases used by components/ui/*. Each points at a canonical token. */
   --color-foreground: var(--ink);
   --color-card: var(--surface);
   --color-card-foreground: var(--ink);
@@ -122,9 +122,6 @@
   --color-border: var(--line-2);
   --color-nav-current: var(--nav-current);
   --color-ring: var(--ring);
-  --duration-press: var(--dur-press);
-  --color-primary: var(--brand-600);
-  --color-primary-foreground: var(--on-fill);
   --color-input: var(--surface);
 
   --color-brand: var(--brand);
@@ -134,19 +131,39 @@
   --color-brand-tint: var(--brand-tint);
   --color-brand-tint-2: var(--brand-tint-2);
 
+  /* Numbers-shade bridge: components written against the Tailwind scale
+     (bg-brand-50, dark:text-brand-300…) had no targets here and fell back to
+     browser defaults. Each points at the foundation token carrying the same
+     role, so both themes stay coherent:
+       50 → tint (chip bg)          200 → tint-2 (soft border)
+       300 → brand-700 (reads dark on light, light peach on dark)
+       800 → brand-hover            900/950 → dark chip bg/border       */
+  --color-brand-50: var(--brand-tint);
+  --color-brand-200: var(--brand-tint-2);
+  --color-brand-300: var(--brand-700);
+  --color-brand-800: var(--brand-hover);
+  --color-brand-900: var(--brand-tint-2);
+  --color-brand-950: var(--brand-tint);
+  --color-brand-line: var(--brand-tint-2);
+
   --color-ok: var(--ok);
   --color-ok-fill: var(--ok-fill);
   --color-ok-700: var(--ok-700);
   --color-ok-tint: var(--ok-tint);
   --color-ok-tint-2: var(--ok-tint-2);
+  /* "line" family: border colour for tinted status chips (see design-system). */
+  --color-ok-line: var(--ok-tint-2);
   --color-warn: var(--warn);
   --color-warn-ink: var(--warn-ink);
   --color-warn-tint: var(--warn-tint);
   --color-warn-tint-2: var(--warn-tint-2);
   --color-bad: var(--bad);
   --color-bad-fill: var(--bad-fill);
+  --color-bad-line: var(--bad);
   --color-bad-hover: var(--bad-hover);
   --color-bad-tint: var(--bad-tint);
+  /* Legacy alias some components still reach for. */
+  --color-good: var(--ok);
 
   /* Space. The 4px scale and nothing else: p-7, gap-9 and mt-14 do not exist.
      0.5 is the 2px nudge, for optical alignment and hairline bars only. */
@@ -179,12 +196,10 @@
   --width-sheet: var(--sheet-w);
   --max-width-sheet: var(--sheet-max-w);
   --max-width-field-sm: var(--field-sm);
-  --max-width-field-lg: var(--field-lg);
   /* The reading column: the document sheet, the employee app and the tab bar are
      one width, and it is the width the HTML templates use. */
   --max-width-doc: var(--doc-w);
   --max-width-page: var(--page-w);
-  --max-width-page-wide: var(--page-wide-w);
   --max-width-narrow: var(--narrow-w);
   --max-width-field-md: var(--field-md);
   --max-width-card: var(--card-w);
@@ -193,18 +208,14 @@
   /* Tailwind's container scale (max-w-5xl, 6xl, 7xl…) is switched off with the
      rest of its defaults. A page width is a decision this system makes once. */
   --container-*: initial;
-  --max-width-field-xl: var(--field-xl);
   --width-drawer-sm: var(--drawer-sm);
   --width-drawer-md: var(--drawer-md);
   --width-drawer-lg: var(--drawer-lg);
   --width-field-xs: var(--field-xs);
   --width-field-sm: var(--field-sm);
   --width-field-md: var(--field-md);
-  --width-field-lg: var(--field-lg);
-  --width-field-xl: var(--field-xl);
   --min-width-field-xs: var(--field-xs);
   --min-width-field-md: var(--field-md);
-  --min-width-field-lg: var(--field-lg);
   --height-tile: var(--tile-min-h);
   --min-height-tile: var(--tile-min-h);
   --max-height-media: var(--media-max-h);
@@ -216,8 +227,12 @@
      14px text appeared at three different leadings on one page: Tailwind's own
      1.43 from `text-sm`, our 1.45 from `leading-meta`, and the inherited body
      1.55 wherever the size came through an arbitrary value. */
-  /* No --text-xs: 12px left the scale, so `text-xs` now compiles to nothing and
-     the audit reports it rather than the page quietly shrinking. */
+  /* No --text-xs used to mean `text-xs` compiled to nothing and the audit
+     reported it. That ban was reverted per the 2025-11 typography audit:
+     a ~450-use off-scale population is worse than a controlled 12px meta
+     step. --t-xs carries the meta/annotation role; body/inputs stay ≥14. */
+  --text-xs: var(--t-xs);
+  --text-xs--line-height: var(--lh-meta);
   --text-sm: var(--t-sm);
   --text-sm--line-height: var(--lh-meta);
   --text-base: var(--t-base);
@@ -260,15 +275,11 @@
   --radius-lg: var(--r-lg);
   --radius-xl: 14px;
   --radius-2xl: 20px;
-  --radius-pill: var(--r-pill);
   --radius-full: var(--r-pill);
 
-  /* Layers, by name. Tailwind still accepts a bare z-30, so the audit bans it. */
-  --z-index-dropdown: var(--z-dropdown);
-  --z-index-sticky: var(--z-sticky);
-  --z-index-backdrop: var(--z-backdrop);
-  --z-index-modal: var(--z-modal);
-  --z-index-toast: var(--z-toast);
+  /* Layers, by name. Tailwind still accepts a bare z-30, so the audit bans it.
+     Only tooltip survives the audit — the other layers had zero utility or var()
+     consumers and were removed in batch D. */
   --z-index-tooltip: var(--z-tooltip);
 
   /* Fonts */

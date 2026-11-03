@@ -98,7 +98,7 @@ export function AssignPeopleModalView({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1.5 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
+            className="rounded-full p-2 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
             aria-label="Close"
           >
             <LuX className="text-xl" />
@@ -110,7 +110,7 @@ export function AssignPeopleModalView({
           <LuSearch
             aria-hidden="true"
             size={16}
-            className="ml-1 absolute pointer-events-none left-3.5 text-[var(--color-ink-3)]"
+            className="ml-1 absolute pointer-events-none left-4 text-[var(--color-ink-3)]"
           />
           <input
             type="text"
@@ -215,7 +215,7 @@ export function AssignPeopleModalView({
                 return (
                   <div
                     key={emp.id}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-2.5 bg-[var(--color-wash)]/40 text-left select-none"
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 bg-[var(--color-wash)]/40 text-left select-none"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       {/* Checkmark indicator with design system token */}
@@ -477,7 +477,7 @@ export function AssignPeopleModalView({
             onClick={onExecuteAssign}
             className="text-sm font-semibold px-5 py-2 rounded-full shadow-xs cursor-pointer"
           >
-            <LuUserPlus className="mr-1.5 text-sm" />
+            <LuUserPlus className="mr-2 text-sm" />
             {isSubmitting
               ? isEs
                 ? "Asignando..."

@@ -1108,7 +1108,7 @@ export function ChapterContentEditor({
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
         >
           <LuArrowLeft className="w-4 h-4" />
           <span>{isEs ? "Volver al curso" : "Back to course"}</span>
@@ -1181,7 +1181,7 @@ export function ChapterContentEditor({
                 {titleError ? (
                   <p
                     role="alert"
-                    className="mt-1.5 flex items-center gap-1.5 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+                    className="mt-2 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
                   >
                     <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
                     <span>{titleError}</span>
@@ -1210,7 +1210,7 @@ export function ChapterContentEditor({
                 {purposeError ? (
                   <p
                     role="alert"
-                    className="mt-1.5 flex items-center gap-1.5 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+                    className="mt-2 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
                   >
                     <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
                     <span>{purposeError}</span>
@@ -1300,16 +1300,16 @@ export function ChapterContentEditor({
                       >
                         <LuBookOpen className="w-4 h-4 text-[var(--color-warn-ink)] shrink-0" />
                         <span className="font-semibold">{title}</span>
-                        <span className="text-[11px] text-[var(--color-ink-2)]">
+                        <span className="text-xs text-[var(--color-ink-2)]">
                           ({questions.length}{" "}
                           {questions.length === 1 ? "question" : "questions"})
                         </span>
                         {countInQuiz > 0 && (
                           <span
-                            className="inline-flex items-center font-bold text-[var(--color-ok-700)] bg-[var(--color-ok-tint)] border border-[var(--color-ok)]/30 rounded-full text-[11px] ml-1"
+                            className="inline-flex items-center font-bold text-[var(--color-ok-700)] bg-[var(--color-ok-tint)] border border-[var(--color-ok)]/30 rounded-full text-xs ml-1"
                             style={{ padding: "2px 8px", gap: "4px" }}
                           >
-                            <LuCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+                            <LuCheck className="w-4 h-4 stroke-[2.5]" />
                             <span>{countInQuiz} in quiz</span>
                           </span>
                         )}
@@ -1324,18 +1324,16 @@ export function ChapterContentEditor({
           {quizError && (
             <div
               role="alert"
-              className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-800 p-4 mb-6 flex items-start gap-3 text-sm font-medium text-red-800 dark:text-red-200 animate-in fade-in"
+              className="rounded-xl border border-[var(--color-bad)]/30 bg-[var(--color-bad-tint)] p-4 mb-6 flex items-start gap-3 text-sm font-medium text-[var(--color-bad)] animate-in fade-in"
             >
-              <LuTriangleAlert className="size-5 shrink-0 text-red-600 mt-0.5" />
+              <LuTriangleAlert className="size-5 shrink-0 text-[var(--color-bad)] mt-0.5" />
               <div className="space-y-1">
                 <p className="font-bold">
                   {isEs
                     ? "Error de validación en el cuestionario"
                     : "Quiz validation error"}
                 </p>
-                <p className="text-xs text-red-700 dark:text-red-300">
-                  {quizError}
-                </p>
+                <p className="text-xs text-[var(--color-bad)]">{quizError}</p>
               </div>
             </div>
           )}
@@ -1360,19 +1358,19 @@ export function ChapterContentEditor({
           variant="surface"
           icon={LuEye}
           onClick={handleOpenPreview}
-          className="pointer-events-auto shadow-e2 text-xs font-semibold bg-white hover:bg-neutral-50 dark:bg-[var(--color-surface)] border border-[var(--color-line-2)]"
+          className="pointer-events-auto shadow-e2 text-xs font-semibold bg-white hover:bg-[var(--color-panel)] dark:bg-[var(--color-surface)] border border-[var(--color-line-2)]"
         >
           {isEs ? "Vista previa" : "Preview"}
         </Button>
       </div>
 
       {/* Sticky wizard footer bar like in procedure editor */}
-      <footer className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-between gap-2 border-t border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2.5 shadow-e2 sm:px-8 sm:py-3">
+      <footer className="fixed bottom-0 left-0 right-0 z-20 flex items-center justify-between gap-2 border-t border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-3 shadow-e2 sm:px-8 sm:py-3">
         <Button
           type="button"
           variant="ghost"
           onClick={onCancel}
-          className="px-2.5 sm:px-4 text-xs sm:text-sm"
+          className="px-3 sm:px-4 text-xs sm:text-sm"
         >
           {isEs ? "Cancelar" : "Cancel"}
         </Button>
@@ -1387,7 +1385,7 @@ export function ChapterContentEditor({
                   icon={LuCheck}
                   disabled={isSaving || !hasTitle || !hasPurpose}
                   onClick={handleSave}
-                  className="px-2.5 sm:px-4 text-xs sm:text-sm"
+                  className="px-3 sm:px-4 text-xs sm:text-sm"
                 >
                   <span className="sm:hidden">
                     {isSaving
@@ -1428,7 +1426,7 @@ export function ChapterContentEditor({
                 icon={LuArrowLeft}
                 disabled={isSaving}
                 onClick={() => setStep("content")}
-                className="px-2.5 sm:px-4 text-xs sm:text-sm"
+                className="px-3 sm:px-4 text-xs sm:text-sm"
               >
                 {isEs ? "Anterior" : "Back"}
               </Button>

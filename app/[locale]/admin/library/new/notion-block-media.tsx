@@ -495,13 +495,13 @@ function getAttachmentMeta(href: string): { icon: string; color: string } {
   if (target.endsWith(".pdf")) {
     return {
       icon: "ri-file-pdf-2-line",
-      color: "text-rose-600 dark:text-rose-400",
+      color: "text-[var(--color-bad)]",
     };
   }
   if (target.endsWith(".docx") || target.endsWith(".doc")) {
     return {
       icon: "ri-file-word-line",
-      color: "text-blue-600 dark:text-blue-400",
+      color: "text-[var(--color-ink-2)]",
     };
   }
   if (
@@ -511,13 +511,13 @@ function getAttachmentMeta(href: string): { icon: string; color: string } {
   ) {
     return {
       icon: "ri-file-excel-line",
-      color: "text-emerald-600 dark:text-emerald-400",
+      color: "text-[var(--color-ok)]",
     };
   }
   if (target.match(/\.(jpg|jpeg|png|webp|gif|svg)$/)) {
     return {
       icon: "ri-image-line",
-      color: "text-amber-600 dark:text-amber-400",
+      color: "text-[var(--color-warn)]",
     };
   }
   return { icon: "ri-file-text-line", color: "text-[var(--color-brand)]" };
@@ -590,7 +590,7 @@ export function AttachmentBody({
   };
 
   return (
-    <div className="space-y-2.5 pt-0.5">
+    <div className="space-y-3 pt-0.5">
       {/* URL input row with upload button outside */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <div
@@ -600,7 +600,7 @@ export function AttachmentBody({
             const f = e.dataTransfer.files?.[0];
             if (f) void startUpload(f);
           }}
-          className="flex flex-1 items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-2 min-h-9 focus-within:border-[var(--color-ring)] focus-within:bg-[var(--color-surface)] transition-all min-w-0"
+          className="flex flex-1 items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-2 min-h-9 focus-within:border-[var(--color-ring)] focus-within:bg-[var(--color-surface)] transition-all min-w-0"
         >
           <Icon
             icon={block.href ? metaInfo.icon : "ri-attachment-line"}
@@ -678,7 +678,7 @@ export function AttachmentBody({
       />
 
       {upload.state === "failed" && (
-        <div className="flex items-center gap-1.5 text-xs text-[var(--color-bad)] px-1">
+        <div className="flex items-center gap-2 text-xs text-[var(--color-bad)] px-1">
           <Icon icon="ri-error-warning-line" />
           <span>{upload.error}</span>
         </div>
@@ -697,8 +697,8 @@ export function AttachmentBody({
       />
 
       {/* Badge label input */}
-      <div className="pt-1.5">
-        <div className="flex items-center gap-2.5 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-2 min-h-9 focus-within:border-[var(--color-ring)] focus-within:bg-[var(--color-surface)] transition-all">
+      <div className="pt-2">
+        <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-2 min-h-9 focus-within:border-[var(--color-ring)] focus-within:bg-[var(--color-surface)] transition-all">
           <Icon
             icon="ri-price-tag-3-line"
             className="text-base text-[var(--color-ink-3)] shrink-0"
@@ -713,7 +713,7 @@ export function AttachmentBody({
             placeholder="Badge label (optional, e.g. PDF · 2.4 MB, Revision 3)…"
             className="flex-1 min-w-0 bg-transparent text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none"
           />
-          <span className="font-mono text-[10px] text-[var(--color-ink-3)] pointer-events-none select-none shrink-0">
+          <span className="font-mono text-xs text-[var(--color-ink-3)] pointer-events-none select-none shrink-0">
             {(block.meta ?? "").length} / 60
           </span>
           {block.meta ? (

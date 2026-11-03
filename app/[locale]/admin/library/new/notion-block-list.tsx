@@ -189,7 +189,7 @@ function EmptyState({
                 <span className="block text-xs sm:text-sm font-semibold text-[var(--color-ink)] truncate">
                   {opt.label}
                 </span>
-                <span className="block text-[11px] sm:text-xs text-[var(--color-ink-2)] mt-0.5 line-clamp-1 leading-tight">
+                <span className="block text-xs sm:text-xs text-[var(--color-ink-2)] mt-0.5 line-clamp-1 leading-tight">
                   {opt.hint}
                 </span>
               </span>

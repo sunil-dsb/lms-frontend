@@ -242,7 +242,7 @@ export function CourseChapterItem({
               minWidth: "36px",
               minHeight: "36px",
             }}
-            className="flex items-center justify-center rounded-full bg-[#16A34A] text-white shadow-xs"
+            className="flex items-center justify-center rounded-full bg-[var(--color-ok)] text-white shadow-xs"
           >
             <LuCheck
               className="text-lg text-white"
@@ -288,7 +288,7 @@ export function CourseChapterItem({
       <div className="min-w-0 flex-1">
         {/* Uppercase CHAPTER N line + Up next badge */}
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-medium tracking-wider uppercase text-[var(--color-ink-3)]">
+          <span className="text-xs font-medium tracking-wider uppercase text-[var(--color-ink-3)]">
             {isEs ? `CAPÍTULO ${chapter.number}` : `CHAPTER ${chapter.number}`}
           </span>
 
@@ -299,7 +299,7 @@ export function CourseChapterItem({
                 backgroundColor: "var(--brand-tint, #FCE8D4)",
                 color: "var(--brand-700, #A8371F)",
                 padding: "2px 8px",
-                fontSize: "11px",
+                fontSize: "var(--t-xs)",
                 lineHeight: "1.2",
               }}
             >
@@ -310,7 +310,7 @@ export function CourseChapterItem({
 
         {/* Chapter Title */}
         <h2
-          className={`mt-1 text-[15px] font-medium leading-snug ${
+          className={`mt-1 text-sm font-medium leading-snug ${
             isLocked ? "text-[var(--color-ink-2)]" : "text-[var(--color-ink)]"
           }`}
         >
@@ -330,33 +330,33 @@ export function CourseChapterItem({
             in icon accent, so the row reads as a set rather than a grab bag. */}
         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-ink-2)]">
           {chapter.hasProcedure && (
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--color-brand-200)] bg-[var(--color-brand-50)] px-3 py-[5px] font-medium text-[var(--color-brand-600)] shadow-2xs dark:border-[var(--color-brand-800)] dark:bg-[var(--color-brand-950)]">
-              <LuBookOpen className="h-3.5 w-3.5 shrink-0" />
+            <span className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[var(--color-brand-200)] bg-[var(--color-brand-50)] px-3 py-[5px] font-medium text-[var(--color-brand-600)] shadow-2xs dark:border-[var(--color-brand-800)] dark:bg-[var(--color-brand-950)]">
+              <LuBookOpen className="h-4 w-4 shrink-0" />
               <span>{linkedProcedureLabel}</span>
             </span>
           )}
           {hasVideo && (
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-[5px] font-medium text-sky-600 shadow-2xs dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-400">
-              <LuVideo className="h-3.5 w-3.5 shrink-0" />
+            <span className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-[5px] font-medium text-sky-600 shadow-2xs dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-400">
+              <LuVideo className="h-4 w-4 shrink-0" />
               <span>Video</span>
             </span>
           )}
           {hasChecklist && (
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-[5px] font-medium text-[var(--color-ink-2)] shadow-2xs">
-              <LuListChecks className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+            <span className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-[5px] font-medium text-[var(--color-ink-2)] shadow-2xs">
+              <LuListChecks className="h-4 w-4 shrink-0 text-[var(--color-ok)]" />
               <span>{isEs ? "Lista de verificación" : "Checklist"}</span>
             </span>
           )}
           {hasRecipe && (
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-[5px] font-medium text-amber-700 shadow-2xs dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
-              <LuUtensils className="h-3.5 w-3.5 shrink-0" />
+            <span className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[var(--color-warn-tint-2)] bg-[var(--color-warn-tint)] px-3 py-1 font-medium text-[var(--color-warn-ink)] shadow-2xs">
+              <LuUtensils className="h-4 w-4 shrink-0" />
               <span>{isEs ? "Receta" : "Recipe"}</span>
             </span>
           )}
           {typeof chapter.quizQuestionsCount === "number" &&
           chapter.quizQuestionsCount > 0 ? (
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-[5px] font-medium text-[var(--color-ink-2)] shadow-2xs">
-              <LuSparkles className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+            <span className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-[5px] font-medium text-[var(--color-ink-2)] shadow-2xs">
+              <LuSparkles className="h-4 w-4 shrink-0 text-[var(--color-warn)]" />
               <span>
                 {chapter.quizQuestionsCount}{" "}
                 {chapter.quizQuestionsCount === 1

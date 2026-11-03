@@ -48,7 +48,7 @@ export function ActiveSeasonToggle(): React.ReactElement {
         type="button"
         aria-pressed={active === "summer"}
         onClick={() => pick("summer")}
-        className={`inline-flex min-h-tap-admin items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors duration-[var(--dur)] ease-[var(--ease)] ${
+        className={`inline-flex min-h-tap-admin items-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors duration-[var(--dur)] ease-[var(--ease)] ${
           active === "summer"
             ? "bg-[var(--color-brand-600)] text-white shadow-e1"
             : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
@@ -61,7 +61,7 @@ export function ActiveSeasonToggle(): React.ReactElement {
         type="button"
         aria-pressed={active === "winter"}
         onClick={() => pick("winter")}
-        className={`inline-flex min-h-tap-admin items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors duration-[var(--dur)] ease-[var(--ease)] ${
+        className={`inline-flex min-h-tap-admin items-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors duration-[var(--dur)] ease-[var(--ease)] ${
           active === "winter"
             ? "bg-[var(--color-brand-600)] text-white shadow-e1"
             : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
@@ -88,7 +88,7 @@ function SeasonDot({
         : "bg-[var(--color-warn)]"
       : on
         ? "bg-white/90"
-        : "bg-[var(--color-info)]";
+        : "bg-[var(--color-ink-3)]";
   return (
     <span
       aria-hidden="true"

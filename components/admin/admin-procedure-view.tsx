@@ -187,7 +187,7 @@ export function AdminProcedureView({
     <div className="mx-auto w-full max-w-doc space-y-4 sm:space-y-6 overflow-hidden">
       {/* Top chrome bar: back arrow + breadcrumb on the left, Edit + kebab on the right */}
       <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-2 shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -211,7 +211,7 @@ export function AdminProcedureView({
               locale={locale === "es" ? "es" : "en"}
             />
           ) : null}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2 shrink-0">
             <Button
               variant="secondary"
               icon={LuPencil}

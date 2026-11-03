@@ -478,9 +478,9 @@ export function EditRolesModal({
       />
       <ModalBody className="space-y-4 p-5 sm:p-6">
         {/* ===== Profile: Name & Email on row 1, Location on row 2 ===== */}
-        <div className="grid gap-3.5">
-          <div className="grid gap-3.5 sm:grid-cols-2">
-            <div className="grid gap-1.5">
+        <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
               <Label htmlFor="edit-name">{t("nameLabel")}</Label>
               <Input
                 id="edit-name"
@@ -491,7 +491,7 @@ export function EditRolesModal({
                 autoFocus
               />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="edit-email">{t("emailLabel")}</Label>
               <Input
                 id="edit-email"
@@ -504,7 +504,7 @@ export function EditRolesModal({
             </div>
           </div>
 
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label id="edit-locationId-label" htmlFor="edit-locationId">
               {t("locationLabel")}
             </Label>

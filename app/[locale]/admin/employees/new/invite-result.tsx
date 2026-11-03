@@ -73,7 +73,7 @@ export function InviteResultCard({
         </CardHeader>
         <CardContent className="space-y-6 px-6 sm:px-8 pb-8">
           {/* Email confirmation callout */}
-          <div className="rounded-[var(--radius-lg)] border border-[var(--color-brand-line,var(--color-line))] bg-[var(--color-brand-tint,#fef7f2)] p-4 text-sm text-[var(--color-ink)] space-y-1.5">
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-brand-line,var(--color-line))] bg-[var(--color-brand-tint,#fef7f2)] p-4 text-sm text-[var(--color-ink)] space-y-2">
             <p className="font-semibold text-[var(--color-brand-800,#9c3b12)] flex items-center gap-2">
               <LuMail className="h-4 w-4 shrink-0 text-[var(--color-brand)]" />
               {t("inviteEmailSent")}

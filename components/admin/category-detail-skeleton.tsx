@@ -41,7 +41,7 @@ export function CategoryDetailSkeleton({
           <div className="flex items-center justify-between gap-3 bg-[var(--color-wash)] px-4 py-3">
             <div className="flex min-w-0 items-center gap-3">
               <Skeleton className="size-10 shrink-0 rounded-[var(--radius-md)] bg-[var(--color-panel)]" />
-              <div className="min-w-0 space-y-1.5 overflow-hidden">
+              <div className="min-w-0 space-y-2 overflow-hidden">
                 <Skeleton className="h-4 w-28 max-w-full" />
                 <Skeleton className="h-3 w-20 max-w-full bg-[var(--color-panel)]" />
               </div>
@@ -58,9 +58,9 @@ export function CategoryDetailSkeleton({
                   key={i}
                   className="flex items-center justify-between gap-4 overflow-hidden px-4 py-3"
                 >
-                  <div className="min-w-0 flex-1 space-y-1.5 overflow-hidden">
+                  <div className="min-w-0 flex-1 space-y-2 overflow-hidden">
                     <Skeleton className="h-4 w-48 max-w-full" />
-                    <Skeleton className="h-3.5 w-32 max-w-full bg-[var(--color-panel)]" />
+                    <Skeleton className="h-4 w-32 max-w-full bg-[var(--color-panel)]" />
                   </div>
                   <div className="flex shrink-0 items-center gap-4">
                     <Skeleton className="h-6 w-20 rounded-md bg-[var(--color-panel)]" />
@@ -83,7 +83,7 @@ export function CategoryDetailSkeleton({
           >
             <div className="flex min-w-0 items-center gap-3">
               <Skeleton className="size-10 shrink-0 rounded-[var(--radius-md)] bg-[var(--color-panel)]" />
-              <div className="min-w-0 space-y-1.5 overflow-hidden">
+              <div className="min-w-0 space-y-2 overflow-hidden">
                 <Skeleton className="h-4 w-24 max-w-full" />
                 <Skeleton className="h-3 w-16 max-w-full bg-[var(--color-panel)]" />
               </div>

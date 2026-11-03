@@ -294,7 +294,7 @@ export function AssignBlock({
           ) : null}
         </div>
 
-        <div className="relative flex w-full sm:w-[280px] md:w-[340px] items-center rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-1.5 sm:py-2 transition-colors focus-within:border-[var(--color-brand)]">
+        <div className="relative flex w-full sm:w-[280px] md:w-[340px] items-center rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 sm:py-2 transition-colors focus-within:border-[var(--color-brand)]">
           <LuSearch
             aria-hidden="true"
             className="mr-2 size-4 shrink-0 text-[var(--color-ink-3)]"
@@ -317,7 +317,7 @@ export function AssignBlock({
               onClick={() => setSearch("")}
               className="ml-1 shrink-0 text-[var(--color-ink-3)] hover:text-[var(--color-ink)] cursor-pointer"
             >
-              <LuX aria-hidden="true" className="size-3.5" />
+              <LuX aria-hidden="true" className="size-4" />
             </button>
           ) : null}
         </div>
@@ -377,11 +377,11 @@ export function AssignBlock({
                           className="flex size-[22px] items-center justify-center rounded-full bg-[var(--color-brand-600)] text-[var(--color-surface)] shadow-xs"
                           aria-hidden="true"
                         >
-                          <LuCheck className="size-3.5 stroke-[3]" />
+                          <LuCheck className="size-4 stroke-[3]" />
                         </span>
                       ) : (
                         <span
-                          className="flex size-[30px] items-center justify-center rounded-full border border-[var(--color-line-2)] bg-[var(--color-wash)] text-[11px] font-semibold text-[var(--color-ink-2)]"
+                          className="flex size-[30px] items-center justify-center rounded-full border border-[var(--color-line-2)] bg-[var(--color-wash)] text-xs font-semibold text-[var(--color-ink-2)]"
                           aria-hidden="true"
                         >
                           {initials}
@@ -553,7 +553,7 @@ export function ProcedureIconPicker({
           {t("iconPickerHint")}
         </p>
         {uploading ? (
-          <p className="text-xs font-medium text-[var(--color-brand-600)] flex items-center gap-1.5">
+          <p className="text-xs font-medium text-[var(--color-brand-600)] flex items-center gap-2">
             <span className="spinner size-3" aria-hidden="true" />
             Uploading icon…
           </p>

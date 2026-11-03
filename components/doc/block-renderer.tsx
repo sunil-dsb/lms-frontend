@@ -514,7 +514,7 @@ export function BlockRenderer({
                         key={j}
                         scope="col"
                         className={cn(
-                          "px-3 py-2.5 text-xs sm:text-sm font-semibold",
+                          "px-3 py-3 text-xs sm:text-sm font-semibold",
                           isShort ? "w-12 text-center" : "min-w-[100px]",
                         )}
                       >
@@ -534,7 +534,7 @@ export function BlockRenderer({
                         <td
                           key={j}
                           className={cn(
-                            "align-top px-3 py-2.5 text-xs sm:text-sm",
+                            "align-top px-3 py-3 text-xs sm:text-sm",
                             isShort ? "w-12 text-center" : "min-w-[100px]",
                           )}
                         >
@@ -800,7 +800,7 @@ function ChecklistBlock({
           {done}/{items.length}
         </span>
       </div>
-      <ul className="checklist space-y-1.5" role="list">
+      <ul className="checklist space-y-2" role="list">
         {items.map((it, i) => {
           const checked = !!picked[it.id];
           const label = it.text[locale] || it.text.en || it.text.es;
@@ -812,7 +812,7 @@ function ChecklistBlock({
                 aria-checked={checked}
                 onClick={() => toggle(it.id)}
                 className={cn(
-                  "checklist-row group flex w-full items-start gap-2.5 sm:gap-3 text-left transition-colors rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 cursor-pointer",
+                  "checklist-row group flex w-full items-start gap-3 sm:gap-3 text-left transition-colors rounded-xl px-3 sm:px-4 py-3 sm:py-3 cursor-pointer",
                   checked
                     ? "checklist-row--done bg-[var(--color-ok-tint)]"
                     : "hover:bg-[var(--color-wash)]",
@@ -827,7 +827,7 @@ function ChecklistBlock({
                   )}
                   aria-hidden="true"
                 >
-                  <LuCheck className="size-3.5 stroke-[3]" />
+                  <LuCheck className="size-4 stroke-[3]" />
                 </span>
                 <span
                   className="checklist-num text-xs font-mono text-[var(--color-ink-3)] shrink-0 mt-0.5 min-w-[18px]"
@@ -954,10 +954,10 @@ function LinkedProcedureDocItem({
     <div
       key={id}
       id={`linked-proc-${sop.id}`}
-      className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-7 shadow-xs space-y-4 sm:space-y-5"
+      className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-8 shadow-xs space-y-4 sm:space-y-5"
     >
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 border-b border-[var(--color-line-2)]/60 pb-4">
-        <div className="min-w-0 space-y-1.5">
+        <div className="min-w-0 space-y-2">
           <h3 className="text-lg sm:text-xl font-bold text-[var(--color-ink)]">
             {title}
           </h3>

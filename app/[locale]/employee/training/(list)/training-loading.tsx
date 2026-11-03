@@ -40,7 +40,7 @@ export function EmployeeTrainingLoading(): React.ReactElement {
 
             <div className="flex items-center gap-3">
               <div className="h-2 flex-1 rounded-full bg-[var(--color-panel)]" />
-              <div className="h-3.5 w-8 rounded bg-[var(--color-panel-2)]" />
+              <div className="h-4 w-8 rounded bg-[var(--color-panel-2)]" />
             </div>
 
             <div className="h-3 w-28 rounded bg-[var(--color-panel)]" />

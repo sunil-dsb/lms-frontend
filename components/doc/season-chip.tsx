@@ -47,7 +47,7 @@ export function SeasonChip({
       }
       data-testid="season-chip"
     >
-      <LuSun aria-hidden className="h-3.5 w-3.5" />
+      <LuSun aria-hidden className="h-4 w-4" />
       {label}
     </span>
   );

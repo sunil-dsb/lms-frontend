@@ -410,11 +410,11 @@ export function RichTextEditor({
               setLinkError("");
             }}
             placeholder="https://example.com"
-            className="min-w-0 flex-1 rounded-md border border-[var(--color-line-2)] bg-[var(--color-surface)] px-2 py-1.5 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-brand-600)]"
+            className="min-w-0 flex-1 rounded-md border border-[var(--color-line-2)] bg-[var(--color-surface)] px-2 py-2 text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-brand-600)]"
           />
           <button
             type="submit"
-            className="rounded-full bg-[var(--color-brand-600)] px-3 py-1.5 text-xs font-semibold text-white"
+            className="rounded-full bg-[var(--color-brand-600)] px-3 py-2 text-xs font-semibold text-white"
           >
             Apply
           </button>
@@ -422,7 +422,7 @@ export function RichTextEditor({
             <button
               type="button"
               onClick={removeLink}
-              className="rounded-full border border-[var(--color-line-2)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-2)]"
+              className="rounded-full border border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold text-[var(--color-ink-2)]"
             >
               Remove
             </button>
@@ -430,7 +430,7 @@ export function RichTextEditor({
           <button
             type="button"
             onClick={() => setLinkOpen(false)}
-            className="rounded-full px-2 py-1.5 text-xs font-semibold text-[var(--color-ink-2)]"
+            className="rounded-full px-2 py-2 text-xs font-semibold text-[var(--color-ink-2)]"
           >
             Cancel
           </button>
@@ -462,7 +462,7 @@ export function RichTextEditor({
         >
           <span
             style={{
-              fontSize: "11px",
+              fontSize: "var(--t-xs)",
               fontVariantNumeric: "tabular-nums",
               color:
                 wordCount > maxWords

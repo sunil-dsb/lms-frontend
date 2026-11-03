@@ -60,7 +60,7 @@ export function Greeting({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "15px",
+                fontSize: "var(--t-sm)",
                 letterSpacing: "0.02em",
               }}
             >
@@ -70,13 +70,13 @@ export function Greeting({
             <div className="min-w-0 flex-1">
               <h2
                 className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] leading-snug tracking-tight truncate"
-                style={{ fontSize: "17px" }}
+                style={{ fontSize: "var(--t-base)" }}
               >
                 {greetText}
               </h2>
               {subtitle ? (
                 <p
-                  className="text-[13px] text-[var(--color-ink-2)] truncate"
+                  className="text-xs text-[var(--color-ink-2)] truncate"
                   style={{ marginTop: "2px", lineHeight: "1.35" }}
                 >
                   {subtitle}
@@ -135,7 +135,7 @@ export function Greeting({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "15px",
+              fontSize: "var(--t-sm)",
               letterSpacing: "0.02em",
             }}
           >
@@ -145,13 +145,13 @@ export function Greeting({
           <div className="min-w-0 flex-1">
             <h2
               className="font-[family-name:var(--font-display)] font-bold text-[var(--color-ink)] leading-snug tracking-tight truncate"
-              style={{ fontSize: "17px" }}
+              style={{ fontSize: "var(--t-base)" }}
             >
               {greetText}
             </h2>
             {subtitle ? (
               <p
-                className="text-[13px] text-[var(--color-ink-2)] truncate"
+                className="text-xs text-[var(--color-ink-2)] truncate"
                 style={{ marginTop: "2px", lineHeight: "1.35" }}
               >
                 {subtitle}
@@ -190,7 +190,7 @@ export function Greeting({
             <div className="min-w-0 flex-1">
               <p
                 className="font-bold text-[var(--color-ink)] leading-snug tracking-tight"
-                style={{ fontSize: "15px" }}
+                style={{ fontSize: "var(--t-sm)" }}
               >
                 {regularTitle}
               </p>
@@ -226,8 +226,8 @@ export function Greeting({
                 style={{
                   width: "44px",
                   height: "44px",
-                  border: "2.5px solid var(--color-brand)",
-                  fontSize: "12px",
+                  border: "3px solid var(--color-brand)",
+                  fontSize: "var(--t-xs)",
                   fontWeight: "bold",
                   color: "var(--color-ink)",
                 }}

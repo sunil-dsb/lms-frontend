@@ -325,9 +325,9 @@ export function ProcedureEditorReviewPanel({
                       return (
                         <li
                           key={id}
-                          className="flex items-center gap-2 rounded-full border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] px-2.5 py-1"
+                          className="flex items-center gap-2 rounded-full border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] px-3 py-1"
                         >
-                          <span className="flex size-5 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-[10px] font-bold text-[var(--color-surface)]">
+                          <span className="flex size-5 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-xs font-bold text-[var(--color-surface)]">
                             {initialsOf(person.name)}
                           </span>
                           <span className="text-sm font-semibold text-[var(--color-brand-700)]">

@@ -87,7 +87,7 @@ export function AssignMainModalView({
   return (
     <div className="flex flex-col h-full justify-between">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3.5">
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -104,7 +104,7 @@ export function AssignMainModalView({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1.5 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
+            className="rounded-full p-2 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
             aria-label="Close"
           >
             <LuX className="text-xl" />
@@ -118,8 +118,8 @@ export function AssignMainModalView({
           </p>
 
           {isLoadingData ? (
-            <div className="space-y-2.5 py-1">
-              <div className="flex items-center gap-2.5 text-sm text-[var(--color-ink-2)]">
+            <div className="space-y-3 py-1">
+              <div className="flex items-center gap-3 text-sm text-[var(--color-ink-2)]">
                 <LuLoader className="animate-spin text-sm text-[var(--color-brand-600)] shrink-0" />
                 <span>
                   {isEs
@@ -127,12 +127,12 @@ export function AssignMainModalView({
                     : "Checking chapters & questions..."}
                 </span>
               </div>
-              <div className="h-3.5 w-44 rounded-md bg-[var(--color-wash)] animate-pulse" />
+              <div className="h-4 w-44 rounded-md bg-[var(--color-wash)] animate-pulse" />
             </div>
           ) : (
             <>
               <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2.5 text-[var(--color-ink)]">
+                <li className="flex items-center gap-3 text-[var(--color-ink)]">
                   <LuCheck
                     aria-hidden="true"
                     size={18}
@@ -157,7 +157,7 @@ export function AssignMainModalView({
                 </li>
 
                 {hasQuiz && !hasMissingQuizQuestions && (
-                  <li className="flex items-center gap-2.5 text-[var(--color-ink)]">
+                  <li className="flex items-center gap-3 text-[var(--color-ink)]">
                     <LuCheck
                       aria-hidden="true"
                       size={18}
@@ -178,16 +178,16 @@ export function AssignMainModalView({
               </ul>
 
               {hasMissingQuizQuestions && (
-                <div className="mt-2 rounded-2xl border border-amber-300 bg-amber-50/90 dark:border-amber-900/60 dark:bg-amber-950/40 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="mt-2 rounded-2xl border border-[var(--color-warn-tint-2)] bg-[var(--color-warn-tint)] p-4 sm:p-5 space-y-1 shadow-xs">
                   <div className="flex items-start gap-3">
-                    <LuTriangleAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <LuTriangleAlert className="w-5 h-5 text-[var(--color-warn)] shrink-0 mt-0.5" />
                     <div className="space-y-1 flex-1">
-                      <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                      <h4 className="text-sm font-bold text-[var(--color-warn-ink)]">
                         {isEs
                           ? "Se requiere al menos una pregunta por capítulo"
                           : "At least one quiz question required per chapter"}
                       </h4>
-                      <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                      <p className="text-xs text-[var(--color-warn-ink)] leading-relaxed">
                         {isEs
                           ? `No puedes asignar este curso porque ${
                               missingChapterNumbers.length === 1
@@ -210,7 +210,7 @@ export function AssignMainModalView({
                           `/${locale}/admin/training/${course.id}/edit`,
                         )
                       }
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-brand-600)] hover:underline cursor-pointer"
+                      className="inline-flex items-center gap-2 text-xs font-bold text-[var(--color-brand-600)] hover:underline cursor-pointer"
                     >
                       {isEs
                         ? "Editar curso y agregar preguntas →"
@@ -224,7 +224,7 @@ export function AssignMainModalView({
         </div>
 
         {/* Assign to: Tabs [Everyone] [By station] [People] */}
-        <div className="space-y-2.5 pt-1">
+        <div className="space-y-3 pt-1">
           <Label className="text-sm font-semibold text-[var(--color-ink)]">
             {isEs ? "Asignar a" : "Assign to"}
           </Label>
@@ -330,7 +330,7 @@ export function AssignMainModalView({
                       )}
                     >
                       <div
-                        className="flex items-center gap-2.5 min-w-0"
+                        className="flex items-center gap-3 min-w-0"
                         style={{ gap: "10px" }}
                       >
                         {/* Checkbox icon */}
@@ -413,7 +413,7 @@ export function AssignMainModalView({
               </div>
               <span
                 style={{ padding: "6px 14px" }}
-                className="text-sm font-bold text-[var(--color-brand-700)] bg-[var(--color-brand-tint)] rounded-full border border-[var(--color-brand-600)]/20 shrink-0 inline-flex items-center gap-1.5"
+                className="text-sm font-bold text-[var(--color-brand-700)] bg-[var(--color-brand-tint)] rounded-full border border-[var(--color-brand-600)]/20 shrink-0 inline-flex items-center gap-2"
               >
                 {isLoadingData ? (
                   <LuLoader className="animate-spin text-sm" />
@@ -529,7 +529,7 @@ export function AssignMainModalView({
           onClick={() => router.push(`/${locale}/admin/training/${course.id}`)}
           className="text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] rounded-full px-4 py-2 shadow-2xs hover:bg-[var(--color-wash)] cursor-pointer justify-center"
         >
-          <LuEye className="mr-1.5 text-sm" />
+          <LuEye className="mr-2 text-sm" />
           {isEs ? "Vista previa" : "Preview as employee"}
         </Button>
 

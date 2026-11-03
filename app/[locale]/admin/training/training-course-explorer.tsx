@@ -219,9 +219,9 @@ export function TrainingCourseExplorer({
     <div className="space-y-6">
       {/* Toast Notification Banner */}
       {successToast ? (
-        <div className="animate-in fade-in slide-in-from-top-2 flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+        <div className="animate-in fade-in slide-in-from-top-2 flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-ok-tint-2)] bg-[var(--color-ok-tint)] px-4 py-3 text-sm text-[var(--color-ok)] shadow-sm">
           <div className="flex items-center gap-2">
-            <span className="flex size-6 items-center justify-center rounded-full border border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900 dark:text-emerald-100">
+            <span className="flex size-6 items-center justify-center rounded-full border border-[var(--color-ok-tint-2)] bg-[var(--color-ok-tint)] text-[var(--color-ok)]">
               <LuCheck aria-hidden="true" className="size-4 stroke-[3]" />
             </span>
             <p className="font-medium">{successToast}</p>
@@ -229,7 +229,7 @@ export function TrainingCourseExplorer({
           <button
             type="button"
             onClick={() => setSuccessToast(null)}
-            className="text-emerald-700 hover:text-emerald-950 dark:text-emerald-300 dark:hover:text-white"
+            className="text-[var(--color-ok)] hover:text-[var(--color-ok-700)]"
           >
             <LuX className="text-base" />
           </button>
@@ -567,7 +567,7 @@ export function TrainingCourseExplorer({
               total: totalPages,
             })}
           </span>
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-2 sm:gap-2">
             <button
               aria-label={isEs ? "Página anterior" : "Previous page"}
               type="button"

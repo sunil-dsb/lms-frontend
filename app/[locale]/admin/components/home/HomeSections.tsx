@@ -432,7 +432,7 @@ function AttentionRow({
           {item.meta.join(" · ")}
         </p>
       </div>
-      <Link href={item.href} className="ml-14 sm:ml-0">
+      <Link href={item.href} className="ml-12 sm:ml-0">
         <Button type="button" variant="neutral" size="sm">
           {action}
           <span className="sr-only">: {item.title}</span>

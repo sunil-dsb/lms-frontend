@@ -205,7 +205,7 @@ export function CourseDetailSkeleton({
           {[1, 2].map((i) => (
             <div
               key={i}
-              className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-3.5 sm:p-4 flex items-center gap-3.5 sm:gap-4 shadow-2xs"
+              className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 sm:p-4 flex items-center gap-4 sm:gap-4 shadow-2xs"
             >
               {/* Circle badge */}
               <Skeleton className="w-9 h-9 rounded-full shrink-0" />
@@ -217,7 +217,7 @@ export function CourseDetailSkeleton({
                   {i === 1 && <Skeleton className="h-4 w-14 rounded-full" />}
                 </div>
                 <Skeleton className="h-5 w-48 rounded-md" />
-                <Skeleton className="h-3.5 w-32 rounded-sm" />
+                <Skeleton className="h-4 w-32 rounded-sm" />
               </div>
 
               {/* Right chevron */}
@@ -234,7 +234,7 @@ export function CourseDetailSkeleton({
           sidebarOffsetPx > 0 && "lg:left-[280px]",
         )}
       >
-        <div className="w-full max-w-doc px-4 py-3 sm:px-6 sm:py-3.5">
+        <div className="w-full max-w-doc px-4 py-3 sm:px-6 sm:py-4">
           <Skeleton className="h-12 w-full rounded-2xl" />
         </div>
       </div>

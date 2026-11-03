@@ -291,18 +291,18 @@ function BlockDeleteButton({
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bad-tint)] text-[var(--color-bad)]">
-                    <LuTriangleAlert aria-hidden="true" className="size-4.5" />
+                    <LuTriangleAlert aria-hidden="true" className="size-5" />
                   </div>
                   <div className="min-w-0 flex-1 pt-0.5">
                     <h3 className="text-base font-semibold text-[var(--color-ink)] tracking-tight">
                       {deleteInfo.title}
                     </h3>
-                    <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--color-ink-2)]">
+                    <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[var(--color-ink-2)]">
                       {deleteInfo.description}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center justify-end gap-2.5 pt-1">
+                <div className="flex items-center justify-end gap-3 pt-1">
                   <Button
                     type="button"
                     size="sm"
@@ -447,7 +447,7 @@ export function BlockRow({
       {error ? (
         <p
           role="alert"
-          className="mb-2.5 flex items-center gap-1.5 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+          className="mb-3 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
         >
           <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
           <span>{error}</span>
@@ -468,7 +468,7 @@ export function BlockRow({
         </button>
 
         {/* Block kind indicator badge */}
-        <span className="inline-flex items-center rounded bg-[var(--color-wash)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-ink-3)] group-focus-within:bg-[var(--color-surface)] group-focus-within:text-[var(--color-ink)] group-focus-within:shadow-e1 transition-all">
+        <span className="inline-flex items-center rounded bg-[var(--color-wash)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-3)] group-focus-within:bg-[var(--color-surface)] group-focus-within:text-[var(--color-ink)] group-focus-within:shadow-e1 transition-all">
           {block.kind === "text"
             ? "Text"
             : block.kind === "heading"

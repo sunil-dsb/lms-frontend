@@ -514,7 +514,7 @@ export function ProcedureEditorImportPanel({
               onClick={() => setImportBannerFile(null)}
               className="flex size-7 items-center justify-center rounded-lg text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-line-2)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
             >
-              <LuX aria-hidden="true" className="size-3.5" />
+              <LuX aria-hidden="true" className="size-4" />
             </button>
           </div>
         </div>

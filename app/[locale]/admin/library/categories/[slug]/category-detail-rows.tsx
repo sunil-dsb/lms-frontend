@@ -384,7 +384,7 @@ export function ProcedureListItem({
                 </StatusPill>
               )}
               {procedure.isPromo ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-brand-700)] shadow-2xs">
+                <span className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] px-2 py-0.5 text-xs font-semibold text-[var(--color-brand-700)] shadow-2xs">
                   <LuSparkles className="size-2.5" />
                   {isEs ? "Plato en promoción" : "Promo dish"}
                 </span>
@@ -419,7 +419,7 @@ export function ProcedureListItem({
                   ))}
                 </div>
               ) : (
-                <span className="inline-flex items-center rounded-lg border border-dashed border-[var(--color-line-2)] px-3.5 py-2 text-xs font-semibold text-[var(--color-ink-3)]">
+                <span className="inline-flex items-center rounded-lg border border-dashed border-[var(--color-line-2)] px-4 py-2 text-xs font-semibold text-[var(--color-ink-3)]">
                   {isEs ? "Sin estación" : "No station"}
                 </span>
               )
@@ -466,7 +466,7 @@ export function ProcedureListItem({
                           }
                           className="rounded-sm p-0.5 text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] focus-visible:outline-none"
                         >
-                          <LuX className="text-[12px]" />
+                          <LuX className="text-xs" />
                         </button>
                       </span>
                     ))}
@@ -489,7 +489,7 @@ export function ProcedureListItem({
                       aria-haspopup="menu"
                       aria-expanded={pickerOpen}
                       aria-label={isEs ? "Añadir estaciones" : "Add stations"}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                      className="inline-flex items-center gap-2 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                     >
                       <LuPlus className="text-xs" />
                       <span>{isEs ? "Añadir estación" : "Add station"}</span>
@@ -503,7 +503,7 @@ export function ProcedureListItem({
                     aria-haspopup="menu"
                     aria-expanded={pickerOpen}
                     aria-label={isEs ? "Añadir estaciones" : "Add stations"}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                    className="inline-flex items-center gap-2 rounded-lg border border-dashed border-[var(--color-line-2)] px-3 py-2 text-xs font-semibold leading-normal text-[var(--color-ink-3)] transition-colors hover:border-[var(--color-line-hover)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
                   >
                     <LuPlus className="text-xs" />
                     <span>{isEs ? "Añadir estación" : "Add station"}</span>
@@ -534,7 +534,7 @@ export function ProcedureListItem({
           side="bottom"
           width={280}
         >
-          <div className="space-y-1.5 p-1">
+          <div className="space-y-2 p-1">
             <p className="px-2 pt-1 text-xs font-semibold text-[var(--color-ink-3)]">
               {isEs ? "Asignar estaciones" : "Assign stations"}
             </p>
@@ -555,7 +555,7 @@ export function ProcedureListItem({
                         );
                       }}
                       className={cn(
-                        "flex w-full cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-md)] px-2 py-1.5 text-left transition-colors",
+                        "flex w-full cursor-pointer items-center justify-between gap-3 rounded-[var(--radius-md)] px-2 py-2 text-left transition-colors",
                         "hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-brand-tint)] focus-visible:outline-none",
                       )}
                     >
@@ -571,14 +571,14 @@ export function ProcedureListItem({
                             : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-transparent",
                         )}
                       >
-                        <LuCheck className="text-[12px]" />
+                        <LuCheck className="text-xs" />
                       </span>
                     </button>
                   </li>
                 );
               })}
             </ul>
-            <p className="px-2 text-[11px] text-[var(--color-ink-3)]">
+            <p className="px-2 text-xs text-[var(--color-ink-3)]">
               {isEs
                 ? "Selecciona las estaciones correspondientes y guarda."
                 : "Select all applicable stations and save."}
@@ -587,14 +587,14 @@ export function ProcedureListItem({
               <button
                 type="button"
                 onClick={() => setPickerOpen(false)}
-                className="rounded-[var(--radius-md)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                className="rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold text-[var(--color-ink-3)] transition-colors hover:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
               >
                 {isEs ? "Cancelar" : "Cancel"}
               </button>
               <button
                 type="button"
                 onClick={savePicker}
-                className="rounded-[var(--radius-md)] bg-[var(--color-brand-600)] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[var(--color-brand-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+                className="rounded-[var(--radius-md)] bg-[var(--color-brand-600)] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--color-brand-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
               >
                 {isEs ? "Guardar" : "Save"}
               </button>

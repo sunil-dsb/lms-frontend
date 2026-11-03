@@ -162,7 +162,7 @@ export function CourseProgressDetail({
                 onClick={() => setIsAssignModalOpen(true)}
                 className="cursor-pointer"
               >
-                <LuUserPlus className="size-4 mr-1.5" />
+                <LuUserPlus className="size-4 mr-2" />
                 <span>{t("manageAssignments")}</span>
               </Button>
             ) : null}
@@ -190,7 +190,7 @@ export function CourseProgressDetail({
                 onClick={() => setIsAssignModalOpen(true)}
                 className="cursor-pointer"
               >
-                <LuUserPlus className="size-4 mr-1.5" />
+                <LuUserPlus className="size-4 mr-2" />
                 <span>{t("manageAssignments")}</span>
               </Button>
             ) : (
@@ -282,7 +282,7 @@ export function CourseProgressDetail({
                       {row.status === "complete" ? (
                         <span className="inline-flex items-center gap-1 text-[var(--color-ok)]">
                           <LuCircleCheck
-                            className="size-3.5 shrink-0"
+                            className="size-4 shrink-0"
                             aria-hidden="true"
                           />
                           {row.courseCompletedAt
@@ -373,7 +373,7 @@ export function CourseProgressDetail({
                     </td>
                     <td className="text-[var(--color-ink-2)]">
                       {row.status === "complete" ? (
-                        <span className="inline-flex items-center gap-1.5 text-[var(--color-ok)]">
+                        <span className="inline-flex items-center gap-2 text-[var(--color-ok)]">
                           <LuCircleCheck
                             className="size-4 shrink-0"
                             aria-hidden="true"
@@ -428,7 +428,7 @@ export function CourseProgressDetail({
                           })
                         }
                         className={cn(
-                          "inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
+                          "inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
                           "text-[var(--color-bad-700)] hover:text-[var(--color-bad-800)] hover:bg-[var(--color-bad-tint)] border border-[var(--color-bad)]/20",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
                           isUnassigning && "opacity-60 cursor-not-allowed",

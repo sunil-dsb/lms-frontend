@@ -233,7 +233,7 @@ export function EmployeesClientTable({
                           </div>
                         </div>
                         <div
-                          className="flex items-center gap-1.5 shrink-0"
+                          className="flex items-center gap-2 shrink-0"
                           onClick={(ev) => ev.stopPropagation()}
                         >
                           <StatusPill tone={tone}>

@@ -545,7 +545,7 @@ export function NewEmployeeForm({
     );
   }
 
-  const field = "flex flex-col gap-1.5";
+  const field = "flex flex-col gap-2";
 
   return (
     <div className="mx-auto max-w-[760px] w-full space-y-6">

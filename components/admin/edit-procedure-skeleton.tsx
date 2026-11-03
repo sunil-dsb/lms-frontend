@@ -11,7 +11,7 @@ export function EditProcedureSkeleton(): React.ReactElement {
       {/* ── Page Header (eyebrow + title) ────────────────────────── */}
       <div className="mx-auto max-w-page">
         <div className="flex flex-wrap items-start justify-between gap-4 pb-2">
-          <div className="min-w-0 space-y-1.5">
+          <div className="min-w-0 space-y-2">
             <Skeleton className="h-4 w-20 rounded-[var(--radius-sm)]" />
             <Skeleton className="h-8 w-48 rounded-[var(--radius-md)]" />
           </div>
@@ -19,7 +19,7 @@ export function EditProcedureSkeleton(): React.ReactElement {
       </div>
 
       {/* ── Stepper Bar (Sticky with full-width negative margins) ──── */}
-      <div className="sticky top-[56px] z-10 -mx-4 border-b border-[var(--color-line-2)]/60 bg-[var(--color-bg-admin)]/95 px-4 py-2.5 backdrop-blur-md transition-shadow sm:-mx-6 sm:px-6 lg:top-[75px] lg:-mx-10 lg:px-10">
+      <div className="sticky top-[56px] z-10 -mx-4 border-b border-[var(--color-line-2)]/60 bg-[var(--color-bg-admin)]/95 px-4 py-3 backdrop-blur-md transition-shadow sm:-mx-6 sm:px-6 lg:top-[75px] lg:-mx-10 lg:px-10">
         <div className="mx-auto max-w-page">
           <div className="py-2">
             <div className="flex w-full items-center justify-between">
@@ -78,12 +78,12 @@ export function EditProcedureSkeleton(): React.ReactElement {
               <Skeleton className="h-4 w-14 rounded-[var(--radius-sm)]" />
               <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-xs">
                 {/* EN Field */}
-                <div className="flex items-center justify-between border-b border-[var(--color-line-2)] px-3 py-2.5">
+                <div className="flex items-center justify-between border-b border-[var(--color-line-2)] px-3 py-3">
                   <Skeleton className="h-4 w-48 rounded-[var(--radius-sm)]" />
                   <Skeleton className="h-4 w-12 rounded-[var(--radius-sm)]" />
                 </div>
                 {/* ES Field */}
-                <div className="flex items-center justify-between bg-[var(--color-wash)] px-3 py-2.5">
+                <div className="flex items-center justify-between bg-[var(--color-wash)] px-3 py-3">
                   <Skeleton className="h-4 w-40 rounded-[var(--radius-sm)]" />
                   <Skeleton className="h-4 w-12 rounded-[var(--radius-sm)]" />
                 </div>
@@ -121,7 +121,7 @@ export function EditProcedureSkeleton(): React.ReactElement {
               <Skeleton className="size-10 rounded-[var(--radius-md)] shrink-0" />
               <div className="min-w-0 pt-1 space-y-1">
                 <Skeleton className="h-5 w-24 rounded-[var(--radius-sm)]" />
-                <Skeleton className="h-3.5 w-72 rounded-[var(--radius-sm)]" />
+                <Skeleton className="h-4 w-72 rounded-[var(--radius-sm)]" />
               </div>
             </div>
             <Skeleton className="h-6 w-20 rounded-full" />

@@ -52,15 +52,13 @@ export function ChapterTimelineItem({
   // Pick appropriate icon for status subtext based on contentType or text
   const getSubtextIcon = () => {
     if (isLocked) {
-      return (
-        <LuLock className="w-3.5 h-3.5 shrink-0 text-[var(--color-ink-3)]" />
-      );
+      return <LuLock className="w-4 h-4 shrink-0 text-[var(--color-ink-3)]" />;
     }
     if (chapter.contentType === "checklist") {
       return (
         <LuListChecks
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isComplete ? "text-[#16A34A]" : "text-[var(--color-ink-2)]"
+          className={`w-4 h-4 shrink-0 ${
+            isComplete ? "text-[var(--color-ok)]" : "text-[var(--color-ink-2)]"
           }`}
         />
       );
@@ -68,8 +66,8 @@ export function ChapterTimelineItem({
     if (chapter.contentType === "procedure") {
       return (
         <LuBookOpen
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isComplete ? "text-[#16A34A]" : "text-[var(--color-ink-2)]"
+          className={`w-4 h-4 shrink-0 ${
+            isComplete ? "text-[var(--color-ok)]" : "text-[var(--color-ink-2)]"
           }`}
         />
       );
@@ -77,8 +75,8 @@ export function ChapterTimelineItem({
     if (chapter.contentType === "quiz") {
       return (
         <LuCircleCheck
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isComplete ? "text-[#16A34A]" : "text-[var(--color-ink-2)]"
+          className={`w-4 h-4 shrink-0 ${
+            isComplete ? "text-[var(--color-ok)]" : "text-[var(--color-ink-2)]"
           }`}
         />
       );
@@ -86,8 +84,8 @@ export function ChapterTimelineItem({
     if (chapter.contentType === "video") {
       return (
         <LuVideo
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isComplete ? "text-[#16A34A]" : "text-[var(--color-ink-2)]"
+          className={`w-4 h-4 shrink-0 ${
+            isComplete ? "text-[var(--color-ok)]" : "text-[var(--color-ink-2)]"
           }`}
         />
       );
@@ -95,8 +93,8 @@ export function ChapterTimelineItem({
     if (chapter.contentType === "file") {
       return (
         <LuPaperclip
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isComplete ? "text-[#16A34A]" : "text-[var(--color-ink-2)]"
+          className={`w-4 h-4 shrink-0 ${
+            isComplete ? "text-[var(--color-ok)]" : "text-[var(--color-ink-2)]"
           }`}
         />
       );
@@ -105,8 +103,8 @@ export function ChapterTimelineItem({
     if (chapter.subtitle.toLowerCase().includes("checklist")) {
       return (
         <LuListChecks
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isComplete ? "text-[#16A34A]" : "text-[var(--color-ink-2)]"
+          className={`w-4 h-4 shrink-0 ${
+            isComplete ? "text-[var(--color-ok)]" : "text-[var(--color-ink-2)]"
           }`}
         />
       );
@@ -114,8 +112,8 @@ export function ChapterTimelineItem({
     if (chapter.subtitle.toLowerCase().includes("quiz")) {
       return (
         <LuCircleCheck
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isComplete ? "text-[#16A34A]" : "text-[var(--color-ink-2)]"
+          className={`w-4 h-4 shrink-0 ${
+            isComplete ? "text-[var(--color-ok)]" : "text-[var(--color-ink-2)]"
           }`}
         />
       );
@@ -123,14 +121,14 @@ export function ChapterTimelineItem({
     if (chapter.subtitle.toLowerCase().includes("procedure")) {
       return (
         <LuBookOpen
-          className={`w-3.5 h-3.5 shrink-0 ${
-            isComplete ? "text-[#16A34A]" : "text-[var(--color-ink-2)]"
+          className={`w-4 h-4 shrink-0 ${
+            isComplete ? "text-[var(--color-ok)]" : "text-[var(--color-ink-2)]"
           }`}
         />
       );
     }
     if (isComplete) {
-      return <LuCheck className="w-3.5 h-3.5 shrink-0 text-[#16A34A]" />;
+      return <LuCheck className="w-4 h-4 shrink-0 text-[var(--color-ok)]" />;
     }
     return null;
   };
@@ -146,7 +144,7 @@ export function ChapterTimelineItem({
             style={{
               height: "22px",
               backgroundColor: isPrevComplete
-                ? "#16A34A"
+                ? "var(--color-ok)"
                 : "var(--color-line-2)",
             }}
           />
@@ -157,7 +155,9 @@ export function ChapterTimelineItem({
           <div
             className="w-[2.5px] absolute top-[20px] bottom-0"
             style={{
-              backgroundColor: isComplete ? "#16A34A" : "var(--color-line-2)",
+              backgroundColor: isComplete
+                ? "var(--color-ok)"
+                : "var(--color-line-2)",
             }}
           />
         )}
@@ -167,7 +167,7 @@ export function ChapterTimelineItem({
           {isComplete ? (
             <div
               aria-label="Completed"
-              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-[#16A34A] text-white shadow-xs"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-[var(--color-ok)] text-white shadow-xs"
             >
               <LuCheck
                 className="text-base text-white stroke-[3]"
@@ -199,7 +199,7 @@ export function ChapterTimelineItem({
       <div className="min-w-0 flex-1 pt-1 pb-6">
         {/* Uppercase CHAPTER N line + Up next badge */}
         <div className="flex items-center gap-2">
-          <span className="font-[family-name:var(--font-ui)] text-[11px] font-bold tracking-wider uppercase text-[var(--color-ink-3)]">
+          <span className="font-[family-name:var(--font-ui)] text-xs font-bold tracking-wider uppercase text-[var(--color-ink-3)]">
             {isEs ? `CAPÍTULO ${chapter.number}` : `CHAPTER ${chapter.number}`}
           </span>
 
@@ -210,7 +210,7 @@ export function ChapterTimelineItem({
                 backgroundColor: "var(--brand-tint, #FCE8D4)",
                 color: "var(--brand-700, #A8371F)",
                 padding: "3px 10px",
-                fontSize: "11px",
+                fontSize: "var(--t-xs)",
                 lineHeight: "1.2",
               }}
             >
@@ -221,7 +221,7 @@ export function ChapterTimelineItem({
 
         {/* Chapter Title */}
         <h3
-          className={`mt-1 font-[family-name:var(--font-ui)] text-[15px] sm:text-base font-semibold leading-snug transition-colors ${
+          className={`mt-1 font-[family-name:var(--font-ui)] text-sm sm:text-base font-semibold leading-snug transition-colors ${
             isLocked
               ? "text-[var(--color-ink-2)]"
               : "text-[var(--color-ink)] group-hover:text-[var(--color-brand-700)]"
@@ -232,9 +232,9 @@ export function ChapterTimelineItem({
 
         {/* Subtext with Icon */}
         <div
-          className={`mt-1.5 flex items-center gap-1.5 text-xs font-medium ${
+          className={`mt-2 flex items-center gap-2 text-xs font-medium ${
             isComplete
-              ? "text-[#16A34A]"
+              ? "text-[var(--color-ok)]"
               : isLocked
                 ? "text-[var(--color-ink-3)]"
                 : "text-[var(--color-ink-2)]"

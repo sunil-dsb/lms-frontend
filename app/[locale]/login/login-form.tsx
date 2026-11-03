@@ -81,12 +81,12 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
       }}
     >
       {/* Decorative top accent line */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
+      <div className="h-2 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
 
       <form onSubmit={handleLogin} noValidate className="flex-1 flex flex-col">
         <CardHeader className="text-center pt-6 pb-2 px-4 sm:px-8 sm:mt-12">
           <CardTitle
-            className="font-[family-name:var(--font-display)] text-xl sm:text-[26px] tracking-tight text-[var(--color-ink)] leading-tight"
+            className="font-[family-name:var(--font-display)] text-lg sm:text-xl tracking-tight text-[var(--color-ink)] leading-tight"
             style={{ fontWeight: 500 }}
           >
             {t("heading")}
@@ -105,7 +105,7 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
           ) : null}
 
           {/* Email field */}
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label
               htmlFor="email"
               className="text-sm font-medium text-[var(--color-ink)]"
@@ -128,7 +128,7 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
           </div>
 
           {/* Password field */}
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <div className="flex items-center justify-between">
               <Label
                 htmlFor="password"
@@ -240,7 +240,7 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
 
         {/* Footer with copyright at bottom of card */}
         <CardFooter className="mt-auto px-6 sm:px-8 pb-5 pt-3 text-center shrink-0">
-          <p className="text-[11px] text-center text-[var(--color-ink-3)]/80 mx-auto">
+          <p className="text-xs text-center text-[var(--color-ink-3)]/80 mx-auto">
             &copy; {new Date().getFullYear()} Alimentaria Mexicana &bull;
             Culinary Learning &amp; SOPs
           </p>

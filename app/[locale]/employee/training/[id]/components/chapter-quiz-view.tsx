@@ -205,13 +205,13 @@ export function ChapterQuizView({
         <div className="relative min-h-screen bg-[var(--color-bg)] flex flex-col justify-between">
           <main className="mx-auto w-full max-w-doc space-y-6 px-4 pt-12 text-center sm:px-6">
             {/* Celebration icon */}
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-600 text-white shadow-lg animate-in zoom-in-90 duration-300">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--color-ok)] text-white shadow-lg animate-in zoom-in-90 duration-300">
               <LuSparkles className="text-4xl" aria-hidden="true" />
             </div>
 
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200">
-                <LuCheck className="w-3.5 h-3.5 stroke-[3]" />
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-[var(--radius-sm)] text-xs font-bold uppercase tracking-wider bg-[var(--color-ok-tint)] text-[var(--color-ok)] border border-[var(--color-ok-tint-2)]">
+                <LuCheck className="w-4 h-4 stroke-[3]" />
                 {isEs ? "Cuestionario aprobado" : "Quiz passed"}
               </span>
               <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-[var(--color-ink)] sm:text-3xl">
@@ -228,20 +228,20 @@ export function ChapterQuizView({
             <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 text-left shadow-xs max-w-lg mx-auto">
               <div className="flex items-center justify-between pb-4 border-b border-[var(--color-line-2)]">
                 <div className="flex items-center gap-2">
-                  <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-[var(--color-ok-tint)] text-[var(--color-ok)]">
                     <LuTarget className="w-4 h-4" />
                   </div>
                   <span className="text-sm font-bold text-[var(--color-ink)]">
                     {isEs ? "Resultado de la prueba" : "Score result"}
                   </span>
                 </div>
-                <span className="text-sm font-bold text-emerald-600">
+                <span className="text-sm font-bold text-[var(--color-ok)]">
                   {Math.round((score / totalQuestions) * 100)}%
                 </span>
               </div>
 
               <div className="pt-4 space-y-2">
-                <div className="flex items-center gap-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                <div className="flex items-center gap-3 text-sm font-semibold text-[var(--color-ok)]">
                   <LuCheck className="text-lg shrink-0 stroke-[3]" />
                   <span>
                     {isEs
@@ -286,7 +286,7 @@ export function ChapterQuizView({
                     );
                     router.refresh();
                   }}
-                  className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+                  className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-full bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
                 >
                   <span>
                     {isEs
@@ -303,7 +303,7 @@ export function ChapterQuizView({
                   router.push(backHref ?? effectiveBasePath);
                   router.refresh();
                 }}
-                className={`flex w-full min-h-[46px] items-center justify-center rounded-2xl px-6 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold transition-all cursor-pointer ${
+                className={`flex w-full min-h-[46px] items-center justify-center rounded-full px-6 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold transition-all cursor-pointer ${
                   nextChapterNumber
                     ? "bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]"
                     : "bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)] shadow-md"
@@ -321,12 +321,12 @@ export function ChapterQuizView({
     return (
       <div className="relative min-h-screen bg-[var(--color-bg)] flex flex-col justify-between">
         <main className="mx-auto w-full max-w-doc space-y-6 px-4 pt-12 text-center sm:px-6">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-500 text-white shadow-lg animate-in zoom-in-90 duration-300">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--color-warn)] text-white shadow-lg animate-in zoom-in-90 duration-300">
             <LuCircleAlert className="text-4xl" aria-hidden="true" />
           </div>
 
           <div className="space-y-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-[var(--radius-sm)] text-xs font-bold uppercase tracking-wider bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn-tint-2)]">
               {isEs ? "Reintentar necesario" : "Retry needed"}
             </span>
             <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-[var(--color-ink)] sm:text-3xl">
@@ -369,7 +369,7 @@ export function ChapterQuizView({
             <button
               type="button"
               onClick={handleRetryQuiz}
-              className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+              className="flex w-full min-h-[50px] items-center justify-center gap-2 rounded-full bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
             >
               <LuRotateCcw className="w-5 h-5" />
               <span>{isEs ? "Reintentar cuestionario" : "Retry quiz"}</span>
@@ -381,7 +381,7 @@ export function ChapterQuizView({
                 router.push(`${effectiveBasePath}?chapter=${chapterNumber}`);
                 router.refresh();
               }}
-              className="flex w-full min-h-[46px] items-center justify-center rounded-2xl bg-[var(--color-panel)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel-2)] transition-all cursor-pointer"
+              className="flex w-full min-h-[46px] items-center justify-center rounded-full bg-[var(--color-panel)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel-2)] transition-all cursor-pointer"
             >
               {isEs
                 ? "Repasar contenido del capítulo"
@@ -408,7 +408,7 @@ export function ChapterQuizView({
         {submissionError ? (
           <p
             role="alert"
-            className="rounded-xl bg-red-50 p-3 text-sm text-red-700"
+            className="rounded-[var(--radius-md)] border border-[var(--color-bad)]/20 bg-[var(--color-bad-tint)] p-3 text-sm text-[var(--color-bad)]"
           >
             {isEs
               ? "No se pudo guardar tu progreso. Inténtalo de nuevo."
@@ -420,7 +420,7 @@ export function ChapterQuizView({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Link
             href={`${effectiveBasePath}?chapter=${chapterNumber}`}
-            className="inline-flex min-h-tap items-center gap-1.5 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
+            className="inline-flex min-h-tap items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
           >
             <LuChevronLeft className="text-lg" aria-hidden="true" />
             <span>
@@ -432,19 +432,19 @@ export function ChapterQuizView({
 
           {/* Status pill: Admin preview vs Passed vs Passing requirement */}
           {isAdmin ? (
-            <span className="inline-flex items-center gap-2 text-xs font-semibold rounded-full bg-[var(--color-wash)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-4 py-2 shadow-2xs">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold rounded-[var(--radius-sm)] bg-[var(--color-wash)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-3 py-1 shadow-2xs">
               <LuEye className="w-4 h-4 text-[var(--color-ink-2)]" />
               <span>
                 {isEs ? "Vista previa de preguntas" : "Questions preview"}
               </span>
             </span>
           ) : isCompleted ? (
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-4 py-2 shadow-2xs">
-              <LuCheck className="w-3.5 h-3.5 stroke-[3]" />
+            <span className="inline-flex items-center gap-2 text-xs font-bold rounded-[var(--radius-sm)] bg-[var(--color-ok-tint)] text-[var(--color-ok)] border border-[var(--color-ok-tint-2)] px-3 py-1 shadow-2xs">
+              <LuCheck className="w-4 h-4 stroke-[3]" />
               <span>{isEs ? "Aprobado" : "Passed"}</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-4 py-2 shadow-2xs">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold rounded-[var(--radius-sm)] bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] px-3 py-1 shadow-2xs">
               <LuTarget className="w-4 h-4 text-[var(--color-brand-600)] shrink-0" />
               <span className="leading-none">
                 {isEs
@@ -457,16 +457,16 @@ export function ChapterQuizView({
 
         {/* Already Passed Banner */}
         {isCompleted && (
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/90 dark:border-emerald-900/60 dark:bg-emerald-950/40 p-4 text-emerald-900 dark:text-emerald-200 shadow-xs">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--color-ok-tint-2)] bg-[var(--color-ok-tint)] p-4 text-[var(--color-ok)] shadow-xs">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-ok)] text-white shadow-xs">
                 <LuCheck className="h-5 w-5 stroke-[3]" />
               </div>
               <div>
                 <div className="text-sm font-bold">
                   {isEs ? "Cuestionario completado" : "Quiz completed"}
                 </div>
-                <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80">
+                <p className="text-xs text-[var(--color-ok)]/85">
                   {isEs
                     ? "Ya has aprobado este cuestionario. Puedes repasar las preguntas; no es necesario volver a enviarlo."
                     : "You've already passed this quiz. You can review questions; no need to reattempt."}
@@ -482,14 +482,14 @@ export function ChapterQuizView({
                   );
                   router.refresh();
                 }}
-                className="hidden sm:inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                className="hidden sm:inline-flex shrink-0 items-center gap-2 rounded-full bg-[var(--color-ok)] hover:bg-[var(--color-ok-700)] text-white px-4 py-2 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 <span>
                   {isEs
                     ? `Capítulo ${chapterNumber + 1}`
                     : `Chapter ${chapterNumber + 1}`}
                 </span>
-                <LuArrowRight className="h-3.5 w-3.5" />
+                <LuArrowRight className="h-4 w-4" />
               </button>
             ) : null}
           </div>
@@ -515,12 +515,12 @@ export function ChapterQuizView({
                   key={i}
                   onClick={() => setCurrentIndex(i)}
                   aria-label={`Go to question ${i + 1}`}
-                  className={`h-1.5 flex-1 rounded-full transition-all duration-300 cursor-pointer border-0 p-0 ${
+                  className={`h-2 flex-1 rounded-full transition-all duration-300 cursor-pointer border-0 p-0 ${
                     isCurrent
                       ? "bg-[var(--color-brand-600)]"
                       : answered
                         ? "bg-[var(--color-brand-600)]/75"
-                        : "bg-[var(--color-line-2)] dark:bg-neutral-700 hover:bg-[var(--color-line-hover)]"
+                        : "bg-[var(--color-line-2)] dark:bg-[var(--color-panel-2)] hover:bg-[var(--color-line-hover)]"
                   }`}
                 />
               );
@@ -530,7 +530,7 @@ export function ChapterQuizView({
 
         {/* Question Eyebrow & Prompt */}
         <div
-          className={`space-y-2.5 ${totalQuestions > 1 ? "pt-2" : "pt-4 sm:pt-6"}`}
+          className={`space-y-3 ${totalQuestions > 1 ? "pt-2" : "pt-4 sm:pt-6"}`}
         >
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-wider text-[var(--color-brand-600)]">
@@ -540,7 +540,7 @@ export function ChapterQuizView({
             {/* If question originates from a linked procedure */}
             {((currentQuestion as { procedureTitle?: string }).procedureTitle ||
               currentQuestion.sourceProcedureTitle) && (
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--color-ink-2)] bg-[var(--color-panel-2)] px-3 py-1 rounded-full">
+              <span className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--color-ink-2)] bg-[var(--color-panel-2)] px-3 py-1 rounded-full">
                 <LuBookOpen className="text-xs shrink-0" />
                 <span className="truncate max-w-[200px]">
                   {(currentQuestion as { procedureTitle?: string })
@@ -586,7 +586,7 @@ export function ChapterQuizView({
               <label
                 key={choice.id || cIdx}
                 onClick={() => handleSelectOption(choice.id)}
-                style={{ gap: "14px", padding: "14px 18px" }}
+                style={{ gap: "12px", padding: "12px 16px" }}
                 className={`group flex items-center rounded-2xl transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer select-none ${
                   isCorrect
                     ? "border-2 border-[var(--color-ok)] bg-[var(--color-ok-tint)] text-[var(--color-ink)] shadow-xs"
@@ -656,7 +656,7 @@ export function ChapterQuizView({
             <button
               type="button"
               onClick={handlePrev}
-              className="flex min-h-[50px] items-center justify-center gap-1 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:scale-[0.99] transition-all cursor-pointer"
+              className="flex min-h-[50px] items-center justify-center gap-1 rounded-full border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:scale-[0.99] transition-all cursor-pointer"
             >
               <LuChevronLeft className="w-4 h-4" />
               <span>{isEs ? "Anterior" : "Previous"}</span>
@@ -669,7 +669,7 @@ export function ChapterQuizView({
               <button
                 type="button"
                 onClick={handleNext}
-                className="flex-1 flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md hover:bg-[var(--color-brand-700)] active:scale-[0.99] transition-all cursor-pointer"
+                className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-full bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-md hover:bg-[var(--color-brand-700)] active:scale-[0.99] transition-all cursor-pointer"
               >
                 <span>{isEs ? "Siguiente pregunta" : "Next question"}</span>
                 <LuChevronRight className="w-4 h-4" />
@@ -683,7 +683,7 @@ export function ChapterQuizView({
                   );
                   router.refresh();
                 }}
-                className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg hover:bg-[var(--color-brand-700)] active:scale-[0.99] transition-all cursor-pointer"
+                className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-full bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg hover:bg-[var(--color-brand-700)] active:scale-[0.99] transition-all cursor-pointer"
               >
                 <span>
                   {isEs
@@ -699,7 +699,7 @@ export function ChapterQuizView({
                   router.push(backHref ?? effectiveBasePath);
                   router.refresh();
                 }}
-                className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg hover:bg-[var(--color-brand-700)] active:scale-[0.99] transition-all cursor-pointer"
+                className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-full bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg hover:bg-[var(--color-brand-700)] active:scale-[0.99] transition-all cursor-pointer"
               >
                 <span>{isEs ? "Volver al curso" : "Back to course"}</span>
               </button>
@@ -709,7 +709,7 @@ export function ChapterQuizView({
               type="button"
               onClick={handleNext}
               disabled={!isCurrentAnswered && !isCompleted}
-              className={`flex-1 flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold transition-all duration-[var(--dur)] ease-[var(--ease)] ${
+              className={`flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-full px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold transition-all duration-[var(--dur)] ease-[var(--ease)] ${
                 isCurrentAnswered || isCompleted
                   ? "bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)] active:scale-[0.99] shadow-md cursor-pointer"
                   : "bg-[var(--color-panel)] text-[var(--color-ink-3)] cursor-not-allowed"
@@ -729,7 +729,7 @@ export function ChapterQuizView({
                     );
                     router.refresh();
                   }}
-                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-full bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
                 >
                   <span>
                     {isEs
@@ -745,7 +745,7 @@ export function ChapterQuizView({
                     router.push(backHref ?? effectiveBasePath);
                     router.refresh();
                   }}
-                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
+                  className="flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-full bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] cursor-pointer"
                 >
                   <span>{t("backToChapters")}</span>
                 </button>
@@ -757,7 +757,7 @@ export function ChapterQuizView({
                   onClick={handleSubmit}
                   disabled={isSubmitting}
                   title={isEs ? "Revisar respuestas" : "Review score"}
-                  className="flex min-h-[50px] items-center justify-center gap-1.5 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex min-h-[50px] items-center justify-center gap-2 rounded-full border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 text-center font-[family-name:var(--font-ui)] text-sm font-semibold text-[var(--color-ink)] hover:bg-[var(--color-panel)] active:scale-[0.99] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <LuLoader className="w-4 h-4 animate-spin" />
@@ -781,7 +781,7 @@ export function ChapterQuizView({
               type="button"
               onClick={handleSubmit}
               disabled={!isCurrentAnswered || isSubmitting}
-              className={`flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-2xl px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold transition-all duration-[var(--dur)] ease-[var(--ease)] ${
+              className={`flex-1 flex min-h-[50px] items-center justify-center gap-2 rounded-full px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold transition-all duration-[var(--dur)] ease-[var(--ease)] ${
                 isCurrentAnswered && !isSubmitting
                   ? "bg-[var(--color-brand-600)] text-white hover:bg-[var(--color-brand-700)] active:scale-[0.99] shadow-lg cursor-pointer"
                   : isSubmitting

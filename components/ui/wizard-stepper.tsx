@@ -72,7 +72,7 @@ export function WizardStepper({
               isActive || isComplete
                 ? {
                     backgroundColor: "var(--color-brand-600)",
-                    color: "#ffffff",
+                    color: "var(--color-on-fill)",
                   }
                 : isStarted
                   ? {
@@ -150,7 +150,7 @@ export function WizardStepper({
 
                 {idx < steps.length - 1 && (
                   <div
-                    className="mx-1.5 sm:mx-3 h-0.5 min-w-3 sm:min-w-8 flex-1 overflow-hidden rounded-full bg-[var(--color-line-2)]"
+                    className="mx-2 sm:mx-3 h-0.5 min-w-3 sm:min-w-8 flex-1 overflow-hidden rounded-full bg-[var(--color-line-2)]"
                     aria-hidden="true"
                   >
                     <div
@@ -169,11 +169,11 @@ export function WizardStepper({
 
         {/* On mobile screens (< 640px), show clean step indicator below the balanced row */}
         {steps[activeIdx] && (
-          <div className="mt-2.5 flex items-center justify-between px-1 text-xs sm:hidden">
+          <div className="mt-3 flex items-center justify-between px-1 text-xs sm:hidden">
             <span className="font-semibold text-[var(--color-brand-700)]">
               {activeIdx + 1} / {steps.length} · {steps[activeIdx].label}
             </span>
-            <span className="text-[11px] font-medium text-[var(--color-ink-3)]">
+            <span className="text-xs font-medium text-[var(--color-ink-3)]">
               {Math.round(steps[activeIdx].progress * 100)}%
             </span>
           </div>

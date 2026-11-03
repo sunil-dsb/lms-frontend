@@ -181,11 +181,11 @@ export function DocHead({
           <span
             style={{
               padding: "2px 8px",
-              borderRadius: "9999px",
+              borderRadius: "var(--r-sm)",
               backgroundColor: "var(--color-brand-tint)",
               color: "var(--color-brand-700)",
               border: "1px solid var(--color-brand-600)",
-              fontSize: "11px",
+              fontSize: "var(--t-xs)",
               fontWeight: 600,
               display: "inline-flex",
               alignItems: "center",

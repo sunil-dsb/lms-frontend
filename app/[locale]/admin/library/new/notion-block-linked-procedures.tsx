@@ -192,7 +192,7 @@ export function LinkedProceduresBody({
             return (
               <div
                 key={sop.id}
-                className="rounded-2xl border border-[#f4cfc6] bg-[#fbf5f3] dark:bg-[var(--color-brand-950)]/20 dark:border-[var(--color-brand-900)] p-4 sm:p-5 shadow-xs space-y-3"
+                className="rounded-2xl border border-[var(--color-brand-200)] bg-[var(--color-brand-50)] dark:bg-[var(--color-brand-950)]/20 dark:border-[var(--color-brand-900)] p-4 sm:p-5 shadow-xs space-y-3"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex items-start sm:items-center gap-3 min-w-0">
@@ -215,7 +215,7 @@ export function LinkedProceduresBody({
                       variant="surface"
                       size="sm"
                       onClick={() => setIsModalOpen(true)}
-                      className="bg-white hover:bg-neutral-50 dark:bg-[var(--color-surface)] shadow-xs text-xs font-semibold"
+                      className="bg-white hover:bg-[var(--color-panel)] dark:bg-[var(--color-surface)] shadow-xs text-xs font-semibold"
                     >
                       {isEs ? "Reemplazar" : "Replace"}
                     </Button>

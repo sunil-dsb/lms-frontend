@@ -293,13 +293,13 @@ export function ChecklistEditor({
           enLabel={t("tabs.en")}
           esLabel={t("tabs.es")}
         />
-        <ol className="space-y-1.5">
+        <ol className="space-y-2">
           {block.items.map((it, i) => (
             <li
               key={it.id}
-              className="group/item flex items-center gap-2 rounded-md border border-transparent p-1.5 transition-colors hover:border-[var(--color-line-2)] hover:bg-[var(--color-wash)]"
+              className="group/item flex items-center gap-2 rounded-md border border-transparent p-2 transition-colors hover:border-[var(--color-line-2)] hover:bg-[var(--color-wash)]"
             >
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-ok-tint)] font-mono text-[10px] font-bold text-[var(--color-ok)]">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-ok-tint)] font-mono text-xs font-bold text-[var(--color-ok)]">
                 {i + 1}
               </span>
               <input

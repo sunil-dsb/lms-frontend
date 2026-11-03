@@ -66,7 +66,7 @@ export default async function RootNotFound(): Promise<React.ReactElement> {
         <p
           style={{
             margin: 0,
-            fontSize: "13px",
+            fontSize: "var(--t-xs)",
             fontWeight: 700,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -88,7 +88,7 @@ export default async function RootNotFound(): Promise<React.ReactElement> {
         <p
           style={{
             margin: "12px 0 0",
-            fontSize: "15px",
+            fontSize: "var(--t-sm)",
             lineHeight: 1.5,
             color: "#515252",
           }}
@@ -112,7 +112,7 @@ export default async function RootNotFound(): Promise<React.ReactElement> {
               borderRadius: "999px",
               background: "#c94327",
               color: "#fff",
-              fontSize: "15px",
+              fontSize: "var(--t-sm)",
               fontWeight: 600,
               textDecoration: "none",
             }}
@@ -128,7 +128,7 @@ export default async function RootNotFound(): Promise<React.ReactElement> {
               background: "transparent",
               color: "#222222",
               border: "1px solid #e9e8e5",
-              fontSize: "15px",
+              fontSize: "var(--t-sm)",
               fontWeight: 600,
               textDecoration: "none",
             }}
