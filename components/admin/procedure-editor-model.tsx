@@ -171,10 +171,6 @@ export function useProcedureEditorModel({
   const [promoExpiresAt, setPromoExpiresAt] = React.useState<string | null>(
     initial?.promoExpiresAt ? initial.promoExpiresAt.slice(0, 10) : null,
   );
-  const [promoAudience, setPromoAudience] = React.useState<
-    "station" | "everyone"
-  >(initial?.promoAudience ?? "station");
-
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [dirty, setDirty] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -588,7 +584,6 @@ export function useProcedureEditorModel({
     protection,
     isPromo,
     promoExpiresAt,
-    promoAudience,
     setDirty,
     importedId,
     isEdit,
@@ -656,8 +651,6 @@ export function useProcedureEditorModel({
     setIsPromo,
     promoExpiresAt,
     setPromoExpiresAt,
-    promoAudience,
-    setPromoAudience,
     previewOpen,
     setPreviewOpen,
     dirty,

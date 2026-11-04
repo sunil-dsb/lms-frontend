@@ -608,16 +608,12 @@ export function PromoSection({
   onChangeIsPromo,
   promoExpiresAt,
   onChangePromoExpiresAt,
-  promoAudience,
-  onChangePromoAudience,
   locale,
 }: {
   isPromo: boolean;
   onChangeIsPromo: (val: boolean) => void;
   promoExpiresAt: string | null;
   onChangePromoExpiresAt: (val: string | null) => void;
-  promoAudience: "station" | "everyone";
-  onChangePromoAudience: (val: "station" | "everyone") => void;
   locale: string;
 }): React.ReactElement {
   const t = useTranslations("admin.library.editor");
@@ -725,37 +721,10 @@ export function PromoSection({
             </p>
           </div>
 
-          {/* Visibility mode */}
-          <div className="space-y-2 pt-1">
-            <Label className="text-xs font-semibold text-[var(--color-ink)] block">
-              {t("promoAudienceLabel")}
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => onChangePromoAudience("station")}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-4 py-2 text-xs font-semibold border transition-colors cursor-pointer",
-                  promoAudience === "station"
-                    ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border-[var(--color-brand-600)] shadow-2xs"
-                    : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)]",
-                )}
-              >
-                {t("promoAudienceStation")}
-              </button>
-              <button
-                type="button"
-                onClick={() => onChangePromoAudience("everyone")}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-4 py-2 text-xs font-semibold border transition-colors cursor-pointer",
-                  promoAudience === "everyone"
-                    ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border-[var(--color-brand-600)] shadow-2xs"
-                    : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)]",
-                )}
-              >
-                {t("promoAudienceEveryone")}
-              </button>
-            </div>
+          <div className="pt-1">
+            <p className="text-xs leading-relaxed text-[var(--color-ink-2)]">
+              {t("promoStationsHint")}
+            </p>
           </div>
         </div>
       ) : null}

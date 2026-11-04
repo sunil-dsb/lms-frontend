@@ -2,45 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { classifyVideoUrl } from "@/lib/procedure-media";
-import {
-  LuArrowDown,
-  LuArrowUp,
-  LuCamera,
-  LuChevronDown,
-  LuChevronUp,
-  LuCircleAlert,
-  LuCirclePlay,
-  LuCloudUpload,
-  LuCopy,
-  LuFocus,
-  LuGripVertical,
-  LuHeading1,
-  LuHeading2,
-  LuHeading3,
-  LuImage,
-  LuImagePlus,
-  LuLightbulb,
-  LuLink,
-  LuListChecks,
-  LuListOrdered,
-  LuPaperclip,
-  LuPlus,
-  LuRefreshCw,
-  LuRotateCcw,
-  LuTable,
-  LuTrash2,
-  LuTriangleAlert,
-  LuType,
-  LuUpload,
-  LuUtensils,
-  LuVideo,
-  LuWorkflow,
-  LuWrench,
-  LuX,
-} from "react-icons/lu";
-import { Icon } from "@/components/ui/icon";
-import type { IconType } from "react-icons";
+import { LuX } from "react-icons/lu";
 import type { ProcedureBlock } from "@/lib/types";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";

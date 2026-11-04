@@ -72,7 +72,7 @@ export function WizardStepper({
               isActive || isComplete
                 ? {
                     backgroundColor: "var(--color-brand-600)",
-                    color: "var(--color-on-fill)",
+                    color: "var(--on-fill)",
                   }
                 : isStarted
                   ? {

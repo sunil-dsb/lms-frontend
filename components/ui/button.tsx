@@ -61,7 +61,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   // work out which is which. Red is worth more as the signal on a grey button
   // than as a second fill competing with the brand.
   destructive:
-    "bg-[var(--color-panel)] text-[var(--color-bad)]! hover:bg-[var(--color-bad-fill)] hover:text-white!",
+    "bg-[var(--color-bad-tint)] text-[var(--color-bad)]! hover:bg-[var(--color-bad-fill)] hover:text-white!",
   neutral:
     "bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]",
   ghost: "bg-transparent text-[var(--color-ink)] hover:bg-[var(--color-panel)]",

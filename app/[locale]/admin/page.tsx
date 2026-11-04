@@ -111,7 +111,9 @@ export default async function AdminHomePage({
       listStations(locationId, cookieHeader),
       // The training card + stat share the admin/progress payload (with a
       // local catch so a backend blip empties the card instead of 500ing).
-      fetchTrainingProgress(cookieHeader).then((r) => r.data),
+      fetchTrainingProgress(cookieHeader, { includeAssignments: true }).then(
+        (r) => r.data,
+      ),
       // Recently updated courses: only the first page matters here.
       fetchCourses({ limit: 8, status: "published" }, cookieHeader).catch(
         () => null,

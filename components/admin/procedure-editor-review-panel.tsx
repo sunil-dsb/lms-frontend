@@ -11,7 +11,6 @@ import {
   LuFileText,
   LuImagePlus,
   LuLayoutGrid,
-  LuSignature,
   LuSparkles,
   LuUsers,
 } from "react-icons/lu";
@@ -78,8 +77,8 @@ export function ProcedureEditorReviewPanel({
     setQuiz,
     audience,
     setAudience,
-    protection,
-    setProtection,
+    isPromo,
+    promoExpiresAt,
     previewOpen,
     setPreviewOpen,
     dirty,
@@ -373,27 +372,30 @@ export function ProcedureEditorReviewPanel({
                 </div>
               </li>
 
-              {/* Protection */}
-              <li className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-wash)] p-4 sm:col-span-2">
-                <div className="flex items-center gap-2">
-                  <IconTile size="xs" icon={LuSignature} />
-                  <p className="text-sm font-semibold text-[var(--color-ink-3)]">
-                    {t("reviewProtectionLabel")}
+              {isPromo ? (
+                <li className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-wash)] p-4 sm:col-span-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <IconTile size="xs" icon={LuSparkles} />
+                    <p className="text-sm font-semibold text-[var(--color-ink-3)]">
+                      {t("promoTitle")}
+                    </p>
+                    <StatusPill tone="ok" withDot>
+                      {t("promoStatusActive")}
+                    </StatusPill>
+                  </div>
+                  {promoExpiresAt ? (
+                    <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
+                      {t("promoExpiresLabel")}:{" "}
+                      {new Intl.DateTimeFormat(locale, {
+                        dateStyle: "medium",
+                      }).format(new Date(`${promoExpiresAt}T00:00:00`))}
+                    </p>
+                  ) : null}
+                  <p className="mt-1 text-sm text-[var(--color-ink-2)]">
+                    {t("promoStationsHint")}
                   </p>
-                </div>
-                <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
-                  {t(
-                    protection === "master"
-                      ? "protectionMaster"
-                      : protection === "confidential"
-                        ? "protectionConfidential"
-                        : "protectionStandard",
-                  )}
-                </p>
-                <p className="mt-1 text-sm text-[var(--color-ink-2)]">
-                  {t("protectionHint")}
-                </p>
-              </li>
+                </li>
+              ) : null}
 
               {/* The picker card. The picker resolves the default glyph itself
                     from PROCEDURE_ICON_MAP (slug -> IconType), shows the

@@ -20,6 +20,7 @@ import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
 
 interface ChapterLearnViewProps {
   courseId: string;
+  trainingCourseId?: string;
   chapterId?: string;
   courseTitle: string;
   chapterNumber: number;
@@ -52,6 +53,7 @@ interface ChapterLearnViewProps {
  */
 export function ChapterLearnView({
   courseId,
+  trainingCourseId,
   chapterId,
   courseTitle,
   chapterNumber,
@@ -273,6 +275,7 @@ export function ChapterLearnView({
             <BlockRenderer
               blocks={blocks!}
               locale={locale === "es" ? "es" : "en"}
+              trainingCourseId={trainingCourseId ?? courseId}
             />
             {standaloneProcedure ? (
               <div className="pt-4">

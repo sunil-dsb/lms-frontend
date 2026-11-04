@@ -23,30 +23,10 @@ import { Button } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
 import { RowActions } from "@/components/ui/row-actions";
 import { LuTriangleAlert } from "react-icons/lu";
-import { classifyVideoUrl } from "@/lib/procedure-media";
 import { Icon } from "@/components/ui/icon";
-import type {
-  Localised,
-  LocalisedOptional,
-  ProcedureBlock,
-  ProcedureBlockKind,
-  ProcedureMethodStep,
-  ProcedureNoteKind,
-} from "@/lib/types";
+import type { ProcedureBlock, ProcedureBlockKind } from "@/lib/types";
 import { IconTile } from "@/components/ui/icon-tile";
-import { IngredientsBlockBody } from "./ingredients-block-body";
-import { BilingualInput } from "@/components/ui/bilingual-input";
-import { LocalisedInput } from "@/components/ui/localised-input";
-import { StepTimerEditor } from "./step-timer-editor";
 import { BlockBody } from "./notion-block-body";
-import {
-  asLoc,
-  asOpt,
-  isAllowedImageFile,
-  readFileAsDataUrl,
-  setLoc,
-  setOpt,
-} from "./notion-block-shared";
 
 interface BlockMenuProps {
   block: ProcedureBlock;
@@ -284,6 +264,7 @@ function BlockDeleteButton({
               style={{
                 top: pos?.top ?? -9999,
                 right: pos?.right ?? 0,
+                zIndex: 9999,
                 ["--pop-origin" as string]: pos?.origin ?? "top right",
               }}
               className="pop-in fixed z-dropdown w-[340px] max-w-[calc(100vw-32px)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 shadow-[var(--e-3)] text-left"
@@ -553,7 +534,7 @@ export function InsertAfterButton({
         className={cn(
           "flex size-8 items-center justify-center rounded-md transition-all",
           ghost
-            ? "text-[var(--color-ink-3)] opacity-30 hover:opacity-100 hover:bg-[var(--color-wash)] hover:text-[var(--color-ink-2)]"
+            ? "text-[var(--color-ink-3)] opacity-100 [@media(hover:hover)]:opacity-30 [@media(hover:hover)]:hover:opacity-100 hover:bg-[var(--color-wash)] hover:text-[var(--color-ink-2)]"
             : "bg-[var(--color-surface)] text-[var(--color-ink-2)] ring-1 ring-[var(--color-line-2)] shadow-e1 hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] hover:ring-[var(--color-line-3)]",
         )}
       >
@@ -597,7 +578,7 @@ export function InsertAfterButton({
                 label: "Link procedure",
                 icon: "ri-links-line",
               },
-            ] as { kind: ProcedureBlockKind; label: string; icon: string }[]
+            ] as const
           )
             .filter(
               (opt) => opt.kind !== "linked_procedures" || allowLinkProcedure,
@@ -624,9 +605,3 @@ export function InsertAfterButton({
     </>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Per-kind bodies. Each one renders the block in its actual shape — a table
-// block shows a table, a steps block shows numbered rows, an image block
-// shows a drop zone. No chrome, no badges, no per-block header.
-// ---------------------------------------------------------------------------

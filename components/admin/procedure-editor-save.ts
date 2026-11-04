@@ -56,7 +56,6 @@ interface ProcedureSaveDependencies {
   protection: ProcedureProtection;
   isPromo: boolean;
   promoExpiresAt: string | null;
-  promoAudience: "station" | "everyone";
   setDirty: Dispatch<SetStateAction<boolean>>;
   importedId: string | null;
   isEdit: boolean;
@@ -98,7 +97,6 @@ export function createProcedureSaveHandler(
     protection,
     isPromo,
     promoExpiresAt,
-    promoAudience,
     setDirty,
     importedId,
     isEdit,
@@ -262,7 +260,7 @@ export function createProcedureSaveHandler(
                 ? promoExpiresAt
                 : new Date(`${promoExpiresAt}T23:59:59.999Z`).toISOString()
               : null,
-          promoAudience,
+          promoAudience: "station",
         };
         let publishedNow = false;
         if (initial) {

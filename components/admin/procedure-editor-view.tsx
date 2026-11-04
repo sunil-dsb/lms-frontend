@@ -166,8 +166,6 @@ export function ProcedureEditorView({
     setIsPromo,
     promoExpiresAt,
     setPromoExpiresAt,
-    promoAudience,
-    setPromoAudience,
     nameOf,
     titleValue,
     purposeValue,
@@ -265,7 +263,7 @@ export function ProcedureEditorView({
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-page mt-4 space-y-4 pb-28 sm:pb-24">
+      <div className="mx-auto max-w-page mt-4 space-y-4 pb-20 sm:pb-16">
         <ProcedureEditorImportPanel model={model} />
 
         {/* ── Step 1 form — only rendered once a method is chosen ─────── */}
@@ -483,8 +481,6 @@ export function ProcedureEditorView({
                 onChangeIsPromo={edit(setIsPromo)}
                 promoExpiresAt={promoExpiresAt}
                 onChangePromoExpiresAt={edit(setPromoExpiresAt)}
-                promoAudience={promoAudience}
-                onChangePromoAudience={edit(setPromoAudience)}
                 locale={locale}
               />
             ) : null}

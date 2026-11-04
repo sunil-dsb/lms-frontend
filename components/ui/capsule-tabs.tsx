@@ -17,6 +17,7 @@ interface CapsuleTabsProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  compact?: boolean;
 }
 
 /**
@@ -33,6 +34,7 @@ export function CapsuleTabs({
   value,
   onChange,
   className,
+  compact = false,
 }: CapsuleTabsProps): React.ReactElement {
   return (
     <div
@@ -55,6 +57,7 @@ export function CapsuleTabs({
             onClick={() => onChange(tab.value)}
             className={cn(
               "inline-flex cursor-pointer items-center justify-center rounded-full font-semibold",
+              "whitespace-nowrap",
               "transition-all duration-[var(--dur)] ease-[var(--ease)]",
               "text-xs sm:text-sm",
               active
@@ -62,8 +65,8 @@ export function CapsuleTabs({
                 : "bg-transparent text-[var(--color-ink)] hover:text-[var(--color-brand-600)]",
             )}
             style={{
-              paddingLeft: "16px",
-              paddingRight: "16px",
+              paddingLeft: compact ? "8px" : "16px",
+              paddingRight: compact ? "8px" : "16px",
               paddingTop: "6px",
               paddingBottom: "6px",
               minHeight: "32px",
