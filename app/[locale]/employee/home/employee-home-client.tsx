@@ -427,6 +427,7 @@ function HomeContent({
           promo={{
             heading: t("promoHeading"),
             rows: promoRows,
+            empty: t("promoEmpty"),
           }}
           assigned={
             assignedRows.length > 0

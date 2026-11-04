@@ -202,7 +202,7 @@ export function ProcedureArticleBody({
         }
         title={title || "Untitled Procedure"}
         withCover={Boolean(cover)}
-        isPromo={isAdmin && Boolean(proc.isPromo)}
+        isPromo={Boolean(proc.isPromo)}
         isEs={isEs}
       />
 

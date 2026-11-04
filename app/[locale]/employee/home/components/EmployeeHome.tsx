@@ -95,7 +95,7 @@ export function EmployeeHome({
   roleName?: string | null;
   stationName?: string | null;
   training: TrainingSummary | null;
-  promo: { heading: string; rows: HomeRow[] };
+  promo: { heading: string; rows: HomeRow[]; empty: string };
   /** Procedures directly assigned to this person (assignUsers). Rendered
    *  above the station section; null when none. */
   assigned?: { heading: string; rows: HomeRow[] } | null;
@@ -156,6 +156,7 @@ export function EmployeeHome({
           ) : null}
           <LockedProceduresPreview
             promo={promo}
+            assigned={assigned}
             station={station}
             loading={loading}
             lockedHref={`/${locale}/employee/training`}
@@ -173,6 +174,7 @@ export function EmployeeHome({
               lockedHref: undefined,
               lockedReason: undefined,
             }))}
+            empty={promo.empty}
             flagLabels={flagLabels}
             loading={loading}
           />
