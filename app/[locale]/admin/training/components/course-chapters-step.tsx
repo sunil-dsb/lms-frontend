@@ -162,7 +162,7 @@ export function CourseChaptersStep({
         {isEditingDetails ? (
           <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 sm:p-6 shadow-xs space-y-5 animate-in fade-in duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--color-line-2)]">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <div className="flex size-8 items-center justify-center rounded-lg bg-[var(--color-brand-600)]/10 text-[var(--color-brand-600)]">
                   <LuFileText className="size-4" />
                 </div>
@@ -207,7 +207,7 @@ export function CourseChaptersStep({
             />
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--color-line-2)]">
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--color-line-2)]">
               <Button
                 type="button"
                 variant="ghost"
@@ -228,7 +228,7 @@ export function CourseChaptersStep({
                 }
                 className={
                   saveSuccess
-                    ? "!bg-emerald-600 !text-white !border-emerald-600 hover:!bg-emerald-600 shadow-sm transition-all duration-200 !opacity-100 font-semibold"
+                    ? "!bg-[var(--color-ok)] !text-white !border-[var(--color-ok)] hover:!bg-[var(--color-ok-700)] shadow-sm transition-all duration-200 !opacity-100 font-semibold"
                     : isSaving
                       ? "!opacity-90 font-medium"
                       : ""
@@ -249,19 +249,19 @@ export function CourseChaptersStep({
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="flex flex-wrap items-center gap-3.5">
+                  <div className="flex flex-wrap items-center gap-4">
                     <h1 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold leading-snug sm:leading-display tracking-tight text-[var(--color-ink)]">
                       {courseName ||
                         (isEs ? "Curso sin título" : "Untitled Course")}
                     </h1>
                     {isDirty && (
-                      <span className="inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 shrink-0 shadow-xs">
-                        <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-[var(--radius-sm)] text-xs font-semibold bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn-tint-2)] shrink-0 shadow-xs">
+                        <span className="size-2 rounded-full bg-[var(--color-warn)] animate-pulse" />
                         {isEs ? "Cambios sin guardar" : "Unsaved changes"}
                       </span>
                     )}
                   </div>
-                  <p className="mt-1.5 text-sm sm:text-base leading-body text-[var(--color-ink-2)] max-w-prose">
+                  <p className="mt-2 text-sm sm:text-base leading-body text-[var(--color-ink-2)] max-w-prose">
                     {coursePurposeText ||
                       (isEs ? "Sin propósito asignado" : "No purpose provided")}
                   </p>
@@ -310,7 +310,7 @@ export function CourseChaptersStep({
                   }
                   className={
                     saveSuccess
-                      ? "!bg-emerald-600 !text-white !border-emerald-600 hover:!bg-emerald-600 shadow-sm transition-all duration-200 !opacity-100 font-semibold"
+                      ? "!bg-[var(--color-ok)] !text-white !border-[var(--color-ok)] hover:!bg-[var(--color-ok-700)] shadow-sm transition-all duration-200 !opacity-100 font-semibold"
                       : isSaving
                         ? "!opacity-90 font-medium"
                         : ""

@@ -53,7 +53,7 @@ export function StepTimerEditor({
   };
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)]/70 p-2.5 sm:p-3 text-xs">
+    <div className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)]/70 p-3 sm:p-3 text-xs">
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <LuClock
@@ -69,9 +69,9 @@ export function StepTimerEditor({
                 onChange({ ...timer, label: event.target.value })
               }
               placeholder="Label (optional), e.g. Simmer sauce"
-              className="h-8 sm:h-9 w-full rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-surface)] pl-2.5 pr-12 text-xs font-medium text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)]/60 focus:border-[var(--color-ink)] focus:outline-none"
+              className="h-8 sm:h-9 w-full rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-surface)] pl-3 pr-12 text-xs font-medium text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)]/60 focus:border-[var(--color-ink)] focus:outline-none"
             />
-            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 font-mono text-[10px] text-[var(--color-ink-3)] pointer-events-none select-none">
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-[var(--color-ink-3)] pointer-events-none select-none">
               {(timer.label ?? "").length}/50
             </span>
           </div>
@@ -86,15 +86,15 @@ export function StepTimerEditor({
           </button>
         </div>
 
-        <div className="flex items-center justify-between sm:justify-start gap-1.5 shrink-0 pl-6 sm:pl-0">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0 pl-6 sm:pl-0">
+          <div className="flex items-center gap-2">
             <input
               type="number"
               min={1}
               step={1}
               value={value}
               onChange={(event) => setValue(event.target.value)}
-              className="h-8 sm:h-9 w-[56px] sm:w-[64px] min-w-[56px] rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-1.5 text-center text-xs font-mono font-bold text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+              className="h-8 sm:h-9 w-[56px] sm:w-[64px] min-w-[56px] rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-2 text-center text-xs font-mono font-bold text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
             />
             <div className="inline-flex h-8 sm:h-9 items-stretch rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-0.5 shadow-2xs">
               {(["sec", "min", "hrs"] as const).map((nextUnit) => {
@@ -117,7 +117,7 @@ export function StepTimerEditor({
                               : 1),
                       });
                     }}
-                    className={`w-9 sm:w-11 flex items-center justify-center rounded-[var(--radius-xs)] text-xs font-semibold transition-all cursor-pointer ${selected ? "bg-[var(--color-ink)] text-[var(--color-surface)] shadow-2xs" : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)] hover:bg-[var(--color-wash)]"}`}
+                    className={`w-9 sm:w-11 flex items-center justify-center rounded-[var(--radius-sm)] text-xs font-semibold transition-all cursor-pointer ${selected ? "bg-[var(--color-ink)] text-[var(--color-surface)] shadow-2xs" : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)] hover:bg-[var(--color-wash)]"}`}
                   >
                     {nextUnit}
                   </button>
@@ -139,7 +139,7 @@ export function StepTimerEditor({
       </div>
 
       {timer.seconds > 14400 ? (
-        <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-bad)]">
+        <div className="flex items-center gap-2 text-xs font-medium text-[var(--color-bad)]">
           <LuTriangleAlert
             className="size-4 shrink-0 text-current"
             strokeWidth={1.75}
@@ -148,11 +148,11 @@ export function StepTimerEditor({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[var(--color-line-2)]/60">
+      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[var(--color-line-2)]/60">
         <span className="text-xs font-semibold text-[var(--color-ink-3)] mr-1 shrink-0">
           Presets:
         </span>
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
           {TIMER_PRESETS.map((preset) => {
             const selected =
               unit === preset.unit && timer.seconds === preset.seconds;

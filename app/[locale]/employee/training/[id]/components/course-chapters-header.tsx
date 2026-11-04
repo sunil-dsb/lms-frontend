@@ -71,7 +71,7 @@ export function CourseChaptersHeader({
       </div>
 
       {/* Course Title & Purpose */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--color-ink)]">
           {title}
         </h1>
@@ -94,14 +94,14 @@ export function CourseChaptersHeader({
               paddingRight: "12px",
               paddingTop: "5px",
               paddingBottom: "5px",
-              fontSize: "12px",
+              fontSize: "var(--t-xs)",
               lineHeight: "1.2",
               fontWeight: "500",
               gap: "6px",
             }}
           >
             <LuClock
-              className="w-3.5 h-3.5 text-[var(--color-ink-2)] shrink-0"
+              className="w-4 h-4 text-[var(--color-ink-2)] shrink-0"
               aria-hidden="true"
             />
             <span>{timeLeftText}</span>

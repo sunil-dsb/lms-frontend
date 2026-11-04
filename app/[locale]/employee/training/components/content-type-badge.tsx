@@ -62,14 +62,14 @@ export function ContentTypeBadge({
         paddingRight: "12px",
         paddingTop: "5px",
         paddingBottom: "5px",
-        fontSize: "12px",
+        fontSize: "var(--t-xs)",
         lineHeight: "1.2",
         fontWeight: "500",
         gap: "6px",
       }}
     >
       <IconComp
-        className="w-3.5 h-3.5 text-[var(--color-ink-2)] shrink-0"
+        className="w-4 h-4 text-[var(--color-ink-2)] shrink-0"
         aria-hidden="true"
       />
       <span>{label}</span>
@@ -91,9 +91,7 @@ export function ContentTypesList({
   if (!types || types.length === 0) return null;
 
   return (
-    <div
-      className={`flex flex-wrap items-center gap-2 sm:gap-2.5 ${className}`}
-    >
+    <div className={`flex flex-wrap items-center gap-2 sm:gap-3 ${className}`}>
       {types.map((t) => (
         <ContentTypeBadge key={t} type={t} locale={locale} />
       ))}

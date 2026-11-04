@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ApiException, fetchMe } from "@/lib/api";
 import { readViewAs } from "@/lib/view-as-server";
 import { ProcedureViewClient } from "./procedure-view-client";
+import { fetchMyTraining } from "@/services/courses/api";
 
 interface PageProps {
   params: Promise<{ locale: string; id: string }>;
@@ -54,6 +55,16 @@ export default async function ProcedurePage({
   // the value as the x-lms-view-as request header. See lib/view-as.
   const viewAs = await readViewAs();
   const effectiveRole = viewAs ?? "employee";
+
+  if (effectiveRole === "employee") {
+    const training = await fetchMyTraining(cookieHeader).catch(() => null);
+    if (
+      training?.requiredTraining.requiredCount &&
+      !training.requiredTraining.isComplete
+    ) {
+      redirect(`/${locale}/employee/training`);
+    }
+  }
 
   // The procedure itself is NOT fetched here: ProcedureViewClient
   // paints instantly from the on-device cache (the procedures list

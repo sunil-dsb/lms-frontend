@@ -71,10 +71,10 @@ export function ForgotPasswordForm({
       }}
     >
       {/* Decorative top accent line */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
+      <div className="h-2 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
 
-      <CardHeader className="text-center pt-6 pb-1 px-4 sm:px-7 sm:mt-12 shrink-0">
-        <div className="p-3 mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-brand-tint)]/60 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-brand-700)] border border-[var(--color-brand)]/20">
+      <CardHeader className="text-center pt-6 pb-1 px-4 sm:px-8 sm:mt-12 shrink-0">
+        <div className="p-3 mx-auto mb-2 inline-flex items-center gap-2 rounded-full bg-[var(--color-brand-tint)]/60 px-3 py-0.5 text-xs font-semibold text-[var(--color-brand-700)] border border-[var(--color-brand)]/20">
           <LuKeyRound className="text-xs" />
           <span>{t("badge")}</span>
         </div>
@@ -92,7 +92,7 @@ export function ForgotPasswordForm({
         noValidate
         className="flex-1 flex flex-col justify-between"
       >
-        <CardContent className="grid gap-3.5 px-6 sm:px-7 pb-2">
+        <CardContent className="grid gap-4 px-6 sm:px-8 pb-2">
           {error ? (
             <div
               role="alert"
@@ -103,7 +103,7 @@ export function ForgotPasswordForm({
             </div>
           ) : null}
 
-          <div className="grid mt-6 gap-1.5">
+          <div className="grid mt-6 gap-2">
             <Label
               htmlFor="forgot-email"
               className="text-xs sm:text-sm font-semibold text-[var(--color-ink)]"
@@ -125,7 +125,7 @@ export function ForgotPasswordForm({
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-3 px-6 sm:px-7 pb-6 sm:pb-8 shrink-0">
+        <CardFooter className="flex flex-col gap-3 px-6 sm:px-8 pb-6 sm:pb-8 shrink-0">
           <Button
             type="submit"
             className="w-full h-12 rounded-full font-semibold text-sm sm:text-base bg-[var(--color-brand-600)] hover:bg-[var(--color-brand-700)] text-white shadow-md shadow-[var(--color-brand-600)]/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -143,13 +143,13 @@ export function ForgotPasswordForm({
 
           <Link
             href={`/${locale}/login`}
-            className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors py-1 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors py-1 cursor-pointer"
           >
             <LuArrowLeft className="text-sm" />
             <span>{t("backToLogin")}</span>
           </Link>
 
-          <p className="text-[11px] text-center text-[var(--color-ink-3)]/80 pt-1">
+          <p className="text-xs text-center text-[var(--color-ink-3)]/80 pt-1">
             &copy; {new Date().getFullYear()} Alimentaria Mexicana &bull;
             Culinary Learning &amp; SOPs
           </p>

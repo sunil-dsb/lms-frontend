@@ -48,7 +48,11 @@ export function useProcedureEditorDerivedData(
     (item) => item.id === subcategoryId,
   );
   const isRecipe = Boolean(
-    category && /recipe/i.test(`${category.slug} ${category.nameEn}`),
+    category &&
+    ((category as any).categoryType === "recipe" ||
+      /recipe|receta/i.test(
+        `${category.slug ?? ""} ${category.nameEn ?? ""} ${category.nameEs ?? ""}`,
+      )),
   );
   const nameOf = (item: { nameEn: string; nameEs?: string }): string =>
     isEs ? item.nameEs || item.nameEn : item.nameEn;

@@ -20,6 +20,7 @@ import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
 
 interface ChapterLearnViewProps {
   courseId: string;
+  trainingCourseId?: string;
   chapterId?: string;
   courseTitle: string;
   chapterNumber: number;
@@ -52,6 +53,7 @@ interface ChapterLearnViewProps {
  */
 export function ChapterLearnView({
   courseId,
+  trainingCourseId,
   chapterId,
   courseTitle,
   chapterNumber,
@@ -207,7 +209,7 @@ export function ChapterLearnView({
         <div>
           <Link
             href={backHref ?? effectiveBasePath}
-            className="inline-flex min-h-tap items-center gap-1.5 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
+            className="inline-flex min-h-tap items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
           >
             <LuChevronLeft className="text-lg" aria-hidden="true" />
             <span>
@@ -229,14 +231,14 @@ export function ChapterLearnView({
           aria-valuemax={hasQuiz ? 2 : 1}
           className="flex items-center gap-2 pt-1"
         >
-          <div className="h-1.5 flex-1 rounded-full bg-[var(--color-brand-600)]" />
+          <div className="h-2 flex-1 rounded-full bg-[var(--color-brand-600)]" />
           {hasQuiz && (
-            <div className="h-1.5 flex-1 rounded-full bg-[var(--color-panel-2)]" />
+            <div className="h-2 flex-1 rounded-full bg-[var(--color-panel-2)]" />
           )}
         </div>
 
         {/* Chapter Eyebrow, Title & Subtitle */}
-        <div className="space-y-1.5 pt-1 pb-2">
+        <div className="space-y-2 pt-1 pb-2">
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-brand-700)]">
             {t("eyebrowLearn")}
           </p>
@@ -273,6 +275,7 @@ export function ChapterLearnView({
             <BlockRenderer
               blocks={blocks!}
               locale={locale === "es" ? "es" : "en"}
+              trainingCourseId={trainingCourseId ?? courseId}
             />
             {standaloneProcedure ? (
               <div className="pt-4">

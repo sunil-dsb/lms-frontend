@@ -75,7 +75,7 @@ function ChipWidths(): React.ReactElement {
                 <Skeleton className="h-5 w-16 rounded-full bg-[var(--color-panel)]" />
               </div>
               {/* Purpose */}
-              <Skeleton className="h-3.5 w-2/3 bg-[var(--color-panel)]" />
+              <Skeleton className="h-4 w-2/3 bg-[var(--color-panel)]" />
               {/* Meta line */}
               <Skeleton className="h-3 w-1/2 bg-[var(--color-panel)]" />
             </div>

@@ -206,7 +206,7 @@ export function IngredientsBlockBody({
                       key={i}
                       className="hover:bg-[var(--color-wash)]/30 transition-colors"
                     >
-                      <td className="p-1.5">
+                      <td className="p-2">
                         <Input
                           value={row.name}
                           maxLength={100}
@@ -217,7 +217,7 @@ export function IngredientsBlockBody({
                           className="h-8 text-xs font-medium"
                         />
                       </td>
-                      <td className="p-1.5">
+                      <td className="p-2">
                         <Input
                           value={displayAmount}
                           maxLength={50}
@@ -229,7 +229,7 @@ export function IngredientsBlockBody({
                           className="h-8 text-xs"
                         />
                       </td>
-                      <td className="p-1.5 text-center align-middle">
+                      <td className="p-2 text-center align-middle">
                         <input
                           type="checkbox"
                           checked={Boolean(row.allergen)}
@@ -240,7 +240,7 @@ export function IngredientsBlockBody({
                           title="Contains allergen"
                         />
                       </td>
-                      <td className="p-1.5 text-center align-middle">
+                      <td className="p-2 text-center align-middle">
                         <button
                           type="button"
                           onClick={() => removeIngredient(i)}

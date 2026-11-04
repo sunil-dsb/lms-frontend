@@ -15,13 +15,15 @@ import type { HomeRow } from "./EmployeeHome";
  */
 export function LockedProceduresPreview({
   promo,
+  assigned,
   station,
   lockedHref,
   lockedReason,
   flagLabels,
   loading = false,
 }: {
-  promo: { heading: string; rows: HomeRow[] };
+  promo: { heading: string; rows: HomeRow[]; empty: string };
+  assigned?: { heading: string; rows: HomeRow[] } | null;
   station: {
     heading: string;
     rows: HomeRow[];
@@ -37,8 +39,10 @@ export function LockedProceduresPreview({
     id: string,
     heading: string,
     rows: HomeRow[],
+    empty?: string,
+    showWhenEmpty = false,
   ): React.ReactElement | null => {
-    if (rows.length === 0 && !loading) return null;
+    if (rows.length === 0 && !loading && !showWhenEmpty) return null;
     return (
       <section aria-labelledby={id} style={{ marginTop: "20px" }}>
         <div
@@ -48,7 +52,7 @@ export function LockedProceduresPreview({
           <SectionHead id={id} title={heading} />
           {loading ? (
             <HomeRowsSkeleton />
-          ) : (
+          ) : rows.length > 0 ? (
             <ul
               style={{
                 marginTop: "10px",
@@ -77,6 +81,10 @@ export function LockedProceduresPreview({
                 </li>
               ))}
             </ul>
+          ) : (
+            <p className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-wash)] px-3 py-3 text-sm text-[var(--color-ink-2)]">
+              {empty}
+            </p>
           )}
         </div>
       </section>
@@ -85,7 +93,16 @@ export function LockedProceduresPreview({
 
   return (
     <>
-      {renderLockedList("promo-h-locked", promo.heading, promo.rows)}
+      {renderLockedList(
+        "promo-h-locked",
+        promo.heading,
+        promo.rows,
+        promo.empty,
+        true,
+      )}
+      {assigned
+        ? renderLockedList("assigned-h-locked", assigned.heading, assigned.rows)
+        : null}
       {renderLockedList("station-h-locked", station.heading, station.rows)}
     </>
   );

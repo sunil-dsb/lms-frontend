@@ -104,18 +104,14 @@ export function CourseEditor({
   // Sync initialCourse into bilingual states when reloaded
   React.useEffect(() => {
     if (initialCourse) {
-      if (initialCourse.titleEn || initialCourse.titleEs) {
-        setCourseTitle({
-          en: initialCourse.titleEn || initialCourse.titleEs || "",
-          es: initialCourse.titleEs || initialCourse.titleEn || "",
-        });
-      }
-      if (initialCourse.purposeEn || initialCourse.purposeEs) {
-        setCoursePurpose({
-          en: initialCourse.purposeEn || initialCourse.purposeEs || "",
-          es: initialCourse.purposeEs || initialCourse.purposeEn || "",
-        });
-      }
+      setCourseTitle({
+        en: initialCourse.titleEn || initialCourse.titleEs || "",
+        es: initialCourse.titleEs || initialCourse.titleEn || "",
+      });
+      setCoursePurpose({
+        en: initialCourse.purposeEn || initialCourse.purposeEs || "",
+        es: initialCourse.purposeEs || initialCourse.purposeEn || "",
+      });
     }
   }, [
     initialCourse?.titleEn,
@@ -169,9 +165,7 @@ export function CourseEditor({
     );
     if (missingIds.length === 0) return;
 
-    for (const id of missingIds) {
-      fetchedIdsRef.current.add(id);
-    }
+    missingIds.forEach((id) => fetchedIdsRef.current.add(id));
 
     let isMounted = true;
     for (const id of missingIds) {

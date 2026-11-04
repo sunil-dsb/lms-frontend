@@ -54,10 +54,10 @@ export function HomeViewToggle({
         style={{
           display: "inline-flex",
           alignItems: "center",
-          gap: "5px",
-          padding: "5px 10px",
+          gap: "var(--s-1)",
+          padding: "4px 8px",
           borderRadius: "9999px",
-          fontSize: "12px",
+          fontSize: "var(--t-xs)",
           fontWeight: 600,
           lineHeight: "1",
           cursor: "pointer",
@@ -68,7 +68,7 @@ export function HomeViewToggle({
         }}
         title="Show onboarding pending scenario (locked UI)"
       >
-        <LuLock style={{ fontSize: "13px" }} />
+        <LuLock className="w-3.5 h-3.5" />
         <span>Pending</span>
       </button>
 
@@ -78,21 +78,21 @@ export function HomeViewToggle({
         style={{
           display: "inline-flex",
           alignItems: "center",
-          gap: "5px",
-          padding: "5px 10px",
+          gap: "var(--s-1)",
+          padding: "4px 8px",
           borderRadius: "9999px",
-          fontSize: "12px",
+          fontSize: "var(--t-xs)",
           fontWeight: 600,
           lineHeight: "1",
           cursor: "pointer",
           border: "none",
-          backgroundColor: !isOnboarding ? "#16a34a" : "transparent",
-          color: !isOnboarding ? "#ffffff" : "var(--color-ink-2)",
+          backgroundColor: !isOnboarding ? "var(--color-ok)" : "transparent",
+          color: !isOnboarding ? "var(--color-on-fill)" : "var(--color-ink-2)",
           transition: "all 0.15s ease",
         }}
         title="Show completed onboarding scenario (unlocked UI)"
       >
-        <LuCircleCheck style={{ fontSize: "13px" }} />
+        <LuCircleCheck className="w-3.5 h-3.5" />
         <span>Completed</span>
       </button>
     </div>

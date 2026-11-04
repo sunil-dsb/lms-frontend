@@ -226,14 +226,14 @@ export function SubcategoryDetailClient({
         >
           {isEs ? "Categorías" : "Categories"}
         </Link>
-        <LuChevronRight className="text-[10px] text-[var(--color-ink-3)]" />
+        <LuChevronRight className="text-xs text-[var(--color-ink-3)]" />
         <Link
           href={`/${locale}/admin/library/categories/${category.slug}`}
           className="hover:text-[var(--color-ink)] transition-colors"
         >
           {catName}
         </Link>
-        <LuChevronRight className="text-[10px] text-[var(--color-ink-3)]" />
+        <LuChevronRight className="text-xs text-[var(--color-ink-3)]" />
         <span className="text-[var(--color-ink)] font-semibold">{subName}</span>
       </nav>
 

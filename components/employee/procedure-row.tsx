@@ -254,7 +254,7 @@ export function ProcedureRow({
     <Link
       href={href}
       className="group flex items-center gap-3 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] transition-all duration-200 hover:border-[var(--color-line-2)] hover:shadow-xs active:scale-[0.995]"
-      style={{ paddingRight: "12px" }}
+      style={{ paddingLeft: "12px", paddingRight: "12px" }}
     >
       {body}
     </Link>

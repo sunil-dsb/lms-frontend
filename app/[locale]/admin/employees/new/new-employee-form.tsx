@@ -31,22 +31,18 @@ import {
   EmployeeAdditionalSection,
   EmployeeDetailsSection,
 } from "./employee-form-sections";
+import {
+  type FieldErrors,
+  type FormState,
+  validateEmployeeForm,
+} from "./employee-form-validation";
+
+export type { FieldErrors, FormState };
 
 interface NewEmployeeFormProps {
   locale: string;
   locations: Location[];
   roles: Role[];
-}
-
-export interface FormState {
-  name: string;
-  email: string;
-  locationId: string;
-  accessLevel: AccessLevel | "";
-  roleIds: string[];
-  stationIds: string[];
-  employeeCode: string;
-  languagePref: LanguagePref;
 }
 
 const initialState = (defaultLocationId: string): FormState => ({
@@ -59,19 +55,6 @@ const initialState = (defaultLocationId: string): FormState => ({
   employeeCode: "",
   languagePref: "en",
 });
-
-export interface FieldErrors {
-  name?: string;
-  email?: string;
-  locationId?: string;
-  accessLevel?: string;
-  roleIds?: string;
-  employeeCode?: string;
-}
-
-const MAX_NAME_LENGTH = 50;
-const MIN_NAME_LENGTH = 2;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function NewEmployeeForm({
   locale,
@@ -356,70 +339,15 @@ export function NewEmployeeForm({
     setFieldErrors({});
   }
 
-  function validate(): {
-    isValid: boolean;
-    errors: FieldErrors;
-    firstError: string | null;
-  } {
-    const errs: FieldErrors = {};
-    let firstErr: string | null = null;
-
-    const trimmedName = form.name.trim();
-    if (!trimmedName) {
-      errs.name = t("errorNeedName");
-      firstErr = firstErr ?? errs.name;
-    } else if (
-      trimmedName.length < MIN_NAME_LENGTH ||
-      trimmedName.length > MAX_NAME_LENGTH
-    ) {
-      errs.name =
-        t("errorNameLength") ||
-        `Employee name must be between ${MIN_NAME_LENGTH} and ${MAX_NAME_LENGTH} characters.`;
-      firstErr = firstErr ?? errs.name;
-    }
-
-    const trimmedEmail = form.email.trim();
-    if (!trimmedEmail) {
-      errs.email = t("errorNeedEmail");
-      firstErr = firstErr ?? errs.email;
-    } else if (!EMAIL_REGEX.test(trimmedEmail)) {
-      errs.email = t("errorInvalidEmail");
-      firstErr = firstErr ?? errs.email;
-    }
-
-    if (!form.locationId) {
-      errs.locationId = t("errorNeedLocation");
-      firstErr = firstErr ?? errs.locationId;
-    }
-
-    if (!form.accessLevel) {
-      errs.accessLevel = t("errorNeedAccessLevel");
-      firstErr = firstErr ?? errs.accessLevel;
-    }
-
-    if (form.roleIds.length === 0) {
-      errs.roleIds = t("errorNeedJobRole");
-      firstErr = firstErr ?? errs.roleIds;
-    }
-
-    const trimmedCode = form.employeeCode.trim();
-    if (trimmedCode && trimmedCode.length !== 6) {
-      errs.employeeCode = t("errorNeedCode");
-      firstErr = firstErr ?? errs.employeeCode;
-    }
-
-    return {
-      isValid: Object.keys(errs).length === 0,
-      errors: errs,
-      firstError: firstErr,
-    };
-  }
-
   function onSubmit(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     setError(null);
 
-    const { isValid, errors: validationErrors, firstError } = validate();
+    const {
+      isValid,
+      errors: validationErrors,
+      firstError,
+    } = validateEmployeeForm(form, t);
     if (!isValid) {
       setFieldErrors(validationErrors);
       if (firstError) {
@@ -545,7 +473,7 @@ export function NewEmployeeForm({
     );
   }
 
-  const field = "flex flex-col gap-1.5";
+  const field = "flex flex-col gap-2";
 
   return (
     <div className="mx-auto max-w-[760px] w-full space-y-6">

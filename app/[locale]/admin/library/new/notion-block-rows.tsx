@@ -23,30 +23,10 @@ import { Button } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
 import { RowActions } from "@/components/ui/row-actions";
 import { LuTriangleAlert } from "react-icons/lu";
-import { classifyVideoUrl } from "@/lib/procedure-media";
 import { Icon } from "@/components/ui/icon";
-import type {
-  Localised,
-  LocalisedOptional,
-  ProcedureBlock,
-  ProcedureBlockKind,
-  ProcedureMethodStep,
-  ProcedureNoteKind,
-} from "@/lib/types";
+import type { ProcedureBlock, ProcedureBlockKind } from "@/lib/types";
 import { IconTile } from "@/components/ui/icon-tile";
-import { IngredientsBlockBody } from "./ingredients-block-body";
-import { BilingualInput } from "@/components/ui/bilingual-input";
-import { LocalisedInput } from "@/components/ui/localised-input";
-import { StepTimerEditor } from "./step-timer-editor";
 import { BlockBody } from "./notion-block-body";
-import {
-  asLoc,
-  asOpt,
-  isAllowedImageFile,
-  readFileAsDataUrl,
-  setLoc,
-  setOpt,
-} from "./notion-block-shared";
 
 interface BlockMenuProps {
   block: ProcedureBlock;
@@ -284,6 +264,7 @@ function BlockDeleteButton({
               style={{
                 top: pos?.top ?? -9999,
                 right: pos?.right ?? 0,
+                zIndex: 9999,
                 ["--pop-origin" as string]: pos?.origin ?? "top right",
               }}
               className="pop-in fixed z-dropdown w-[340px] max-w-[calc(100vw-32px)] rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-5 shadow-[var(--e-3)] text-left"
@@ -291,18 +272,18 @@ function BlockDeleteButton({
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bad-tint)] text-[var(--color-bad)]">
-                    <LuTriangleAlert aria-hidden="true" className="size-4.5" />
+                    <LuTriangleAlert aria-hidden="true" className="size-5" />
                   </div>
                   <div className="min-w-0 flex-1 pt-0.5">
                     <h3 className="text-base font-semibold text-[var(--color-ink)] tracking-tight">
                       {deleteInfo.title}
                     </h3>
-                    <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--color-ink-2)]">
+                    <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[var(--color-ink-2)]">
                       {deleteInfo.description}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center justify-end gap-2.5 pt-1">
+                <div className="flex items-center justify-end gap-3 pt-1">
                   <Button
                     type="button"
                     size="sm"
@@ -447,7 +428,7 @@ export function BlockRow({
       {error ? (
         <p
           role="alert"
-          className="mb-2.5 flex items-center gap-1.5 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+          className="mb-3 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
         >
           <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
           <span>{error}</span>
@@ -468,7 +449,7 @@ export function BlockRow({
         </button>
 
         {/* Block kind indicator badge */}
-        <span className="inline-flex items-center rounded bg-[var(--color-wash)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-ink-3)] group-focus-within:bg-[var(--color-surface)] group-focus-within:text-[var(--color-ink)] group-focus-within:shadow-e1 transition-all">
+        <span className="inline-flex items-center rounded bg-[var(--color-wash)] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-3)] group-focus-within:bg-[var(--color-surface)] group-focus-within:text-[var(--color-ink)] group-focus-within:shadow-e1 transition-all">
           {block.kind === "text"
             ? "Text"
             : block.kind === "heading"
@@ -553,7 +534,7 @@ export function InsertAfterButton({
         className={cn(
           "flex size-8 items-center justify-center rounded-md transition-all",
           ghost
-            ? "text-[var(--color-ink-3)] opacity-30 hover:opacity-100 hover:bg-[var(--color-wash)] hover:text-[var(--color-ink-2)]"
+            ? "text-[var(--color-ink-3)] opacity-100 [@media(hover:hover)]:opacity-30 [@media(hover:hover)]:hover:opacity-100 hover:bg-[var(--color-wash)] hover:text-[var(--color-ink-2)]"
             : "bg-[var(--color-surface)] text-[var(--color-ink-2)] ring-1 ring-[var(--color-line-2)] shadow-e1 hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] hover:ring-[var(--color-line-3)]",
         )}
       >
@@ -597,7 +578,7 @@ export function InsertAfterButton({
                 label: "Link procedure",
                 icon: "ri-links-line",
               },
-            ] as { kind: ProcedureBlockKind; label: string; icon: string }[]
+            ] as const
           )
             .filter(
               (opt) => opt.kind !== "linked_procedures" || allowLinkProcedure,
@@ -624,9 +605,3 @@ export function InsertAfterButton({
     </>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Per-kind bodies. Each one renders the block in its actual shape — a table
-// block shows a table, a steps block shows numbered rows, an image block
-// shows a drop zone. No chrome, no badges, no per-block header.
-// ---------------------------------------------------------------------------

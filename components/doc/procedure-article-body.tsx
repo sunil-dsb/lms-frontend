@@ -202,6 +202,8 @@ export function ProcedureArticleBody({
         }
         title={title || "Untitled Procedure"}
         withCover={Boolean(cover)}
+        isPromo={Boolean(proc.isPromo)}
+        isEs={isEs}
       />
 
       {allergen ? (

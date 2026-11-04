@@ -28,11 +28,11 @@ export default function CourseDetailLoading(): React.ReactElement {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="animate-pulse flex items-center justify-between gap-3.5 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4"
+              className="animate-pulse flex items-center justify-between gap-4 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4"
             >
               <div className="h-9 w-9 shrink-0 rounded-full bg-[var(--color-panel-2)]" />
               <div className="min-w-0 flex-1 space-y-2">
-                <div className="h-4.5 w-44 rounded bg-[var(--color-panel-2)]" />
+                <div className="h-5 w-44 rounded bg-[var(--color-panel-2)]" />
                 <div className="h-3 w-32 rounded bg-[var(--color-panel)]" />
               </div>
               <div className="h-5 w-5 rounded bg-[var(--color-panel)]" />
@@ -41,9 +41,9 @@ export default function CourseDetailLoading(): React.ReactElement {
         </div>
 
         {/* Linked procedure skeleton */}
-        <div className="animate-pulse flex items-start gap-3.5 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-panel)]/30 p-4">
+        <div className="animate-pulse flex items-start gap-4 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-panel)]/30 p-4">
           <div className="h-8 w-8 shrink-0 rounded-xl bg-[var(--color-panel-2)]" />
-          <div className="flex-1 space-y-1.5">
+          <div className="flex-1 space-y-2">
             <div className="h-3 w-28 rounded bg-[var(--color-panel-2)]" />
             <div className="h-4 w-40 rounded bg-[var(--color-panel)]" />
           </div>

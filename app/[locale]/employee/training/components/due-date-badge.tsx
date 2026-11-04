@@ -70,7 +70,7 @@ export function DueDateBadge({
           : "var(--warn-tint, #FEF3C7)",
         color: isOverdue ? "var(--bad, #B91C1C)" : "var(--warn-ink, #92400E)",
         padding: "4px 12px",
-        fontSize: "12px",
+        fontSize: "var(--t-xs)",
         lineHeight: "1.2",
       }}
     >

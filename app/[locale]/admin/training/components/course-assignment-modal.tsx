@@ -88,6 +88,7 @@ export function CourseAssignmentModal({
 
   // Due date & submission
   const [dueAt, setDueAt] = React.useState<string>(defaultDueDate());
+  const [isRequired, setIsRequired] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [unassigningEmployeeId, setUnassigningEmployeeId] = React.useState<
     string | null
@@ -142,18 +143,22 @@ export function CourseAssignmentModal({
           .filter(Boolean);
         setDbStations(realStations);
 
-        // Pre-select all available stations by default
-        const allSt = new Set<string>(realStations);
-        if (empRes.success) {
-          for (const e of empRes.data) {
-            if (e.stations && Array.isArray(e.stations)) {
-              e.stations.forEach((s) => allSt.add(s));
-            } else if (e.station) {
-              allSt.add(e.station);
-            }
+        // Pre-select only stations that have unassigned employees (not already fully assigned)
+        const assignedIds = new Set(
+          assignRes.success ? assignRes.data.map((a) => a.employeeId) : [],
+        );
+        const assignableStations = new Set<string>();
+        const empList = empRes.success ? empRes.data : [];
+        for (const st of realStations) {
+          const emps = empList.filter(
+            (e) => e.station === st || e.stations?.includes(st),
+          );
+          const hasUnassigned = emps.some((e) => !assignedIds.has(e.id));
+          if (hasUnassigned) {
+            assignableStations.add(st);
           }
         }
-        setSelectedStations(allSt);
+        setSelectedStations(assignableStations);
       })
       .finally(() => {
         if (isMounted) setIsLoadingData(false);
@@ -166,6 +171,7 @@ export function CourseAssignmentModal({
     setPeopleSearch("");
     setStationFilter("all");
     setDueAt(defaultDueDate());
+    setIsRequired(false);
     setCourseDetail(null);
     setDbStations([]);
     setIsSubmitting(false);
@@ -179,6 +185,15 @@ export function CourseAssignmentModal({
   const assignedEmployeeIds = React.useMemo(() => {
     return new Set(existingAssignments.map((a) => a.employeeId));
   }, [existingAssignments]);
+  const requiredEmployeeIds = React.useMemo(
+    () =>
+      new Set(
+        existingAssignments
+          .filter((assignment) => assignment.isRequired)
+          .map((assignment) => assignment.employeeId),
+      ),
+    [existingAssignments],
+  );
 
   // Unassigned employees available for assignment
   const unassignedEmployees = React.useMemo(() => {
@@ -333,6 +348,9 @@ export function CourseAssignmentModal({
   if (!open || !course) return null;
 
   function toggleStation(st: string): void {
+    const totalEmps = (stationEmployees[st] || []).length;
+    const unassignedCount = stationEmployeeCounts[st] ?? 0;
+    if (totalEmps > 0 && unassignedCount === 0) return; // Already fully assigned
     setSelectedStations((prev) => {
       const next = new Set(prev);
       if (next.has(st)) next.delete(st);
@@ -342,7 +360,10 @@ export function CourseAssignmentModal({
   }
 
   function handleSelectAllStations(): void {
-    setSelectedStations(new Set(availableStations));
+    const assignable = availableStations.filter(
+      (st) => (stationEmployeeCounts[st] ?? 0) > 0,
+    );
+    setSelectedStations(new Set(assignable));
   }
 
   function handleDeselectAllStations(): void {
@@ -390,6 +411,7 @@ export function CourseAssignmentModal({
         employeeIds: targetIds,
         dueAt: dueAt && dueAt.trim() ? dueAt : undefined,
         scope,
+        isRequired,
       });
 
       if (response.success) {
@@ -450,8 +472,11 @@ export function CourseAssignmentModal({
               availableStations={availableStations}
               dueAt={dueAt}
               setDueAt={setDueAt}
+              isRequired={isRequired}
+              setIsRequired={setIsRequired}
               getPresetDate={getPresetDate}
               targetEmployeeCount={mainScopeEmployeeIds.length}
+              existingAssignedCount={existingAssignments.length}
               selectedPeopleCount={selectedPeopleIds.size}
               chapterCount={chapterCount}
               linkedSopsCount={linkedSopsCount}
@@ -487,6 +512,7 @@ export function CourseAssignmentModal({
               locale={locale}
               filteredPeople={filteredPeople}
               assignedEmployeeIds={assignedEmployeeIds}
+              requiredEmployeeIds={requiredEmployeeIds}
               selectedPeopleIds={selectedPeopleIds}
               togglePerson={togglePerson}
               onSelectAllVisible={handleSelectAllVisiblePeople}
@@ -498,6 +524,8 @@ export function CourseAssignmentModal({
               availableStations={availableStations}
               dueAt={dueAt}
               setDueAt={setDueAt}
+              isRequired={isRequired}
+              setIsRequired={setIsRequired}
               getPresetDate={getPresetDate}
               chapterCount={chapterCount}
               hasQuiz={hasQuiz}

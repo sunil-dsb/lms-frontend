@@ -25,7 +25,7 @@ export function PageHeader({
               <button
                 type="button"
                 onClick={onEyebrowClick}
-                className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-[var(--color-ink)] hover:underline cursor-pointer"
+                className="inline-flex items-center gap-2 underline-offset-4 hover:text-[var(--color-ink)] hover:underline cursor-pointer"
               >
                 <span aria-hidden="true">&larr;</span>
                 <span>{eyebrow}</span>
@@ -33,7 +33,7 @@ export function PageHeader({
             ) : eyebrowHref ? (
               <Link
                 href={eyebrowHref}
-                className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-[var(--color-ink)] hover:underline"
+                className="inline-flex items-center gap-2 underline-offset-4 hover:text-[var(--color-ink)] hover:underline"
               >
                 <span aria-hidden="true">&larr;</span>
                 <span>{eyebrow}</span>

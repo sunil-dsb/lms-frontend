@@ -34,7 +34,11 @@ import { cn } from "@/lib/utils";
 
 import type { ProcedureBlock } from "@/lib/types";
 
-import { AssignBlock, CategoryAccordion } from "./procedure-editor-fields";
+import {
+  AssignBlock,
+  CategoryAccordion,
+  PromoSection,
+} from "./procedure-editor-fields";
 
 import type { ProcedureEditorModel } from "./procedure-editor-model";
 import { ProcedureEditorImportPanel } from "./procedure-editor-import-panel";
@@ -158,6 +162,10 @@ export function ProcedureEditorView({
     category,
     subcategory,
     isRecipe,
+    isPromo,
+    setIsPromo,
+    promoExpiresAt,
+    setPromoExpiresAt,
     nameOf,
     titleValue,
     purposeValue,
@@ -255,7 +263,7 @@ export function ProcedureEditorView({
         </div>
       ) : null}
 
-      <div className="mx-auto max-w-page mt-4 space-y-4 pb-28 sm:pb-24">
+      <div className="mx-auto max-w-page mt-4 space-y-4 pb-20 sm:pb-16">
         <ProcedureEditorImportPanel model={model} />
 
         {/* ── Step 1 form — only rendered once a method is chosen ─────── */}
@@ -285,7 +293,7 @@ export function ProcedureEditorView({
                   {titleError ? (
                     <p
                       role="alert"
-                      className="mt-1.5 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+                      className="mt-2 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
                     >
                       <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
                       <span>{titleError}</span>
@@ -312,7 +320,7 @@ export function ProcedureEditorView({
                   {purposeError ? (
                     <p
                       role="alert"
-                      className="mt-1.5 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+                      className="mt-2 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
                     >
                       <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
                       <span>{purposeError}</span>
@@ -466,6 +474,17 @@ export function ProcedureEditorView({
               </section>
             ) : null}
 
+            {/* Promo Dish Section — only visible for recipe procedures */}
+            {isRecipe ? (
+              <PromoSection
+                isPromo={isPromo}
+                onChangeIsPromo={edit(setIsPromo)}
+                promoExpiresAt={promoExpiresAt}
+                onChangePromoExpiresAt={edit(setPromoExpiresAt)}
+                locale={locale}
+              />
+            ) : null}
+
             {/* Block 3 — Assign. Lists employees filtered by the chosen
                 stations (or everyone, when no stations are filtered).
                 The block supplies its own header bar (icon + title + picked
@@ -502,7 +521,7 @@ export function ProcedureEditorView({
       {/* ── Sticky wizard footer (hidden on the choose screen and while a
           document is being drafted: there is nothing to save or move on to) ── */}
       {!showEntryCards && creationMode !== "upload" ? (
-        <div className="fixed bottom-0 left-0 right-0 z-sticky flex flex-col sm:flex-row sm:items-center justify-between gap-x-3 gap-y-2.5 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2.5 sm:px-6 sm:py-3 shadow-e2">
+        <div className="fixed bottom-0 left-0 right-0 z-sticky flex flex-col sm:flex-row sm:items-center justify-between gap-x-3 gap-y-3 border-t border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-3 sm:px-6 sm:py-3 shadow-e2">
           {/* Top row on mobile, Left col on desktop: Status + Mobile Preview */}
           <div className="flex items-center justify-between gap-2 min-w-0">
             <p className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--color-ink-2)] min-w-0 truncate">
@@ -520,7 +539,7 @@ export function ProcedureEditorView({
               onClick={() => setPreviewOpen(true)}
               className="sm:hidden inline-flex items-center gap-2 rounded-full border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-2 text-xs font-semibold text-[var(--color-ink)] shadow-2xs hover:bg-[var(--color-panel)] hover:border-[var(--color-line-3)] transition-all shrink-0 cursor-pointer min-h-[32px]"
             >
-              <LuEye className="size-3.5 text-[var(--color-ink-2)]" />
+              <LuEye className="size-4 text-[var(--color-ink-2)]" />
               <span>{t("preview")}</span>
             </button>
           </div>

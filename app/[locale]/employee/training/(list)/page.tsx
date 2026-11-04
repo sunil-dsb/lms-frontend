@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ApiException } from "@/lib/api";
 import { fetchMyTraining } from "@/services/courses/api";
+import type { EmployeeTrainingResponse } from "@/services/courses/types";
 import { TabBar } from "@/components/employee/tab-bar";
 import { mapEmployeeTrainingAssignments } from "../lib/map-training-rows";
 import { EmployeeTrainingView } from "../components/employee-training-view";
@@ -42,9 +43,9 @@ async function EmployeeTrainingContent({
 }): Promise<React.ReactElement> {
   const t = await getTranslations("employee.training");
 
-  let assignments: Awaited<ReturnType<typeof fetchMyTraining>> = [];
+  let training: EmployeeTrainingResponse | null = null;
   try {
-    assignments = await fetchMyTraining(cookieHeader);
+    training = await fetchMyTraining(cookieHeader);
   } catch (err) {
     if (
       err instanceof ApiException &&
@@ -56,7 +57,7 @@ async function EmployeeTrainingContent({
   }
 
   const { pending, completed } = mapEmployeeTrainingAssignments(
-    assignments,
+    training?.assignments ?? [],
     locale,
   );
 
@@ -65,6 +66,7 @@ async function EmployeeTrainingContent({
       <EmployeeTrainingView
         pendingItems={pending}
         completedItems={completed}
+        requiredTraining={training?.requiredTraining ?? null}
         locale={locale}
       />
 

@@ -18,16 +18,17 @@ import type { HomeRow } from "./EmployeeHome";
 export function PromoSection({
   heading,
   rows,
+  empty,
   flagLabels,
   loading = false,
 }: {
   heading: string;
   rows: HomeRow[];
+  empty: string;
   flagLabels: FlagLabels;
   /** Procedures query still resolving — card + heading paint, rows skeletonize. */
   loading?: boolean;
 }): React.ReactElement | null {
-  if (rows.length === 0 && !loading) return null;
   return (
     <section aria-labelledby="promo-h" style={{ marginTop: "24px" }}>
       {/* Bordered card wrapping heading + rows */}
@@ -38,7 +39,7 @@ export function PromoSection({
         <SectionHead id="promo-h" title={heading} />
         {loading ? (
           <HomeRowsSkeleton count={2} />
-        ) : (
+        ) : rows.length > 0 ? (
           <ul
             style={{
               marginTop: "10px",
@@ -67,6 +68,10 @@ export function PromoSection({
               </li>
             ))}
           </ul>
+        ) : (
+          <p className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-wash)] px-3 py-3 text-sm text-[var(--color-ink-2)]">
+            {empty}
+          </p>
         )}
       </div>
     </section>

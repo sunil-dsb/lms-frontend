@@ -381,7 +381,7 @@ function CategoryForm({
           icon below, and a second copy in the header was the same mark twice. */}
       <ModalBody className="max-h-[calc(100dvh-14rem)] overscroll-contain space-y-4">
         {/* Bilingual adaptive input for category name */}
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <BilingualInput
             label={isEs ? "Nombre de la categoría" : "Category name"}
             value={name}
@@ -404,7 +404,7 @@ function CategoryForm({
             so category type defaults to 'general' behind the scenes.
             Retained as commented code:
         {mode === 'create' && (
-          <fieldset className="space-y-1.5">
+          <fieldset className="space-y-2">
             <legend className="text-sm font-semibold text-[var(--color-ink)]">
               {isEs ? 'Tipo de categoría' : 'Category type'}
             </legend>
@@ -440,7 +440,7 @@ function CategoryForm({
         )}
         */}
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="cat-icon-toggle">{isEs ? "Icono" : "Icon"}</Label>
           <div className="flex items-center gap-3">
             <IconTile size="md" icon={CurrentIconComp} />
@@ -552,7 +552,7 @@ function KindOption({
   return (
     <label
       className={cn(
-        "flex items-start gap-2.5 rounded-[var(--radius-md)] border p-3 cursor-pointer transition-colors",
+        "flex items-start gap-3 rounded-[var(--radius-md)] border p-3 cursor-pointer transition-colors",
         checked
           ? "border-[var(--color-ring)] bg-[var(--color-brand-tint)]"
           : "border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-panel)]",

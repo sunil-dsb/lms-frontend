@@ -486,7 +486,7 @@ export function CategoryDetailClient({
               maxLength={200}
               placeholder={{ en: "e.g. Plating", es: "p. ej. Emplatado" }}
             />
-            <div className="space-y-1.5 mt-4">
+            <div className="space-y-2 mt-4">
               <Label>{isEs ? "Icono" : "Icon"}</Label>
               <div className="flex items-center gap-3">
                 <IconTile

@@ -13,6 +13,7 @@ import {
   LuPlus,
   LuRefreshCw,
   LuSearch,
+  LuSparkles,
   LuTrash2,
   LuX,
 } from "react-icons/lu";
@@ -88,7 +89,7 @@ export function ProcedureExplorerResults({
                   <Skeleton className="h-5 w-52" />
                   <Skeleton className="h-5 w-16 rounded-full bg-[var(--color-panel)]" />
                 </div>
-                <Skeleton className="h-3.5 w-2/3 bg-[var(--color-panel)]" />
+                <Skeleton className="h-4 w-2/3 bg-[var(--color-panel)]" />
                 <Skeleton className="h-3 w-1/2 bg-[var(--color-panel)]" />
               </div>
               <Skeleton className="size-8 shrink-0 rounded-full bg-[var(--color-panel)]" />
@@ -290,6 +291,12 @@ export function ProcedureExplorerResults({
                                 ? "Borrador"
                                 : "Draft"}
                         </StatusPill>
+                        {p.isPromo ? (
+                          <span className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] px-2 py-0.5 text-xs font-semibold text-[var(--color-brand-700)] shadow-2xs">
+                            <LuSparkles className="size-3" />
+                            {isEs ? "Plato en promoción" : "Promo dish"}
+                          </span>
+                        ) : null}
                       </div>
 
                       {purpose ? (

@@ -198,7 +198,7 @@ export function RolesManager({
             <label
               key={s.id}
               htmlFor={`${idPrefix}-${s.id}`}
-              className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-[var(--color-ink)] hover:bg-[var(--color-panel)]"
+              className="flex cursor-pointer items-center gap-2 rounded px-2 py-2 text-sm text-[var(--color-ink)] hover:bg-[var(--color-panel)]"
             >
               <input
                 id={`${idPrefix}-${s.id}`}

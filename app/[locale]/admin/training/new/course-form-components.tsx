@@ -332,7 +332,7 @@ export function QuizEditor({
               </div>
             </div>
 
-            <fieldset className="space-y-2 pl-9">
+            <fieldset className="space-y-2 pl-8">
               <legend className="sr-only">Choices</legend>
               {q.choices.map((c) => {
                 const isCorrect = q.correctChoiceId === c.id;
@@ -382,7 +382,7 @@ export function QuizEditor({
                 <button
                   type="button"
                   onClick={() => addChoice(q.id)}
-                  className="ml-9 inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-brand-700)] hover:underline"
+                  className="ml-8 inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-brand-700)] hover:underline"
                 >
                   <LuPlus aria-hidden="true" />
                   {tForm("addChoice")}
@@ -506,7 +506,7 @@ export function LinkedSopsEditor({
                   <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
                     {s.titleEn}
                   </p>
-                  <p className="truncate text-[11px] text-[var(--color-ink-2)]">
+                  <p className="truncate text-xs text-[var(--color-ink-2)]">
                     {s.titleEs}
                   </p>
                 </div>
@@ -556,7 +556,7 @@ export function LinkedSopsEditor({
                     <p className="truncate font-semibold text-[var(--color-ink)]">
                       {s.titleEn}
                     </p>
-                    <p className="truncate text-[11px] text-[var(--color-ink-2)]">
+                    <p className="truncate text-xs text-[var(--color-ink-2)]">
                       {s.titleEs}
                     </p>
                   </div>

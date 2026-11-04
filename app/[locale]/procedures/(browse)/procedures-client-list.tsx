@@ -425,7 +425,7 @@ function ProceduresListSkeleton(): React.ReactElement {
         {[0, 1, 2, 3, 4].map((i) => (
           <li
             key={i}
-            className="animate-pulse flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3 sm:p-3.5 shadow-xs"
+            className="animate-pulse flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-3 sm:p-4 shadow-xs"
           >
             <div className="size-12 shrink-0 rounded-lg bg-[var(--color-panel-2)]" />
             <div className="min-w-0 flex-1 space-y-2">
@@ -519,13 +519,13 @@ function EmptyProceduresCard({
       </p>
 
       {hasFilter ? (
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
             onClick={onReset}
             className="inline-flex min-h-[38px] items-center gap-2 rounded-full bg-[var(--color-ink)] px-5 py-2 text-xs font-semibold text-[var(--color-surface)] shadow-xs transition hover:opacity-90 cursor-pointer"
           >
-            <LuRotateCcw className="size-3.5" />
+            <LuRotateCcw className="size-4" />
             {isEs ? "Restablecer todos los filtros" : "Clear all filters"}
           </button>
           {hasScope ? (

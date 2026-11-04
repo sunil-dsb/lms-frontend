@@ -579,6 +579,12 @@ export interface Procedure {
   contentTypes?: Array<"checklist" | "quiz" | "procedure" | "video" | "file">;
   /** Active seasons for seasonal recipes. */
   seasons?: ProcedureSeason[];
+  /** Whether this procedure is a promo dish featured on staff home. */
+  isPromo?: boolean;
+  /** Expiration timestamp for the promo status. After this time, reverts to regular procedure. */
+  promoExpiresAt?: string | null;
+  /** Who sees this promo: 'station' (only employees on this procedure's station) or 'everyone'. */
+  promoAudience?: "station" | "everyone";
 }
 
 /** Course acknowledgement — the `I have read and understood` checkbox at
@@ -652,6 +658,12 @@ export interface CreateProcedureInput {
   /** Procedure ids of SOPs / recipes referenced from this course.
    *  Legacy training-course shape. */
   linkedSops?: string[];
+  /** Whether this procedure is a promo dish featured on staff home. */
+  isPromo?: boolean;
+  /** Expiration timestamp for the promo status. After this time, reverts to regular procedure. */
+  promoExpiresAt?: string | null;
+  /** Who sees this promo: 'station' (only employees on this procedure's station) or 'everyone'. */
+  promoAudience?: "station" | "everyone";
   /** Acknowledgement statement shown on read; null/undefined disables.
    *  Legacy training-course shape. */
   acknowledgement?: ProcedureAcknowledgement | null;
@@ -744,15 +756,12 @@ export interface TrainingProgressSummary {
   overdue: number;
 }
 
-/** One of a person's assigned courses: how far it stands and when it's due.
- *  The Progress table reads the aggregates; the admin home card and drill-down
- *  drawer read the per-assignment rows. */
+/** Minimal per-course fields used to build the admin home training card. */
 export interface EmployeeProgressAssignment {
   courseId: string;
   courseTitleEn: string;
   courseTitleEs: string;
   dueDate: string;
-  currentChapter: number | null;
   isComplete: boolean;
   isOverdue: boolean;
   /** Null while the course is unfinished. */
@@ -772,7 +781,7 @@ export interface EmployeeProgressRow {
   /** 1-based chapter inside `currentCourse`; null whenever the course is. */
   currentChapter: number | null;
   status: ProgressStatus;
-  /** Every assigned course, for grouping people on the admin home card. */
+  /** Present only when the admin home requests due-date details. */
   assignments?: EmployeeProgressAssignment[];
 }
 
@@ -792,8 +801,15 @@ export interface CourseProgressRow {
 
 export interface TrainingProgressData {
   summary: TrainingProgressSummary;
+  counts?: { employees: number; courses: number };
   employees: EmployeeProgressRow[];
   courses: CourseProgressRow[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 // ============================================================================

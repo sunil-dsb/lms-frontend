@@ -34,7 +34,12 @@ Every page in the application must maintain a strict, uniform width hierarchy fr
   - Used for all text, labels, inputs, table cells, and controls below 28px.
 - **Text Floor & Sizes:**
   - **Admin Desk Density:** 14px (`--t-sm`) floor for body and inputs.
-  - **Employee Phone Density:** 18px (`--t-md`) floor. 12px text is banned except tab-bar meta labels.
+  - **Employee Phone Density:** 18px (`--t-md`) floor for body and inputs.
+  - **Meta & annotation step:** 12px (`--t-xs`) is the reserved meta/annotation
+    size for badges, chips, captions and small labels — never for body or
+    input text. Restored by the 2025-11 typography audit: ~450 components were
+    authored against it, and leaving it unmapped rendered them at inherited,
+    inconsistent sizes. Do not introduce sizes outside the scale.
 
 ---
 

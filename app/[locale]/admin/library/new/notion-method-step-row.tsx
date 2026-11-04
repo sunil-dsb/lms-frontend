@@ -421,7 +421,7 @@ export function MethodStepRow({
                 style={{ backgroundColor: currentTone.tintBg }}
                 className="w-full min-w-0 rounded-[var(--radius-md)] p-3 sm:p-4 space-y-3 sm:space-y-4 text-xs transition-colors"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 sm:pb-3 border-b border-[var(--color-line-2)]/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-3 border-b border-[var(--color-line-2)]/50">
                   <div className="flex items-center justify-between w-full sm:w-auto">
                     <span className="font-semibold text-[var(--color-ink)] flex items-center gap-2 text-xs shrink-0 whitespace-nowrap">
                       <span
@@ -541,7 +541,7 @@ export function MethodStepRow({
                       className="text-[var(--color-ink-3)]"
                     />
                     <span>Step Photos</span>
-                    <span className="rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] px-2 py-0.5 text-[10px] font-bold text-[var(--color-ink-2)]">
+                    <span className="rounded-full bg-[var(--color-surface)] border border-[var(--color-line-2)] px-2 py-0.5 text-xs font-bold text-[var(--color-ink-2)]">
                       {images.length}/{MAX_STEP_IMAGES}
                     </span>
                   </span>
@@ -551,14 +551,14 @@ export function MethodStepRow({
                       onClick={() => triggerImageUpload(null)}
                       className="inline-flex items-center gap-1 font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] cursor-pointer text-xs"
                     >
-                      <LuPlus className="size-3.5" />
+                      <LuPlus className="size-4" />
                       <span>Add photo</span>
                     </button>
                   )}
                 </div>
 
                 {images.length === 2 && (
-                  <label className="flex items-center gap-2 text-[11px] text-[var(--color-ink-2)] cursor-pointer bg-[var(--color-surface)] p-2 rounded-[var(--radius-sm)] border border-[var(--color-line-2)]">
+                  <label className="flex items-center gap-2 text-xs text-[var(--color-ink-2)] cursor-pointer bg-[var(--color-surface)] p-2 rounded-[var(--radius-sm)] border border-[var(--color-line-2)]">
                     <input
                       type="checkbox"
                       checked={Boolean(step.compareImages)}
@@ -579,9 +579,9 @@ export function MethodStepRow({
                     return (
                       <div
                         key={idx}
-                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-2.5 shadow-2xs"
+                        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-3 shadow-2xs"
                       >
-                        <div className="flex items-center justify-between gap-2.5 sm:justify-start">
+                        <div className="flex items-center justify-between gap-3 sm:justify-start">
                           {}
                           <div className="relative size-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-panel)]">
                             <img
@@ -592,7 +592,7 @@ export function MethodStepRow({
                             {step.compareImages && images.length === 2 && (
                               <span
                                 className={cn(
-                                  "absolute bottom-0 inset-x-0 text-center text-[9px] font-bold text-white py-0.5",
+                                  "absolute bottom-0 inset-x-0 text-center text-xs font-bold text-white py-0.5",
                                   idx === 0
                                     ? "bg-[var(--color-ok-fill)]"
                                     : "bg-[var(--color-bad-fill)]",
@@ -722,7 +722,7 @@ export function MethodStepRow({
             {(hasVideo ||
               videoBusy?.state === "uploading" ||
               videoBusy?.state === "failed") && (
-              <div className="space-y-2 border-t border-[var(--color-line-2)] pt-2.5">
+              <div className="space-y-2 border-t border-[var(--color-line-2)] pt-3">
                 <div className="flex items-center gap-2 font-semibold text-[var(--color-ink)]">
                   <Icon
                     icon="ri-video-line"

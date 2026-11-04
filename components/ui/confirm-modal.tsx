@@ -67,7 +67,7 @@ export function ConfirmModal({
         >
           {isLoading ? (
             <>
-              <LuLoader className="size-3.5 animate-spin mr-1.5" />
+              <LuLoader className="size-4 animate-spin mr-2" />
               <span>{confirmLabel}</span>
             </>
           ) : (

@@ -23,8 +23,11 @@ interface AssignMainModalViewProps {
   availableStations: string[];
   dueAt: string;
   setDueAt: (dueAt: string) => void;
+  isRequired: boolean;
+  setIsRequired: (required: boolean) => void;
   getPresetDate?: (preset: "1week" | "2weeks" | "endOfMonth") => string;
   targetEmployeeCount: number;
+  existingAssignedCount: number;
   selectedPeopleCount?: number;
   chapterCount: number;
   linkedSopsCount: number;
@@ -54,8 +57,11 @@ export function AssignMainModalView({
   availableStations,
   dueAt,
   setDueAt,
+  isRequired,
+  setIsRequired,
   getPresetDate,
   targetEmployeeCount,
+  existingAssignedCount,
   selectedPeopleCount = 0,
   chapterCount,
   linkedSopsCount,
@@ -87,7 +93,7 @@ export function AssignMainModalView({
   return (
     <div className="flex flex-col h-full justify-between">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3.5">
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
@@ -104,7 +110,7 @@ export function AssignMainModalView({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1.5 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
+            className="rounded-full p-2 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
             aria-label="Close"
           >
             <LuX className="text-xl" />
@@ -118,8 +124,8 @@ export function AssignMainModalView({
           </p>
 
           {isLoadingData ? (
-            <div className="space-y-2.5 py-1">
-              <div className="flex items-center gap-2.5 text-sm text-[var(--color-ink-2)]">
+            <div className="space-y-3 py-1">
+              <div className="flex items-center gap-3 text-sm text-[var(--color-ink-2)]">
                 <LuLoader className="animate-spin text-sm text-[var(--color-brand-600)] shrink-0" />
                 <span>
                   {isEs
@@ -127,12 +133,12 @@ export function AssignMainModalView({
                     : "Checking chapters & questions..."}
                 </span>
               </div>
-              <div className="h-3.5 w-44 rounded-md bg-[var(--color-wash)] animate-pulse" />
+              <div className="h-4 w-44 rounded-md bg-[var(--color-wash)] animate-pulse" />
             </div>
           ) : (
             <>
               <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2.5 text-[var(--color-ink)]">
+                <li className="flex items-center gap-3 text-[var(--color-ink)]">
                   <LuCheck
                     aria-hidden="true"
                     size={18}
@@ -157,7 +163,7 @@ export function AssignMainModalView({
                 </li>
 
                 {hasQuiz && !hasMissingQuizQuestions && (
-                  <li className="flex items-center gap-2.5 text-[var(--color-ink)]">
+                  <li className="flex items-center gap-3 text-[var(--color-ink)]">
                     <LuCheck
                       aria-hidden="true"
                       size={18}
@@ -178,16 +184,16 @@ export function AssignMainModalView({
               </ul>
 
               {hasMissingQuizQuestions && (
-                <div className="mt-2 rounded-2xl border border-amber-300 bg-amber-50/90 dark:border-amber-900/60 dark:bg-amber-950/40 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="mt-2 rounded-2xl border border-[var(--color-warn-tint-2)] bg-[var(--color-warn-tint)] p-4 sm:p-5 space-y-1 shadow-xs">
                   <div className="flex items-start gap-3">
-                    <LuTriangleAlert className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <LuTriangleAlert className="w-5 h-5 text-[var(--color-warn)] shrink-0 mt-0.5" />
                     <div className="space-y-1 flex-1">
-                      <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                      <h4 className="text-sm font-bold text-[var(--color-warn-ink)]">
                         {isEs
                           ? "Se requiere al menos una pregunta por capítulo"
                           : "At least one quiz question required per chapter"}
                       </h4>
-                      <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                      <p className="text-xs text-[var(--color-warn-ink)] leading-relaxed">
                         {isEs
                           ? `No puedes asignar este curso porque ${
                               missingChapterNumbers.length === 1
@@ -210,7 +216,7 @@ export function AssignMainModalView({
                           `/${locale}/admin/training/${course.id}/edit`,
                         )
                       }
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--color-brand-600)] hover:underline cursor-pointer"
+                      className="inline-flex items-center gap-2 text-xs font-bold text-[var(--color-brand-600)] hover:underline cursor-pointer"
                     >
                       {isEs
                         ? "Editar curso y agregar preguntas →"
@@ -224,7 +230,7 @@ export function AssignMainModalView({
         </div>
 
         {/* Assign to: Tabs [Everyone] [By station] [People] */}
-        <div className="space-y-2.5 pt-1">
+        <div className="space-y-3 pt-1">
           <Label className="text-sm font-semibold text-[var(--color-ink)]">
             {isEs ? "Asignar a" : "Assign to"}
           </Label>
@@ -271,6 +277,12 @@ export function AssignMainModalView({
             </button>
           </div>
 
+          <p className="text-xs text-[var(--color-ink-2)]">
+            {isEs
+              ? `Asignados: ${existingAssignedCount}. Por asignar: ${targetEmployeeCount}.`
+              : `Already assigned: ${existingAssignedCount}. This assignment will add: ${targetEmployeeCount}.`}
+          </p>
+
           {/* Station cards when "By station" is active */}
           {scope === "station" ? (
             <div className="space-y-3 pt-2 animate-in fade-in duration-150">
@@ -314,7 +326,58 @@ export function AssignMainModalView({
                 {cleanStations.map((st) => {
                   const isSelected = selectedStations.has(st);
                   const assignableCount = stationEmployeeCounts?.[st] ?? 0;
+                  const totalCount = stationEmployees?.[st]?.length ?? 0;
+                  const assignedCount = totalCount - assignableCount;
+                  const isFullyAssigned =
+                    totalCount > 0 && assignableCount === 0;
+                  const isPartiallyAssigned =
+                    assignedCount > 0 && assignableCount > 0;
                   const displayName = st.charAt(0).toUpperCase() + st.slice(1);
+
+                  if (isFullyAssigned) {
+                    return (
+                      <div
+                        key={st}
+                        style={{ padding: "8px 12px" }}
+                        className="flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--color-ok)]/40 bg-[var(--color-ok-tint)]/25 text-left transition-all duration-150"
+                        title={
+                          isEs
+                            ? "Todos los empleados de esta estación ya tienen este curso asignado"
+                            : "All employees in this station already have this course assigned"
+                        }
+                      >
+                        <div
+                          className="flex items-center gap-3 min-w-0"
+                          style={{ gap: "10px" }}
+                        >
+                          <div className="size-5 rounded-md flex items-center justify-center shrink-0 bg-[var(--color-ok)] text-white shadow-2xs">
+                            <LuCheck
+                              className="text-xs stroke-[3] text-white"
+                              style={{ strokeWidth: 3 }}
+                            />
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-[var(--color-ink)] truncate leading-snug">
+                              {displayName}
+                            </p>
+                            <p className="text-xs text-[var(--color-ok)] font-medium">
+                              {isEs
+                                ? `${totalCount} ya asignado${totalCount === 1 ? "" : "s"}`
+                                : `${totalCount} already assigned`}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span
+                          style={{ padding: "3px 8px" }}
+                          className="mr-1 text-xs font-bold rounded-full shrink-0 border bg-[var(--color-ok-tint)] text-[var(--color-ok)] border-[var(--color-ok)]/30"
+                        >
+                          {isEs ? "Asignado" : "Assigned"}
+                        </span>
+                      </div>
+                    );
+                  }
 
                   return (
                     <button
@@ -330,7 +393,7 @@ export function AssignMainModalView({
                       )}
                     >
                       <div
-                        className="flex items-center gap-2.5 min-w-0"
+                        className="flex items-center gap-3 min-w-0"
                         style={{ gap: "10px" }}
                       >
                         {/* Checkbox icon */}
@@ -352,9 +415,18 @@ export function AssignMainModalView({
                         </div>
 
                         {/* Station Name */}
-                        <p className="text-sm font-semibold text-[var(--color-ink)] truncate leading-snug">
-                          {displayName}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[var(--color-ink)] truncate leading-snug">
+                            {displayName}
+                          </p>
+                          {isPartiallyAssigned ? (
+                            <p className="text-xs text-[var(--color-ink-3)]">
+                              {isEs
+                                ? `${assignedCount} ya asignado${assignedCount === 1 ? "" : "s"}`
+                                : `${assignedCount} already assigned`}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
 
                       {/* Clean count badge */}
@@ -402,7 +474,7 @@ export function AssignMainModalView({
                           allEmployees?.filter((e) => e.status === "pending")
                             .length || 0
                         } pendientes).`
-                      : `All active and pending employees will receive this course (${
+                      : `Only employees without an existing assignment will be added (${
                           allEmployees?.filter((e) => e.status === "active")
                             .length || 0
                         } active, ${
@@ -413,12 +485,12 @@ export function AssignMainModalView({
               </div>
               <span
                 style={{ padding: "6px 14px" }}
-                className="text-sm font-bold text-[var(--color-brand-700)] bg-[var(--color-brand-tint)] rounded-full border border-[var(--color-brand-600)]/20 shrink-0 inline-flex items-center gap-1.5"
+                className="text-sm font-bold text-[var(--color-brand-700)] bg-[var(--color-brand-tint)] rounded-full border border-[var(--color-brand-600)]/20 shrink-0 inline-flex items-center gap-2"
               >
                 {isLoadingData ? (
                   <LuLoader className="animate-spin text-sm" />
                 ) : (
-                  `${targetEmployeeCount} ${isEs ? "empleados" : "employees"}`
+                  `${targetEmployeeCount} ${isEs ? "por asignar" : "to add"}`
                 )}
               </span>
             </div>
@@ -455,6 +527,25 @@ export function AssignMainModalView({
             </div>
           ) : null}
         </div>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-line-2)] p-3">
+          <input
+            type="checkbox"
+            checked={isRequired}
+            onChange={(event) => setIsRequired(event.target.checked)}
+            className="mt-1 size-4 accent-[var(--color-brand-600)]"
+          />
+          <span>
+            <span className="block text-sm font-semibold text-[var(--color-ink)]">
+              {isEs ? "Capacitacion obligatoria" : "Required training"}
+            </span>
+            <span className="mt-1 block text-xs leading-relaxed text-[var(--color-ink-2)]">
+              {isEs
+                ? "Estos empleados deben completar el curso antes de abrir otros cursos o procedimientos."
+                : "These employees must complete this course before opening other courses or procedures."}
+            </span>
+          </span>
+        </label>
 
         {/* Due date picker with standard width and quick presets */}
         <div
@@ -529,7 +620,7 @@ export function AssignMainModalView({
           onClick={() => router.push(`/${locale}/admin/training/${course.id}`)}
           className="text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] rounded-full px-4 py-2 shadow-2xs hover:bg-[var(--color-wash)] cursor-pointer justify-center"
         >
-          <LuEye className="mr-1.5 text-sm" />
+          <LuEye className="mr-2 text-sm" />
           {isEs ? "Vista previa" : "Preview as employee"}
         </Button>
 

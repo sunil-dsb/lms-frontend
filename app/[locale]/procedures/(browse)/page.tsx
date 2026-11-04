@@ -8,6 +8,8 @@ import { readViewAs } from "@/lib/view-as-server";
 import { withAs } from "@/lib/view-as";
 import { LuArrowLeft } from "react-icons/lu";
 import { TabBar } from "@/components/employee/tab-bar";
+import { fetchMyTraining } from "@/services/courses/api";
+import type { EmployeeRequiredTrainingStatus } from "@/services/courses/types";
 import { ProceduresClientList } from "./procedures-client-list";
 
 interface PageProps {
@@ -31,6 +33,18 @@ export default async function ProceduresPage({
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
+
+  const viewAs = await readViewAs();
+  const effectiveRole = viewAs ?? "employee";
+  const requiredTrainingPromise: Promise<EmployeeRequiredTrainingStatus | null> =
+    effectiveRole === "employee"
+      ? fetchMyTraining(cookieHeader)
+          .then((training) => training.requiredTraining)
+          .catch((err) => {
+            console.error("Could not load required-training status:", err);
+            return null;
+          })
+      : Promise.resolve(null);
 
   let employee;
   try {
@@ -59,30 +73,14 @@ export default async function ProceduresPage({
   // employee chrome by default. `?as=admin` opts into the admin chrome for
   // anyone who wants the library nav context while here. The proxy forwards
   // the query value into the x-lms-view-as request header.
-  const viewAs = await readViewAs();
-  const effectiveRole = viewAs ?? "employee";
-
-  // Note: Onboarding gate & demo view toggle commented out for now.
-  // When an actual onboarding course is completed from backend data,
-  // this can be hooked up dynamically.
-  /*
-  const onboardingEmployeeId =
-    mockTrainingEmployees.find((e) => e.id === employee.id)?.id ??
-    mockTrainingEmployees.find(
-      (e) => e.name.toLowerCase() === employee.name.toLowerCase(),
-    )?.id ??
-    employee.id;
-  const cookieView = cookieStore.get("lms_demo_view")?.value;
-  const effectiveView = view || cookieView;
-  const isOrientationPending =
-    effectiveView === "onboarding"
-      ? true
-      : effectiveView === "regular"
-        ? false
-        : !getOnboardingChapters(onboardingEmployeeId, new Date())
-            .onboardingDone;
-  const onboardingDone = effectiveRole === "admin" || !isOrientationPending;
-  */
+  const tTraining = await getTranslations("employee.training");
+  const requiredTraining = await requiredTrainingPromise;
+  const isTrainingLocked = Boolean(
+    effectiveRole === "employee" &&
+    requiredTraining &&
+    requiredTraining.requiredCount > 0 &&
+    !requiredTraining.isComplete,
+  );
 
   // The list itself (categories + procedures) is fetched by
   // ProceduresClientList through TanStack Query — the shell above
@@ -136,6 +134,29 @@ export default async function ProceduresPage({
           </h1>
         </div>
 
+        {isTrainingLocked && requiredTraining ? (
+          <aside className="mt-5 rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 sm:p-5">
+            <p className="font-semibold text-[var(--color-ink)]">
+              {tTraining("requiredTrainingHeading")}
+            </p>
+            <p className="mt-1 text-sm text-[var(--color-ink-2)]">
+              {tTraining("requiredTrainingProgress", {
+                completed: requiredTraining.completedCount,
+                total: requiredTraining.requiredCount,
+              })}
+              {requiredTraining.lockedCount > 0
+                ? ` ${tTraining("requiredTrainingLocked", { count: requiredTraining.lockedCount })}`
+                : ""}
+            </p>
+            <Link
+              href={withAs(`/${locale}/employee/training`, viewAs)}
+              className="mt-2 inline-flex min-h-11 items-center font-semibold text-[var(--color-brand-700)]"
+            >
+              {tTraining("requiredTrainingAction")}
+            </Link>
+          </aside>
+        ) : null}
+
         <ProceduresClientList
           initialQuery={q}
           initialCategory={category}
@@ -146,7 +167,13 @@ export default async function ProceduresPage({
           stationId={resolvedStationIds[0] ?? null}
           stationIds={resolvedStationIds}
           employeeId={employee.id}
-          locked={false}
+          locked={isTrainingLocked}
+          lockedHref={withAs(`/${locale}/employee/training`, viewAs)}
+          lockedReason={
+            isTrainingLocked
+              ? tTraining("requiredTrainingLockReason")
+              : undefined
+          }
         />
       </main>
 

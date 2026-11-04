@@ -169,7 +169,7 @@ export function MultiSelectChips({
         {isLoading ? (
           <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--color-ink-3)]">
             <LuLoader
-              className="size-3.5 animate-spin text-[var(--color-brand-600)]"
+              className="size-4 animate-spin text-[var(--color-brand-600)]"
               aria-hidden="true"
             />
             <span>{loadingText || "Loading options..."}</span>

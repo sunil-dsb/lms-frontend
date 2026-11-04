@@ -260,7 +260,7 @@ function EntityChip({
       </span>
       <LuPencil
         aria-hidden="true"
-        className="size-3.5 shrink-0 text-[var(--color-ink-3)] group-hover:text-[var(--color-ink-2)]"
+        className="size-4 shrink-0 text-[var(--color-ink-3)] group-hover:text-[var(--color-ink-2)]"
       />
     </button>
   );

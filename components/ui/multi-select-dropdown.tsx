@@ -104,7 +104,7 @@ export function MultiSelectDropdown({
 
         <div className="flex items-center gap-2 shrink-0">
           {selectedLabels.length > 0 && (
-            <span className="flex size-5 items-center justify-center rounded-full bg-[var(--color-panel-2)] text-[11px] font-semibold text-[var(--color-ink-2)]">
+            <span className="flex size-5 items-center justify-center rounded-full bg-[var(--color-panel-2)] text-xs font-semibold text-[var(--color-ink-2)]">
               {selectedLabels.length}
             </span>
           )}

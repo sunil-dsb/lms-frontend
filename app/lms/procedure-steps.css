@@ -302,7 +302,7 @@
   margin-top: var(--s-1);
   height: 24px;
   min-height: 24px;
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   font-weight: 600;
   color: var(--ink-2);
   background: var(--wash);

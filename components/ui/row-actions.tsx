@@ -208,17 +208,14 @@ export function RowActions({
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bad-tint)] text-[var(--color-bad)]">
-                      <LuTriangleAlert
-                        aria-hidden="true"
-                        className="size-4.5"
-                      />
+                      <LuTriangleAlert aria-hidden="true" className="size-5" />
                     </div>
                     <div className="min-w-0 flex-1 pt-0.5">
                       <h3 className="text-base font-semibold text-[var(--color-ink)] tracking-tight">
                         {items[confirmIndex]?.confirmTitle ??
                           t("rowActionsConfirmTitle")}
                       </h3>
-                      <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-[var(--color-ink-2)]">
+                      <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[var(--color-ink-2)]">
                         {items[confirmIndex]?.confirmDescription ??
                           (items[confirmIndex]?.label
                             ? `"${items[confirmIndex]?.label}" and its contents will be permanently removed. This can't be undone.`
@@ -226,7 +223,7 @@ export function RowActions({
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-end gap-2.5 pt-1">
+                  <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
                     <Button
                       type="button"
                       size="sm"

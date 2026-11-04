@@ -82,7 +82,7 @@ export function InviteLinkForm({
           borderTopRightRadius: "32px",
         }}
       >
-        <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
+        <div className="h-2 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
         <CardHeader className="pt-10 pb-3 px-6 sm:px-8">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-brand-tint)]">
             <LuLoader className="h-6 w-6 animate-spin text-[var(--color-brand-700)]" />
@@ -107,7 +107,7 @@ export function InviteLinkForm({
         borderTopRightRadius: "32px",
       }}
     >
-      <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-bad)] to-[var(--color-bad-fill)] shrink-0" />
+      <div className="h-2 w-full bg-gradient-to-r from-[var(--color-bad)] to-[var(--color-bad-fill)] shrink-0" />
       <CardHeader className="pt-8 pb-3 px-6 sm:px-8">
         <CardTitle className="font-[family-name:var(--font-display)] text-2xl font-bold">
           {tActivate("invalidHeading")}

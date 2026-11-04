@@ -122,7 +122,7 @@ export function LocalisedInput({
         <div className="flex items-center justify-end px-1 pt-0.5 select-none pointer-events-none">
           <span
             className={cn(
-              "font-mono text-[10px] tabular-nums transition-colors",
+              "font-mono text-xs tabular-nums transition-colors",
               isNearLimit
                 ? "text-[var(--color-bad)] font-semibold"
                 : "text-[var(--color-ink-3)]",

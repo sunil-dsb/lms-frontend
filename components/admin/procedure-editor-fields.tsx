@@ -9,6 +9,7 @@ import {
   LuChevronRight,
   LuFileText,
   LuSearch,
+  LuSparkles,
   LuTrash2,
   LuUpload,
   LuUsers,
@@ -16,6 +17,9 @@ import {
 } from "react-icons/lu";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { StatusPill } from "@/components/ui/status-pill";
 
 import { IconTile } from "@/components/ui/icon-tile";
 
@@ -290,7 +294,7 @@ export function AssignBlock({
           ) : null}
         </div>
 
-        <div className="relative flex w-full sm:w-[280px] md:w-[340px] items-center rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-1.5 sm:py-2 transition-colors focus-within:border-[var(--color-brand)]">
+        <div className="relative flex w-full sm:w-[280px] md:w-[340px] items-center rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 sm:py-2 transition-colors focus-within:border-[var(--color-brand)]">
           <LuSearch
             aria-hidden="true"
             className="mr-2 size-4 shrink-0 text-[var(--color-ink-3)]"
@@ -313,7 +317,7 @@ export function AssignBlock({
               onClick={() => setSearch("")}
               className="ml-1 shrink-0 text-[var(--color-ink-3)] hover:text-[var(--color-ink)] cursor-pointer"
             >
-              <LuX aria-hidden="true" className="size-3.5" />
+              <LuX aria-hidden="true" className="size-4" />
             </button>
           ) : null}
         </div>
@@ -373,11 +377,11 @@ export function AssignBlock({
                           className="flex size-[22px] items-center justify-center rounded-full bg-[var(--color-brand-600)] text-[var(--color-surface)] shadow-xs"
                           aria-hidden="true"
                         >
-                          <LuCheck className="size-3.5 stroke-[3]" />
+                          <LuCheck className="size-4 stroke-[3]" />
                         </span>
                       ) : (
                         <span
-                          className="flex size-[30px] items-center justify-center rounded-full border border-[var(--color-line-2)] bg-[var(--color-wash)] text-[11px] font-semibold text-[var(--color-ink-2)]"
+                          className="flex size-[30px] items-center justify-center rounded-full border border-[var(--color-line-2)] bg-[var(--color-wash)] text-xs font-semibold text-[var(--color-ink-2)]"
                           aria-hidden="true"
                         >
                           {initials}
@@ -549,7 +553,7 @@ export function ProcedureIconPicker({
           {t("iconPickerHint")}
         </p>
         {uploading ? (
-          <p className="text-xs font-medium text-[var(--color-brand-600)] flex items-center gap-1.5">
+          <p className="text-xs font-medium text-[var(--color-brand-600)] flex items-center gap-2">
             <span className="spinner size-3" aria-hidden="true" />
             Uploading icon…
           </p>
@@ -596,5 +600,134 @@ export function ProcedureIconPicker({
         onChange={(e) => void onFile(e)}
       />
     </div>
+  );
+}
+
+export function PromoSection({
+  isPromo,
+  onChangeIsPromo,
+  promoExpiresAt,
+  onChangePromoExpiresAt,
+  locale,
+}: {
+  isPromo: boolean;
+  onChangeIsPromo: (val: boolean) => void;
+  promoExpiresAt: string | null;
+  onChangePromoExpiresAt: (val: string | null) => void;
+  locale: string;
+}): React.ReactElement {
+  const t = useTranslations("admin.library.editor");
+  const isEs = locale === "es";
+
+  const setPreset = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    onChangePromoExpiresAt(d.toISOString().slice(0, 10));
+  };
+
+  return (
+    <section
+      id="proc-promo"
+      className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-6 transition-colors"
+    >
+      {/* Same header pattern as the other step-3 rows: icon tile, title,
+          status pill; the on/off control sits at the row's end. The state
+          is carried by the pill, so the card border stays neutral. */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <IconTile size="xs" icon={LuSparkles} />
+          <h3 className="text-sm font-semibold text-[var(--color-ink)]">
+            {t("promoTitle")}
+          </h3>
+          <StatusPill tone={isPromo ? "ok" : "neutral"} withDot={isPromo}>
+            {isPromo
+              ? isEs
+                ? "Activo"
+                : "Active"
+              : isEs
+                ? "Inactivo"
+                : "Inactive"}
+          </StatusPill>
+        </div>
+
+        {/* On/off control — the same checkbox-as-action pattern as the quiz
+            attach toggle: the label says what the control does, the state
+            lives in the pill. */}
+        <label className="flex shrink-0 cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isPromo}
+            onChange={(event) => {
+              const next = event.target.checked;
+              onChangeIsPromo(next);
+              if (next && !promoExpiresAt) setPreset(30);
+            }}
+            className="size-5 cursor-pointer accent-[var(--color-brand-600)]"
+          />
+          <span className="text-xs font-semibold text-[var(--color-ink-2)] select-none">
+            {isEs ? "Activar promoción" : "Enable promo"}
+          </span>
+        </label>
+      </div>
+      <p className="mt-2 text-xs leading-meta text-[var(--color-ink-3)]">
+        {t("promoSubtitle")}
+      </p>
+
+      {isPromo ? (
+        <div className="mt-5 pt-5 border-t border-[var(--color-line-2)] space-y-5">
+          {/* Expiration date + presets */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="proc-promo-expires"
+              className="text-xs font-semibold text-[var(--color-ink)] block"
+            >
+              {t("promoExpiresLabel")}
+            </Label>
+            <div className="flex flex-wrap items-center gap-3">
+              <Input
+                id="proc-promo-expires"
+                type="date"
+                min={new Date().toISOString().slice(0, 10)}
+                value={promoExpiresAt ?? ""}
+                onChange={(e) => onChangePromoExpiresAt(e.target.value || null)}
+                className="h-[38px] w-[180px] shrink-0 rounded-[var(--radius-md)] border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 text-xs text-[var(--color-ink)]"
+              />
+              <div className="flex items-center flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreset(14)}
+                  className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                >
+                  {t("promoPreset2Weeks")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreset(30)}
+                  className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                >
+                  {t("promoPreset1Month")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreset(60)}
+                  className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                >
+                  {t("promoPreset2Months")}
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-[var(--color-ink-3)] leading-relaxed mt-1">
+              {t("promoExpiresHint")}
+            </p>
+          </div>
+
+          <div className="pt-1">
+            <p className="text-xs leading-relaxed text-[var(--color-ink-2)]">
+              {t("promoStationsHint")}
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }

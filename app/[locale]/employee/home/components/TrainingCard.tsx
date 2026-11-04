@@ -153,7 +153,7 @@ export function TrainingCard({
             </svg>
             <span
               className="absolute inset-0 flex items-center justify-center font-bold tracking-tight text-[var(--color-ink)] tabular-nums"
-              style={{ fontSize: "11px" }}
+              style={{ fontSize: "var(--t-xs)" }}
             >
               {pct}%
             </span>

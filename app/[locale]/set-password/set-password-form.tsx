@@ -133,16 +133,16 @@ export function SetPasswordForm({
       }}
     >
       {/* Decorative top accent line */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
+      <div className="h-2 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
 
       <CardHeader className="text-center pt-6 pb-2 px-4 sm:px-8 sm:mt-12 shrink-0">
         <CardTitle
-          className="font-[family-name:var(--font-display)] text-xl sm:text-[26px] tracking-tight text-[var(--color-ink)] leading-tight"
+          className="font-[family-name:var(--font-display)] text-lg sm:text-xl tracking-tight text-[var(--color-ink)] leading-tight"
           style={{ fontWeight: 500 }}
         >
           {t("title")}
         </CardTitle>
-        <CardDescription className="text-xs sm:text-sm text-[var(--color-ink-2)] mt-1.5 max-w-sm mx-auto leading-relaxed">
+        <CardDescription className="text-xs sm:text-sm text-[var(--color-ink-2)] mt-2 max-w-sm mx-auto leading-relaxed">
           {employeeName
             ? t("intro", { name: employeeName })
             : locale === "es"
@@ -168,7 +168,7 @@ export function SetPasswordForm({
           ) : null}
 
           {/* Choose Password */}
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label
               htmlFor="password"
               className="text-sm font-medium text-[var(--color-ink)]"
@@ -217,7 +217,7 @@ export function SetPasswordForm({
           </div>
 
           {/* Confirm Password */}
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label
               htmlFor="confirm"
               className="text-sm font-medium text-[var(--color-ink)]"
@@ -282,14 +282,14 @@ export function SetPasswordForm({
           >
             {/* Rule: Min 8 chars */}
             <div
-              className={`flex items-center gap-2.5 transition-colors ${
+              className={`flex items-center gap-3 transition-colors ${
                 isMinLength
                   ? "text-[var(--color-ok)] font-medium"
                   : "text-[var(--color-ink-3)]"
               }`}
             >
               <div
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs ${
                   isMinLength
                     ? "bg-[var(--color-ok-tint)] text-[var(--color-ok)] font-bold"
                     : "bg-[var(--color-line-2)] text-[var(--color-ink-3)]"
@@ -302,14 +302,14 @@ export function SetPasswordForm({
 
             {/* Rule: Uppercase letter */}
             <div
-              className={`flex items-center gap-2.5 transition-colors ${
+              className={`flex items-center gap-3 transition-colors ${
                 hasUppercase
                   ? "text-[var(--color-ok)] font-medium"
                   : "text-[var(--color-ink-3)]"
               }`}
             >
               <div
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs ${
                   hasUppercase
                     ? "bg-[var(--color-ok-tint)] text-[var(--color-ok)] font-bold"
                     : "bg-[var(--color-line-2)] text-[var(--color-ink-3)]"
@@ -326,14 +326,14 @@ export function SetPasswordForm({
 
             {/* Rule: Special character */}
             <div
-              className={`flex items-center gap-2.5 transition-colors ${
+              className={`flex items-center gap-3 transition-colors ${
                 hasSpecial
                   ? "text-[var(--color-ok)] font-medium"
                   : "text-[var(--color-ink-3)]"
               }`}
             >
               <div
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs ${
                   hasSpecial
                     ? "bg-[var(--color-ok-tint)] text-[var(--color-ok)] font-bold"
                     : "bg-[var(--color-line-2)] text-[var(--color-ink-3)]"
@@ -350,14 +350,14 @@ export function SetPasswordForm({
 
             {/* Rule: Passwords match */}
             <div
-              className={`flex items-center gap-2.5 transition-colors ${
+              className={`flex items-center gap-3 transition-colors ${
                 isMatching
                   ? "text-[var(--color-ok)] font-medium"
                   : "text-[var(--color-ink-3)]"
               }`}
             >
               <div
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs ${
                   isMatching
                     ? "bg-[var(--color-ok-tint)] text-[var(--color-ok)] font-bold"
                     : "bg-[var(--color-line-2)] text-[var(--color-ink-3)]"
@@ -388,13 +388,13 @@ export function SetPasswordForm({
 
           <Link
             href={`/${locale}/login`}
-            className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors py-1 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors py-1 cursor-pointer"
           >
             <LuArrowLeft className="text-sm" />
             <span>{t("backToLogin")}</span>
           </Link>
 
-          <p className="text-[11px] text-center text-[var(--color-ink-3)]/80 pt-1">
+          <p className="text-xs text-center text-[var(--color-ink-3)]/80 pt-1">
             &copy; {new Date().getFullYear()} Alimentaria Mexicana &bull;
             Culinary Learning &amp; SOPs
           </p>

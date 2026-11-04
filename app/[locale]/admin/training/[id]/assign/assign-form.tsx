@@ -94,7 +94,7 @@ function AlreadyAssignedTable({
           <div className="flex items-center gap-2 md:min-w-0 md:flex-1">
             <span
               aria-hidden="true"
-              className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-[11px] font-semibold text-[var(--color-ink)]"
+              className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-xs font-semibold text-[var(--color-ink)]"
             >
               {employee.name
                 .split(" ")
@@ -108,7 +108,7 @@ function AlreadyAssignedTable({
               <p className="truncate text-xs font-semibold text-[var(--color-ink)]">
                 {employee.name}
               </p>
-              <p className="truncate text-[11px] text-[var(--color-ink-2)]">
+              <p className="truncate text-xs text-[var(--color-ink-2)]">
                 {employee.station}
               </p>
             </div>
@@ -158,7 +158,7 @@ function EmployeePicker({
       <div className="relative">
         <LuSearch
           aria-hidden="true"
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-ink-3)] pointer-events-none z-10"
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[var(--color-ink-3)] pointer-events-none z-10"
         />
         <Input
           value={search}
@@ -168,7 +168,7 @@ function EmployeePicker({
             paddingLeft: "2.75rem",
             paddingRight: search ? "2.5rem" : "1rem",
           }}
-          className="!pl-11 h-tap-admin text-xs"
+          className="!pl-10 h-tap-admin text-xs"
         />
       </div>
 
@@ -208,7 +208,7 @@ function EmployeePicker({
                     <span className="block truncate text-xs font-semibold text-[var(--color-ink)]">
                       {e.name}
                     </span>
-                    <span className="block truncate text-[11px] text-[var(--color-ink-2)]">
+                    <span className="block truncate text-xs text-[var(--color-ink-2)]">
                       {e.station}
                     </span>
                   </span>
@@ -305,7 +305,7 @@ export function AssignForm({
                     return (
                       <span
                         key={id}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] px-2.5 py-1 rounded-full text-[var(--color-ink)] shadow-xs"
+                        className="inline-flex items-center gap-2 text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] px-3 py-1 rounded-full text-[var(--color-ink)] shadow-xs"
                       >
                         <LuUserPlus className="text-xs text-[var(--color-ink-3)] shrink-0" />
                         <span className="truncate max-w-[130px]">{e.name}</span>

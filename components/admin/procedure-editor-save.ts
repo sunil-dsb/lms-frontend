@@ -54,6 +54,8 @@ interface ProcedureSaveDependencies {
   body: ProcedureBody;
   iconImageUrl: string | null;
   protection: ProcedureProtection;
+  isPromo: boolean;
+  promoExpiresAt: string | null;
   setDirty: Dispatch<SetStateAction<boolean>>;
   importedId: string | null;
   isEdit: boolean;
@@ -93,6 +95,8 @@ export function createProcedureSaveHandler(
     body,
     iconImageUrl,
     protection,
+    isPromo,
+    promoExpiresAt,
     setDirty,
     importedId,
     isEdit,
@@ -249,6 +253,14 @@ export function createProcedureSaveHandler(
           quizId,
           audience: audience.mode === "everyone" ? null : audience,
           protection,
+          isPromo,
+          promoExpiresAt:
+            isPromo && promoExpiresAt
+              ? promoExpiresAt.includes("T")
+                ? promoExpiresAt
+                : new Date(`${promoExpiresAt}T23:59:59.999Z`).toISOString()
+              : null,
+          promoAudience: "station",
         };
         let publishedNow = false;
         if (initial) {

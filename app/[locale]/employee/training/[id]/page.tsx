@@ -2,7 +2,8 @@ import * as React from "react";
 import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { ApiException, getProcedureBySlug } from "@/lib/api";
+import { ApiException } from "@/lib/api";
+import { fetchProcedureById } from "@/services/library/api";
 import {
   fetchEmployeeQuiz,
   fetchMyTrainingCourse,
@@ -260,13 +261,16 @@ export default async function EmployeeTrainingCoursePage({
     let linkedProcedure = null;
 
     // Only fetch a single procedure when there's exactly one and no linked_procedures block
-    if (!hasLinkedProceduresBlock && chapterDetail.procedureSlug) {
+    const linkedProcedureId =
+      chapterDetail.procedureId || chapterDetail.procedureSlug;
+    if (!hasLinkedProceduresBlock && linkedProcedureId) {
       try {
-        const res = await getProcedureBySlug(
-          chapterDetail.procedureSlug,
+        linkedProcedure = await fetchProcedureById(
+          linkedProcedureId,
+          false,
           cookieHeader,
+          id,
         );
-        linkedProcedure = res.procedure;
       } catch (err) {
         console.warn("Could not load live procedure from API:", err);
       }
@@ -275,6 +279,7 @@ export default async function EmployeeTrainingCoursePage({
     return (
       <ChapterLearnView
         courseId={id}
+        trainingCourseId={id}
         chapterId={currentChapterObj?.id}
         courseTitle={courseTitle}
         chapterNumber={chapterNumber}

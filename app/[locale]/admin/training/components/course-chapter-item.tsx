@@ -107,10 +107,10 @@ export function CourseChapterItem({
           )}
 
           {/* Chapter Metadata: linked procedures, quiz, blocks */}
-          <div className="mt-1.5 flex items-center gap-3 text-xs text-[var(--color-ink-3)] flex-wrap">
+          <div className="mt-2 flex items-center gap-3 text-xs text-[var(--color-ink-3)] flex-wrap">
             {linkedProcedures.length > 0 && (
-              <span className="inline-flex items-center gap-1.5 font-medium text-[var(--color-brand-600)]">
-                <LuBookOpen className="w-3.5 h-3.5 shrink-0" />
+              <span className="inline-flex items-center gap-2 font-medium text-[var(--color-brand-600)]">
+                <LuBookOpen className="w-4 h-4 shrink-0" />
                 <span>
                   {linkedProcedures.length === 1
                     ? linkedProcedures[0].title
@@ -126,8 +126,8 @@ export function CourseChapterItem({
                 {linkedProcedures.length > 0 && (
                   <span className="inline-block h-1 w-1 rounded-full bg-[var(--color-line-2)]" />
                 )}
-                <span className="inline-flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400">
-                  <LuSparkles className="w-3.5 h-3.5 shrink-0" />
+                <span className="inline-flex items-center gap-2 font-medium text-[var(--color-warn-ink)]">
+                  <LuSparkles className="w-4 h-4 shrink-0" />
                   <span>
                     {quizQuestionsCount}{" "}
                     {quizQuestionsCount === 1
@@ -170,7 +170,7 @@ export function CourseChapterItem({
           disabled={index === 0 || isReordering}
           onClick={() => onMoveUp(index)}
           title={isEs ? "Subir capítulo" : "Move up"}
-          className="p-1.5 rounded-lg text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-20 disabled:pointer-events-none transition-colors"
+          className="p-2 rounded-lg text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-20 disabled:pointer-events-none transition-colors"
         >
           <LuChevronUp className="w-4 h-4" />
         </button>
@@ -179,7 +179,7 @@ export function CourseChapterItem({
           disabled={index === totalCount - 1 || isReordering}
           onClick={() => onMoveDown(index)}
           title={isEs ? "Bajar capítulo" : "Move down"}
-          className="p-1.5 rounded-lg text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-20 disabled:pointer-events-none transition-colors"
+          className="p-2 rounded-lg text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-20 disabled:pointer-events-none transition-colors"
         >
           <LuChevronDown className="w-4 h-4" />
         </button>
@@ -188,7 +188,7 @@ export function CourseChapterItem({
           onClick={() => onRequestDelete(chapter)}
           disabled={isDeleting}
           title={isEs ? "Eliminar capítulo" : "Remove chapter"}
-          className="p-1.5 rounded-lg text-[var(--color-ink-3)] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-20 transition-colors"
+          className="p-2 rounded-lg text-[var(--color-ink-3)] hover:text-[var(--color-bad)] hover:bg-[var(--color-bad-tint)] disabled:opacity-20 transition-colors"
         >
           <LuTrash2 className="w-4 h-4" />
         </button>

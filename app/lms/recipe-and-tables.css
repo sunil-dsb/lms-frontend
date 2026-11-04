@@ -295,7 +295,7 @@
    may skip was the step nobody noticed. */
 .step.is-crit {
   background: var(--wash);
-  border-radius: var(--r-xl);
+  border-radius: var(--r-lg);
   padding: var(--s-4);
   margin-top: var(--s-3);
   margin-bottom: var(--s-3);

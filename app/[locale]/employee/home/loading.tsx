@@ -24,7 +24,7 @@ export default function EmployeeHomeLoading(): React.ReactElement {
             <Skeleton className="size-[42px] shrink-0 rounded-full" />
             <div className="min-w-0 flex-1 space-y-2">
               <Skeleton className="h-5 w-36" />
-              <Skeleton className="h-3.5 w-48 bg-[var(--color-panel)]" />
+              <Skeleton className="h-4 w-48 bg-[var(--color-panel)]" />
             </div>
           </div>
         </div>

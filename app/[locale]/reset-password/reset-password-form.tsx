@@ -157,7 +157,7 @@ export function ResetPasswordForm({
   if (status === "success") {
     return (
       <Card className="w-full rounded-3xl border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-xl overflow-hidden backdrop-blur-sm text-center">
-        <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-ok)] to-[var(--color-ok-700)]" />
+        <div className="h-2 w-full bg-gradient-to-r from-[var(--color-ok)] to-[var(--color-ok-700)]" />
         <CardHeader className="pt-8 pb-3 px-6 sm:px-8">
           <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-ok-tint)] text-[var(--color-ok)] border border-[var(--color-ok)]/20 shadow-xs animate-in zoom-in-75 duration-300">
             <LuCircleCheck className="text-3xl" />
@@ -165,7 +165,7 @@ export function ResetPasswordForm({
           <CardTitle className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-ink)]">
             {t("successTitle")}
           </CardTitle>
-          <CardDescription className="text-xs sm:text-sm text-[var(--color-ink-2)] mt-1.5 max-w-sm mx-auto leading-relaxed">
+          <CardDescription className="text-xs sm:text-sm text-[var(--color-ink-2)] mt-2 max-w-sm mx-auto leading-relaxed">
             {t("successBody")}
           </CardDescription>
         </CardHeader>
@@ -195,16 +195,16 @@ export function ResetPasswordForm({
       }}
     >
       {/* Decorative top accent line */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
+      <div className="h-2 w-full bg-gradient-to-r from-[var(--color-brand)] via-[var(--color-brand-600)] to-[var(--color-brand-700)] shrink-0" />
 
       <CardHeader className="text-center pt-6 pb-2 px-4 sm:px-8 sm:mt-12 shrink-0">
         <CardTitle
-          className="font-[family-name:var(--font-display)] text-xl sm:text-[26px] tracking-tight text-[var(--color-ink)] leading-tight"
+          className="font-[family-name:var(--font-display)] text-lg sm:text-xl tracking-tight text-[var(--color-ink)] leading-tight"
           style={{ fontWeight: 500 }}
         >
           {t("title")}
         </CardTitle>
-        <CardDescription className="text-xs sm:text-sm text-[var(--color-ink-2)] mt-1.5 max-w-sm mx-auto leading-relaxed">
+        <CardDescription className="text-xs sm:text-sm text-[var(--color-ink-2)] mt-2 max-w-sm mx-auto leading-relaxed">
           {t("subtitle")}
         </CardDescription>
       </CardHeader>
@@ -235,13 +235,13 @@ export function ResetPasswordForm({
               </span>
               <Link
                 href={`/${locale}/forgot-password`}
-                className="font-semibold underline shrink-0 text-[var(--color-brand-700)] hover:text-[var(--color-brand-800)] text-[11px]"
+                className="font-semibold underline shrink-0 text-[var(--color-brand-700)] hover:text-[var(--color-brand-800)] text-xs"
               >
                 Change
               </Link>
             </div>
           ) : (
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label
                 htmlFor="email"
                 className="text-sm font-medium text-[var(--color-ink)]"
@@ -262,14 +262,14 @@ export function ResetPasswordForm({
           )}
 
           {/* 6-digit code */}
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label className="text-sm font-medium text-[var(--color-ink)]">
               {t("codeLabel")}
             </Label>
             <div
               role="group"
               aria-label={t("codeLabel")}
-              className="grid grid-cols-6 gap-1.5 sm:gap-2"
+              className="grid grid-cols-6 gap-2 sm:gap-2"
             >
               {[0, 1, 2, 3, 4, 5].map((i) => (
                 <Input
@@ -324,7 +324,7 @@ export function ResetPasswordForm({
           </div>
 
           {/* New Password */}
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label
               htmlFor="new-password"
               className="text-sm font-medium text-[var(--color-ink)]"
@@ -375,7 +375,7 @@ export function ResetPasswordForm({
           </div>
 
           {/* Confirm New Password */}
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label
               htmlFor="confirm-password"
               className="text-sm font-medium text-[var(--color-ink)]"
@@ -439,14 +439,14 @@ export function ResetPasswordForm({
             style={{ padding: "14px 16px" }}
           >
             <div
-              className={`flex items-center gap-2.5 transition-colors ${
+              className={`flex items-center gap-3 transition-colors ${
                 isCodeComplete
                   ? "text-[var(--color-ok)] font-medium"
                   : "text-[var(--color-ink-3)]"
               }`}
             >
               <div
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs ${
                   isCodeComplete
                     ? "bg-[var(--color-ok-tint)] text-[var(--color-ok)] font-bold"
                     : "bg-[var(--color-line-2)] text-[var(--color-ink-3)]"
@@ -458,14 +458,14 @@ export function ResetPasswordForm({
             </div>
 
             <div
-              className={`flex items-center gap-2.5 transition-colors ${
+              className={`flex items-center gap-3 transition-colors ${
                 isMinLength
                   ? "text-[var(--color-ok)] font-medium"
                   : "text-[var(--color-ink-3)]"
               }`}
             >
               <div
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs ${
                   isMinLength
                     ? "bg-[var(--color-ok-tint)] text-[var(--color-ok)] font-bold"
                     : "bg-[var(--color-line-2)] text-[var(--color-ink-3)]"
@@ -477,14 +477,14 @@ export function ResetPasswordForm({
             </div>
 
             <div
-              className={`flex items-center gap-2.5 transition-colors ${
+              className={`flex items-center gap-3 transition-colors ${
                 isMatching
                   ? "text-[var(--color-ok)] font-medium"
                   : "text-[var(--color-ink-3)]"
               }`}
             >
               <div
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-xs ${
                   isMatching
                     ? "bg-[var(--color-ok-tint)] text-[var(--color-ok)] font-bold"
                     : "bg-[var(--color-line-2)] text-[var(--color-ink-3)]"
@@ -517,13 +517,13 @@ export function ResetPasswordForm({
 
           <Link
             href={`/${locale}/login`}
-            className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors py-1 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors py-1 cursor-pointer"
           >
             <LuArrowLeft className="text-sm" />
             <span>{t("backToLogin")}</span>
           </Link>
 
-          <p className="text-[11px] text-center text-[var(--color-ink-3)]/80 pt-1">
+          <p className="text-xs text-center text-[var(--color-ink-3)]/80 pt-1">
             &copy; {new Date().getFullYear()} Alimentaria Mexicana &bull;
             Culinary Learning &amp; SOPs
           </p>

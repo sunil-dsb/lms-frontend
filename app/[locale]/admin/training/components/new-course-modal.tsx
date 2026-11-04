@@ -137,7 +137,7 @@ export function NewCourseModal({
             {error && (
               <div
                 role="alert"
-                className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300"
+                className="rounded-[var(--radius-md)] border border-[var(--color-bad)]/30 bg-[var(--color-bad-tint)] p-3 text-xs font-medium text-[var(--color-bad)]"
               >
                 {error}
               </div>
@@ -180,19 +180,19 @@ export function NewCourseModal({
           </div>
 
           {/* Modal Footer matching reference design */}
-          <div className="flex items-center justify-end gap-3 border-t border-[var(--color-line-2)] bg-[#FAF7F2] dark:bg-[#1E1B18] px-6 sm:px-8 py-4">
+          <div className="flex items-center justify-end gap-3 border-t border-[var(--color-line-2)] bg-[var(--color-wash)] dark:bg-[var(--color-field)] px-6 sm:px-8 py-4">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-xl px-5 py-2.5 text-sm font-semibold text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              className="rounded-xl px-5 py-3 text-sm font-semibold text-[var(--color-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
             >
               {isEs ? "Cancelar" : "Cancel"}
             </button>
             <button
               type="submit"
               disabled={!isFormValid || isSubmitting}
-              className="rounded-2xl bg-[var(--color-brand-600)] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSubmitting
                 ? isEs

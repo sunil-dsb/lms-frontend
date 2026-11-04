@@ -65,7 +65,7 @@ export default async function SetPasswordTokenPage({
             borderTopRightRadius: "32px",
           }}
         >
-          <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-brand)] to-[var(--color-brand-700)] shrink-0" />
+          <div className="h-2 w-full bg-gradient-to-r from-[var(--color-brand)] to-[var(--color-brand-700)] shrink-0" />
           <CardHeader className="pt-8 pb-3 px-6 sm:px-8">
             <CardTitle className="font-[family-name:var(--font-display)] text-2xl font-bold">
               {t("alreadyActiveHeading")}
@@ -104,7 +104,7 @@ export default async function SetPasswordTokenPage({
             borderTopRightRadius: "32px",
           }}
         >
-          <div className="h-1.5 w-full bg-gradient-to-r from-[var(--color-bad)] to-[var(--color-bad-fill)] shrink-0" />
+          <div className="h-2 w-full bg-gradient-to-r from-[var(--color-bad)] to-[var(--color-bad-fill)] shrink-0" />
           <CardHeader className="pt-8 pb-3 px-6 sm:px-8">
             <CardTitle className="font-[family-name:var(--font-display)] text-2xl font-bold">
               {t("invalidHeading")}

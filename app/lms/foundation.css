@@ -129,8 +129,11 @@
   --scrim-strong: rgb(34 34 34 / 0.82);
   /* caption and label over a photo */
 
-  /* Space, 4px base */
+  /* Space, 4px base
+     --s-1-5 is the optical half-step used where an 8px read as a hole and 4px
+     as a collision: it is a anchor-of-last-resort, not license to invent more. */
   --s-1: 4px;
+  --s-1-5: 6px;
   --s-2: 8px;
   --s-3: 12px;
   --s-4: 16px;
@@ -172,7 +175,12 @@
 
      The old scale was eight numbers whose ratios drifted from 1.125 to 1.33, so
      16 and 18 sat a twelfth apart and read as the same size in the same weight.
-     12px is gone: it was below the floor on every surface this product has. */
+     12px was first removed as below the floor — but the app-wide audit found
+     ~450 components authored against it (badges, chips, captions, meta rows),
+     rendering at inconsistent inherited sizes once the step vanished. It is
+     restored as --t-xs with a reserved role: meta and annotation only, never
+     body or input text. */
+  --t-xs: 0.75rem;
   --t-sm: 0.875rem;
   --t-base: 1rem;
   --t-md: 1.25rem;
@@ -281,6 +289,53 @@
   --z-modal: 40;
   --z-toast: 50;
   --z-tooltip: 60;
+}
+
+/* ============================================================
+   RESPONSIVE WORK SURFACE
+   Adapts the admin work surface across wider displays (QHD, 4K,
+   ultrawide) and scales smoothly during browser zoom (Ctrl - / Ctrl +).
+   ============================================================ */
+@media (min-width: 1440px) {
+  :root {
+    --page-w: 84rem;
+    --page-wide-w: 96rem;
+  }
+}
+
+@media (min-width: 1680px) {
+  :root {
+    --page-w: 96rem;
+    --page-wide-w: 108rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --page-w: 108rem;
+    --page-wide-w: 120rem;
+  }
+}
+
+@media (min-width: 2200px) {
+  :root {
+    --page-w: 124rem;
+    --page-wide-w: 136rem;
+  }
+}
+
+@media (min-width: 2560px) {
+  :root {
+    --page-w: 140rem;
+    --page-wide-w: 152rem;
+  }
+}
+
+@media (min-width: 3200px) {
+  :root {
+    --page-w: 168rem;
+    --page-wide-w: 180rem;
+  }
 }
 
 /* ============================================================

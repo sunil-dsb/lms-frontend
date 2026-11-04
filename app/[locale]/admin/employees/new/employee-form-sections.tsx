@@ -40,7 +40,7 @@ function FormSection({
   );
 }
 
-const field = "flex flex-col gap-1.5";
+const field = "flex flex-col gap-2";
 
 export function EmployeeDetailsSection({
   form,
@@ -69,7 +69,7 @@ export function EmployeeDetailsSection({
         <div className={field}>
           <div className="flex items-center justify-between min-h-5">
             <Label htmlFor="name">{t("nameLabel")}</Label>
-            <span className="text-[11px] font-medium text-[var(--color-ink-3)]">
+            <span className="text-xs font-medium text-[var(--color-ink-3)]">
               {form.name.length}/50
             </span>
           </div>
@@ -267,7 +267,7 @@ export function EmployeeAccessSection({
             {fieldErrors.roleIds ? (
               <p
                 role="alert"
-                className="mt-1.5 text-xs font-medium text-[var(--color-bad)]"
+                className="mt-2 text-xs font-medium text-[var(--color-bad)]"
               >
                 {fieldErrors.roleIds}
               </p>

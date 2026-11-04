@@ -86,7 +86,7 @@ export function AuthShell({
             </span>
           </div>
           {locale ? (
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <ThemeToggle
                 labels={{
                   toDark: t("themeToDark"),
@@ -101,7 +101,7 @@ export function AuthShell({
         {/* Top Restaurant Logo & Name Header - Shown on desktop */}
         <div className="hidden sm:flex flex-col items-center justify-center text-center gap-2 pt-6 pb-4 shrink-0 px-4">
           {/* Circular Restaurant Logo */}
-          <div className="flex items-center justify-center rounded-full bg-white shadow-md border-2 border-[var(--color-line-2)] p-1.5 shrink-0 transition-transform hover:scale-105 w-[58px] h-[58px]">
+          <div className="flex items-center justify-center rounded-full bg-white shadow-md border-2 border-[var(--color-line-2)] p-2 shrink-0 transition-transform hover:scale-105 w-[58px] h-[58px]">
             <img
               src="/brand-mark.png"
               alt="Alimentaria Mexicana"

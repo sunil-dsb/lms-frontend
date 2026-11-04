@@ -60,16 +60,16 @@ export function ChapterStatusIndicator({
 
   // 2. Resolve Tone/Color
   const textColorClass = isComplete
-    ? "text-[#16A34A]"
+    ? "text-[var(--color-ok)]"
     : isLocked
       ? "text-[var(--color-ink-3)]"
       : "text-[var(--color-ink-2)]";
 
   return (
     <div
-      className={`flex items-center gap-1.5 text-xs font-medium ${textColorClass} ${className}`}
+      className={`flex items-center gap-2 text-xs font-medium ${textColorClass} ${className}`}
     >
-      <IconComp className="w-3.5 h-3.5 shrink-0 mr-1" aria-hidden="true" />
+      <IconComp className="w-4 h-4 shrink-0 mr-1" aria-hidden="true" />
       <span>{subtitle}</span>
     </div>
   );

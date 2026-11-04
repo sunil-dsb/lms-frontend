@@ -57,7 +57,7 @@ export function CourseDetailsStep({
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300"
+          className="rounded-[var(--radius-lg)] border border-[var(--color-bad)]/30 bg-[var(--color-bad-tint)] p-4 text-xs font-medium text-[var(--color-bad)]"
         >
           {error}
         </div>

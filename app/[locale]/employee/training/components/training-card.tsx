@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { LuLock } from "react-icons/lu";
 import { useTranslations } from "next-intl";
 import type { EmployeeTrainingItem } from "../lib/training-view-types";
 import { DueDateBadge } from "./due-date-badge";
@@ -37,6 +38,61 @@ export function TrainingCard({
         item.chapterCount === 1 ? "chapter" : "chapters"
       } · about ${estimatedMin} min`;
 
+  /* Locked: the card stays so the employee can see what they're blocked from,
+     but it is a dead block — content blurred, crisp plain lock knob at the
+     side, exactly ProcedureRow's treatment (`blur(3px)` wrapper, LockRowShell's
+     dashed frame). Tapping does nothing: the detail endpoint would refuse the
+     visit with COURSE_LOCKED_BY_REQUIRED_TRAINING anyway. */
+  if (item.locked) {
+    return (
+      <li className="list-none" aria-disabled="true">
+        <div className="block rounded-[24px] border border-dashed border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
+            {/* Blurred course content */}
+            <div
+              className="min-w-0 flex-1"
+              style={{
+                filter: "blur(3px)",
+                opacity: 0.5,
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+              aria-hidden="true"
+            >
+              {item.stationTag ? (
+                <div className="mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-ink-3)]">
+                    {item.stationTag}
+                  </span>
+                </div>
+              ) : null}
+              <h2 className="font-[family-name:var(--font-ui)] text-base sm:text-lg font-bold leading-snug text-[var(--color-ink)]">
+                {item.title}
+              </h2>
+              <div className="mt-1 mb-1 flex flex-wrap items-center gap-2">
+                <p className="text-sm font-normal text-[var(--color-ink-2)]">
+                  {metaLine}
+                </p>
+                {item.dueAt ? (
+                  <DueDateBadge dueAt={item.dueAt} locale={locale} />
+                ) : null}
+              </div>
+            </div>
+
+            {/* Crisp unblurred lock icon at the side — bare icon like the
+                procedure rows, no chip, no ring. */}
+            <span
+              aria-hidden="true"
+              className="shrink-0 pr-1 text-[var(--color-ink-2)]"
+            >
+              <LuLock className="text-xl" />
+            </span>
+          </div>
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li className="list-none">
       <Link
@@ -45,8 +101,8 @@ export function TrainingCard({
       >
         {/* Station tag if any */}
         {item.stationTag ? (
-          <div className="mb-1.5">
-            <span className="text-[11px] font-bold tracking-wider uppercase text-[var(--color-brand-700)]">
+          <div className="mb-2">
+            <span className="text-xs font-bold tracking-wider uppercase text-[var(--color-brand-700)]">
               {item.stationTag}
             </span>
           </div>
@@ -55,24 +111,32 @@ export function TrainingCard({
         {/* Content row: Title + Meta on left, Circular percentage on right */}
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="min-w-0 flex-1">
-            <h2 className="font-[family-name:var(--font-ui)] text-base sm:text-lg font-bold leading-snug text-[var(--color-ink)] group-hover:text-[var(--color-brand-700)] transition-colors duration-[var(--dur)]">
-              {item.title}
-            </h2>
+            {/* Title line: Required pill rides just after the title text */}
+            <div className="flex items-center gap-2">
+              <h2 className="font-[family-name:var(--font-ui)] text-base sm:text-lg font-bold leading-snug text-[var(--color-ink)] group-hover:text-[var(--color-brand-700)] transition-colors duration-[var(--dur)]">
+                {item.title}
+              </h2>
+              {item.isRequired ? (
+                <span className="shrink-0 rounded-full bg-[var(--color-brand-600)]/10 px-2 py-1 text-xs font-semibold text-[var(--color-brand-700)]">
+                  {t("requiredCourseBadge")}
+                </span>
+              ) : null}
+            </div>
 
-            {/* Meta Line: Chapters count & duration */}
+            {/* Meta Line: chapters count & duration */}
             <p className="mt-1 text-sm text-[var(--color-ink-2)] font-normal mb-1">
               {metaLine}
             </p>
 
-            {/* Due Date Badge placed where other badges were */}
+            {/* Due Date Badge on its own line below the meta */}
             {item.dueAt ? (
-              <div className="mt-3.5">
+              <div className="mt-4">
                 <DueDateBadge dueAt={item.dueAt} locale={locale} />
               </div>
             ) : null}
           </div>
 
-          {/* Circular Percentage Progress Ring (matches reference Image 2) */}
+          {/* Circular Percentage Progress Ring (right edge) */}
           <CircularProgress
             percent={item.progressPercent}
             size={48}

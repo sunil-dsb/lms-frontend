@@ -190,7 +190,7 @@
   border-radius: var(--r-sm);
   background: var(--panel);
   color: var(--ink);
-  font-size: 0.8125rem;
+  font-size: var(--t-xs);
   white-space: nowrap;
 }
 
@@ -307,7 +307,7 @@
 
 .ds-values {
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-  font-size: 0.8125rem;
+  font-size: var(--t-xs);
   color: var(--ink-2);
   overflow-wrap: anywhere;
 }
@@ -530,7 +530,7 @@
 
 .ds-spec-head code {
   color: var(--ink-3);
-  font-size: 0.8125rem;
+  font-size: var(--t-xs);
 }
 
 .ds-spec-about {
@@ -582,7 +582,7 @@
   border-radius: var(--r-md);
   background: var(--panel);
   color: var(--ink);
-  font-size: 0.8125rem;
+  font-size: var(--t-xs);
   line-height: 1.6;
   white-space: pre;
 }

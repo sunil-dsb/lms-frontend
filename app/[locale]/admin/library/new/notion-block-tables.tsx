@@ -104,7 +104,7 @@ export function TableBody({
   }
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-[var(--color-ink-3)]">
           Table Columns & Rows
@@ -118,7 +118,7 @@ export function TableBody({
             return (
               <div
                 key={lang}
-                className="w-full rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-3 shadow-[var(--e-1)] transition-all duration-200 space-y-2.5"
+                className="w-full rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] p-3 shadow-[var(--e-1)] transition-all duration-200 space-y-3"
               >
                 <div className="flex items-center justify-between px-1">
                   <span className="text-xs font-semibold text-[var(--color-ink)]">
@@ -294,7 +294,7 @@ export function TableBody({
                   <span className="shrink-0 text-xs text-[var(--color-ink-3)]">
                     ·
                   </span>
-                  <div className="flex items-center gap-1.5 overflow-hidden">
+                  <div className="flex items-center gap-2 overflow-hidden">
                     {block.headers.map((h, k) => (
                       <span
                         key={k}
@@ -396,7 +396,7 @@ export function ChecklistBody({
         if (isActive) {
           return (
             <div key={lang} className="bli-card is-active">
-              <header className="flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-wash)] px-4 py-2.5">
+              <header className="flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-wash)] px-4 py-3">
                 <span className="text-xs font-semibold text-[var(--color-ink)]">
                   {lang === "en"
                     ? "Checklist (English)"
@@ -471,7 +471,7 @@ export function ChecklistBody({
                       />
 
                       {/* Item number badge */}
-                      <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-ok-tint)] font-mono text-[10px] font-bold text-[var(--color-ok)]">
+                      <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-ok-tint)] font-mono text-xs font-bold text-[var(--color-ok)]">
                         {i + 1}
                       </span>
 
@@ -517,7 +517,7 @@ export function ChecklistBody({
                 <button
                   type="button"
                   onClick={addItem}
-                  className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-semibold text-[var(--color-brand-600)] hover:bg-[var(--color-panel)] hover:text-[var(--color-brand-700)] transition-colors mt-1"
+                  className="inline-flex items-center gap-2 rounded px-2 py-1 text-xs font-semibold text-[var(--color-brand-600)] hover:bg-[var(--color-panel)] hover:text-[var(--color-brand-700)] transition-colors mt-1"
                 >
                   <Icon icon="ri-add-line" className="text-sm" />
                   <span>
@@ -559,11 +559,11 @@ export function ChecklistBody({
             }
           >
             <div className="flex w-full items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex items-center gap-3 min-w-0">
                 <span className="truncate text-xs font-normal text-[var(--color-ink-2)]">
                   {preview}
                 </span>
-                <span className="text-[11px] text-[var(--color-ink-3)] shrink-0">
+                <span className="text-xs text-[var(--color-ink-3)] shrink-0">
                   · {filled}/{items.length}{" "}
                   {lang === "es" ? "completados" : "items"}
                 </span>

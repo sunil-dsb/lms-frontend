@@ -535,7 +535,7 @@
    .segbar>* {
       min-height: 28px !important;
       padding: 0 8px !important;
-      font-size: 11px !important;
+      font-size: var(--t-xs) !important;
       line-height: 28px !important;
    }
 }

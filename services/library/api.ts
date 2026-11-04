@@ -245,6 +245,7 @@ export async function fetchProcedureById(
   slugOrId: string,
   _isAdmin = false,
   cookieHeader?: string,
+  trainingCourseId?: string,
 ): Promise<Procedure> {
   if (!slugOrId) throw new Error("Missing procedure id or slug");
   if (!cookieHeader && procedureCache.has(slugOrId)) {
@@ -267,6 +268,7 @@ export async function fetchProcedureById(
         data: { procedure: Procedure };
       }>(LIBRARY_ENDPOINTS.GET(slugOrId), {
         headers: Object.keys(headers).length ? headers : undefined,
+        params: trainingCourseId ? { trainingCourseId } : undefined,
       });
 
       if (data.data?.procedure) {
@@ -414,6 +416,13 @@ function buildProcedurePayload(
   }
   if (validUsers.length > 0) payload.assignUsers = validUsers;
 
+  if (typeof input.isPromo === "boolean") {
+    payload.isPromo = input.isPromo;
+    payload.promoExpiresAt =
+      input.isPromo && input.promoExpiresAt ? input.promoExpiresAt : null;
+    payload.promoAudience = input.promoAudience ?? "station";
+  }
+
   return payload;
 }
 
@@ -442,6 +451,16 @@ function normalizeWrittenProcedure(
     quizId: input.quizId ?? null,
     linkedTrainingId: input.linkedTrainingId ?? null,
     quizMode: input.quizMode ?? "training",
+    isPromo:
+      "isPromo" in input
+        ? (input.isPromo ?? false)
+        : (apiProcedure.isPromo ?? false),
+    promoExpiresAt:
+      "promoExpiresAt" in input
+        ? (input.promoExpiresAt ?? null)
+        : (apiProcedure.promoExpiresAt ?? null),
+    promoAudience:
+      input.promoAudience ?? apiProcedure.promoAudience ?? "station",
   };
 }
 

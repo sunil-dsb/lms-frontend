@@ -43,6 +43,9 @@ export interface EmployeeTrainingAssignment {
   purposeEn: string;
   purposeEs: string;
   courseStatus: TrainingCourseStatus;
+  isRequired: boolean;
+  /** True while any required course is incomplete and this course is not one of them. */
+  locked?: boolean;
   dueDate: string;
   assignedAt: string;
   currentChapterId: string | null;
@@ -54,6 +57,18 @@ export interface EmployeeTrainingAssignment {
   completedChapterCount: number;
   progressPercent: number;
   status: "complete" | "in_progress";
+}
+
+export interface EmployeeRequiredTrainingStatus {
+  requiredCount: number;
+  completedCount: number;
+  lockedCount: number;
+  isComplete: boolean;
+}
+
+export interface EmployeeTrainingResponse {
+  assignments: EmployeeTrainingAssignment[];
+  requiredTraining: EmployeeRequiredTrainingStatus;
 }
 
 export interface EmployeeTrainingChapter extends Omit<
@@ -131,6 +146,7 @@ export interface AssignCoursePayload {
   courseId: string;
   employeeIds: string[];
   mode?: "add" | "replace";
+  isRequired?: boolean;
 }
 
 export interface PaginatedCoursesResponse {
@@ -160,6 +176,7 @@ export interface CourseAssignmentRow {
   id: string;
   courseId: string;
   employeeId: string;
+  isRequired?: boolean;
   /** "YYYY-MM-DD" soft deadline from the assignment. */
   dueDate: string;
   /** Same value as `dueDate` — the alias the older consumers read. */

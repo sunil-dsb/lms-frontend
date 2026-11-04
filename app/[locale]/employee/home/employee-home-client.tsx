@@ -6,7 +6,10 @@ import { useTranslations } from "next-intl";
 import { useMe } from "@/services/auth/hooks";
 import { useAssignedProcedures } from "@/services/library/hooks";
 import type { Procedure, ProcedureBlock } from "@/lib/types";
-import type { EmployeeTrainingAssignment } from "@/services/courses/types";
+import type {
+  EmployeeRequiredTrainingStatus,
+  EmployeeTrainingAssignment,
+} from "@/services/courses/types";
 import { useMyTraining } from "@/services/courses/hooks";
 import { parseAsParam, withAs } from "@/lib/view-as";
 import { TabBar } from "@/components/employee/tab-bar";
@@ -127,12 +130,30 @@ export function EmployeeHomeClient({
       employee={employee}
       procedures={procedures}
       proceduresLoading={proceduresLoading}
-      trainingAssignments={trainingQuery.data}
+      trainingAssignments={trainingQuery.data?.assignments}
+      requiredTraining={trainingQuery.data?.requiredTraining ?? null}
       trainingFailed={trainingQuery.isError}
       viewAs={viewAs}
       t={t}
     />
   );
+}
+
+function promoMeta(p: Procedure, isEs: boolean, fallback: string): string {
+  if (p.isPromo && p.promoExpiresAt) {
+    const expires = new Date(p.promoExpiresAt).getTime();
+    const days = Math.ceil((expires - Date.now()) / (1000 * 60 * 60 * 24));
+    if (days > 1) {
+      return isEs ? `Termina en ${days} días` : `Ends in ${days} days`;
+    }
+    if (days === 1) {
+      return isEs ? "Termina mañana" : "Ends tomorrow";
+    }
+    if (days === 0) {
+      return isEs ? "Termina hoy" : "Ends today";
+    }
+  }
+  return fallback;
 }
 
 function HomeContent({
@@ -143,6 +164,7 @@ function HomeContent({
   procedures,
   proceduresLoading,
   trainingAssignments,
+  requiredTraining,
   trainingFailed,
   viewAs,
   t,
@@ -154,6 +176,7 @@ function HomeContent({
   procedures: Procedure[];
   proceduresLoading: boolean;
   trainingAssignments?: EmployeeTrainingAssignment[];
+  requiredTraining: EmployeeRequiredTrainingStatus | null;
   trainingFailed: boolean;
   viewAs: ReturnType<typeof parseAsParam>;
   t: (k: string, v?: Record<string, string | number>) => string;
@@ -341,8 +364,8 @@ function HomeContent({
         : p.category.nameEn
       : t("uncategorised");
 
-  const promoRows = pickPromoProcedures(procedures).map((p) =>
-    toRow(p, categoryOf(p)),
+  const promoRows = pickPromoProcedures(procedures, now).map((p) =>
+    toRow(p, promoMeta(p, isEs, categoryOf(p))),
   );
   const promoIds = new Set(promoRows.map((p) => p.key));
 
@@ -404,6 +427,7 @@ function HomeContent({
           promo={{
             heading: t("promoHeading"),
             rows: promoRows,
+            empty: t("promoEmpty"),
           }}
           assigned={
             assignedRows.length > 0
@@ -431,7 +455,12 @@ function HomeContent({
             critical: t("flagCritical"),
             english: t("flagEnglishOnly"),
           }}
-          isOnboarding={false}
+          isOnboarding={Boolean(
+            requiredTraining &&
+            requiredTraining.requiredCount > 0 &&
+            !requiredTraining.isComplete,
+          )}
+          requiredTraining={requiredTraining}
         />
       </main>
 

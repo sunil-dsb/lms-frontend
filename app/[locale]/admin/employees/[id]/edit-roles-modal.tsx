@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useState, useTransition, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { LuChefHat, LuCheck, LuCopy, LuLoader, LuShield } from "react-icons/lu";
+import { LuChefHat, LuShield } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,8 +23,9 @@ import {
 } from "@/services/employees/api";
 import type { UpdateEmployeeInput } from "@/services/employees/types";
 import { ApiException } from "@/lib/errors";
-import { fetchJobStations } from "@/services/jobs/api";
 import type { AdminEmployee, Role, Station } from "@/lib/types";
+import { useDynamicStations } from "./use-dynamic-stations";
+import { EditRolesInviteBox } from "./edit-roles-invite-box";
 
 interface EditRolesModalProps {
   open: boolean;
@@ -91,7 +92,6 @@ export function EditRolesModal({
   // employee (email change). Shown in place of the form with a copy
   // button — email delivery can't be relied on in every kitchen.
   const [savedInvite, setSavedInvite] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [inviteFresh, setInviteFresh] = useState(false);
   const [inviteEmpty, setInviteEmpty] = useState(false);
   const [inviteLoading, setInviteLoading] = useState(false);
@@ -145,7 +145,6 @@ export function EditRolesModal({
     setStationIds(employee.stationIds);
     setSaveError(null);
     setSavedInvite(null);
-    setCopied(false);
     setInviteFresh(false);
     setInviteEmpty(false);
     setInviteLoading(false);
@@ -160,78 +159,15 @@ export function EditRolesModal({
     );
   }, [stations]);
 
-  // Job→station mapping: each Role carries the stations it works on
-  // (Line Cook → gm/grill/expo, Prep Cook → prep, Dishwasher → dish).
-  // Manager bypasses the filter and shows every station at the location.
-  const roleById = useMemo<Map<string, Role>>(
-    () => new Map(roles.map((r) => [r.id, r])),
-    [roles],
-  );
-
-  const stationsCoveredByRoles = useMemo<Set<string>>(() => {
-    const covered = new Set<string>();
-    for (const roleId of roleIds) {
-      const role = roleById.get(roleId);
-      if (!role) continue;
-      if (role.stationIds.length === 0) {
-        return new Set(stations.map((s) => s.id));
-      }
-      for (const stationId of role.stationIds) covered.add(stationId);
-    }
-    return covered;
-  }, [roleIds, roleById, stations]);
-
-  const [dynamicStations, setDynamicStations] = useState<Station[] | null>(
-    null,
-  );
-
-  React.useEffect(() => {
-    if (roleIds.length === 0) {
-      setDynamicStations([]);
-      setStationIds([]);
-      return;
-    }
-    let cancelled = false;
-    void fetchJobStations(roleIds)
-      .then((res) => {
-        if (cancelled) return;
-        if (res.stations.length > 0) {
-          const mapped = res.stations.map((s, idx) => ({
-            id: s.id,
-            name: s.name,
-            locationId,
-            sortOrder: idx + 1,
-            isArchived: false,
-          }));
-          setDynamicStations(mapped);
-          // Automatically drop stations that are no longer valid for the remaining roleIds
-          setStationIds((prev) =>
-            prev.filter((id) => mapped.some((m) => m.id === id)),
-          );
-        } else {
-          setDynamicStations([]);
-          setStationIds([]);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setDynamicStations(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [roleIds, locationId]);
-
-  const availableStations = useMemo<Station[]>(() => {
-    if (roleIds.length === 0) return [];
-    if (dynamicStations !== null) return dynamicStations;
-    return stations.filter((s) => stationsCoveredByRoles.has(s.id));
-  }, [roleIds.length, stations, dynamicStations, stationsCoveredByRoles]);
-
-  const stationsBlockedReason = useMemo<string | undefined>(() => {
-    if (roleIds.length === 0) return t("detailEditRolesNeedRole");
-    if (availableStations.length === 0) return t("stationsEmptyForRoles");
-    return undefined;
-  }, [roleIds.length, availableStations.length, t]);
+  const { availableStations, stationsBlockedReason } = useDynamicStations({
+    roleIds,
+    locationId,
+    roles,
+    stations,
+    setStationIds,
+    needRoleMessage: t("detailEditRolesNeedRole"),
+    stationsEmptyMessage: t("stationsEmptyForRoles"),
+  });
 
   function onTierChange(next: Tier): void {
     if (next === "manager") {
@@ -258,27 +194,15 @@ export function EditRolesModal({
   const canSave =
     name.trim().length > 0 && locationId !== "" && roleIds.length > 0;
 
-  // Compare against the persisted employee to decide whether Save is even
-  // meaningful — disabled when nothing changed keeps the action honest.
-  const priorSnapshot = JSON.stringify({
-    name: employee.name,
-    email: employee.email ?? "",
-    locationId: employee.locationId,
-    role: employee.role,
-    accessLevel: employee.accessLevel,
-    roleIds: employee.roleIds,
-    stationIds: employee.stationIds,
-  });
-  const nextSnapshot = JSON.stringify({
-    name: name.trim(),
-    email: email.trim(),
-    locationId,
-    role: employee.role,
-    accessLevel: tier,
-    roleIds,
-    stationIds,
-  });
-  const dirty = priorSnapshot !== nextSnapshot;
+  const dirty =
+    name.trim() !== employee.name ||
+    email.trim() !== (employee.email ?? "") ||
+    locationId !== employee.locationId ||
+    tier !==
+      (employee.accessLevel ??
+        (employee.role === "manager" ? "manager" : "employee")) ||
+    JSON.stringify(roleIds) !== JSON.stringify(employee.roleIds) ||
+    JSON.stringify(stationIds) !== JSON.stringify(employee.stationIds);
 
   function onSave(): void {
     if (!canSave || pending) return;
@@ -336,7 +260,6 @@ export function EditRolesModal({
           setSavedInvite(inviteUrl);
           setInviteFresh(true);
           setInviteEmpty(false);
-          setCopied(false);
           return;
         }
         onSaved(updated, prior);
@@ -357,7 +280,6 @@ export function EditRolesModal({
               setSavedInvite(refetched.inviteUrl);
               setInviteFresh(false);
               setInviteEmpty(false);
-              setCopied(false);
               return;
             }
           } catch {
@@ -412,7 +334,6 @@ export function EditRolesModal({
           setSavedInvite(invite.url);
           setInviteFresh(true);
           setInviteEmpty(false);
-          setCopied(false);
         } else {
           setSaveError(
             isEs
@@ -434,27 +355,6 @@ export function EditRolesModal({
     });
   }
 
-  async function copyInvite(): Promise<void> {
-    if (!savedInvite) return;
-    let ok = false;
-    try {
-      await navigator.clipboard.writeText(savedInvite);
-      ok = true;
-    } catch {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = savedInvite;
-        document.body.appendChild(ta);
-        ta.select();
-        ok = document.execCommand("copy");
-        ta.remove();
-      } catch {
-        ok = false;
-      }
-    }
-    setCopied(ok);
-  }
-
   // When the link box appears it can sit below the fold of the
   // scrollable modal body — bring it into view so the link + copy
   // button are never hidden behind the footer.
@@ -466,8 +366,6 @@ export function EditRolesModal({
     });
   }, [savedInvite]);
 
-  const locationOptions = locations;
-
   return (
     <Modal open={open} onClose={closeModal} size="2xl">
       <ModalHeader
@@ -478,9 +376,9 @@ export function EditRolesModal({
       />
       <ModalBody className="space-y-4 p-5 sm:p-6">
         {/* ===== Profile: Name & Email on row 1, Location on row 2 ===== */}
-        <div className="grid gap-3.5">
-          <div className="grid gap-3.5 sm:grid-cols-2">
-            <div className="grid gap-1.5">
+        <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
               <Label htmlFor="edit-name">{t("nameLabel")}</Label>
               <Input
                 id="edit-name"
@@ -491,7 +389,7 @@ export function EditRolesModal({
                 autoFocus
               />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid gap-2">
               <Label htmlFor="edit-email">{t("emailLabel")}</Label>
               <Input
                 id="edit-email"
@@ -504,7 +402,7 @@ export function EditRolesModal({
             </div>
           </div>
 
-          <div className="grid gap-1.5">
+          <div className="grid gap-2">
             <Label id="edit-locationId-label" htmlFor="edit-locationId">
               {t("locationLabel")}
             </Label>
@@ -513,7 +411,7 @@ export function EditRolesModal({
               ariaLabelledBy="edit-locationId-label"
               value={locationId}
               onChange={onLocationChangeLocal}
-              options={locationOptions.map((l) => ({
+              options={locations.map((l) => ({
                 value: l.id,
                 label: l.name,
               }))}
@@ -628,74 +526,24 @@ export function EditRolesModal({
           </div>
         </div>
 
-        {/* Fresh invite link, appended last: saving re-invites a pending
-            employee when their email changes (or the reads above find
-            their active link). Stays in this same modal with a copy
-            button — email delivery can't be relied on in every kitchen.
-            While the link is being fetched the box reads as generating,
-            never as a sent link with nothing under it. */}
-        {inviteLoading || savedInvite || inviteEmpty ? (
-          <div
-            ref={inviteBoxRef}
-            className="border-t border-[var(--color-line)] pt-4"
-          >
-            {savedInvite ? (
-              <>
-                <p className="text-sm font-semibold text-[var(--color-ink)]">
-                  {inviteFresh
-                    ? t("inviteCreatedHeading")
-                    : t("inviteUrlLabel")}
-                </p>
-                {inviteFresh ? (
-                  <p className="mt-0.5 text-xs text-[var(--color-ink-2)]">
-                    {t("inviteEmailSent")}
-                  </p>
-                ) : null}
-                <p className="mt-2 break-all rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-panel)] px-3 py-2 text-xs text-[var(--color-ink-2)]">
-                  {savedInvite}
-                </p>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => void copyInvite()}
-                  icon={copied ? LuCheck : LuCopy}
-                  className="mt-2"
-                >
-                  {copied ? t("copied") : t("copyUrl")}
-                </Button>
-              </>
-            ) : inviteEmpty ? (
-              <>
-                <p className="text-sm font-semibold text-[var(--color-ink)]">
-                  {t("inviteUrlLabel")}
-                </p>
-                <p className="mt-0.5 text-xs text-[var(--color-ink-2)]">
-                  {isEs
-                    ? "No hay ningún enlace activo. Genera uno nuevo para este empleado pendiente."
-                    : "There is no active link. Generate a fresh one for this pending employee."}
-                </p>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={onResendInvite}
-                  icon={LuCopy}
-                  className="mt-2"
-                  disabled={inviteLoading}
-                >
-                  {isEs ? "Generar enlace" : "Generate link"}
-                </Button>
-              </>
-            ) : (
-              <p className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-ink-2)]">
-                <LuLoader
-                  className="size-4 animate-spin text-[var(--color-brand-600)]"
-                  aria-hidden="true"
-                />
-                <span>{t("submitting")}</span>
-              </p>
-            )}
-          </div>
-        ) : null}
+        {/* Fresh invite link box */}
+        <EditRolesInviteBox
+          inviteLoading={inviteLoading}
+          savedInvite={savedInvite}
+          inviteEmpty={inviteEmpty}
+          inviteFresh={inviteFresh}
+          isEs={isEs}
+          inviteBoxRef={inviteBoxRef}
+          onResendInvite={onResendInvite}
+          labels={{
+            inviteCreatedHeading: t("inviteCreatedHeading"),
+            inviteUrlLabel: t("inviteUrlLabel"),
+            inviteEmailSent: t("inviteEmailSent"),
+            copied: t("copied"),
+            copyUrl: t("copyUrl"),
+            submitting: t("submitting"),
+          }}
+        />
       </ModalBody>
       <ModalFooter>
         {/* Cancel first per the focus rule (DESIGN.md §3.6). */}
