@@ -101,8 +101,10 @@ export function ProgressOverview({
   const pagination = progressData.pagination;
   const visibleCount = pagination?.total ?? 0;
   const totalPages = pagination?.totalPages ?? 1;
-  const rangeStart = visibleCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const rangeEnd = Math.min(page * PAGE_SIZE, visibleCount);
+  const displayedPage = pagination?.page ?? page;
+  const rangeStart =
+    visibleCount === 0 ? 0 : (displayedPage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(displayedPage * PAGE_SIZE, visibleCount);
 
   const setGroup = (value: string): void => {
     const nextGroup = value as GroupBy;
@@ -323,23 +325,21 @@ export function ProgressOverview({
               type="button"
               variant="neutral"
               size="sm"
-              disabled={page <= 1 || progressQuery.isFetching}
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={displayedPage <= 1 || progressQuery.isFetching}
+              onClick={() => setPage(Math.max(1, displayedPage - 1))}
               icon={LuArrowLeft}
             >
               {t("previousPage")}
             </Button>
             <span className="px-1 text-sm text-[var(--color-ink-2)]">
-              {t("pageOf", { page, pages: totalPages })}
+              {t("pageOf", { page: displayedPage, pages: totalPages })}
             </span>
             <Button
               type="button"
               variant="neutral"
               size="sm"
-              disabled={page >= totalPages || progressQuery.isFetching}
-              onClick={() =>
-                setPage((current) => Math.min(totalPages, current + 1))
-              }
+              disabled={displayedPage >= totalPages || progressQuery.isFetching}
+              onClick={() => setPage(Math.min(totalPages, displayedPage + 1))}
               icon={LuArrowRight}
             >
               {t("nextPage")}
