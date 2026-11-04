@@ -116,7 +116,7 @@ export function TrainingCard({
               <h2 className="font-[family-name:var(--font-ui)] text-base sm:text-lg font-bold leading-snug text-[var(--color-ink)] group-hover:text-[var(--color-brand-700)] transition-colors duration-[var(--dur)]">
                 {item.title}
               </h2>
-              {item.isRequiredOrientation ? (
+              {item.isRequired ? (
                 <span className="shrink-0 rounded-full bg-[var(--color-brand-600)]/10 px-2 py-1 text-xs font-semibold text-[var(--color-brand-700)]">
                   {t("requiredCourseBadge")}
                 </span>

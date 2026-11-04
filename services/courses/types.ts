@@ -23,7 +23,6 @@ export interface BackendCourse {
   titleEs: string;
   purposeEn: string;
   purposeEs: string;
-  isRequiredOrientation?: boolean;
   status: TrainingCourseStatus;
   assignUsers?: string[] | null;
   assignedCount?: number;
@@ -44,7 +43,7 @@ export interface EmployeeTrainingAssignment {
   purposeEn: string;
   purposeEs: string;
   courseStatus: TrainingCourseStatus;
-  isRequiredOrientation: boolean;
+  isRequired: boolean;
   /** True while any required course is incomplete and this course is not one of them. */
   locked?: boolean;
   dueDate: string;
@@ -122,7 +121,6 @@ export interface CreateCourseInput {
   titleEs: string;
   purposeEn: string;
   purposeEs: string;
-  isRequiredOrientation?: boolean;
   assignUsers?: string[];
   chapters?: ChapterInput[];
 }
@@ -132,7 +130,6 @@ export interface UpdateCourseInput {
   titleEs?: string;
   purposeEn?: string;
   purposeEs?: string;
-  isRequiredOrientation?: boolean;
   assignUsers?: string[];
   chapters?: ChapterInput[];
 }
@@ -149,6 +146,7 @@ export interface AssignCoursePayload {
   courseId: string;
   employeeIds: string[];
   mode?: "add" | "replace";
+  isRequired?: boolean;
 }
 
 export interface PaginatedCoursesResponse {
@@ -178,6 +176,7 @@ export interface CourseAssignmentRow {
   id: string;
   courseId: string;
   employeeId: string;
+  isRequired?: boolean;
   /** "YYYY-MM-DD" soft deadline from the assignment. */
   dueDate: string;
   /** Same value as `dueDate` — the alias the older consumers read. */

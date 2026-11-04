@@ -1,4 +1,5 @@
 import http from "@/lib/http";
+import type { TrainingProgressData } from "@/lib/types";
 import { COURSES_ENDPOINTS } from "./endpoints";
 import type {
   BackendCourse,
@@ -259,14 +260,17 @@ export async function assignCourseApi(
   employeeIds: string[],
   dueDate?: string,
   mode: "add" | "replace" = "add",
+  isRequired = false,
 ): Promise<{ courseId: string; assignedCount: number; assignUsers: string[] }> {
   const payload: {
     employeeIds: string[];
     mode: "add" | "replace";
+    isRequired: boolean;
     dueDate?: string;
   } = {
     employeeIds,
     mode,
+    isRequired,
   };
   if (dueDate) {
     payload.dueDate = dueDate;
@@ -328,7 +332,15 @@ export async function fetchCourseAssignmentsApi(
  */
 export async function fetchTrainingProgressApi(
   cookieHeader?: string,
-): Promise<any> {
+  options: {
+    status?: "complete" | "in_progress" | "overdue";
+    groupBy?: "employee" | "course";
+    page?: number;
+    limit?: number;
+    search?: string;
+    includeAssignments?: boolean;
+  } = {},
+): Promise<TrainingProgressData> {
   const headers: Record<string, string> = {};
 
   // The axios auth interceptor only sees the browser's cookies — server
@@ -345,9 +357,10 @@ export async function fetchTrainingProgressApi(
   const { data } = await http.get<{
     success: boolean;
     message: string;
-    data: any;
+    data: TrainingProgressData;
   }>(COURSES_ENDPOINTS.PROGRESS, {
     headers: Object.keys(headers).length ? headers : undefined,
+    params: options,
   });
 
   return data.data;
@@ -378,7 +391,6 @@ export interface SaveCourseInput {
   titleEs?: string;
   purposeEn?: string;
   purposeEs?: string;
-  isRequiredOrientation?: boolean;
   assignUsers?: string[];
   linkedSops?: string[];
   chapters?: SaveCourseChapterInput[];
@@ -480,7 +492,6 @@ export async function saveCourse(
       titleEs,
       purposeEn,
       purposeEs,
-      isRequiredOrientation: input.isRequiredOrientation,
       ...(input.assignUsers !== undefined
         ? { assignUsers: input.assignUsers }
         : {}),
@@ -492,7 +503,6 @@ export async function saveCourse(
       titleEs,
       purposeEn,
       purposeEs,
-      isRequiredOrientation: input.isRequiredOrientation,
       ...(input.assignUsers !== undefined
         ? { assignUsers: input.assignUsers }
         : {}),

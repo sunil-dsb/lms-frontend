@@ -36,7 +36,9 @@ export default async function EmployeeProgressDetailPage({
   // Meta comes from the same data the Progress table rows are built on, so
   // the numbers on the list row and the header card can never disagree.
   const cookieHeader = await serverCookieHeader();
-  const { data: progress } = await fetchTrainingProgress(cookieHeader);
+  const { data: progress } = await fetchTrainingProgress(cookieHeader, {
+    includeAssignments: false,
+  });
   const meta: EmployeeProgressRow | undefined = progress.employees.find(
     (row) => row.employeeId === employeeId,
   );

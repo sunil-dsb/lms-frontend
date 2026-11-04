@@ -12,6 +12,7 @@ export interface TrainingProgressResponse {
 
 const emptyProgress: TrainingProgressData = {
   summary: { completed: 0, inProgress: 0, overdue: 0 },
+  counts: { employees: 0, courses: 0 },
   employees: [],
   courses: [],
 };
@@ -26,9 +27,17 @@ const emptyProgress: TrainingProgressData = {
  */
 export async function fetchTrainingProgress(
   cookieHeader?: string,
+  options: {
+    status?: "complete" | "in_progress" | "overdue";
+    groupBy?: "employee" | "course";
+    page?: number;
+    limit?: number;
+    search?: string;
+    includeAssignments?: boolean;
+  } = {},
 ): Promise<TrainingProgressResponse> {
   try {
-    const data = await fetchTrainingProgressApi(cookieHeader);
+    const data = await fetchTrainingProgressApi(cookieHeader, options);
     if (data && data.summary) {
       return { success: true, data };
     }

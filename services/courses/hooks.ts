@@ -129,11 +129,20 @@ export function useAssignCourse() {
       courseId,
       employeeIds,
       mode,
+      isRequired,
     }: {
       courseId: string;
       employeeIds: string[];
       mode?: "add" | "replace";
-    }) => assignCourseApi(courseId, employeeIds, mode),
+      isRequired?: boolean;
+    }) =>
+      assignCourseApi(
+        courseId,
+        employeeIds,
+        undefined,
+        mode,
+        isRequired ?? false,
+      ),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: COURSES_QUERY_KEY,

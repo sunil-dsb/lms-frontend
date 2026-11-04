@@ -1,20 +1,31 @@
 "use client";
 
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { LuCircleCheck, LuGraduationCap, LuSearch, LuX } from "react-icons/lu";
+import {
+  LuArrowLeft,
+  LuArrowRight,
+  LuCircleCheck,
+  LuGraduationCap,
+  LuLoader,
+  LuSearch,
+  LuX,
+} from "react-icons/lu";
 import { PageHeader } from "@/components/admin/page-header";
 import { Button } from "@/components/ui/button";
 import { CapsuleTabs } from "@/components/ui/capsule-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { TrainingProgressData } from "@/lib/types";
 import { CourseProgressTable } from "./course-progress-table";
 import { EmployeeProgressTable } from "./employee-progress-table";
-import { courseTitle } from "./progress-row";
+import { fetchTrainingProgressApi } from "@/services/courses/api";
 
 type GroupBy = "employee" | "course";
+type StatusFilter = "all" | "in_progress" | "complete" | "overdue";
+const PAGE_SIZE = 25;
 
 interface ProgressOverviewProps {
   locale: string;
@@ -37,31 +48,74 @@ export function ProgressOverview({
   const tAdmin = useTranslations("admin");
 
   const [groupBy, setGroupBy] = React.useState<GroupBy>("employee");
-  const [overdueOnly, setOverdueOnly] = React.useState(false);
+  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
+  const [page, setPage] = React.useState(1);
   const [employeeSearch, setEmployeeSearch] = React.useState("");
   const [courseSearch, setCourseSearch] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
 
-  const employeeRows = overdueOnly
-    ? data.employees.filter((row) => row.status === "overdue")
-    : data.employees;
-  const courseRows = overdueOnly
-    ? data.courses.filter((row) => row.status === "overdue")
-    : data.courses;
   const search = groupBy === "employee" ? employeeSearch : courseSearch;
-  const visibleEmployeeRows = employeeRows.filter((row) =>
-    row.name
-      .toLocaleLowerCase()
-      .includes(employeeSearch.trim().toLocaleLowerCase()),
-  );
-  const visibleCourseRows = courseRows.filter((row) =>
-    courseTitle(row.course, locale)
-      .toLocaleLowerCase()
-      .includes(courseSearch.trim().toLocaleLowerCase()),
-  );
-  const visibleCount =
-    groupBy === "employee"
-      ? visibleEmployeeRows.length
-      : visibleCourseRows.length;
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const queryOptions = {
+    status: statusFilter === "all" ? undefined : statusFilter,
+    groupBy,
+    page,
+    limit: PAGE_SIZE,
+    search: debouncedSearch || undefined,
+    includeAssignments: false,
+  } as const;
+  const progressQuery = useQuery({
+    queryKey: ["admin-training-progress", queryOptions],
+    queryFn: () => fetchTrainingProgressApi(undefined, queryOptions),
+    initialData:
+      groupBy === "employee" &&
+      statusFilter === "all" &&
+      page === 1 &&
+      debouncedSearch === ""
+        ? data
+        : undefined,
+    placeholderData: (previous, previousQuery) => {
+      const previousOptions = previousQuery?.queryKey[1] as
+        { groupBy?: GroupBy } | undefined;
+      return previousOptions?.groupBy === groupBy ? previous : undefined;
+    },
+    staleTime: 30_000,
+  });
+  const progressData = progressQuery.data ?? {
+    summary: { completed: 0, inProgress: 0, overdue: 0 },
+    counts: { employees: 0, courses: 0 },
+    employees: [],
+    courses: [],
+    pagination: { page, limit: PAGE_SIZE, total: 0, totalPages: 0 },
+  };
+
+  const visibleEmployeeRows = progressData.employees;
+  const visibleCourseRows = progressData.courses;
+  const pagination = progressData.pagination;
+  const visibleCount = pagination?.total ?? 0;
+  const totalPages = pagination?.totalPages ?? 1;
+  const rangeStart = visibleCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * PAGE_SIZE, visibleCount);
+
+  const setGroup = (value: string): void => {
+    const nextGroup = value as GroupBy;
+    setGroupBy(nextGroup);
+    setPage(1);
+    setDebouncedSearch(
+      (nextGroup === "employee" ? employeeSearch : courseSearch).trim(),
+    );
+  };
+  const setStatus = (value: string): void => {
+    setStatusFilter(value as StatusFilter);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6">
@@ -75,32 +129,34 @@ export function ProgressOverview({
         <CapsuleTabs
           ariaLabel={t("groupBy")}
           value={groupBy}
-          onChange={(value) => setGroupBy(value as GroupBy)}
+          onChange={setGroup}
           tabs={[
             {
               value: "employee",
               label: t("byEmployee"),
-              count: employeeRows.length,
+              count: progressData.counts?.employees,
             },
-            { value: "course", label: t("byCourse"), count: courseRows.length },
+            {
+              value: "course",
+              label: t("byCourse"),
+              count: progressData.counts?.courses,
+            },
           ]}
         />
 
-        <Button
-          type="button"
-          variant="surface"
-          size="sm"
-          aria-pressed={overdueOnly}
-          onClick={() => setOverdueOnly((value) => !value)}
-          className={cn(
-            "self-start sm:self-auto cursor-pointer",
-            overdueOnly
-              ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border-[var(--color-brand-600)]/30 font-semibold"
-              : undefined,
-          )}
-        >
-          {t("overdueOnly")}
-        </Button>
+        <CapsuleTabs
+          ariaLabel={t("statusFilter")}
+          value={statusFilter}
+          onChange={setStatus}
+          className="w-full max-w-full overflow-x-auto sm:w-auto"
+          compact
+          tabs={[
+            { value: "all", label: t("filterAll") },
+            { value: "in_progress", label: t("statusInProgress") },
+            { value: "complete", label: t("statusDone") },
+            { value: "overdue", label: t("statusOverdue") },
+          ]}
+        />
       </div>
 
       <div className="relative w-full">
@@ -151,15 +207,45 @@ export function ProgressOverview({
         )}
       </div>
 
-      {visibleCount === 0 ? (
-        search.trim() ? (
+      {progressQuery.isFetching ? (
+        <p
+          role="status"
+          className="flex items-center gap-2 text-sm text-[var(--color-ink-2)]"
+        >
+          <LuLoader
+            aria-hidden="true"
+            className="size-4 animate-spin text-[var(--color-brand-600)]"
+          />
+          {t("loadingProgress")}
+        </p>
+      ) : null}
+
+      {progressQuery.isPending && !progressQuery.data ? (
+        <ProgressRowsSkeleton />
+      ) : progressQuery.isError && !progressQuery.data ? (
+        <EmptyState
+          icon={LuGraduationCap}
+          title={t("loadErrorHeading")}
+          body={t("loadErrorBody")}
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => void progressQuery.refetch()}
+            >
+              {t("retry")}
+            </Button>
+          }
+        />
+      ) : visibleCount === 0 ? (
+        debouncedSearch ? (
           <EmptyState
             icon={LuSearch}
             title={t("noSearchResultsHeading")}
             body={
               groupBy === "employee"
-                ? t("noEmployeeSearchResultsBody", { query: search.trim() })
-                : t("noCourseSearchResultsBody", { query: search.trim() })
+                ? t("noEmployeeSearchResultsBody", { query: debouncedSearch })
+                : t("noCourseSearchResultsBody", { query: debouncedSearch })
             }
             action={
               <Button
@@ -174,16 +260,24 @@ export function ProgressOverview({
               </Button>
             }
           />
-        ) : overdueOnly ? (
+        ) : statusFilter !== "all" ? (
           <EmptyState
-            icon={LuCircleCheck}
-            title={t("noOverdueHeading")}
-            body={t("noOverdueBody")}
+            icon={statusFilter === "complete" ? LuCircleCheck : LuGraduationCap}
+            title={
+              statusFilter === "overdue"
+                ? t("noOverdueHeading")
+                : t("noStatusResultsHeading")
+            }
+            body={
+              statusFilter === "overdue"
+                ? t("noOverdueBody")
+                : t("noStatusResultsBody")
+            }
             action={
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setOverdueOnly(false)}
+                onClick={() => setStatus("all")}
               >
                 {tAdmin("clearFilter")}
               </Button>
@@ -197,10 +291,84 @@ export function ProgressOverview({
           />
         )
       ) : groupBy === "employee" ? (
-        <EmployeeProgressTable locale={locale} rows={visibleEmployeeRows} />
+        <div
+          aria-busy={progressQuery.isFetching}
+          className={progressQuery.isFetching ? "opacity-60" : undefined}
+        >
+          <EmployeeProgressTable locale={locale} rows={visibleEmployeeRows} />
+        </div>
       ) : (
-        <CourseProgressTable locale={locale} rows={visibleCourseRows} />
+        <div
+          aria-busy={progressQuery.isFetching}
+          className={progressQuery.isFetching ? "opacity-60" : undefined}
+        >
+          <CourseProgressTable locale={locale} rows={visibleCourseRows} />
+        </div>
       )}
+
+      {visibleCount > 0 && totalPages > 1 ? (
+        <nav
+          aria-label={t("paginationLabel")}
+          className="flex flex-wrap items-center justify-between gap-3"
+        >
+          <p className="text-sm text-[var(--color-ink-2)]" aria-live="polite">
+            {t("paginationRange", {
+              from: rangeStart,
+              to: rangeEnd,
+              total: visibleCount,
+            })}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="neutral"
+              size="sm"
+              disabled={page <= 1 || progressQuery.isFetching}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              icon={LuArrowLeft}
+            >
+              {t("previousPage")}
+            </Button>
+            <span className="px-1 text-sm text-[var(--color-ink-2)]">
+              {t("pageOf", { page, pages: totalPages })}
+            </span>
+            <Button
+              type="button"
+              variant="neutral"
+              size="sm"
+              disabled={page >= totalPages || progressQuery.isFetching}
+              onClick={() =>
+                setPage((current) => Math.min(totalPages, current + 1))
+              }
+              icon={LuArrowRight}
+            >
+              {t("nextPage")}
+            </Button>
+          </div>
+        </nav>
+      ) : null}
+    </div>
+  );
+}
+
+function ProgressRowsSkeleton(): React.ReactElement {
+  return (
+    <div aria-hidden="true" className="space-y-3">
+      {Array.from({ length: 5 }, (_, index) => (
+        <div
+          key={index}
+          className="rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-panel)] p-4"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-3 w-28" />
+            </div>
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
+          <Skeleton className="mt-4 h-3 w-full" />
+        </div>
+      ))}
     </div>
   );
 }

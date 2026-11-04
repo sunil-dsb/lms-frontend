@@ -19,7 +19,12 @@ export default async function AdminTrainingProgressPage({
   // GET /courses/admin/progress (mock fallback only if the backend is
   // briefly unreachable). The cookie header forwards the browser session
   // so the server-side call is authenticated.
-  const { data } = await fetchTrainingProgress(await serverCookieHeader());
+  const { data } = await fetchTrainingProgress(await serverCookieHeader(), {
+    groupBy: "employee",
+    page: 1,
+    limit: 25,
+    includeAssignments: false,
+  });
 
   return (
     <div className="mx-auto max-w-page space-y-6 pb-12">

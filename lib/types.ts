@@ -488,7 +488,6 @@ export interface Procedure {
   titleEs: string;
   purposeEn: string;
   purposeEs: string;
-  isRequiredOrientation?: boolean;
   category: Category | null;
   status: ProcedureStatus;
   bodyEn: ProcedureBody;
@@ -757,15 +756,12 @@ export interface TrainingProgressSummary {
   overdue: number;
 }
 
-/** One of a person's assigned courses: how far it stands and when it's due.
- *  The Progress table reads the aggregates; the admin home card and drill-down
- *  drawer read the per-assignment rows. */
+/** Minimal per-course fields used to build the admin home training card. */
 export interface EmployeeProgressAssignment {
   courseId: string;
   courseTitleEn: string;
   courseTitleEs: string;
   dueDate: string;
-  currentChapter: number | null;
   isComplete: boolean;
   isOverdue: boolean;
   /** Null while the course is unfinished. */
@@ -785,7 +781,7 @@ export interface EmployeeProgressRow {
   /** 1-based chapter inside `currentCourse`; null whenever the course is. */
   currentChapter: number | null;
   status: ProgressStatus;
-  /** Every assigned course, for grouping people on the admin home card. */
+  /** Present only when the admin home requests due-date details. */
   assignments?: EmployeeProgressAssignment[];
 }
 
@@ -805,8 +801,15 @@ export interface CourseProgressRow {
 
 export interface TrainingProgressData {
   summary: TrainingProgressSummary;
+  counts?: { employees: number; courses: number };
   employees: EmployeeProgressRow[];
   courses: CourseProgressRow[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 // ============================================================================

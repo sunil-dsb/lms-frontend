@@ -24,7 +24,7 @@ export function mapEmployeeTrainingAssignments(
         id: assignment.assignmentId,
         courseId: assignment.courseId,
         title,
-        isRequiredOrientation: assignment.isRequiredOrientation,
+        isRequired: assignment.isRequired,
         locked: assignment.locked ?? false,
         purpose: purpose || undefined,
         chapterCount: assignment.chapterCount,
@@ -51,8 +51,7 @@ export function mapEmployeeTrainingAssignments(
   const requiredFirst = (
     a: EmployeeTrainingItem,
     b: EmployeeTrainingItem,
-  ): number =>
-    Number(b.isRequiredOrientation) - Number(a.isRequiredOrientation);
+  ): number => Number(b.isRequired) - Number(a.isRequired);
 
   const pending = items
     .filter((item) => item.status !== "complete")

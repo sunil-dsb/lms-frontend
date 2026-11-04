@@ -7,7 +7,7 @@ export interface EmployeeTrainingItem {
   id: string;
   courseId: string;
   title: string;
-  isRequiredOrientation: boolean;
+  isRequired: boolean;
   /** Locked while any required course is incomplete: show the block, disable the link. */
   locked: boolean;
   purpose?: string;

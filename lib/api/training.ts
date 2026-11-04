@@ -21,6 +21,7 @@ export interface AssignCoursePayload {
   employeeIds: string[];
   dueAt?: string;
   scope?: "everyone" | "station" | "people";
+  isRequired?: boolean;
 }
 
 export interface AssignCourseResponse {
@@ -147,6 +148,7 @@ export async function assignCourse(
     payload.employeeIds,
     payload.dueAt,
     "add",
+    payload.isRequired ?? false,
   );
 
   return {

@@ -245,6 +245,7 @@ export async function fetchProcedureById(
   slugOrId: string,
   _isAdmin = false,
   cookieHeader?: string,
+  trainingCourseId?: string,
 ): Promise<Procedure> {
   if (!slugOrId) throw new Error("Missing procedure id or slug");
   if (!cookieHeader && procedureCache.has(slugOrId)) {
@@ -267,6 +268,7 @@ export async function fetchProcedureById(
         data: { procedure: Procedure };
       }>(LIBRARY_ENDPOINTS.GET(slugOrId), {
         headers: Object.keys(headers).length ? headers : undefined,
+        params: trainingCourseId ? { trainingCourseId } : undefined,
       });
 
       if (data.data?.procedure) {

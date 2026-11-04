@@ -25,7 +25,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FilterChips } from "@/components/ui/filter-chips";
 import { RowActions } from "@/components/ui/row-actions";
 import { StatusPill } from "@/components/ui/status-pill";
-import { getQuizById } from "@/lib/api";
 import { IconTile } from "@/components/ui/icon-tile";
 import { TrainingCoursesListSkeleton } from "@/components/admin/training-courses-skeleton";
 import { cn } from "@/lib/utils";
@@ -115,7 +114,6 @@ export function TrainingCourseExplorer({
           titleEs: bc.titleEs,
           purposeEn: bc.purposeEn,
           purposeEs: bc.purposeEs,
-          isRequiredOrientation: bc.isRequiredOrientation ?? false,
           status: "published",
           isArchived: bc.status === "archived",
           createdAt: bc.createdAt,
@@ -390,11 +388,7 @@ export function TrainingCourseExplorer({
 
             const updated = new Date(row.course.updatedAt).toLocaleDateString(
               isEs ? "es" : "en",
-              {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              },
+              { day: "numeric", month: "short", year: "numeric" },
             );
             const courseDetailHref = `/${locale}/admin/training/${row.course.id}`;
 
@@ -442,12 +436,6 @@ export function TrainingCourseExplorer({
                           {t("statusUnassigned")}
                         </StatusPill>
                       )}
-
-                      {row.course.isRequiredOrientation ? (
-                        <StatusPill tone="warn">
-                          {isEs ? "Obligatorio" : "Required"}
-                        </StatusPill>
-                      ) : null}
 
                       {/* Quiz Pill */}
                       {hasQuiz ? null : (
