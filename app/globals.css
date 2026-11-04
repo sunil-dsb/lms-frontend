@@ -277,9 +277,12 @@
   --radius-2xl: 20px;
   --radius-full: var(--r-pill);
 
-  /* Layers, by name. Tailwind still accepts a bare z-30, so the audit bans it.
-     Only tooltip survives the audit — the other layers had zero utility or var()
-     consumers and were removed in batch D. */
+  /* Named stacking layers used by overlays and sticky navigation. */
+  --z-index-dropdown: var(--z-dropdown);
+  --z-index-sticky: var(--z-sticky);
+  --z-index-backdrop: var(--z-backdrop);
+  --z-index-modal: var(--z-modal);
+  --z-index-toast: var(--z-toast);
   --z-index-tooltip: var(--z-tooltip);
 
   /* Fonts */
@@ -461,5 +464,12 @@
 html,
 body {
   overflow-x: clip;
+}
+
+/* Keep Sonner's dismiss control at the toast's top-right, matching inline alerts. */
+[data-sonner-toast].lms-toast[data-styled="true"] [data-close-button] {
+  left: auto;
+  right: 0;
+  transform: translate(35%, -35%);
 }
 

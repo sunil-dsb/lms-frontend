@@ -8,24 +8,15 @@ import { cn } from "@/lib/utils";
 import type { Employee } from "@/lib/types";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LocaleSwitch } from "@/components/ui/locale-switch";
+import { LuArrowUpRight, LuMenu, LuX } from "react-icons/lu";
 import {
-  LuArrowLeft,
-  LuArrowUpRight,
-  LuChartColumn,
-  LuChefHat,
-  LuCirclePlus,
-  LuClipboardList,
-  LuFolders,
-  LuGraduationCap,
-  LuHouse,
-  LuLogOut,
-  LuMenu,
-  LuUserPlus,
-  LuUsers,
-  LuX,
-} from "react-icons/lu";
-import { Icon } from "@/components/ui/icon";
-import type { IconType } from "react-icons";
+  Sidebar,
+  NAV_GROUPS,
+  type NavGroup,
+  type NavItem,
+} from "./components/admin-sidebar";
+
+export type { NavGroup, NavItem };
 
 /**
  * AdminShell — DESIGN.md §3.5 admin navigation.
@@ -65,70 +56,6 @@ interface AdminShellProps {
   workspace: string;
   signOutAction: () => Promise<void>;
 }
-
-type NavItem = {
-  href: string;
-  icon: IconType;
-  labelKey: string;
-  /** Marked in the nav and reachable, but the page behind it is a placeholder. */
-  soon?: boolean;
-};
-
-type NavGroup = {
-  headingKey:
-    | "groupWorkspace"
-    | "groupLibrary"
-    | "groupTraining"
-    | "groupPeople"
-    | "groupSettings";
-  items: NavItem[];
-};
-
-const NAV_GROUPS: NavGroup[] = [
-  {
-    headingKey: "groupWorkspace",
-    items: [{ href: "", icon: LuHouse, labelKey: "navHome" }],
-  },
-  {
-    headingKey: "groupLibrary",
-    items: [
-      { href: "/library", icon: LuClipboardList, labelKey: "navProcedures" },
-      {
-        href: "/library/categories",
-        icon: LuFolders,
-        labelKey: "navCategories",
-      },
-      { href: "/library/new", icon: LuCirclePlus, labelKey: "navNewProcedure" },
-    ],
-  },
-  {
-    headingKey: "groupTraining",
-    items: [
-      { href: "/training", icon: LuGraduationCap, labelKey: "navCourses" },
-      {
-        href: "/training/progress",
-        icon: LuChartColumn,
-        labelKey: "navProgress",
-      },
-    ],
-  },
-  {
-    headingKey: "groupPeople",
-    items: [
-      { href: "/employees", icon: LuUsers, labelKey: "navEmployees" },
-      { href: "/employees/new", icon: LuUserPlus, labelKey: "inviteEmployee" },
-    ],
-  },
-  {
-    headingKey: "groupSettings",
-    items: [
-      // One Settings row that opens the single /admin/settings page — the
-      // three sub-resources (stations, roles, locations) are now inline
-      // panels in that page rather than separate URLs.
-      { href: "/settings", icon: LuChefHat, labelKey: "navSettings" },
-    ],
-  },
-];
 
 export function AdminShell({
   children,
@@ -348,8 +275,8 @@ export function AdminShell({
 
             It is not shown below 900px: there the mobile header already occupies
             that row, and a phone has no space for a field this wide. */}
-        <header className="sticky top-0 z-sticky hidden h-[75px] min-h-[75px] items-center gap-4 border-b border-[var(--color-line-2)] bg-[var(--color-surface)] px-10 shadow-[var(--e-1)] backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--color-surface)_80%,transparent)] lg:flex">
-          <div className="ml-auto flex items-center gap-3">
+        <header className="sticky top-0 z-sticky hidden h-[75px] min-h-[75px] items-center border-b border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 sm:px-6 lg:px-10 shadow-[var(--e-1)] backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--color-surface)_80%,transparent)] lg:flex">
+          <div className="mx-auto flex w-full max-w-page items-center justify-end gap-3">
             {/* The way across to what the cooks see. The employee bar has the same
                 link back, under the name of the area it opens — so this one is
                 "Employee", not "Preview" or "Back": the two sides name each other
@@ -390,228 +317,5 @@ export function AdminShell({
         </main>
       </div>
     </div>
-  );
-}
-
-interface SidebarProps {
-  locale: string;
-  employee: Pick<Employee, "id" | "name" | "role">;
-  workspace: string;
-  groups: NavGroup[];
-  labelFor: (key: string) => string;
-  headingFor: (key: NavGroup["headingKey"]) => string;
-  isActive: (href: string) => boolean;
-  onNavigate: () => void;
-  signOutLabel: string;
-  backToAppLabel: string;
-  titleLabel: string;
-  soonLabel: string;
-  langLabel: string;
-  themeToDarkLabel: string;
-  themeToLightLabel: string;
-  signOutAction: () => Promise<void>;
-  className?: string;
-}
-
-function Sidebar({
-  locale,
-  employee,
-  workspace,
-  groups,
-  labelFor,
-  headingFor,
-  isActive,
-  onNavigate,
-  signOutLabel,
-  backToAppLabel,
-  titleLabel,
-  soonLabel,
-  langLabel,
-  themeToDarkLabel,
-  themeToLightLabel,
-  signOutAction,
-  className,
-}: SidebarProps): React.ReactElement {
-  return (
-    <aside
-      className={cn(
-        "sticky top-0 h-screen w-sidebar shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-surface)]",
-        className,
-      )}
-      aria-label={titleLabel}
-    >
-      {/* The brand block is the restaurant's block: its colour, ending in its own
-          stepped zigzag instead of a 1px rule. It is the one place in the admin
-          chrome that looks like the restaurant rather than like software, which
-          is why it is also the only terracotta field on the screen. */}
-      <div className="flex h-16 min-h-16 items-center gap-3 bg-[var(--color-brand-600)] px-4 py-3">
-        {/* The restaurant's own mark, from alimentariamexicana.com. It carries its
-            own cream ground, so it sits in a plain rounded frame. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand-mark.png"
-          alt=""
-          width={40}
-          height={40}
-          className="size-10 shrink-0 rounded-[var(--radius-md)] object-cover"
-        />
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold leading-heading text-[var(--color-white)]">
-            {workspace.split(",")[0] || titleLabel}
-          </span>
-          {/* White, not the peach tint: the tint reads at 4.09:1 on terracotta,
-              under the 4.5:1 this size needs. The weight carries the hierarchy. */}
-          <span className="block truncate text-sm leading-meta text-[var(--color-white)]">
-            {workspace.split(",").slice(1).join(",").trim() || titleLabel}
-          </span>
-        </span>
-      </div>
-      {/* Teeth down: the block above owns the edge, the way the site draws it. */}
-      <span className="pix-edge is-down" aria-hidden="true" />
-
-      {/* The zigzag is a piece of ornament, not a rule, so it needs room under it
-          before the first row — pressed up against Home it reads as that row's
-          decoration rather than as the brand block's edge. */}
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4 pt-6">
-        {groups.map((group) => (
-          <div key={group.headingKey} className="space-y-1">
-            {/* 14px, because 12px is the one size this system does not use on an
-                admin screen — and a group label is read, not decoration. The first
-                group is a single row called Home, which needs no heading over it. */}
-            {group.headingKey === "groupWorkspace" ? null : (
-              <p className="px-3 pb-1 text-sm leading-meta text-[var(--color-ink-3)]">
-                {headingFor(group.headingKey)}
-              </p>
-            )}
-            <ul className="space-y-0.5">
-              {group.items.map((item) => (
-                <li key={item.href || "home"}>
-                  <NavLink
-                    href={`/${locale}/admin${item.href}`}
-                    icon={item.icon}
-                    label={labelFor(item.labelKey)}
-                    active={isActive(item.href)}
-                    onClick={onNavigate}
-                    soon={item.soon ? soonLabel : undefined}
-                  />
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </nav>
-
-      <div className="border-t border-[var(--color-line)] p-3">
-        <p className="flex items-center gap-3 px-3 py-2">
-          <span
-            aria-hidden="true"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-sm font-semibold text-[var(--color-ink)]"
-          >
-            {employee.name
-              .split(" ")
-              .filter(Boolean)
-              .slice(0, 2)
-              .map((w) => w[0])
-              .join("")
-              .toUpperCase()}
-          </span>
-          <span className="min-w-0 truncate text-sm font-medium text-[var(--color-ink)]">
-            {employee.name}
-          </span>
-        </p>
-        <Link
-          href={`/${locale}/employee/home`}
-          onClick={onNavigate}
-          className={cn(
-            "flex min-h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2",
-            "text-sm font-medium text-[var(--color-ink-2)]",
-            "transition-colors duration-[var(--dur)] ease-[var(--ease)]",
-            "hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2",
-          )}
-        >
-          <LuArrowLeft aria-hidden="true" className="text-md" />
-          <span className="flex-1 truncate">{backToAppLabel}</span>
-        </Link>
-        <div className="mt-2 flex items-center justify-between border-t border-[var(--color-line)] pt-3 px-1 lg:hidden">
-          <LocaleSwitch locale={locale} label={langLabel} />
-          <ThemeToggle
-            labels={{ toDark: themeToDarkLabel, toLight: themeToLightLabel }}
-          />
-        </div>
-        {/* Sign out is hidden in the sidebar for now — UI only. The action and its
-            label are still wired, so putting this row back is uncommenting it.
-            Signing out is still reachable from the employee bar via "Back to app".
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            className={cn(
-              'mt-1 flex w-full min-h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2',
-              'text-sm font-medium text-[var(--color-ink-3)]',
-              'transition-colors duration-[var(--dur)] ease-[var(--ease)]',
-              'hover:bg-[var(--color-bad-tint)] hover:text-[var(--color-bad)]',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2',
-            )}
-          >
-            <LuLogOut aria-hidden="true" className="text-md" />
-            <span className="flex-1 truncate text-left">{signOutLabel}</span>
-          </button>
-        </form>
-        */}
-      </div>
-    </aside>
-  );
-}
-
-function NavLink({
-  href,
-  icon,
-  label,
-  active,
-  onClick,
-  soon,
-}: {
-  href: string;
-  icon: IconType;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  /** Text of the badge for a page that is not built yet. */
-  soon?: string;
-}): React.ReactElement {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      aria-current={active ? "page" : undefined}
-      className={cn(
-        "group flex min-h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2",
-        "text-sm font-medium",
-        // A sidebar link is passed over dozens of times an hour: the colour
-        // lands at press speed, and the row gives a little when pressed.
-        "transition-[background-color,color,transform] duration-[var(--dur-press)] ease-[var(--ease)]",
-        "active:scale-[var(--press)]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2",
-        active
-          ? "bg-[var(--color-nav-current)] text-[var(--color-brand-700)]"
-          : "text-[var(--color-ink-2)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]",
-      )}
-    >
-      <Icon
-        icon={icon}
-        className={cn(
-          "text-md",
-          active
-            ? "text-[var(--color-brand-700)]"
-            : "text-[var(--color-ink-3)] group-hover:text-[var(--color-ink-2)]",
-        )}
-      />
-      <span className="flex-1 truncate">{label}</span>
-      {soon ? (
-        <span className="rounded-[var(--radius-sm)] bg-[var(--color-panel)] px-2 py-0.5 text-sm font-semibold text-[var(--color-ink-2)]">
-          {soon}
-        </span>
-      ) : null}
-    </Link>
   );
 }

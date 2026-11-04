@@ -292,6 +292,53 @@
 }
 
 /* ============================================================
+   RESPONSIVE WORK SURFACE
+   Adapts the admin work surface across wider displays (QHD, 4K,
+   ultrawide) and scales smoothly during browser zoom (Ctrl - / Ctrl +).
+   ============================================================ */
+@media (min-width: 1440px) {
+  :root {
+    --page-w: 84rem;
+    --page-wide-w: 96rem;
+  }
+}
+
+@media (min-width: 1680px) {
+  :root {
+    --page-w: 96rem;
+    --page-wide-w: 108rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --page-w: 108rem;
+    --page-wide-w: 120rem;
+  }
+}
+
+@media (min-width: 2200px) {
+  :root {
+    --page-w: 124rem;
+    --page-wide-w: 136rem;
+  }
+}
+
+@media (min-width: 2560px) {
+  :root {
+    --page-w: 140rem;
+    --page-wide-w: 152rem;
+  }
+}
+
+@media (min-width: 3200px) {
+  :root {
+    --page-w: 168rem;
+    --page-wide-w: 180rem;
+  }
+}
+
+/* ============================================================
    DARK
    The same token names with a different scale under them, so no component
    knows this exists. Authored, not inverted: every value was picked against
