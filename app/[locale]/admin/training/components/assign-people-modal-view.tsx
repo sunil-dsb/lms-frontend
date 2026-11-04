@@ -14,6 +14,7 @@ interface AssignPeopleModalViewProps {
   locale: string;
   filteredPeople: MockEmployee[];
   assignedEmployeeIds: Set<string>;
+  requiredEmployeeIds: Set<string>;
   selectedPeopleIds: Set<string>;
   togglePerson: (id: string) => void;
   onSelectAllVisible: () => void;
@@ -25,6 +26,8 @@ interface AssignPeopleModalViewProps {
   availableStations: string[];
   dueAt: string;
   setDueAt: (date: string) => void;
+  isRequired: boolean;
+  setIsRequired: (required: boolean) => void;
   getPresetDate: (preset: "1week" | "2weeks" | "endOfMonth") => string;
   chapterCount: number;
   hasQuiz: boolean;
@@ -41,6 +44,7 @@ export function AssignPeopleModalView({
   locale,
   filteredPeople,
   assignedEmployeeIds,
+  requiredEmployeeIds,
   selectedPeopleIds,
   togglePerson,
   onSelectAllVisible,
@@ -52,6 +56,8 @@ export function AssignPeopleModalView({
   availableStations,
   dueAt,
   setDueAt,
+  isRequired,
+  setIsRequired,
   getPresetDate,
   chapterCount,
   hasQuiz,
@@ -215,82 +221,77 @@ export function AssignPeopleModalView({
                 return (
                   <div
                     key={emp.id}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 bg-[var(--color-wash)]/40 text-left select-none"
+                    className="flex w-full items-center gap-3 px-4 py-3 bg-[var(--color-wash)]/40 text-left select-none"
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      {/* Checkmark indicator with design system token */}
-                      <span
-                        aria-hidden="true"
-                        className="inline-flex size-5 shrink-0 items-center justify-center rounded-md border border-[var(--color-ok-tint-2)] bg-[var(--color-ok-tint)] text-[var(--color-ok)]"
-                      >
-                        <LuCheck
-                          aria-hidden="true"
-                          size={13}
-                          style={{ strokeWidth: 3 }}
-                          className="text-xs shrink-0"
-                        />
-                      </span>
+                    <SelectionIndicator checked />
 
-                      {/* Name & Station */}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[var(--color-ink)] leading-snug">
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                      <div className="flex min-w-0 items-center justify-between gap-3">
+                        <p className="truncate text-sm font-semibold leading-snug text-[var(--color-ink)]">
                           {emp.name}
                         </p>
-                        <p className="truncate text-xs text-[var(--color-ink-3)] leading-snug mt-0.5">
+                        <p className="shrink-0 text-xs text-[var(--color-ink-3)]">
                           {emp.station}
                         </p>
                       </div>
-                    </div>
 
-                    <div
-                      className="flex items-center gap-2 shrink-0"
-                      style={{ marginRight: "6px" }}
-                    >
-                      {emp.status === "pending" ? (
-                        <span
-                          style={{
-                            padding: "4px 12px",
-                            minWidth: "64px",
-                            textAlign: "center",
-                          }}
-                          className="text-xs font-semibold rounded-full bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn)]/30"
-                        >
-                          {isEs ? "Pendiente" : "Pending"}
-                        </span>
-                      ) : null}
-
-                      <span
-                        style={{ padding: "4px 10px" }}
-                        className="text-xs font-semibold rounded-[var(--radius-sm)] bg-[var(--color-panel)] text-[var(--color-ink-2)] border border-[var(--color-line)]"
-                      >
-                        {isEs ? "Asignado" : "Assigned"}
-                      </span>
-
-                      {onUnassignPerson ? (
-                        <button
-                          type="button"
-                          disabled={isCurrentlyUnassigning}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onUnassignPerson(emp.id, emp.name);
-                          }}
-                          className={cn(
-                            "inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
-                            "text-[var(--color-bad-700)] hover:text-[var(--color-bad-800)] hover:bg-[var(--color-bad-tint)] border border-[var(--color-bad)]/20",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
-                            isCurrentlyUnassigning &&
-                              "opacity-60 cursor-not-allowed",
-                          )}
-                          title={
-                            isEs ? "Desasignar empleado" : "Unassign employee"
-                          }
-                        >
-                          {isCurrentlyUnassigning ? (
-                            <LuLoader className="size-3 animate-spin" />
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {emp.status === "pending" ? (
+                            <span
+                              style={{
+                                padding: "4px 8px",
+                                borderRadius: "var(--r-sm)",
+                              }}
+                              className="text-xs font-semibold bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn)]/30"
+                            >
+                              {isEs ? "Pendiente" : "Pending"}
+                            </span>
                           ) : null}
-                          <span>{isEs ? "Desasignar" : "Unassign"}</span>
-                        </button>
-                      ) : null}
+
+                          <span
+                            style={{
+                              padding: "4px 8px",
+                              borderRadius: "var(--r-sm)",
+                            }}
+                            className="text-xs font-semibold bg-[var(--color-panel)] text-[var(--color-ink-2)] border border-[var(--color-line)]"
+                          >
+                            {isEs ? "Asignado" : "Assigned"}
+                          </span>
+
+                          {requiredEmployeeIds.has(emp.id) ? (
+                            <span
+                              style={{ borderRadius: "var(--r-sm)" }}
+                              className="border border-[var(--color-warn)]/30 bg-[var(--color-warn-tint)] px-2 py-1 text-xs font-semibold text-[var(--color-warn-ink)]"
+                            >
+                              {isEs ? "Requerido" : "Required"}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        {onUnassignPerson ? (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            disabled={isCurrentlyUnassigning}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onUnassignPerson(emp.id, emp.name);
+                            }}
+                            className="shrink-0 text-xs"
+                            style={{ borderRadius: "var(--r-pill)" }}
+                            title={
+                              isEs ? "Desasignar empleado" : "Unassign employee"
+                            }
+                          >
+                            {isCurrentlyUnassigning ? (
+                              <LuLoader className="size-3 animate-spin" />
+                            ) : null}
+                            <span>{isEs ? "Desasignar" : "Unassign"}</span>
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 );
@@ -312,23 +313,7 @@ export function AssignPeopleModalView({
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     {/* Interactive Checkbox with design system token */}
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "inline-flex size-5 shrink-0 items-center justify-center rounded-md border transition-all duration-150",
-                        isSelected
-                          ? "bg-[var(--color-brand-600)] border-[var(--color-brand-600)] text-[var(--color-white)]"
-                          : "border-[var(--color-line-3)] bg-transparent",
-                      )}
-                    >
-                      <LuCheck
-                        style={{ strokeWidth: 3 }}
-                        className={cn(
-                          "text-xs",
-                          isSelected ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                    </span>
+                    <SelectionIndicator checked={isSelected} />
 
                     {/* Name & Station */}
                     <div className="min-w-0 flex-1">
@@ -349,8 +334,9 @@ export function AssignPeopleModalView({
                         marginRight: "6px",
                         minWidth: "64px",
                         textAlign: "center",
+                        borderRadius: "var(--r-sm)",
                       }}
-                      className="shrink-0 text-xs font-semibold rounded-full bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn)]/30"
+                      className="shrink-0 text-xs font-semibold rounded-[var(--radius-sm)] bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn)]/30"
                     >
                       {isEs ? "Pendiente" : "Pending"}
                     </span>
@@ -362,7 +348,7 @@ export function AssignPeopleModalView({
                         minWidth: "64px",
                         textAlign: "center",
                       }}
-                      className="shrink-0 text-xs font-semibold rounded-full bg-[var(--color-ok-tint)] text-[var(--color-ok-700)] border border-[var(--color-ok)]/30"
+                      className="shrink-0 text-xs font-semibold rounded-[var(--radius-sm)] bg-[var(--color-ok-tint)] text-[var(--color-ok-700)] border border-[var(--color-ok)]/30"
                     >
                       {isEs ? "Activo" : "Active"}
                     </span>
@@ -372,6 +358,25 @@ export function AssignPeopleModalView({
             })
           )}
         </div>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-line-2)] p-3">
+          <input
+            type="checkbox"
+            checked={isRequired}
+            onChange={(event) => setIsRequired(event.target.checked)}
+            className="mt-1 size-4 accent-[var(--color-brand-600)]"
+          />
+          <span>
+            <span className="block text-sm font-semibold text-[var(--color-ink)]">
+              {isEs ? "Capacitacion obligatoria" : "Required training"}
+            </span>
+            <span className="mt-1 block text-xs leading-relaxed text-[var(--color-ink-2)]">
+              {isEs
+                ? "Estos empleados deben completar el curso antes de abrir otros cursos o procedimientos."
+                : "These employees must complete this course before opening other courses or procedures."}
+            </span>
+          </span>
+        </label>
 
         {/* Due date + Quick Presets (Always visible at first view without scrolling) */}
         <div
@@ -489,5 +494,28 @@ export function AssignPeopleModalView({
         </div>
       </div>
     </div>
+  );
+}
+
+function SelectionIndicator({
+  checked,
+}: {
+  checked: boolean;
+}): React.ReactElement {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "inline-flex size-5 shrink-0 items-center justify-center rounded-md border transition-all duration-150",
+        checked
+          ? "border-[var(--color-brand-600)] bg-[var(--color-brand-600)] text-[var(--color-white)]"
+          : "border-[var(--color-line-3)] bg-transparent",
+      )}
+    >
+      <LuCheck
+        style={{ strokeWidth: 3 }}
+        className={cn("text-xs", checked ? "opacity-100" : "opacity-0")}
+      />
+    </span>
   );
 }

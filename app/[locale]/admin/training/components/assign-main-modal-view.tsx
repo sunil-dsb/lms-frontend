@@ -23,8 +23,11 @@ interface AssignMainModalViewProps {
   availableStations: string[];
   dueAt: string;
   setDueAt: (dueAt: string) => void;
+  isRequired: boolean;
+  setIsRequired: (required: boolean) => void;
   getPresetDate?: (preset: "1week" | "2weeks" | "endOfMonth") => string;
   targetEmployeeCount: number;
+  existingAssignedCount: number;
   selectedPeopleCount?: number;
   chapterCount: number;
   linkedSopsCount: number;
@@ -54,8 +57,11 @@ export function AssignMainModalView({
   availableStations,
   dueAt,
   setDueAt,
+  isRequired,
+  setIsRequired,
   getPresetDate,
   targetEmployeeCount,
+  existingAssignedCount,
   selectedPeopleCount = 0,
   chapterCount,
   linkedSopsCount,
@@ -271,6 +277,12 @@ export function AssignMainModalView({
             </button>
           </div>
 
+          <p className="text-xs text-[var(--color-ink-2)]">
+            {isEs
+              ? `Asignados: ${existingAssignedCount}. Por asignar: ${targetEmployeeCount}.`
+              : `Already assigned: ${existingAssignedCount}. This assignment will add: ${targetEmployeeCount}.`}
+          </p>
+
           {/* Station cards when "By station" is active */}
           {scope === "station" ? (
             <div className="space-y-3 pt-2 animate-in fade-in duration-150">
@@ -314,7 +326,58 @@ export function AssignMainModalView({
                 {cleanStations.map((st) => {
                   const isSelected = selectedStations.has(st);
                   const assignableCount = stationEmployeeCounts?.[st] ?? 0;
+                  const totalCount = stationEmployees?.[st]?.length ?? 0;
+                  const assignedCount = totalCount - assignableCount;
+                  const isFullyAssigned =
+                    totalCount > 0 && assignableCount === 0;
+                  const isPartiallyAssigned =
+                    assignedCount > 0 && assignableCount > 0;
                   const displayName = st.charAt(0).toUpperCase() + st.slice(1);
+
+                  if (isFullyAssigned) {
+                    return (
+                      <div
+                        key={st}
+                        style={{ padding: "8px 12px" }}
+                        className="flex items-center justify-between rounded-[var(--radius-lg)] border border-[var(--color-ok)]/40 bg-[var(--color-ok-tint)]/25 text-left transition-all duration-150"
+                        title={
+                          isEs
+                            ? "Todos los empleados de esta estación ya tienen este curso asignado"
+                            : "All employees in this station already have this course assigned"
+                        }
+                      >
+                        <div
+                          className="flex items-center gap-3 min-w-0"
+                          style={{ gap: "10px" }}
+                        >
+                          <div className="size-5 rounded-md flex items-center justify-center shrink-0 bg-[var(--color-ok)] text-white shadow-2xs">
+                            <LuCheck
+                              className="text-xs stroke-[3] text-white"
+                              style={{ strokeWidth: 3 }}
+                            />
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-[var(--color-ink)] truncate leading-snug">
+                              {displayName}
+                            </p>
+                            <p className="text-xs text-[var(--color-ok)] font-medium">
+                              {isEs
+                                ? `${totalCount} ya asignado${totalCount === 1 ? "" : "s"}`
+                                : `${totalCount} already assigned`}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span
+                          style={{ padding: "3px 8px" }}
+                          className="mr-1 text-xs font-bold rounded-full shrink-0 border bg-[var(--color-ok-tint)] text-[var(--color-ok)] border-[var(--color-ok)]/30"
+                        >
+                          {isEs ? "Asignado" : "Assigned"}
+                        </span>
+                      </div>
+                    );
+                  }
 
                   return (
                     <button
@@ -352,9 +415,18 @@ export function AssignMainModalView({
                         </div>
 
                         {/* Station Name */}
-                        <p className="text-sm font-semibold text-[var(--color-ink)] truncate leading-snug">
-                          {displayName}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[var(--color-ink)] truncate leading-snug">
+                            {displayName}
+                          </p>
+                          {isPartiallyAssigned ? (
+                            <p className="text-xs text-[var(--color-ink-3)]">
+                              {isEs
+                                ? `${assignedCount} ya asignado${assignedCount === 1 ? "" : "s"}`
+                                : `${assignedCount} already assigned`}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
 
                       {/* Clean count badge */}
@@ -402,7 +474,7 @@ export function AssignMainModalView({
                           allEmployees?.filter((e) => e.status === "pending")
                             .length || 0
                         } pendientes).`
-                      : `All active and pending employees will receive this course (${
+                      : `Only employees without an existing assignment will be added (${
                           allEmployees?.filter((e) => e.status === "active")
                             .length || 0
                         } active, ${
@@ -418,7 +490,7 @@ export function AssignMainModalView({
                 {isLoadingData ? (
                   <LuLoader className="animate-spin text-sm" />
                 ) : (
-                  `${targetEmployeeCount} ${isEs ? "empleados" : "employees"}`
+                  `${targetEmployeeCount} ${isEs ? "por asignar" : "to add"}`
                 )}
               </span>
             </div>
@@ -455,6 +527,25 @@ export function AssignMainModalView({
             </div>
           ) : null}
         </div>
+
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--color-line-2)] p-3">
+          <input
+            type="checkbox"
+            checked={isRequired}
+            onChange={(event) => setIsRequired(event.target.checked)}
+            className="mt-1 size-4 accent-[var(--color-brand-600)]"
+          />
+          <span>
+            <span className="block text-sm font-semibold text-[var(--color-ink)]">
+              {isEs ? "Capacitacion obligatoria" : "Required training"}
+            </span>
+            <span className="mt-1 block text-xs leading-relaxed text-[var(--color-ink-2)]">
+              {isEs
+                ? "Estos empleados deben completar el curso antes de abrir otros cursos o procedimientos."
+                : "These employees must complete this course before opening other courses or procedures."}
+            </span>
+          </span>
+        </label>
 
         {/* Due date picker with standard width and quick presets */}
         <div
