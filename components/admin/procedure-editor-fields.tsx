@@ -603,26 +603,131 @@ export function ProcedureIconPicker({
   );
 }
 
+/** A run-window field rendered as a date input + a time input pair so the
+ *  manager picks the wall-clock moment of the window edge, not just the day.
+ *  A value picked on the date alone gets the default time joined on: runs
+ *  start at 00:00 (whole first day) and end at 23:59 (whole last day),
+ *  mirroring the previous save which stamped expiry end-of-day. */
+function PromoDatetimeRow({
+  id,
+  label,
+  value,
+  defaultTime,
+  onChange,
+  minDate,
+  children,
+}: {
+  id: string;
+  label: string;
+  value: string | null;
+  defaultTime: string;
+  onChange: (next: string | null) => void;
+  minDate?: string;
+  children?: React.ReactNode;
+}): React.ReactElement {
+  const { date, time } = ((): { date: string; time: string } => {
+    if (!value) return { date: "", time: defaultTime };
+    return {
+      date: value.slice(0, 10),
+      time: value.includes("T") ? value.slice(11, 16) : defaultTime,
+    };
+  })();
+  return (
+    <div className="space-y-2">
+      <Label
+        htmlFor={`${id}-date`}
+        className="text-xs font-semibold text-[var(--color-ink)] block"
+      >
+        {label}
+      </Label>
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          id={`${id}-date`}
+          type="date"
+          min={minDate}
+          value={date}
+          onChange={(e) =>
+            onChange(e.target.value ? `${e.target.value}T${time}` : null)
+          }
+          className="h-[38px] w-[150px] shrink-0 rounded-[var(--radius-md)] border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 text-xs text-[var(--color-ink)]"
+        />
+        <Input
+          id={`${id}-time`}
+          type="time"
+          value={time}
+          onChange={(e) =>
+            onChange(date ? `${date}T${e.target.value || defaultTime}` : null)
+          }
+          className="h-[38px] w-[120px] shrink-0 rounded-[var(--radius-md)] border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 text-xs text-[var(--color-ink)]"
+        />
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function PromoSection({
   isPromo,
   onChangeIsPromo,
+  promoStartsAt,
+  onChangePromoStartsAt,
   promoExpiresAt,
   onChangePromoExpiresAt,
+  promoEmployeeIds,
+  onChangePromoEmployeeIds,
+  people,
   locale,
 }: {
   isPromo: boolean;
   onChangeIsPromo: (val: boolean) => void;
+  promoStartsAt: string | null;
+  onChangePromoStartsAt: (val: string | null) => void;
   promoExpiresAt: string | null;
   onChangePromoExpiresAt: (val: string | null) => void;
+  promoEmployeeIds: string[];
+  onChangePromoEmployeeIds: (ids: string[]) => void;
+  people: AdminEmployee[];
   locale: string;
 }): React.ReactElement {
   const t = useTranslations("admin.library.editor");
   const isEs = locale === "es";
+  const [employeeSearch, setEmployeeSearch] = React.useState("");
 
-  const setPreset = (days: number) => {
+  const pad = (n: number): string => String(n).padStart(2, "0");
+
+  // Run-window presets land the expiration at end-of-day on the target day.
+  const setExpiryPreset = (days: number) => {
     const d = new Date();
     d.setDate(d.getDate() + days);
-    onChangePromoExpiresAt(d.toISOString().slice(0, 10));
+    onChangePromoExpiresAt(
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T23:59`,
+    );
+  };
+  const today = new Date();
+  const todayLocal = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+  // All loaded employees are active rows (the editor fetches active-only),
+  // so "everyone" is simply the full people list.
+  const selectedIds = React.useMemo(
+    () => new Set(promoEmployeeIds),
+    [promoEmployeeIds],
+  );
+  const allSelected =
+    people.length > 0 && people.every((p) => selectedIds.has(p.id));
+  const filteredPeople = employeeSearch.trim()
+    ? people.filter((p) =>
+        `${p.name} ${p.employeeCode ?? ""}`
+          .toLowerCase()
+          .includes(employeeSearch.trim().toLowerCase()),
+      )
+    : people;
+
+  const toggleEmployee = (id: string) => {
+    onChangePromoEmployeeIds(
+      selectedIds.has(id)
+        ? promoEmployeeIds.filter((x) => x !== id)
+        : [...promoEmployeeIds, id],
+    );
   };
 
   return (
@@ -660,7 +765,17 @@ export function PromoSection({
             onChange={(event) => {
               const next = event.target.checked;
               onChangeIsPromo(next);
-              if (next && !promoExpiresAt) setPreset(30);
+              if (next) {
+                // Enabling prefills a sensible run window: starts now,
+                // ends a month out at end-of-day. Both stay editable.
+                if (!promoExpiresAt) setExpiryPreset(30);
+                if (!promoStartsAt) {
+                  const d = new Date();
+                  onChangePromoStartsAt(
+                    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`,
+                  );
+                }
+              }
             }}
             className="size-5 cursor-pointer accent-[var(--color-brand-600)]"
           />
@@ -675,56 +790,161 @@ export function PromoSection({
 
       {isPromo ? (
         <div className="mt-5 pt-5 border-t border-[var(--color-line-2)] space-y-5">
-          {/* Expiration date + presets */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="proc-promo-expires"
-              className="text-xs font-semibold text-[var(--color-ink)] block"
-            >
-              {t("promoExpiresLabel")}
-            </Label>
-            <div className="flex flex-wrap items-center gap-3">
-              <Input
-                id="proc-promo-expires"
-                type="date"
-                min={new Date().toISOString().slice(0, 10)}
-                value={promoExpiresAt ?? ""}
-                onChange={(e) => onChangePromoExpiresAt(e.target.value || null)}
-                className="h-[38px] w-[180px] shrink-0 rounded-[var(--radius-md)] border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 text-xs text-[var(--color-ink)]"
-              />
-              <div className="flex items-center flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPreset(14)}
-                  className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
-                >
-                  {t("promoPreset2Weeks")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreset(30)}
-                  className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
-                >
-                  {t("promoPreset1Month")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreset(60)}
-                  className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
-                >
-                  {t("promoPreset2Months")}
-                </button>
-              </div>
+          {/* Run window — start and end, each date + time */}
+          <PromoDatetimeRow
+            id="proc-promo-starts"
+            label={t("promoStartsLabel")}
+            value={promoStartsAt}
+            defaultTime="00:00"
+            onChange={onChangePromoStartsAt}
+          />
+          <div className="pt-1 border-t border-dashed border-[var(--color-line-2)]" />
+          <PromoDatetimeRow
+            id="proc-promo-expires"
+            label={t("promoExpiresLabel")}
+            value={promoExpiresAt}
+            defaultTime="23:59"
+            minDate={promoStartsAt?.slice(0, 10) ?? todayLocal}
+            onChange={onChangePromoExpiresAt}
+          >
+            <div className="flex items-center flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setExpiryPreset(14)}
+                className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+              >
+                {t("promoPreset2Weeks")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setExpiryPreset(30)}
+                className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+              >
+                {t("promoPreset1Month")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setExpiryPreset(60)}
+                className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+              >
+                {t("promoPreset2Months")}
+              </button>
             </div>
-            <p className="text-xs text-[var(--color-ink-3)] leading-relaxed mt-1">
-              {t("promoExpiresHint")}
-            </p>
-          </div>
+          </PromoDatetimeRow>
 
-          <div className="pt-1">
-            <p className="text-xs leading-relaxed text-[var(--color-ink-2)]">
-              {t("promoStationsHint")}
+          <p className="text-xs text-[var(--color-ink-3)] leading-relaxed mt-1">
+            {t("promoExpiresHint")}
+          </p>
+
+          {/* Employee assignment — the promo is visible only to the
+              employees picked here. "All employees" selects the whole
+              loaded roster in one tap; the check icon + branded pill make
+              the everyone-selected state visible at a glance. */}
+          <div className="pt-4 border-t border-dashed border-[var(--color-line-2)] space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <IconTile size="xs" icon={LuUsers} />
+                <h4 className="text-sm font-semibold text-[var(--color-ink)]">
+                  {t("promoEmployeesTitle")}
+                </h4>
+                <StatusPill
+                  tone={
+                    allSelected
+                      ? "ok"
+                      : promoEmployeeIds.length > 0
+                        ? "info"
+                        : "neutral"
+                  }
+                >
+                  {t("promoEmployeesCount", { count: promoEmployeeIds.length })}
+                </StatusPill>
+              </div>
+              <Button
+                type="button"
+                variant={allSelected ? "secondary" : "neutral"}
+                size="sm"
+                icon={LuCheck}
+                onClick={() =>
+                  onChangePromoEmployeeIds(
+                    allSelected ? [] : people.map((p) => p.id),
+                  )
+                }
+              >
+                {t("promoAllEmployees")}
+              </Button>
+            </div>
+            <p className="text-xs text-[var(--color-ink-3)] leading-relaxed">
+              {t("promoEmployeesHint")}
             </p>
+
+            {people.length > 0 ? (
+              <>
+                <div className="relative">
+                  <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--color-ink-3)]" />
+                  <Input
+                    type="search"
+                    value={employeeSearch}
+                    onChange={(e) => setEmployeeSearch(e.target.value)}
+                    placeholder={t("promoSearchPlaceholder")}
+                    className="h-[38px] w-full max-w-[280px] rounded-full border-[var(--color-line-2)] bg-[var(--color-surface)] pl-9 pr-3 text-xs text-[var(--color-ink)]"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onChangePromoEmployeeIds(
+                      allSelected ? [] : people.map((p) => p.id),
+                    )
+                  }
+                  className="text-xs font-semibold text-[var(--color-brand-600)] hover:underline"
+                >
+                  {allSelected
+                    ? t("promoDeselectAll")
+                    : t("promoSelectAllCount", { count: people.length })}
+                </button>
+                <ul className="max-h-[240px] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--color-line-2)] divide-y divide-[var(--color-line-2)]">
+                  {filteredPeople.map((p) => {
+                    const checked = selectedIds.has(p.id);
+                    return (
+                      <li key={p.id}>
+                        <label
+                          htmlFor={`promo-emp-${p.id}`}
+                          className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-[var(--color-wash)] transition-colors"
+                        >
+                          <input
+                            id={`promo-emp-${p.id}`}
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleEmployee(p.id)}
+                            className="size-5 shrink-0 cursor-pointer accent-[var(--color-brand-600)]"
+                          />
+                          <span className="min-w-0 flex-1 truncate text-xs font-medium text-[var(--color-ink)]">
+                            {p.name}
+                          </span>
+                          {p.employeeCode ? (
+                            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-ink-3)]">
+                              {p.employeeCode}
+                            </span>
+                          ) : null}
+                        </label>
+                      </li>
+                    );
+                  })}
+                  {filteredPeople.length === 0 ? (
+                    <li className="px-4 py-3 text-xs text-[var(--color-ink-3)]">
+                      {t("promoNobody")}
+                    </li>
+                  ) : null}
+                </ul>
+              </>
+            ) : null}
+
+            {promoEmployeeIds.length === 0 ? (
+              <p className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-wash)] px-3 py-2 text-xs font-medium text-[var(--color-ink-2)]">
+                <LuX className="size-4 shrink-0 text-[var(--color-bad)]" />
+                {t("promoNoneSelected")}
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}

@@ -23,6 +23,31 @@ export const PROMO_SLUGS: readonly string[] = [
 const PROMO_SLUG_SET = new Set(PROMO_SLUGS);
 
 /**
+ * Converts a server ISO instant (e.g. 2026-11-05T22:00:00.000Z) into the
+ * local `datetime-local` input format (YYYY-MM-DDTHH:mm) for the editor.
+ * Returns null for absent / unparseable values.
+ */
+export function toLocalDatetimeInput(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * Converts a local `datetime-local` value (YYYY-MM-DDTHH:mm) into a UTC ISO
+ * instant. Browsers parse the input format in the viewer's local timezone,
+ * so the manager picks a wall-clock time and every device shows the run
+ * window consistently. Returns null for absent values.
+ */
+export function fromLocalDatetimeInput(local?: string | null): string | null {
+  if (!local) return null;
+  const d = new Date(local);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/**
  * Checks if a procedure is currently an active promo dish.
  */
 export function isPromoActive(
@@ -30,6 +55,13 @@ export function isPromoActive(
   now: number = Date.now(),
 ): boolean {
   if (!procedure.isPromo) return false;
+  // Not started yet — the run window hasn't opened.
+  if (
+    procedure.promoStartsAt &&
+    new Date(procedure.promoStartsAt).getTime() > now
+  ) {
+    return false;
+  }
   if (!procedure.promoExpiresAt) return true;
   return new Date(procedure.promoExpiresAt).getTime() > now;
 }

@@ -371,13 +371,11 @@ function buildProcedurePayload(
         ? input.iconImageUrl
         : null;
 
-  const rawAssignUsers =
-    Array.isArray(input.assignUsers) && input.assignUsers.length > 0
-      ? input.assignUsers
-      : Array.isArray(input.audience?.employeeIds) &&
-          input.audience.employeeIds.length > 0
-        ? input.audience.employeeIds
-        : [];
+  // An explicit empty list means clear the assignment. Only fall back to the
+  // audience when assignUsers was not supplied at all.
+  const rawAssignUsers = Array.isArray(input.assignUsers)
+    ? input.assignUsers
+    : (input.audience?.employeeIds ?? []);
   const validUsers = rawAssignUsers.filter(isUuid);
 
   const payload: Record<string, any> = {
@@ -414,12 +412,16 @@ function buildProcedurePayload(
   } else if (input.procedureImage === null || input.iconImageUrl === null) {
     payload.procedureImage = null;
   }
-  if (validUsers.length > 0) payload.assignUsers = validUsers;
+  if (Array.isArray(input.assignUsers) || input.audience?.employeeIds) {
+    payload.assignUsers = validUsers;
+  }
 
   if (typeof input.isPromo === "boolean") {
     payload.isPromo = input.isPromo;
     payload.promoExpiresAt =
       input.isPromo && input.promoExpiresAt ? input.promoExpiresAt : null;
+    payload.promoStartsAt =
+      input.isPromo && input.promoStartsAt ? input.promoStartsAt : null;
     payload.promoAudience = input.promoAudience ?? "station";
   }
 
@@ -459,6 +461,16 @@ function normalizeWrittenProcedure(
       "promoExpiresAt" in input
         ? (input.promoExpiresAt ?? null)
         : (apiProcedure.promoExpiresAt ?? null),
+    promoStartsAt:
+      "promoStartsAt" in input
+        ? (input.promoStartsAt ?? null)
+        : (apiProcedure.promoStartsAt ?? null),
+    promoEmployeeIds:
+      "promoEmployeeIds" in input
+        ? (input.promoEmployeeIds ?? [])
+        : (apiProcedure.assignUsers?.map((u) =>
+            typeof u === "string" ? u : (u as { id: string }).id,
+          ) ?? []),
     promoAudience:
       input.promoAudience ?? apiProcedure.promoAudience ?? "station",
   };

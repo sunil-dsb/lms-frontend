@@ -29,6 +29,7 @@ import {
   toEditorContent,
 } from "@/lib/procedure-draft";
 import { backendSlug, categorySlugsMatch } from "@/services/categories/api";
+import { toLocalDatetimeInput } from "@/lib/promos";
 import type {
   AdminEmployee,
   Category,
@@ -168,8 +169,14 @@ export function useProcedureEditorModel({
   const [isPromo, setIsPromo] = React.useState<boolean>(
     initial?.isPromo ?? false,
   );
+  const [promoStartsAt, setPromoStartsAt] = React.useState<string | null>(
+    toLocalDatetimeInput(initial?.promoStartsAt),
+  );
   const [promoExpiresAt, setPromoExpiresAt] = React.useState<string | null>(
-    initial?.promoExpiresAt ? initial.promoExpiresAt.slice(0, 10) : null,
+    toLocalDatetimeInput(initial?.promoExpiresAt),
+  );
+  const [promoEmployeeIds, setPromoEmployeeIds] = React.useState<string[]>(
+    initial?.promoEmployeeIds ?? [],
   );
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [dirty, setDirty] = React.useState(false);
@@ -584,6 +591,8 @@ export function useProcedureEditorModel({
     protection,
     isPromo,
     promoExpiresAt,
+    promoStartsAt,
+    promoEmployeeIds,
     setDirty,
     importedId,
     isEdit,
@@ -651,6 +660,10 @@ export function useProcedureEditorModel({
     setIsPromo,
     promoExpiresAt,
     setPromoExpiresAt,
+    promoStartsAt,
+    setPromoStartsAt,
+    promoEmployeeIds,
+    setPromoEmployeeIds,
     previewOpen,
     setPreviewOpen,
     dirty,

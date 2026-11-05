@@ -583,6 +583,11 @@ export interface Procedure {
   isPromo?: boolean;
   /** Expiration timestamp for the promo status. After this time, reverts to regular procedure. */
   promoExpiresAt?: string | null;
+  /** Employees selected in the promo editor. Persisted via `assignUsers`. */
+  promoEmployeeIds?: string[] | null;
+  /** Start timestamp of the promo run window. Before this instant the dish
+   *  doesn't surface in the Promo section (null = active immediately). */
+  promoStartsAt?: string | null;
   /** Who sees this promo: 'station' (only employees on this procedure's station) or 'everyone'. */
   promoAudience?: "station" | "everyone";
 }
@@ -662,6 +667,13 @@ export interface CreateProcedureInput {
   isPromo?: boolean;
   /** Expiration timestamp for the promo status. After this time, reverts to regular procedure. */
   promoExpiresAt?: string | null;
+  /** Employee IDs selected for this promo; the API persists them in assignUsers. */
+  promoEmployeeIds?: string[];
+  /** Start timestamp of the promo run window. Before this instant the dish
+   *  doesn't surface in the Promo section (null = active immediately). For
+   *  promo dishes the promo audience reuses `assignUsers` — only listed
+   *  employees see the dish in their Promo section. */
+  promoStartsAt?: string | null;
   /** Who sees this promo: 'station' (only employees on this procedure's station) or 'everyone'. */
   promoAudience?: "station" | "everyone";
   /** Acknowledgement statement shown on read; null/undefined disables.

@@ -654,6 +654,9 @@ export function normalizeBackendProcedure(raw: any): Procedure {
     quizMode: raw.quizMode ?? "training",
     isPromo: Boolean(raw.isPromo),
     promoExpiresAt: raw.promoExpiresAt ?? null,
+    promoStartsAt: raw.promoStartsAt ?? null,
+    promoEmployeeIds:
+      raw.promoEmployeeIds ?? (raw.isPromo ? (raw.assignUsers ?? []) : null),
     promoAudience: raw.promoAudience ?? "station",
   };
 }

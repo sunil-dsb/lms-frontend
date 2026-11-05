@@ -23,6 +23,7 @@ import type {
 } from "@/lib/types";
 import type { BilingualValue } from "@/components/ui/bilingual-input";
 import type { ValidationErrorResult } from "./procedure-editor-validation";
+import { fromLocalDatetimeInput } from "@/lib/promos";
 import type { WizardStepId } from "./procedure-editor-model";
 
 interface ProcedureSaveDependencies {
@@ -56,6 +57,8 @@ interface ProcedureSaveDependencies {
   protection: ProcedureProtection;
   isPromo: boolean;
   promoExpiresAt: string | null;
+  promoStartsAt: string | null;
+  promoEmployeeIds: string[];
   setDirty: Dispatch<SetStateAction<boolean>>;
   importedId: string | null;
   isEdit: boolean;
@@ -97,6 +100,8 @@ export function createProcedureSaveHandler(
     protection,
     isPromo,
     promoExpiresAt,
+    promoStartsAt,
+    promoEmployeeIds,
     setDirty,
     importedId,
     isEdit,
@@ -241,7 +246,9 @@ export function createProcedureSaveHandler(
           subcategoryId: liveSubcategoryId,
           stationIds: audience.stationIds,
           stationId: audience.stationIds[0] || null,
-          assignUsers: audience.employeeIds,
+          // Promo dishes use their dedicated employee picker; regular
+          // procedures keep the station audience assignment.
+          assignUsers: isPromo ? promoEmployeeIds : audience.employeeIds,
           stationScope: {
             mode: audience.stationIds.length ? "specific" : "all",
             stationIds: audience.stationIds,
@@ -254,11 +261,14 @@ export function createProcedureSaveHandler(
           audience: audience.mode === "everyone" ? null : audience,
           protection,
           isPromo,
+          promoStartsAt:
+            isPromo && promoStartsAt
+              ? fromLocalDatetimeInput(promoStartsAt)
+              : null,
+          promoEmployeeIds: isPromo ? promoEmployeeIds : [],
           promoExpiresAt:
             isPromo && promoExpiresAt
-              ? promoExpiresAt.includes("T")
-                ? promoExpiresAt
-                : new Date(`${promoExpiresAt}T23:59:59.999Z`).toISOString()
+              ? fromLocalDatetimeInput(promoExpiresAt)
               : null,
           promoAudience: "station",
         };
