@@ -28,8 +28,10 @@ import type {
  *  every list and the reader never scrolls to the problem. */
 const STATUS_RANK: Record<ProgressStatus, number> = {
   overdue: 0,
-  in_progress: 1,
-  complete: 2,
+  due_soon: 1,
+  in_progress: 2,
+  not_started: 3,
+  complete: 4,
 };
 
 /** One assignment as a progress row sees it: resolved against its course with

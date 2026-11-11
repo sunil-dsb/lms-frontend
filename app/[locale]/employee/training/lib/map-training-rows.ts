@@ -20,6 +20,14 @@ export function mapEmployeeTrainingAssignments(
         ? assignment.purposeEs || assignment.purposeEn
         : assignment.purposeEn || assignment.purposeEs;
 
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const dueDateObj = new Date(assignment.dueDate);
+      dueDateObj.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil(
+        (dueDateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
       return {
         id: assignment.assignmentId,
         courseId: assignment.courseId,
@@ -37,9 +45,11 @@ export function mapEmployeeTrainingAssignments(
           ? "complete"
           : assignment.dueDate < today
             ? "overdue"
-            : assignment.completedChapterCount > 0
-              ? "in_progress"
-              : "not_started",
+            : diffDays >= 0 && diffDays <= 3
+              ? "due_soon"
+              : assignment.completedChapterCount > 0
+                ? "in_progress"
+                : "not_started",
         dueAt: assignment.dueDate,
         completedAt: assignment.courseCompletedAt,
         estimatedMinutes: assignment.chapterCount * 5,

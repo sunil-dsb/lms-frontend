@@ -57,7 +57,7 @@ export interface EmployeeTrainingAssignment {
   chapterCount: number;
   completedChapterCount: number;
   progressPercent: number;
-  status: "complete" | "in_progress";
+  status: "complete" | "in_progress" | "not_started" | "due_soon" | "overdue";
 }
 
 export interface EmployeeRequiredTrainingStatus {
@@ -94,7 +94,7 @@ export interface EmployeeTrainingCourseDetail {
     completedChapterCount: number;
     totalChapters: number;
     progressPercent: number;
-    status: "complete" | "in_progress";
+    status: "complete" | "in_progress" | "not_started" | "due_soon" | "overdue";
   };
   course: Pick<
     BackendCourse,
@@ -197,7 +197,7 @@ export interface CourseAssignmentRow {
   /** `complete`, `in_progress`, or `overdue` (past due, unfinished) — note it
    *  does not collapse an untouched course into `due` like the per-employee
    *  endpoint does; the table highlights chapter progress instead. */
-  status: "complete" | "in_progress" | "overdue";
+  status: "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
   employee: {
     id: string;
     name: string;

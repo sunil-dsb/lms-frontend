@@ -16,7 +16,7 @@ export interface EmployeeTrainingItem {
   completedCount: number;
   progressPercent: number;
   nextChapterIndex: number | null;
-  status: "not_started" | "in_progress" | "complete" | "overdue";
+  status: "not_started" | "in_progress" | "due_soon" | "overdue" | "complete";
   dueAt: string;
   completedAt?: string | null;
   hasRecipeChapter?: boolean;

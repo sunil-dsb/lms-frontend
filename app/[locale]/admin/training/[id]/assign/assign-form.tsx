@@ -49,7 +49,9 @@ const STATUS_TONE: Record<
   "neutral" | "ok" | "warn" | "bad"
 > = {
   due: "warn",
+  due_soon: "warn",
   in_progress: "warn",
+  not_started: "neutral",
   complete: "ok",
   overdue: "bad",
 };

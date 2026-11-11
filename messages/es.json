@@ -1588,6 +1588,8 @@
         "allFinished": "Todo terminado",
         "statusDone": "Hecho",
         "statusInProgress": "En curso",
+        "statusDueSoon": "Vence pronto",
+        "statusNotStarted": "No iniciado",
         "statusOverdue": "Vencido",
         "emptyHeading": "Aún no hay progreso",
         "emptyBody": "Asigna un curso a tu equipo y su progreso aparecerá aquí.",

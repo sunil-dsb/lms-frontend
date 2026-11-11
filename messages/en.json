@@ -1588,6 +1588,8 @@
         "allFinished": "All finished",
         "statusDone": "Done",
         "statusInProgress": "In progress",
+        "statusDueSoon": "Due soon",
+        "statusNotStarted": "Not started",
         "statusOverdue": "Overdue",
         "emptyHeading": "No progress yet",
         "emptyBody": "Assign a course to your team and everyone's progress shows up here.",

@@ -338,7 +338,8 @@ export async function fetchCourseAssignmentsApi(
 export async function fetchTrainingProgressApi(
   cookieHeader?: string,
   options: {
-    status?: "complete" | "in_progress" | "overdue";
+    status?:
+      "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
     groupBy?: "employee" | "course";
     page?: number;
     limit?: number;

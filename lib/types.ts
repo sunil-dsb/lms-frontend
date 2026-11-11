@@ -692,7 +692,7 @@ export interface CreateProcedureInput {
  *  derived status (dueAt < now && !complete) so it does not need to be
  *  persisted — the admin UI computes it from `dueAt` and `status`. */
 export type TrainingAssignmentStatus =
-  "due" | "in_progress" | "complete" | "overdue";
+  "due" | "in_progress" | "complete" | "overdue" | "not_started" | "due_soon";
 
 export interface TrainingAssignment {
   id: string;
@@ -706,7 +706,7 @@ export interface TrainingAssignment {
   dueAt: string;
   /** Last non-terminal status from the employee side. The admin list
    *  re-derives `overdue` from `dueAt` — see TrainingAssignmentRow below. */
-  status: Exclude<TrainingAssignmentStatus, "overdue">;
+  status: Exclude<TrainingAssignmentStatus, "overdue" | "due_soon">;
   /** Procedure step ids the employee marked done. Empty array until they
    *  start; the per-step list lets the receipt show "X of Y steps done"
    *  without leaking an overall % (forbidden by DESIGN.md §8). */
@@ -750,7 +750,8 @@ export interface TrainingAssignmentRow {
 /** A row's state as the Progress tab reads it: finished, going, or past its
  *  due date. `due` and `in_progress` collapse into `in_progress` — to the
  *  admin scanning the page both simply mean "not finished yet". */
-export type ProgressStatus = "complete" | "in_progress" | "overdue";
+export type ProgressStatus =
+  "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
 
 /** A course referenced by a progress row. Carries both titles so the view
  *  picks the reader's language the way the other training surfaces do. */
@@ -760,12 +761,13 @@ export interface ProgressCourseRef {
   titleEs: string;
 }
 
-/** The three stat cards. Counts are training items (assignments), not people:
- *  one person lands in a bucket once per assigned course. */
+/** The stat cards and bucket counts for assignments. */
 export interface TrainingProgressSummary {
   completed: number;
   inProgress: number;
   overdue: number;
+  notStarted?: number;
+  dueSoon?: number;
 }
 
 /** Minimal per-course fields used to build the admin home training card. */

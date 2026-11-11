@@ -24,7 +24,8 @@ import { EmployeeProgressTable } from "./employee-progress-table";
 import { fetchTrainingProgressApi } from "@/services/courses/api";
 
 type GroupBy = "employee" | "course";
-type StatusFilter = "all" | "in_progress" | "complete" | "overdue";
+type StatusFilter =
+  "all" | "not_started" | "in_progress" | "due_soon" | "complete" | "overdue";
 const PAGE_SIZE = 25;
 
 interface ProgressOverviewProps {
@@ -154,7 +155,9 @@ export function ProgressOverview({
           compact
           tabs={[
             { value: "all", label: t("filterAll") },
+            { value: "not_started", label: t("statusNotStarted") },
             { value: "in_progress", label: t("statusInProgress") },
+            { value: "due_soon", label: t("statusDueSoon") },
             { value: "complete", label: t("statusDone") },
             { value: "overdue", label: t("statusOverdue") },
           ]}

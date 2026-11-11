@@ -93,16 +93,20 @@ export function summariseTraining(rows: TrainingAssignmentRow[]): {
 /** Map a row's effective status to a `StatusPill` tone. Single source of
  *  truth so the list and detail page can't drift. */
 export function trainingStatusTone(
-  status: TrainingAssignmentStatus,
-): "ok" | "progress" | "warn" | "bad" {
+  status: TrainingAssignmentStatus | "not_started" | "due_soon",
+): "ok" | "progress" | "warn" | "bad" | "neutral" {
   switch (status) {
     case "complete":
       return "ok";
     case "in_progress":
       return "progress";
     case "due":
+    case "due_soon":
       return "warn";
     case "overdue":
       return "bad";
+    case "not_started":
+    default:
+      return "neutral";
   }
 }

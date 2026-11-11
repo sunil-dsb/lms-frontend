@@ -14,7 +14,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
-import type { EmployeeProgressRow } from "@/lib/types";
+import type {
+  EmployeeProgressRow,
+  ProgressStatus,
+  TrainingProgressSummary,
+} from "@/lib/types";
 import type { EmployeeTrainingRow } from "@/services/employees/types";
 import { unassignCourseApi } from "@/services/courses/api";
 import {
@@ -24,7 +28,6 @@ import {
 } from "../components/progress-row";
 import { ProgressTableShell } from "../components/progress-table-shell";
 import { ProgressStatStrip } from "../components/progress-stat-strip";
-import type { TrainingProgressSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
@@ -96,14 +99,14 @@ export function EmployeeProgressDetail({
     overdue: assignmentList.filter((row) => row.status === "overdue").length,
   };
 
-  const statusOf = (
-    row: EmployeeTrainingRow,
-  ): "complete" | "in_progress" | "overdue" =>
-    row.status === "overdue"
-      ? "overdue"
-      : row.status === "complete"
-        ? "complete"
-        : "in_progress";
+  const statusOf = (row: EmployeeTrainingRow): ProgressStatus => {
+    if (row.status === "complete") return "complete";
+    if (row.status === "overdue") return "overdue";
+    if (row.status === "due_soon") return "due_soon";
+    if (row.status === "not_started" || row.status === "due")
+      return "not_started";
+    return "in_progress";
+  };
 
   return (
     <div className="space-y-6">

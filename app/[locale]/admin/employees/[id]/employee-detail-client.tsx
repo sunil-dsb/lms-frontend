@@ -243,7 +243,14 @@ export function EmployeeDetailClient({
         employeeId: id ?? "",
         assignedAt: row.assignedAt,
         dueAt: row.dueDate,
-        status: row.status === "overdue" ? "in_progress" : row.status,
+        status:
+          row.status === "complete"
+            ? "complete"
+            : row.status === "in_progress"
+              ? "in_progress"
+              : row.status === "not_started"
+                ? "not_started"
+                : "due",
         completedStepIds: [],
         quizPassedAt: null,
         acknowledgedAt: row.courseCompletedAt,
@@ -667,9 +674,13 @@ function trainingStatusKey(status: TrainingAssignmentStatus): string {
     case "in_progress":
       return "detailAssignedStatusInProgress";
     case "due":
+    case "due_soon":
       return "detailAssignedStatusDue";
     case "overdue":
       return "detailAssignedStatusOverdue";
+    case "not_started":
+    default:
+      return "detailAssignedStatusDue";
   }
 }
 
