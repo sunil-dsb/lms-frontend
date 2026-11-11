@@ -19,6 +19,7 @@ export const TRAINING_ENDPOINTS = {
 export interface AssignCoursePayload {
   courseId: string;
   employeeIds: string[];
+  stationIds?: string[];
   dueAt?: string;
   scope?: "everyone" | "station" | "people";
   isRequired?: boolean;
@@ -149,6 +150,7 @@ export async function assignCourse(
     payload.dueAt,
     "add",
     payload.isRequired ?? false,
+    payload.stationIds,
   );
 
   return {

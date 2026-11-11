@@ -64,6 +64,9 @@ export function CourseAssignmentModal({
 
   // API Data States
   const [employees, setEmployees] = React.useState<MockEmployee[]>([]);
+  const [stationList, setStationList] = React.useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [dbStations, setDbStations] = React.useState<string[]>([]);
   const [existingAssignments, setExistingAssignments] = React.useState<
     CourseAssignmentRow[]
@@ -138,7 +141,9 @@ export function CourseAssignmentModal({
           setCourseDetail(detailRes);
         }
 
-        const realStations = (stationsRes?.stations || [])
+        const rawStations = stationsRes?.stations || [];
+        setStationList(rawStations);
+        const realStations = rawStations
           .map((s) => s.name.trim())
           .filter(Boolean);
         setDbStations(realStations);
@@ -220,13 +225,17 @@ export function CourseAssignmentModal({
       return unassignedEmployees.map((e) => e.id);
     }
     if (scope === "station") {
-      return unassignedEmployees
+      const stationEmpIds = unassignedEmployees
         .filter((e) => {
           if (selectedStations.has(e.station)) return true;
           if (e.stations?.some((s) => selectedStations.has(s))) return true;
           return false;
         })
         .map((e) => e.id);
+      // Combine station employees with any individually selected employees
+      return Array.from(
+        new Set([...stationEmpIds, ...Array.from(selectedPeopleIds)]),
+      );
     }
     return Array.from(selectedPeopleIds);
   }, [scope, unassignedEmployees, selectedStations, selectedPeopleIds]);
@@ -402,13 +411,33 @@ export function CourseAssignmentModal({
   }
 
   async function executeAssignment(targetIds: string[]): Promise<void> {
-    if (!course || targetIds.length === 0 || isSubmitting) return;
+    if (!course || isSubmitting) return;
+
+    const selectedStationIds =
+      scope === "station"
+        ? stationList
+            .filter(
+              (s) =>
+                selectedStations.has(s.name) ||
+                selectedStations.has(s.name.trim()) ||
+                selectedStations.has(s.id),
+            )
+            .map((s) => s.id)
+        : undefined;
+
+    if (
+      targetIds.length === 0 &&
+      (!selectedStationIds || selectedStationIds.length === 0)
+    ) {
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const response = await assignCourse({
         courseId: course.id,
         employeeIds: targetIds,
+        stationIds: selectedStationIds,
         dueAt: dueAt && dueAt.trim() ? dueAt : undefined,
         scope,
         isRequired,
@@ -487,7 +516,8 @@ export function CourseAssignmentModal({
               )}
               isLoadingData={isLoadingData}
               canAssign={
-                mainScopeEmployeeIds.length > 0 &&
+                (mainScopeEmployeeIds.length > 0 ||
+                  (scope === "station" && selectedStations.size > 0)) &&
                 Boolean(dueAt && dueAt.trim()) &&
                 !hasMissingQuizQuestions &&
                 !isSubmitting &&

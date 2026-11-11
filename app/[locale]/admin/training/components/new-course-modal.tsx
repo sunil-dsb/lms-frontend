@@ -3,6 +3,10 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useCreateCourse } from "@/services/courses/hooks";
+import { fetchStations } from "@/services/stations/api";
+import type { Station } from "@/services/stations/types";
+import { LuCheck } from "react-icons/lu";
+import { cn } from "@/lib/utils";
 import {
   BilingualInput,
   type BilingualValue,
@@ -28,13 +32,26 @@ export function NewCourseModal({
     en: "",
     es: "",
   });
+  const [availableStations, setAvailableStations] = React.useState<Station[]>(
+    [],
+  );
+  const [selectedStationIds, setSelectedStationIds] = React.useState<
+    Set<string>
+  >(new Set());
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!open) {
+    if (open) {
+      fetchStations()
+        .then((res) => {
+          setAvailableStations(res.stations || []);
+        })
+        .catch(() => {});
+    } else {
       setName({ en: "", es: "" });
       setPurpose({ en: "", es: "" });
+      setSelectedStationIds(new Set());
       setError(null);
       setIsSubmitting(false);
     }
@@ -85,6 +102,7 @@ export function NewCourseModal({
         titleEs,
         purposeEn,
         purposeEs,
+        stationIds: Array.from(selectedStationIds),
         chapters: [],
       });
 
@@ -177,6 +195,52 @@ export function NewCourseModal({
                 es: "Cómo preparamos tacos al pastor, desde el marinado hasta el emplatado.",
               }}
             />
+
+            {/* Field 3: Required for stations (optional) */}
+            {availableStations.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <label className="block text-xs font-semibold text-[var(--color-ink)]">
+                  {isEs
+                    ? "Obligatorio para estaciones (opcional)"
+                    : "Required for stations (optional)"}
+                </label>
+                <p className="text-xs text-[var(--color-ink-2)]">
+                  {isEs
+                    ? "Los empleados asignados a estas estaciones recibirán este curso automáticamente."
+                    : "Employees assigned to these stations will automatically receive this course."}
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {availableStations.map((st) => {
+                    const isSelected = selectedStationIds.has(st.id);
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedStationIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(st.id)) next.delete(st.id);
+                            else next.add(st.id);
+                            return next;
+                          });
+                        }}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border transition-all cursor-pointer",
+                          isSelected
+                            ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border-[var(--color-brand-600)] shadow-2xs"
+                            : "bg-[var(--color-surface)] text-[var(--color-ink-2)] border-[var(--color-line-2)] hover:border-[var(--color-ink-3)]",
+                        )}
+                      >
+                        {isSelected && (
+                          <LuCheck className="text-xs stroke-[3]" />
+                        )}
+                        <span>{st.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Modal Footer matching reference design */}

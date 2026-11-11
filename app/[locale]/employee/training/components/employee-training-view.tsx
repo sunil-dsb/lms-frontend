@@ -9,13 +9,10 @@ import type {
 import { TrainingFilterTabs } from "./training-filter-tabs";
 import { TrainingCard } from "./training-card";
 import { TrainingEmptyState } from "./training-empty-state";
-import Link from "next/link";
-import type { EmployeeRequiredTrainingStatus } from "@/services/courses/types";
 
 interface EmployeeTrainingViewProps {
   pendingItems: EmployeeTrainingItem[];
   completedItems: EmployeeTrainingItem[];
-  requiredTraining: EmployeeRequiredTrainingStatus | null;
   locale: string;
 }
 
@@ -23,11 +20,16 @@ interface EmployeeTrainingViewProps {
  * Main employee training view component.
  * Features a single unified header with a segmented pill toggle tray
  * matching the reference mockup and mobile-first card list.
+ *
+ * Deliberately has no "complete required training to unlock the rest"
+ * banner: the reader is already on the training page, required courses
+ * float to the top with a Required badge, and the link would point back
+ * at this same list. That banner lives on Home and Procedures, where it
+ * explains why content there is locked.
  */
 export function EmployeeTrainingView({
   pendingItems,
   completedItems,
-  requiredTraining,
   locale,
 }: EmployeeTrainingViewProps): React.ReactElement {
   const t = useTranslations("employee.training");
@@ -67,53 +69,6 @@ export function EmployeeTrainingView({
           completedCount={completedItems.length}
         />
       </header>
-
-      {requiredTraining &&
-      requiredTraining.requiredCount > 0 &&
-      !requiredTraining.isComplete ? (
-        <aside className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 sm:p-5">
-          <p className="font-semibold text-[var(--color-ink)]">
-            {t("requiredTrainingHeading")}
-          </p>
-          <p className="mt-1 text-sm text-[var(--color-ink-2)]">
-            {t("requiredTrainingProgress", {
-              completed: requiredTraining.completedCount,
-              total: requiredTraining.requiredCount,
-            })}
-            {requiredTraining.lockedCount > 0
-              ? ` ${t("requiredTrainingLocked", { count: requiredTraining.lockedCount })}`
-              : ""}
-          </p>
-          <div
-            className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-wash)]"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={requiredTraining.requiredCount}
-            aria-valuenow={requiredTraining.completedCount}
-            aria-label={t("requiredTrainingProgress", {
-              completed: requiredTraining.completedCount,
-              total: requiredTraining.requiredCount,
-            })}
-          >
-            <div
-              className="h-full rounded-full bg-[var(--color-brand-600)] transition-[width]"
-              style={{
-                width: `${Math.round((requiredTraining.completedCount / requiredTraining.requiredCount) * 100)}%`,
-              }}
-            />
-          </div>
-          <Link
-            href={
-              pendingItems[0]
-                ? `/${locale}/employee/training/${pendingItems[0].courseId}`
-                : `/${locale}/employee/training`
-            }
-            className="mt-3 inline-flex min-h-11 items-center font-semibold text-[var(--color-brand-700)]"
-          >
-            {t("requiredTrainingAction")}
-          </Link>
-        </aside>
-      ) : null}
 
       {/* Content list or empty state */}
       <section aria-label={`${t("heading")} - ${activeTab}`}>

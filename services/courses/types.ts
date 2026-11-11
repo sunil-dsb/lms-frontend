@@ -25,6 +25,7 @@ export interface BackendCourse {
   purposeEs: string;
   status: TrainingCourseStatus;
   assignUsers?: string[] | null;
+  stationIds?: string[] | null;
   assignedCount?: number;
   createdBy?: string | null;
   createdAt: string;
@@ -122,6 +123,7 @@ export interface CreateCourseInput {
   purposeEn: string;
   purposeEs: string;
   assignUsers?: string[];
+  stationIds?: string[];
   chapters?: ChapterInput[];
 }
 
@@ -131,6 +133,7 @@ export interface UpdateCourseInput {
   purposeEn?: string;
   purposeEs?: string;
   assignUsers?: string[];
+  stationIds?: string[];
   chapters?: ChapterInput[];
 }
 

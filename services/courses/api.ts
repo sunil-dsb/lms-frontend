@@ -261,12 +261,14 @@ export async function assignCourseApi(
   dueDate?: string,
   mode: "add" | "replace" = "add",
   isRequired = false,
+  stationIds?: string[],
 ): Promise<{ courseId: string; assignedCount: number; assignUsers: string[] }> {
   const payload: {
     employeeIds: string[];
     mode: "add" | "replace";
     isRequired: boolean;
     dueDate?: string;
+    stationIds?: string[];
   } = {
     employeeIds,
     mode,
@@ -274,6 +276,9 @@ export async function assignCourseApi(
   };
   if (dueDate) {
     payload.dueDate = dueDate;
+  }
+  if (stationIds) {
+    payload.stationIds = stationIds;
   }
 
   const { data } = await http.post<{
@@ -392,6 +397,7 @@ export interface SaveCourseInput {
   purposeEn?: string;
   purposeEs?: string;
   assignUsers?: string[];
+  stationIds?: string[];
   linkedSops?: string[];
   chapters?: SaveCourseChapterInput[];
 }
@@ -495,6 +501,9 @@ export async function saveCourse(
       ...(input.assignUsers !== undefined
         ? { assignUsers: input.assignUsers }
         : {}),
+      ...(input.stationIds !== undefined
+        ? { stationIds: input.stationIds }
+        : {}),
       chapters: backendChapters,
     });
   } else {
@@ -505,6 +514,9 @@ export async function saveCourse(
       purposeEs,
       ...(input.assignUsers !== undefined
         ? { assignUsers: input.assignUsers }
+        : {}),
+      ...(input.stationIds !== undefined
+        ? { stationIds: input.stationIds }
         : {}),
       chapters: backendChapters,
     });

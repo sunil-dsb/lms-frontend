@@ -10,6 +10,7 @@ import {
   LuArrowLeft,
   LuCircleCheck,
   LuPencil,
+  LuSparkles,
   LuTrash2,
 } from "react-icons/lu";
 import {
@@ -21,6 +22,8 @@ import {
   setProcedureState,
   updateQuiz,
 } from "@/lib/api";
+import { updateProcedure } from "@/services/library/api";
+import { PromoConfigModal, type PromoData } from "./promo-config-modal";
 import type { Employee, Procedure, ProcedureStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
@@ -45,6 +48,25 @@ export function AdminProcedureView({
 
   const [proc, setProc] = React.useState<Procedure>(initial);
   const [error, setError] = React.useState<string | null>(null);
+  const [promoModalOpen, setPromoModalOpen] = React.useState(false);
+
+  const handleSavePromo = async (data: PromoData) => {
+    if (!proc) return;
+    try {
+      const updated = await updateProcedure(proc.id, {
+        isPromo: data.isPromo,
+        promoStartsAt: data.promoStartsAt,
+        promoExpiresAt: data.promoExpiresAt,
+        promoAudience: data.promoAudience,
+        assignUsers: data.promoEmployeeIds,
+        stationIds: data.stationIds,
+      });
+      setProc(updated);
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to update promo settings:", err);
+    }
+  };
 
   // Quiz attach banner state. The banner is shown by `<ProcedureArticleBody>`
   // when a procedure has an authored quiz that isn't yet attached and isn't
@@ -153,6 +175,19 @@ export function AdminProcedureView({
             label: t("actionsArchive"),
             icon: LuArchive,
             onSelect: () => void transition({ isArchived: true }),
+          },
+      proc.isArchived
+        ? null
+        : {
+            label: proc.isPromo
+              ? locale === "es"
+                ? "Editar promoción"
+                : "Edit promo"
+              : locale === "es"
+                ? "Agregar a promoción"
+                : "Add to promo",
+            icon: LuSparkles,
+            onSelect: () => setPromoModalOpen(true),
           },
       // 3. Delete — destructive, gets the inline-confirm panel from RowActions.
       {
@@ -263,6 +298,14 @@ export function AdminProcedureView({
         isAttaching={isAttaching}
         bannerDismissed={bannerDismissed}
         onDismissBanner={() => setBannerDismissed(true)}
+      />
+
+      <PromoConfigModal
+        open={promoModalOpen}
+        procedure={proc}
+        onClose={() => setPromoModalOpen(false)}
+        onSave={handleSavePromo}
+        locale={locale}
       />
     </div>
   );
