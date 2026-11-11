@@ -458,7 +458,8 @@ function HomeContent({
           isOnboarding={Boolean(
             requiredTraining &&
             requiredTraining.requiredCount > 0 &&
-            !requiredTraining.isComplete,
+            !requiredTraining.isComplete &&
+            !requiredTraining.isOverridden,
           )}
           requiredTraining={requiredTraining}
         />

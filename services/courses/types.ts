@@ -58,6 +58,11 @@ export interface EmployeeTrainingAssignment {
   completedChapterCount: number;
   progressPercent: number;
   status: "complete" | "in_progress" | "not_started" | "due_soon" | "overdue";
+  overrideUntil?: string | null;
+  overriddenBy?: string | null;
+  overriddenAt?: string | null;
+  overrideReason?: string | null;
+  isOverridden?: boolean;
 }
 
 export interface EmployeeRequiredTrainingStatus {
@@ -65,6 +70,9 @@ export interface EmployeeRequiredTrainingStatus {
   completedCount: number;
   lockedCount: number;
   isComplete: boolean;
+  isOverridden?: boolean;
+  overrideUntil?: string | null;
+  overrideReason?: string | null;
 }
 
 export interface EmployeeTrainingResponse {
@@ -198,6 +206,11 @@ export interface CourseAssignmentRow {
    *  does not collapse an untouched course into `due` like the per-employee
    *  endpoint does; the table highlights chapter progress instead. */
   status: "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
+  overrideUntil?: string | null;
+  overriddenBy?: string | null;
+  overriddenAt?: string | null;
+  overrideReason?: string | null;
+  isOverridden?: boolean;
   employee: {
     id: string;
     name: string;

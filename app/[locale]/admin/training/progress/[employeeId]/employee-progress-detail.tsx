@@ -9,18 +9,26 @@ import {
   LuCircleCheck,
   LuUserMinus,
   LuLoader,
+  LuClock,
+  LuShieldOff,
+  LuShieldCheck,
 } from "react-icons/lu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
+import { StatusPill } from "@/components/ui/status-pill";
 import type {
   EmployeeProgressRow,
   ProgressStatus,
   TrainingProgressSummary,
 } from "@/lib/types";
 import type { EmployeeTrainingRow } from "@/services/employees/types";
-import { unassignCourseApi } from "@/services/courses/api";
+import {
+  unassignCourseApi,
+  revokeTrainingOverrideApi,
+} from "@/services/courses/api";
+import { GrantOverrideModal } from "@/components/admin/grant-override-modal";
 import {
   PROGRESS_STATUS_LABEL_KEY,
   ProgressStatusPill,
@@ -55,6 +63,7 @@ export function EmployeeProgressDetail({
   employeeId,
 }: EmployeeProgressDetailProps): React.ReactElement {
   const t = useTranslations("admin.training.progress");
+  const tOverride = useTranslations("admin.training.override");
   const isEs = locale === "es";
 
   const [assignmentList, setAssignmentList] =
@@ -67,11 +76,44 @@ export function EmployeeProgressDetail({
     title: string;
   } | null>(null);
 
+  const [overrideModalOpen, setOverrideModalOpen] = React.useState(false);
+  const [selectedCourseForOverride, setSelectedCourseForOverride] =
+    React.useState<{
+      id: string;
+      title: string;
+    } | null>(null);
+  const [confirmRevokeModalOpen, setConfirmRevokeModalOpen] =
+    React.useState(false);
+  const [revoking, setRevoking] = React.useState(false);
+
   React.useEffect(() => {
     setAssignmentList(assignments);
   }, [assignments]);
 
   const effectiveEmployeeId = meta?.employeeId || employeeId;
+
+  async function handleRevoke(): Promise<void> {
+    if (!effectiveEmployeeId) return;
+    setRevoking(true);
+    try {
+      await revokeTrainingOverrideApi(effectiveEmployeeId);
+      setAssignmentList((prev) =>
+        prev.map((r) => ({
+          ...r,
+          isOverridden: false,
+          overrideUntil: null,
+          overrideReason: null,
+        })),
+      );
+      setConfirmRevokeModalOpen(false);
+    } catch (err) {
+      console.error("Failed to revoke training override:", err);
+    } finally {
+      setRevoking(false);
+    }
+  }
+
+  const activeOverride = assignmentList.find((r) => r.isOverridden);
 
   async function handleUnassign(courseId: string): Promise<void> {
     if (!effectiveEmployeeId || unassigningCourseId) return;
@@ -156,8 +198,56 @@ export function EmployeeProgressDetail({
                   : null}
             </p>
           </div>
+
+          <div className="shrink-0 flex items-center gap-2">
+            {!activeOverride && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setSelectedCourseForOverride(null);
+                  setOverrideModalOpen(true);
+                }}
+              >
+                <LuClock className="size-4" />
+                <span>{tOverride("grantButton")}</span>
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      {activeOverride && activeOverride.overrideUntil ? (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--color-warn)]/40 bg-[var(--color-warn-tint)] p-4 text-sm text-[var(--color-warn-ink)] shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-warn)] text-white shadow-xs">
+              <LuShieldCheck className="size-5" />
+            </div>
+            <div className="pt-0.5">
+              <p className="font-semibold text-sm text-[var(--color-warn-ink)]">
+                {tOverride("activeBadge", {
+                  until: formatDate(activeOverride.overrideUntil, locale),
+                })}
+              </p>
+              {activeOverride.overrideReason ? (
+                <p className="text-xs text-[var(--color-warn-ink)]/85 mt-0.5">
+                  {activeOverride.overrideReason}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setConfirmRevokeModalOpen(true)}
+          >
+            <LuShieldOff className="size-4" />
+            <span>{tOverride("revokeButton")}</span>
+          </Button>
+        </div>
+      ) : null}
 
       {assignmentList.length === 0 ? (
         <EmptyState
@@ -205,10 +295,16 @@ export function EmployeeProgressDetail({
                         {title}
                       </Link>
                       <div className="shrink-0">
-                        <ProgressStatusPill
-                          status={status}
-                          label={t(PROGRESS_STATUS_LABEL_KEY[status])}
-                        />
+                        {row.isOverridden ? (
+                          <StatusPill tone="warn" withDot>
+                            {tOverride("statusOverridden")}
+                          </StatusPill>
+                        ) : (
+                          <ProgressStatusPill
+                            status={status}
+                            label={t(PROGRESS_STATUS_LABEL_KEY[status])}
+                          />
+                        )}
                       </div>
                     </div>
 
@@ -387,10 +483,16 @@ export function EmployeeProgressDetail({
                       {formatDate(row.dueDate, locale)}
                     </td>
                     <td>
-                      <ProgressStatusPill
-                        status={status}
-                        label={t(PROGRESS_STATUS_LABEL_KEY[status])}
-                      />
+                      {row.isOverridden ? (
+                        <StatusPill tone="warn" withDot>
+                          {tOverride("statusOverridden")}
+                        </StatusPill>
+                      ) : (
+                        <ProgressStatusPill
+                          status={status}
+                          label={t(PROGRESS_STATUS_LABEL_KEY[status])}
+                        />
+                      )}
                     </td>
                     <td>
                       {effectiveEmployeeId ? (
@@ -451,6 +553,35 @@ export function EmployeeProgressDetail({
             setConfirmUnassignCourse(null);
           }
         }}
+      />
+
+      <GrantOverrideModal
+        open={overrideModalOpen}
+        onClose={() => {
+          setOverrideModalOpen(false);
+          setSelectedCourseForOverride(null);
+        }}
+        employeeId={effectiveEmployeeId ?? ""}
+        employeeName={meta?.name ?? "Employee"}
+        courseId={selectedCourseForOverride?.id}
+        courseTitle={selectedCourseForOverride?.title}
+        onSuccess={() => {
+          window.location.reload();
+        }}
+      />
+
+      <ConfirmModal
+        open={confirmRevokeModalOpen}
+        title={tOverride("revokeTitle")}
+        description={tOverride("revokeBody", {
+          name: meta?.name ?? "Employee",
+        })}
+        confirmLabel={tOverride("revokeConfirm")}
+        cancelLabel={tOverride("cancel")}
+        variant="destructive"
+        isLoading={revoking}
+        onConfirm={handleRevoke}
+        onClose={() => setConfirmRevokeModalOpen(false)}
       />
     </div>
   );

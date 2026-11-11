@@ -79,7 +79,8 @@ export default async function ProceduresPage({
     effectiveRole === "employee" &&
     requiredTraining &&
     requiredTraining.requiredCount > 0 &&
-    !requiredTraining.isComplete,
+    !requiredTraining.isComplete &&
+    !requiredTraining.isOverridden,
   );
 
   // The list itself (categories + procedures) is fetched by

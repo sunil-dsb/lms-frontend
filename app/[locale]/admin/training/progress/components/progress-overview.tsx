@@ -4,8 +4,6 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
-  LuArrowLeft,
-  LuArrowRight,
   LuCircleCheck,
   LuGraduationCap,
   LuLoader,
@@ -17,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { CapsuleTabs } from "@/components/ui/capsule-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TrainingProgressData } from "@/lib/types";
 import { CourseProgressTable } from "./course-progress-table";
@@ -26,7 +25,7 @@ import { fetchTrainingProgressApi } from "@/services/courses/api";
 type GroupBy = "employee" | "course";
 type StatusFilter =
   "all" | "not_started" | "in_progress" | "due_soon" | "complete" | "overdue";
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 interface ProgressOverviewProps {
   locale: string;
@@ -164,7 +163,10 @@ export function ProgressOverview({
         />
       </div>
 
-      <div className="relative w-full">
+      <div
+        className="relative w-full max-w-[320px]"
+        style={{ maxWidth: "320px" }}
+      >
         <LuSearch
           aria-hidden="true"
           size={16}
@@ -192,6 +194,7 @@ export function ProgressOverview({
               : t("searchCoursesPlaceholder")
           }
           className="h-9 w-full !pl-10 !pr-10"
+          style={{ maxWidth: "320px" }}
         />
 
         {search && (
@@ -311,44 +314,29 @@ export function ProgressOverview({
         </div>
       )}
 
-      {visibleCount > 0 && totalPages > 1 ? (
-        <nav
-          aria-label={t("paginationLabel")}
-          className="flex flex-wrap items-center justify-between gap-3"
-        >
-          <p className="text-sm text-[var(--color-ink-2)]" aria-live="polite">
-            {t("paginationRange", {
-              from: rangeStart,
-              to: rangeEnd,
-              total: visibleCount,
-            })}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="neutral"
-              size="sm"
-              disabled={displayedPage <= 1 || progressQuery.isFetching}
-              onClick={() => setPage(Math.max(1, displayedPage - 1))}
-              icon={LuArrowLeft}
-            >
-              {t("previousPage")}
-            </Button>
-            <span className="px-1 text-sm text-[var(--color-ink-2)]">
-              {t("pageOf", { page: displayedPage, pages: totalPages })}
-            </span>
-            <Button
-              type="button"
-              variant="neutral"
-              size="sm"
-              disabled={displayedPage >= totalPages || progressQuery.isFetching}
-              onClick={() => setPage(Math.min(totalPages, displayedPage + 1))}
-              icon={LuArrowRight}
-            >
-              {t("nextPage")}
-            </Button>
-          </div>
-        </nav>
+      {visibleCount > 0 ? (
+        <div className="pt-2">
+          <Pagination
+            page={displayedPage}
+            totalPages={totalPages}
+            totalItems={visibleCount}
+            pageSize={PAGE_SIZE}
+            onPageChange={(nextPage) => {
+              setPage(nextPage);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            isEs={locale === "es"}
+            itemLabel={
+              groupBy === "employee"
+                ? locale === "es"
+                  ? "empleados"
+                  : "employees"
+                : locale === "es"
+                  ? "cursos"
+                  : "courses"
+            }
+          />
+        </div>
       ) : null}
     </div>
   );

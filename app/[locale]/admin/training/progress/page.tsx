@@ -22,7 +22,7 @@ export default async function AdminTrainingProgressPage({
   const { data } = await fetchTrainingProgress(await serverCookieHeader(), {
     groupBy: "employee",
     page: 1,
-    limit: 25,
+    limit: 10,
     includeAssignments: false,
   });
 

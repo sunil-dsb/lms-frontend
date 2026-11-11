@@ -61,4 +61,9 @@ export interface EmployeeTrainingRow {
   progressPercent: number;
   status:
     "due" | "in_progress" | "complete" | "overdue" | "not_started" | "due_soon";
+  overrideUntil?: string | null;
+  overriddenBy?: string | null;
+  overriddenAt?: string | null;
+  overrideReason?: string | null;
+  isOverridden?: boolean;
 }

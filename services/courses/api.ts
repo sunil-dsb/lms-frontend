@@ -523,3 +523,41 @@ export async function saveCourse(
     });
   }
 }
+
+/**
+ * Grants a temporary training override to unblock LMS access.
+ */
+export async function grantTrainingOverrideApi(
+  employeeId: string,
+  input: {
+    overrideUntil: string;
+    reason?: string;
+    courseId?: string;
+  },
+): Promise<{
+  success: boolean;
+  overrideUntil: string;
+  reason?: string | null;
+}> {
+  const { data } = await http.post<{
+    success: boolean;
+    data: { success: boolean; overrideUntil: string; reason?: string | null };
+  }>(`/api/v1/courses/admin/override/${employeeId}`, input);
+  return data.data;
+}
+
+/**
+ * Revokes an active training override.
+ */
+export async function revokeTrainingOverrideApi(
+  employeeId: string,
+  courseId?: string,
+): Promise<{ success: boolean }> {
+  const { data } = await http.delete<{
+    success: boolean;
+    data: { success: boolean };
+  }>(`/api/v1/courses/admin/override/${employeeId}`, {
+    params: courseId ? { courseId } : undefined,
+  });
+  return data.data;
+}
