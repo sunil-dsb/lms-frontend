@@ -27,6 +27,7 @@ import type {
 /** Behind first: this page exists to find who is stuck, so overdue rows lead
  *  every list and the reader never scrolls to the problem. */
 const STATUS_RANK: Record<ProgressStatus, number> = {
+  restricted: -1,
   overdue: 0,
   due_soon: 1,
   in_progress: 2,

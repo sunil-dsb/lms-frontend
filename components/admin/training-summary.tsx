@@ -93,7 +93,7 @@ export function summariseTraining(rows: TrainingAssignmentRow[]): {
 /** Map a row's effective status to a `StatusPill` tone. Single source of
  *  truth so the list and detail page can't drift. */
 export function trainingStatusTone(
-  status: TrainingAssignmentStatus | "not_started" | "due_soon",
+  status: TrainingAssignmentStatus | "not_started" | "due_soon" | "restricted",
 ): "ok" | "progress" | "warn" | "bad" | "neutral" {
   switch (status) {
     case "complete":
@@ -104,6 +104,7 @@ export function trainingStatusTone(
     case "due_soon":
       return "warn";
     case "overdue":
+    case "restricted":
       return "bad";
     case "not_started":
     default:

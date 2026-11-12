@@ -751,7 +751,12 @@ export interface TrainingAssignmentRow {
  *  due date. `due` and `in_progress` collapse into `in_progress` — to the
  *  admin scanning the page both simply mean "not finished yet". */
 export type ProgressStatus =
-  "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
+  | "complete"
+  | "in_progress"
+  | "overdue"
+  | "not_started"
+  | "due_soon"
+  | "restricted";
 
 /** A course referenced by a progress row. Carries both titles so the view
  *  picks the reader's language the way the other training surfaces do. */
@@ -768,6 +773,7 @@ export interface TrainingProgressSummary {
   overdue: number;
   notStarted?: number;
   dueSoon?: number;
+  restricted?: number;
 }
 
 /** Minimal per-course fields used to build the admin home training card. */
@@ -786,9 +792,14 @@ export interface EmployeeProgressAssignment {
 export interface EmployeeProgressRow {
   employeeId: string;
   name: string;
+  email?: string | null;
   station: string;
   coursesDone: number;
   coursesTotal: number;
+  requiredCoursesDone?: number;
+  requiredCoursesTotal?: number;
+  isRestricted?: boolean;
+  isOverridden?: boolean;
   /** The unfinished course due soonest — what this person should be on.
    *  Null when every assigned course is finished. */
   currentCourse: ProgressCourseRef | null;

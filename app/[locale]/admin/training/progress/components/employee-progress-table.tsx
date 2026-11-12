@@ -81,13 +81,23 @@ export function EmployeeProgressTable({
 
               {/* Bottom: Progress details + Chevron */}
               <div className="mt-4 flex items-center justify-between text-xs text-[var(--color-ink-2)] border-t border-[var(--color-line-2)]/80 pt-4">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
                   <span className="font-semibold text-[var(--color-ink)] shrink-0 tabular-nums">
                     {t("doneOfTotal", {
                       done: row.coursesDone,
                       total: row.coursesTotal,
                     })}
                   </span>
+                  {row.requiredCoursesTotal && row.requiredCoursesTotal > 0 ? (
+                    <span className="text-[11px] text-[var(--color-ink-3)]">
+                      (
+                      {t("requiredRatio", {
+                        done: row.requiredCoursesDone ?? 0,
+                        total: row.requiredCoursesTotal,
+                      })}
+                      )
+                    </span>
+                  ) : null}
                   <span
                     aria-hidden="true"
                     className="text-[var(--color-line-2)] shrink-0"
@@ -152,10 +162,20 @@ export function EmployeeProgressTable({
                 </div>
               </td>
               <td className="tabular-nums text-[var(--color-ink-2)]">
-                {t("doneOfTotal", {
-                  done: row.coursesDone,
-                  total: row.coursesTotal,
-                })}
+                <div>
+                  {t("doneOfTotal", {
+                    done: row.coursesDone,
+                    total: row.coursesTotal,
+                  })}
+                </div>
+                {row.requiredCoursesTotal && row.requiredCoursesTotal > 0 ? (
+                  <div className="text-xs text-[var(--color-ink-3)] font-normal mt-0.5">
+                    {t("requiredRatio", {
+                      done: row.requiredCoursesDone ?? 0,
+                      total: row.requiredCoursesTotal,
+                    })}
+                  </div>
+                ) : null}
               </td>
               <td className="text-[var(--color-ink-2)]">
                 {row.currentCourse && row.currentChapter !== null

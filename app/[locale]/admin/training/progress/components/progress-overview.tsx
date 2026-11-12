@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   LuCircleCheck,
+  LuDownload,
+  LuFileText,
   LuGraduationCap,
   LuLoader,
   LuSearch,
@@ -20,11 +22,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { TrainingProgressData } from "@/lib/types";
 import { CourseProgressTable } from "./course-progress-table";
 import { EmployeeProgressTable } from "./employee-progress-table";
-import { fetchTrainingProgressApi } from "@/services/courses/api";
+import {
+  fetchTrainingProgressApi,
+  downloadTrainingProgressCsvApi,
+} from "@/services/courses/api";
+import { downloadCompliancePdfFile } from "@/services/courses/pdf-report";
 
 type GroupBy = "employee" | "course";
 type StatusFilter =
-  "all" | "not_started" | "in_progress" | "due_soon" | "complete" | "overdue";
+  | "all"
+  | "not_started"
+  | "in_progress"
+  | "due_soon"
+  | "complete"
+  | "overdue"
+  | "restricted";
 const PAGE_SIZE = 10;
 
 interface ProgressOverviewProps {
@@ -53,6 +65,33 @@ export function ProgressOverview({
   const [employeeSearch, setEmployeeSearch] = React.useState("");
   const [courseSearch, setCourseSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const [isExporting, setIsExporting] = React.useState(false);
+
+  async function handleExportCsv(): Promise<void> {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      await downloadTrainingProgressCsvApi({
+        status: statusFilter,
+        groupBy,
+        search: debouncedSearch || undefined,
+      });
+    } catch (err) {
+      console.error("Failed to export progress CSV:", err);
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  function handleExportPdf(): void {
+    downloadCompliancePdfFile({
+      locale,
+      groupBy,
+      summary: progressData.summary,
+      employees: visibleEmployeeRows,
+      courses: visibleCourseRows,
+    });
+  }
 
   const search = groupBy === "employee" ? employeeSearch : courseSearch;
   React.useEffect(() => {
@@ -165,60 +204,96 @@ export function ProgressOverview({
             { value: "due_soon", label: t("statusDueSoon") },
             { value: "complete", label: t("statusDone") },
             { value: "overdue", label: t("statusOverdue") },
+            ...(groupBy === "employee"
+              ? [
+                  {
+                    value: "restricted",
+                    label: t("statusRestricted"),
+                    count: progressData.summary?.restricted,
+                  },
+                ]
+              : []),
           ]}
         />
       </div>
 
-      <div
-        className="relative w-full max-w-[320px]"
-        style={{ maxWidth: "320px" }}
-      >
-        <LuSearch
-          aria-hidden="true"
-          size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-3)]"
-        />
-
-        <Input
-          type="text"
-          value={search}
-          onChange={(event) => {
-            if (groupBy === "employee") {
-              setEmployeeSearch(event.target.value);
-            } else {
-              setCourseSearch(event.target.value);
-            }
-          }}
-          aria-label={
-            groupBy === "employee"
-              ? t("searchEmployeesLabel")
-              : t("searchCoursesLabel")
-          }
-          placeholder={
-            groupBy === "employee"
-              ? t("searchEmployeesPlaceholder")
-              : t("searchCoursesPlaceholder")
-          }
-          className="h-9 w-full !pl-10 !pr-10"
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
+        <div
+          className="relative w-full max-w-[320px]"
           style={{ maxWidth: "320px" }}
-        />
+        >
+          <LuSearch
+            aria-hidden="true"
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-3)]"
+          />
 
-        {search && (
-          <button
-            type="button"
-            aria-label={t("clearSearch")}
-            onClick={() => {
+          <Input
+            type="text"
+            value={search}
+            onChange={(event) => {
               if (groupBy === "employee") {
-                setEmployeeSearch("");
+                setEmployeeSearch(event.target.value);
               } else {
-                setCourseSearch("");
+                setCourseSearch(event.target.value);
               }
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]"
+            aria-label={
+              groupBy === "employee"
+                ? t("searchEmployeesLabel")
+                : t("searchCoursesLabel")
+            }
+            placeholder={
+              groupBy === "employee"
+                ? t("searchEmployeesPlaceholder")
+                : t("searchCoursesPlaceholder")
+            }
+            className="h-9 w-full !pl-10 !pr-10"
+            style={{ maxWidth: "320px" }}
+          />
+
+          {search && (
+            <button
+              type="button"
+              aria-label={t("clearSearch")}
+              onClick={() => {
+                if (groupBy === "employee") {
+                  setEmployeeSearch("");
+                } else {
+                  setCourseSearch("");
+                }
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]"
+            >
+              <LuX aria-hidden="true" size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* Export CSV & PDF download buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="surface"
+            size="sm"
+            icon={isExporting ? LuLoader : LuDownload}
+            disabled={isExporting}
+            onClick={handleExportCsv}
+            title={t("exportCsv")}
           >
-            <LuX aria-hidden="true" size={16} />
-          </button>
-        )}
+            {t("exportCsv")}
+          </Button>
+          <Button
+            type="button"
+            variant="neutral"
+            size="sm"
+            icon={LuFileText}
+            onClick={handleExportPdf}
+            title={t("exportPdf")}
+          >
+            {t("exportPdf")}
+          </Button>
+        </div>
       </div>
 
       {progressQuery.isFetching ? (
@@ -321,7 +396,7 @@ export function ProgressOverview({
       )}
 
       {visibleCount > 0 ? (
-        <div className="pt-2">
+        <div className="pt-2 print:hidden">
           <Pagination
             page={displayedPage}
             totalPages={totalPages}

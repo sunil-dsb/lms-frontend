@@ -362,7 +362,13 @@ export async function fetchCourseAssignmentsApi(
  * GET /api/v1/courses/admin/progress — Aggregated training progress for Admin Progress tab
  */
 export type TrainingProgressOptions = {
-  status?: "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
+  status?:
+    | "complete"
+    | "in_progress"
+    | "overdue"
+    | "not_started"
+    | "due_soon"
+    | "restricted";
   groupBy?: "employee" | "course";
   page?: number;
   limit?: number;
@@ -412,6 +418,45 @@ export async function fetchTrainingProgressApi(
   });
 
   return data.data;
+}
+
+/**
+ * Downloads a CSV compliance report from GET /api/v1/courses/admin/progress/export
+ */
+export async function downloadTrainingProgressCsvApi(options: {
+  status?: string;
+  groupBy?: "employee" | "course";
+  search?: string;
+}): Promise<void> {
+  const params: Record<string, string> = {};
+  if (options.status && options.status !== "all") {
+    params.status = options.status;
+  }
+  if (options.groupBy) {
+    params.groupBy = options.groupBy;
+  }
+  if (options.search) {
+    params.search = options.search;
+  }
+
+  const response = await http.get<string>(
+    `${COURSES_ENDPOINTS.PROGRESS}/export`,
+    {
+      params,
+      responseType: "text",
+    },
+  );
+
+  const blob = new Blob([response.data], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `training-compliance-${options.groupBy === "course" ? "courses" : "employees"}-${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 export interface SaveCourseChapterInput {
