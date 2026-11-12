@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import type { EmployeeTrainingItem } from "../lib/training-view-types";
 import { DueDateBadge } from "./due-date-badge";
 import { CircularProgress } from "./circular-progress";
+import { TrainingStatusBadge } from "./training-status-badge";
 
 interface TrainingCardProps {
   item: EmployeeTrainingItem;
@@ -128,12 +129,18 @@ export function TrainingCard({
               {metaLine}
             </p>
 
-            {/* Due Date Badge on its own line below the meta */}
-            {item.dueAt ? (
-              <div className="mt-4">
+            {/* Status badge & Due Date Badge below the meta */}
+            <div
+              className="mt-4 flex flex-wrap items-center"
+              style={{ gap: "8px" }}
+            >
+              <TrainingStatusBadge status={item.status} locale={locale} />
+              {item.dueAt &&
+              item.status !== "complete" &&
+              item.status !== "overdue" ? (
                 <DueDateBadge dueAt={item.dueAt} locale={locale} />
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
 
           {/* Circular Percentage Progress Ring (right edge) */}

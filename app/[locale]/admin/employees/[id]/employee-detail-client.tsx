@@ -15,6 +15,8 @@ import {
   LuMail,
   LuMapPin,
   LuPencil,
+  LuShieldCheck,
+  LuShieldOff,
 } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
@@ -25,12 +27,13 @@ import { Meter } from "@/components/ui/meter";
 import { ChipStack } from "@/components/admin/chip-stack";
 import { FormSection } from "@/components/admin/form-section";
 import {
-  TrainingSummary,
   summariseTraining,
   trainingStatusTone,
 } from "@/components/admin/training-summary";
 import { EmployeeRowActions } from "../employee-row-actions";
 import { EditRolesModal } from "./edit-roles-modal";
+import { GrantOverrideModal } from "@/components/admin/grant-override-modal";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -38,6 +41,7 @@ import {
   fetchEmployeeById,
   fetchEmployeeTraining,
 } from "@/services/employees/api";
+import { revokeTrainingOverrideApi } from "@/services/courses/api";
 import { useRoles } from "@/services/jobs/hooks";
 import { useStations } from "@/services/stations/hooks";
 import { useLocations } from "@/services/locations/hooks";
@@ -65,6 +69,7 @@ export function EmployeeDetailClient({
   const id = propId ?? params.id;
   const router = useRouter();
   const t = useTranslations("admin");
+  const tOverride = useTranslations("admin.training.override");
 
   // The detail API is the ONE source for this page — called client-side
   // so the request is visible in the Network tab. React Query dedupes
@@ -115,6 +120,9 @@ export function EmployeeDetailClient({
   const locations = locationsData?.locations ?? [];
   const [editOpen, setEditOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [overrideModalOpen, setOverrideModalOpen] = useState(false);
+  const [confirmRevokeOpen, setConfirmRevokeOpen] = useState(false);
+  const [revoking, setRevoking] = useState(false);
 
   function openEdit(): void {
     if (!employee) return;
@@ -243,10 +251,18 @@ export function EmployeeDetailClient({
         employeeId: id ?? "",
         assignedAt: row.assignedAt,
         dueAt: row.dueDate,
-        status: row.status === "overdue" ? "in_progress" : row.status,
+        status:
+          row.status === "complete"
+            ? "complete"
+            : row.status === "in_progress"
+              ? "in_progress"
+              : row.status === "not_started"
+                ? "not_started"
+                : "due",
         completedStepIds: [],
         quizPassedAt: null,
         acknowledgedAt: row.courseCompletedAt,
+        isOverridden: row.isOverridden,
       },
       course: {
         id: row.courseId,
@@ -261,6 +277,27 @@ export function EmployeeDetailClient({
     }));
   }, [trainingQuery.data, id]);
   const trainingSummary = summariseTraining(trainingRows);
+
+  // Active override: the first row that is still within the override window
+  const activeOverride = (trainingQuery.data ?? []).find(
+    (r) => r.isOverridden && r.overrideUntil,
+  );
+
+  async function handleRevoke(): Promise<void> {
+    if (!id) return;
+    setRevoking(true);
+    try {
+      await revokeTrainingOverrideApi(id);
+      await queryClient.invalidateQueries({
+        queryKey: ["employee", "training", id],
+      });
+      setConfirmRevokeOpen(false);
+    } catch (err) {
+      console.error("Failed to revoke override:", err);
+    } finally {
+      setRevoking(false);
+    }
+  }
 
   const statusTone: StatusTone =
     employee?.status === "active"
@@ -289,6 +326,28 @@ export function EmployeeDetailClient({
           <span>{t("backToList")}</span>
         </Link>
         <div className="flex items-center gap-2">
+          {trainingSummary.total > 0 &&
+            (activeOverride ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setConfirmRevokeOpen(true)}
+                icon={LuShieldOff}
+                disabled={!employee}
+              >
+                {tOverride("revokeButton")}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setOverrideModalOpen(true)}
+                icon={LuShieldCheck}
+                disabled={!employee}
+              >
+                {tOverride("grantButton")}
+              </Button>
+            ))}
           <Button
             type="button"
             variant="secondary"
@@ -506,38 +565,59 @@ export function EmployeeDetailClient({
             </p>
           )
         ) : (
-          <div className="flex flex-wrap items-center gap-6">
-            <Meter
-              value={trainingSummary.complete}
-              total={trainingSummary.total}
-              size={70}
-              stroke={7}
-              tone={trainingSummary.overdue > 0 ? "warn" : "ok"}
-              label={`${trainingSummary.share}%`}
-            />
-            <dl className="grid flex-1 grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
-              <TrainingCount
-                label={t("detailTrainingCompleted")}
+          <>
+            {activeOverride && activeOverride.overrideUntil && (
+              <div className="mb-4 flex items-start gap-3 rounded-[var(--radius-md)] border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-700 dark:bg-amber-900/20">
+                <LuShieldCheck
+                  className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
+                  aria-hidden="true"
+                />
+                <p className="text-sm text-[var(--color-ink)]">
+                  {tOverride("activeBadge", {
+                    until: new Date(
+                      activeOverride.overrideUntil,
+                    ).toLocaleDateString(locale, {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    }),
+                  })}
+                </p>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-6">
+              <Meter
                 value={trainingSummary.complete}
-                tone="ok"
+                total={trainingSummary.total}
+                size={70}
+                stroke={7}
+                tone={trainingSummary.overdue > 0 ? "warn" : "ok"}
+                label={`${trainingSummary.share}%`}
               />
-              <TrainingCount
-                label={t("detailTrainingInProgress")}
-                value={trainingSummary.inProgress}
-                tone="neutral"
-              />
-              <TrainingCount
-                label={t("detailTrainingNotStarted")}
-                value={trainingSummary.notStarted}
-                tone="neutral"
-              />
-              <TrainingCount
-                label={t("detailTrainingOverdue")}
-                value={trainingSummary.overdue}
-                tone="bad"
-              />
-            </dl>
-          </div>
+              <dl className="grid flex-1 grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
+                <TrainingCount
+                  label={t("detailTrainingCompleted")}
+                  value={trainingSummary.complete}
+                  tone="ok"
+                />
+                <TrainingCount
+                  label={t("detailTrainingInProgress")}
+                  value={trainingSummary.inProgress}
+                  tone="neutral"
+                />
+                <TrainingCount
+                  label={t("detailTrainingNotStarted")}
+                  value={trainingSummary.notStarted}
+                  tone="neutral"
+                />
+                <TrainingCount
+                  label={t("detailTrainingOverdue")}
+                  value={trainingSummary.overdue}
+                  tone="bad"
+                />
+              </dl>
+            </div>
+          </>
         )}
       </FormSection>
 
@@ -597,9 +677,15 @@ export function EmployeeDetailClient({
                       {subtitle}
                     </p>
                   </div>
-                  <StatusPill tone={trainingStatusTone(row.effectiveStatus)}>
-                    {t(trainingStatusKey(row.effectiveStatus))}
-                  </StatusPill>
+                  {(row.assignment as any).isOverridden ? (
+                    <StatusPill tone="warn" withDot>
+                      {tOverride("statusOverridden")}
+                    </StatusPill>
+                  ) : (
+                    <StatusPill tone={trainingStatusTone(row.effectiveStatus)}>
+                      {t(trainingStatusKey(row.effectiveStatus))}
+                    </StatusPill>
+                  )}
                 </li>
               );
             })}
@@ -621,6 +707,36 @@ export function EmployeeDetailClient({
           stations={stations}
           onLocationChange={onLocationChange}
           onSaved={onSaved}
+        />
+      )}
+
+      {/* Grant Temporary Override modal */}
+      {employee && overrideModalOpen && (
+        <GrantOverrideModal
+          open={overrideModalOpen}
+          onClose={() => setOverrideModalOpen(false)}
+          employeeId={id}
+          employeeName={employee.name}
+          onSuccess={async () => {
+            setOverrideModalOpen(false);
+            await queryClient.invalidateQueries({
+              queryKey: ["employee", "training", id],
+            });
+          }}
+        />
+      )}
+
+      {/* Revoke Override confirm */}
+      {employee && (
+        <ConfirmModal
+          open={confirmRevokeOpen}
+          onClose={() => setConfirmRevokeOpen(false)}
+          onConfirm={() => void handleRevoke()}
+          isLoading={revoking}
+          title={tOverride("revokeTitle")}
+          description={tOverride("revokeBody", { name: employee.name })}
+          confirmLabel={tOverride("revokeConfirm")}
+          variant="destructive"
         />
       )}
     </div>
@@ -667,9 +783,13 @@ function trainingStatusKey(status: TrainingAssignmentStatus): string {
     case "in_progress":
       return "detailAssignedStatusInProgress";
     case "due":
+    case "due_soon":
       return "detailAssignedStatusDue";
     case "overdue":
       return "detailAssignedStatusOverdue";
+    case "not_started":
+    default:
+      return "detailAssignedStatusDue";
   }
 }
 

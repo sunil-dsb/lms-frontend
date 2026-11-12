@@ -473,3 +473,33 @@ body {
   transform: translate(35%, -35%);
 }
 
+@media print {
+  /* Hide sidebar navigation, headers, theme toggles, and controls on print */
+  aside,
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+}
+

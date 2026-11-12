@@ -7,16 +7,33 @@ import {
   LuArrowLeft,
   LuGraduationCap,
   LuCircleCheck,
+  LuCalendarDays,
+  LuPencil,
   LuUserMinus,
   LuLoader,
+  LuClock,
+  LuShieldOff,
+  LuShieldCheck,
 } from "react-icons/lu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
-import type { EmployeeProgressRow } from "@/lib/types";
+import { StatusPill } from "@/components/ui/status-pill";
+import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
+import type {
+  EmployeeProgressRow,
+  ProgressStatus,
+  TrainingProgressSummary,
+} from "@/lib/types";
 import type { EmployeeTrainingRow } from "@/services/employees/types";
-import { unassignCourseApi } from "@/services/courses/api";
+import {
+  unassignCourseApi,
+  revokeTrainingOverrideApi,
+  updateAssignmentDueDatesApi,
+} from "@/services/courses/api";
+import { GrantOverrideModal } from "@/components/admin/grant-override-modal";
+import { ChangeDueDateModal } from "@/components/admin/change-due-date-modal";
 import {
   PROGRESS_STATUS_LABEL_KEY,
   ProgressStatusPill,
@@ -24,9 +41,9 @@ import {
 } from "../components/progress-row";
 import { ProgressTableShell } from "../components/progress-table-shell";
 import { ProgressStatStrip } from "../components/progress-stat-strip";
-import type { TrainingProgressSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useMe } from "@/services/auth/hooks";
 
 interface EmployeeProgressDetailProps {
   locale: string;
@@ -52,16 +69,31 @@ export function EmployeeProgressDetail({
   employeeId,
 }: EmployeeProgressDetailProps): React.ReactElement {
   const t = useTranslations("admin.training.progress");
+  const tOverride = useTranslations("admin.training.override");
   const isEs = locale === "es";
+  const { employee: me } = useMe();
+  // Due-date editing is super_admin-only on the API — hide it otherwise.
+  const canEditDueDate = me?.role === "super_admin";
 
   const [assignmentList, setAssignmentList] =
     React.useState<EmployeeTrainingRow[]>(assignments);
   const [unassigningCourseId, setUnassigningCourseId] = React.useState<
     string | null
   >(null);
-  const [confirmUnassignCourse, setConfirmUnassignCourse] = React.useState<{
+
+  const [overrideModalOpen, setOverrideModalOpen] = React.useState(false);
+  const [selectedCourseForOverride, setSelectedCourseForOverride] =
+    React.useState<{
+      id: string;
+      title: string;
+    } | null>(null);
+  const [confirmRevokeModalOpen, setConfirmRevokeModalOpen] =
+    React.useState(false);
+  const [revoking, setRevoking] = React.useState(false);
+  const [dueDateTarget, setDueDateTarget] = React.useState<{
     courseId: string;
-    title: string;
+    courseTitle: string;
+    currentDueDate: string;
   } | null>(null);
 
   React.useEffect(() => {
@@ -69,6 +101,29 @@ export function EmployeeProgressDetail({
   }, [assignments]);
 
   const effectiveEmployeeId = meta?.employeeId || employeeId;
+
+  async function handleRevoke(): Promise<void> {
+    if (!effectiveEmployeeId) return;
+    setRevoking(true);
+    try {
+      await revokeTrainingOverrideApi(effectiveEmployeeId);
+      setAssignmentList((prev) =>
+        prev.map((r) => ({
+          ...r,
+          isOverridden: false,
+          overrideUntil: null,
+          overrideReason: null,
+        })),
+      );
+      setConfirmRevokeModalOpen(false);
+    } catch (err) {
+      console.error("Failed to revoke training override:", err);
+    } finally {
+      setRevoking(false);
+    }
+  }
+
+  const activeOverride = assignmentList.find((r) => r.isOverridden);
 
   async function handleUnassign(courseId: string): Promise<void> {
     if (!effectiveEmployeeId || unassigningCourseId) return;
@@ -96,14 +151,14 @@ export function EmployeeProgressDetail({
     overdue: assignmentList.filter((row) => row.status === "overdue").length,
   };
 
-  const statusOf = (
-    row: EmployeeTrainingRow,
-  ): "complete" | "in_progress" | "overdue" =>
-    row.status === "overdue"
-      ? "overdue"
-      : row.status === "complete"
-        ? "complete"
-        : "in_progress";
+  const statusOf = (row: EmployeeTrainingRow): ProgressStatus => {
+    if (row.status === "complete") return "complete";
+    if (row.status === "overdue") return "overdue";
+    if (row.status === "due_soon") return "due_soon";
+    if (row.status === "not_started" || row.status === "due")
+      return "not_started";
+    return "in_progress";
+  };
 
   return (
     <div className="space-y-6">
@@ -153,8 +208,56 @@ export function EmployeeProgressDetail({
                   : null}
             </p>
           </div>
+
+          <div className="shrink-0 flex items-center gap-2">
+            {!activeOverride && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setSelectedCourseForOverride(null);
+                  setOverrideModalOpen(true);
+                }}
+              >
+                <LuClock className="size-4" />
+                <span>{tOverride("grantButton")}</span>
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      {activeOverride && activeOverride.overrideUntil ? (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[var(--color-warn)]/40 bg-[var(--color-warn-tint)] p-4 text-sm text-[var(--color-warn-ink)] shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-warn)] text-white shadow-xs">
+              <LuShieldCheck className="size-5" />
+            </div>
+            <div className="pt-0.5">
+              <p className="font-semibold text-sm text-[var(--color-warn-ink)]">
+                {tOverride("activeBadge", {
+                  until: formatDate(activeOverride.overrideUntil, locale),
+                })}
+              </p>
+              {activeOverride.overrideReason ? (
+                <p className="text-xs text-[var(--color-warn-ink)]/85 mt-0.5">
+                  {activeOverride.overrideReason}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setConfirmRevokeModalOpen(true)}
+          >
+            <LuShieldOff className="size-4" />
+            <span>{tOverride("revokeButton")}</span>
+          </Button>
+        </div>
+      ) : null}
 
       {assignmentList.length === 0 ? (
         <EmptyState
@@ -189,11 +292,41 @@ export function EmployeeProgressDetail({
                     ? row.titleEs || row.titleEn
                     : row.titleEn || row.titleEs;
 
-                const isUnassigning = unassigningCourseId === row.courseId;
+                const mobileActionItems: RowActionItem[] = [
+                  ...(canEditDueDate && effectiveEmployeeId
+                    ? [
+                        {
+                          label: t("changeDueDate"),
+                          icon: LuCalendarDays,
+                          onSelect: () =>
+                            setDueDateTarget({
+                              courseId: row.courseId,
+                              courseTitle: title,
+                              currentDueDate: row.dueDate,
+                            }),
+                        },
+                      ]
+                    : []),
+                  ...(effectiveEmployeeId
+                    ? [
+                        {
+                          label: t("unassign"),
+                          icon: LuUserMinus,
+                          destructive: true,
+                          confirmTitle: t("unassignConfirmTitle"),
+                          confirmDescription: t("unassignConfirmCourseBody", {
+                            course: title,
+                          }),
+                          confirmLabel: t("unassign"),
+                          onSelect: () => void handleUnassign(row.courseId),
+                        },
+                      ]
+                    : []),
+                ];
 
                 return (
                   <div key={row.assignmentId} className="p-4">
-                    {/* Top: Course title + Status */}
+                    {/* Top: Course title + Status + RowActions */}
                     <div className="flex items-start justify-between gap-3">
                       <Link
                         href={`/${locale}/admin/training/${row.courseId}`}
@@ -201,11 +334,23 @@ export function EmployeeProgressDetail({
                       >
                         {title}
                       </Link>
-                      <div className="shrink-0">
-                        <ProgressStatusPill
-                          status={status}
-                          label={t(PROGRESS_STATUS_LABEL_KEY[status])}
-                        />
+                      <div className="shrink-0 flex items-center gap-2">
+                        {row.isOverridden ? (
+                          <StatusPill tone="warn" withDot>
+                            {tOverride("statusOverridden")}
+                          </StatusPill>
+                        ) : (
+                          <ProgressStatusPill
+                            status={status}
+                            label={t(PROGRESS_STATUS_LABEL_KEY[status])}
+                          />
+                        )}
+                        {mobileActionItems.length > 0 ? (
+                          <RowActions
+                            items={mobileActionItems}
+                            triggerLabel={title}
+                          />
+                        ) : null}
                       </div>
                     </div>
 
@@ -264,35 +409,6 @@ export function EmployeeProgressDetail({
                         </>
                       ) : null}
                     </div>
-
-                    {effectiveEmployeeId ? (
-                      <div className="mt-3 flex justify-end border-t border-[var(--color-line-2)]/80 pt-3">
-                        <button
-                          type="button"
-                          disabled={isUnassigning}
-                          onClick={() =>
-                            setConfirmUnassignCourse({
-                              courseId: row.courseId,
-                              title,
-                            })
-                          }
-                          className={cn(
-                            "inline-flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
-                            "text-[var(--color-bad-700)] hover:text-[var(--color-bad-800)] hover:bg-[var(--color-bad-tint)] border border-[var(--color-bad)]/20",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
-                            isUnassigning && "opacity-60 cursor-not-allowed",
-                          )}
-                          title={isEs ? "Desasignar curso" : "Unassign course"}
-                        >
-                          {isUnassigning ? (
-                            <LuLoader className="size-3.5 animate-spin" />
-                          ) : (
-                            <LuUserMinus className="size-3.5" />
-                          )}
-                          <span>{t("unassign")}</span>
-                        </button>
-                      </div>
-                    ) : null}
                   </div>
                 );
               })}
@@ -309,7 +425,9 @@ export function EmployeeProgressDetail({
                 t("thCurrentChapter"),
                 t("thDue"),
                 t("thStatus"),
-                t("thActions"),
+                <span key="actions" className="sr-only">
+                  {t("thActions")}
+                </span>,
               ]}
             >
               {assignmentList.map((row) => {
@@ -318,11 +436,43 @@ export function EmployeeProgressDetail({
                   row.status === "complete"
                     ? row.chapterCount
                     : row.completedChapterCount;
-                const isUnassigning = unassigningCourseId === row.courseId;
                 const courseName =
                   locale === "es"
                     ? row.titleEs || row.titleEn
                     : row.titleEn || row.titleEs;
+
+                const tableActionItems: RowActionItem[] = [
+                  ...(canEditDueDate && effectiveEmployeeId
+                    ? [
+                        {
+                          label: t("changeDueDate"),
+                          icon: LuCalendarDays,
+                          onSelect: () =>
+                            setDueDateTarget({
+                              courseId: row.courseId,
+                              courseTitle: courseName,
+                              currentDueDate: row.dueDate,
+                            }),
+                        },
+                      ]
+                    : []),
+                  ...(effectiveEmployeeId
+                    ? [
+                        {
+                          label: t("unassign"),
+                          icon: LuUserMinus,
+                          destructive: true,
+                          confirmTitle: t("unassignConfirmTitle"),
+                          confirmDescription: t("unassignConfirmCourseBody", {
+                            course: courseName,
+                          }),
+                          confirmLabel: t("unassign"),
+                          onSelect: () => void handleUnassign(row.courseId),
+                        },
+                      ]
+                    : []),
+                ];
+
                 return (
                   <tr key={row.assignmentId}>
                     <td>
@@ -330,9 +480,7 @@ export function EmployeeProgressDetail({
                         href={`/${locale}/admin/training/${row.courseId}`}
                         className="font-medium text-[var(--color-ink)] underline-offset-2 hover:text-[var(--color-brand-700)] hover:underline"
                       >
-                        {locale === "es"
-                          ? row.titleEs || row.titleEn
-                          : row.titleEn || row.titleEs}
+                        {courseName}
                       </Link>
                     </td>
                     <td className="tabular-nums text-[var(--color-ink-2)]">
@@ -377,44 +525,55 @@ export function EmployeeProgressDetail({
                     <td
                       className={
                         status === "overdue"
-                          ? "tabular-nums text-[var(--color-bad)]"
+                          ? "tabular-nums font-semibold text-[var(--color-bad)]"
                           : "tabular-nums text-[var(--color-ink-2)]"
                       }
                     >
-                      {formatDate(row.dueDate, locale)}
-                    </td>
-                    <td>
-                      <ProgressStatusPill
-                        status={status}
-                        label={t(PROGRESS_STATUS_LABEL_KEY[status])}
-                      />
-                    </td>
-                    <td>
-                      {effectiveEmployeeId ? (
+                      {canEditDueDate &&
+                      effectiveEmployeeId &&
+                      row.status !== "complete" ? (
                         <button
                           type="button"
-                          disabled={isUnassigning}
                           onClick={() =>
-                            setConfirmUnassignCourse({
+                            setDueDateTarget({
                               courseId: row.courseId,
-                              title: courseName,
+                              courseTitle: courseName,
+                              currentDueDate: row.dueDate,
                             })
                           }
-                          className={cn(
-                            "inline-flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
-                            "text-[var(--color-bad-700)] hover:text-[var(--color-bad-800)] hover:bg-[var(--color-bad-tint)] border border-[var(--color-bad)]/20",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
-                            isUnassigning && "opacity-60 cursor-not-allowed",
-                          )}
-                          title={isEs ? "Desasignar curso" : "Unassign course"}
+                          className="group inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-sm)] py-0.5 px-1.5 -mx-1.5 text-left transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-600)]"
+                          title={t("changeDueDate")}
                         >
-                          {isUnassigning ? (
-                            <LuLoader className="size-3.5 animate-spin" />
-                          ) : (
-                            <LuUserMinus className="size-3.5" />
-                          )}
-                          <span>{t("unassign")}</span>
+                          <span>{formatDate(row.dueDate, locale)}</span>
+                          <LuPencil
+                            className="size-3 text-[var(--color-ink-3)] opacity-0 transition-opacity group-hover:opacity-100"
+                            aria-hidden="true"
+                          />
                         </button>
+                      ) : (
+                        formatDate(row.dueDate, locale)
+                      )}
+                    </td>
+                    <td>
+                      {row.isOverridden ? (
+                        <StatusPill tone="warn" withDot>
+                          {tOverride("statusOverridden")}
+                        </StatusPill>
+                      ) : (
+                        <ProgressStatusPill
+                          status={status}
+                          label={t(PROGRESS_STATUS_LABEL_KEY[status])}
+                        />
+                      )}
+                    </td>
+                    <td className="text-right">
+                      {tableActionItems.length > 0 ? (
+                        <div className="flex justify-end">
+                          <RowActions
+                            items={tableActionItems}
+                            triggerLabel={courseName}
+                          />
+                        </div>
                       ) : null}
                     </td>
                   </tr>
@@ -425,29 +584,46 @@ export function EmployeeProgressDetail({
         </>
       )}
 
-      <ConfirmModal
-        open={confirmUnassignCourse !== null}
-        title={t("unassignConfirmTitle")}
-        description={
-          confirmUnassignCourse
-            ? t("unassignConfirmCourseBody", {
-                course: confirmUnassignCourse.title,
-              })
-            : ""
-        }
-        confirmLabel={t("unassign")}
-        cancelLabel={t("cancel")}
-        isLoading={unassigningCourseId !== null}
-        onConfirm={async () => {
-          if (!confirmUnassignCourse) return;
-          await handleUnassign(confirmUnassignCourse.courseId);
-          setConfirmUnassignCourse(null);
-        }}
+      <GrantOverrideModal
+        open={overrideModalOpen}
         onClose={() => {
-          if (!unassigningCourseId) {
-            setConfirmUnassignCourse(null);
-          }
+          setOverrideModalOpen(false);
+          setSelectedCourseForOverride(null);
         }}
+        employeeId={effectiveEmployeeId ?? ""}
+        employeeName={meta?.name ?? "Employee"}
+        courseId={selectedCourseForOverride?.id}
+        courseTitle={selectedCourseForOverride?.title}
+        onSuccess={() => {
+          window.location.reload();
+        }}
+      />
+
+      {effectiveEmployeeId && dueDateTarget ? (
+        <ChangeDueDateModal
+          open
+          onClose={() => setDueDateTarget(null)}
+          courseId={dueDateTarget.courseId}
+          courseTitle={dueDateTarget.courseTitle}
+          employeeIds={[effectiveEmployeeId]}
+          employeeName={meta?.name ?? ""}
+          currentDueDate={dueDateTarget.currentDueDate}
+          onSuccess={() => window.location.reload()}
+        />
+      ) : null}
+
+      <ConfirmModal
+        open={confirmRevokeModalOpen}
+        title={tOverride("revokeTitle")}
+        description={tOverride("revokeBody", {
+          name: meta?.name ?? "Employee",
+        })}
+        confirmLabel={tOverride("revokeConfirm")}
+        cancelLabel={tOverride("cancel")}
+        variant="destructive"
+        isLoading={revoking}
+        onConfirm={handleRevoke}
+        onClose={() => setConfirmRevokeModalOpen(false)}
       />
     </div>
   );

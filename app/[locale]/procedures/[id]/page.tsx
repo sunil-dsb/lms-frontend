@@ -58,10 +58,9 @@ export default async function ProcedurePage({
 
   if (effectiveRole === "employee") {
     const training = await fetchMyTraining(cookieHeader).catch(() => null);
-    if (
-      training?.requiredTraining.requiredCount &&
-      !training.requiredTraining.isComplete
-    ) {
+    // Redirect only while restrictions are active — an incomplete required
+    // course that isn't due yet keeps the procedure readable.
+    if (training?.requiredTraining.isRestricted) {
       redirect(`/${locale}/employee/training`);
     }
   }

@@ -4,9 +4,9 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
-  LuArrowLeft,
-  LuArrowRight,
   LuCircleCheck,
+  LuDownload,
+  LuFileText,
   LuGraduationCap,
   LuLoader,
   LuSearch,
@@ -17,15 +17,27 @@ import { Button } from "@/components/ui/button";
 import { CapsuleTabs } from "@/components/ui/capsule-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { TrainingProgressData } from "@/lib/types";
 import { CourseProgressTable } from "./course-progress-table";
 import { EmployeeProgressTable } from "./employee-progress-table";
-import { fetchTrainingProgressApi } from "@/services/courses/api";
+import {
+  fetchTrainingProgressApi,
+  downloadTrainingProgressCsvApi,
+} from "@/services/courses/api";
+import { downloadCompliancePdfFile } from "@/services/courses/pdf-report";
 
 type GroupBy = "employee" | "course";
-type StatusFilter = "all" | "in_progress" | "complete" | "overdue";
-const PAGE_SIZE = 25;
+type StatusFilter =
+  | "all"
+  | "not_started"
+  | "in_progress"
+  | "due_soon"
+  | "complete"
+  | "overdue"
+  | "restricted";
+const PAGE_SIZE = 10;
 
 interface ProgressOverviewProps {
   locale: string;
@@ -53,6 +65,33 @@ export function ProgressOverview({
   const [employeeSearch, setEmployeeSearch] = React.useState("");
   const [courseSearch, setCourseSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const [isExporting, setIsExporting] = React.useState(false);
+
+  async function handleExportCsv(): Promise<void> {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      await downloadTrainingProgressCsvApi({
+        status: statusFilter,
+        groupBy,
+        search: debouncedSearch || undefined,
+      });
+    } catch (err) {
+      console.error("Failed to export progress CSV:", err);
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  function handleExportPdf(): void {
+    downloadCompliancePdfFile({
+      locale,
+      groupBy,
+      summary: progressData.summary,
+      employees: visibleEmployeeRows,
+      courses: visibleCourseRows,
+    });
+  }
 
   const search = groupBy === "employee" ? employeeSearch : courseSearch;
   React.useEffect(() => {
@@ -73,7 +112,7 @@ export function ProgressOverview({
   } as const;
   const progressQuery = useQuery({
     queryKey: ["admin-training-progress", queryOptions],
-    queryFn: () => fetchTrainingProgressApi(undefined, queryOptions),
+    queryFn: () => fetchTrainingProgressApi(queryOptions),
     initialData:
       groupBy === "employee" &&
       statusFilter === "all" &&
@@ -88,19 +127,25 @@ export function ProgressOverview({
     },
     staleTime: 30_000,
   });
-  const progressData = progressQuery.data ?? {
-    summary: { completed: 0, inProgress: 0, overdue: 0 },
-    counts: { employees: 0, courses: 0 },
-    employees: [],
-    courses: [],
-    pagination: { page, limit: PAGE_SIZE, total: 0, totalPages: 0 },
-  };
+  const progressData = progressQuery.data ??
+    data ?? {
+      summary: { completed: 0, inProgress: 0, overdue: 0 },
+      counts: { employees: 0, courses: 0 },
+      employees: [],
+      courses: [],
+      pagination: { page, limit: PAGE_SIZE, total: 0, totalPages: 0 },
+    };
 
-  const visibleEmployeeRows = progressData.employees;
-  const visibleCourseRows = progressData.courses;
+  const visibleEmployeeRows = progressData.employees ?? [];
+  const visibleCourseRows = progressData.courses ?? [];
   const pagination = progressData.pagination;
-  const visibleCount = pagination?.total ?? 0;
-  const totalPages = pagination?.totalPages ?? 1;
+  const visibleCount =
+    pagination?.total ??
+    (groupBy === "employee"
+      ? (progressData.counts?.employees ?? visibleEmployeeRows.length)
+      : (progressData.counts?.courses ?? visibleCourseRows.length));
+  const totalPages =
+    pagination?.totalPages ?? Math.max(1, Math.ceil(visibleCount / PAGE_SIZE));
   const displayedPage = pagination?.page ?? page;
   const rangeStart =
     visibleCount === 0 ? 0 : (displayedPage - 1) * PAGE_SIZE + 1;
@@ -154,59 +199,101 @@ export function ProgressOverview({
           compact
           tabs={[
             { value: "all", label: t("filterAll") },
+            { value: "not_started", label: t("statusNotStarted") },
             { value: "in_progress", label: t("statusInProgress") },
+            { value: "due_soon", label: t("statusDueSoon") },
             { value: "complete", label: t("statusDone") },
             { value: "overdue", label: t("statusOverdue") },
+            ...(groupBy === "employee"
+              ? [
+                  {
+                    value: "restricted",
+                    label: t("statusRestricted"),
+                    count: progressData.summary?.restricted,
+                  },
+                ]
+              : []),
           ]}
         />
       </div>
 
-      <div className="relative w-full">
-        <LuSearch
-          aria-hidden="true"
-          size={16}
-          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-3)]"
-        />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
+        <div
+          className="relative w-full max-w-[320px]"
+          style={{ maxWidth: "320px" }}
+        >
+          <LuSearch
+            aria-hidden="true"
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-3)]"
+          />
 
-        <Input
-          type="text"
-          value={search}
-          onChange={(event) => {
-            if (groupBy === "employee") {
-              setEmployeeSearch(event.target.value);
-            } else {
-              setCourseSearch(event.target.value);
-            }
-          }}
-          aria-label={
-            groupBy === "employee"
-              ? t("searchEmployeesLabel")
-              : t("searchCoursesLabel")
-          }
-          placeholder={
-            groupBy === "employee"
-              ? t("searchEmployeesPlaceholder")
-              : t("searchCoursesPlaceholder")
-          }
-          className="h-9 w-full !pl-10 !pr-10"
-        />
-
-        {search && (
-          <button
-            type="button"
-            aria-label={t("clearSearch")}
-            onClick={() => {
+          <Input
+            type="text"
+            value={search}
+            onChange={(event) => {
               if (groupBy === "employee") {
-                setEmployeeSearch("");
+                setEmployeeSearch(event.target.value);
               } else {
-                setCourseSearch("");
+                setCourseSearch(event.target.value);
               }
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]"
+            aria-label={
+              groupBy === "employee"
+                ? t("searchEmployeesLabel")
+                : t("searchCoursesLabel")
+            }
+            placeholder={
+              groupBy === "employee"
+                ? t("searchEmployeesPlaceholder")
+                : t("searchCoursesPlaceholder")
+            }
+            className="h-9 w-full !pl-10 !pr-10"
+            style={{ maxWidth: "320px" }}
+          />
+
+          {search && (
+            <button
+              type="button"
+              aria-label={t("clearSearch")}
+              onClick={() => {
+                if (groupBy === "employee") {
+                  setEmployeeSearch("");
+                } else {
+                  setCourseSearch("");
+                }
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]"
+            >
+              <LuX aria-hidden="true" size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* Export CSV & PDF download buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="surface"
+            size="sm"
+            icon={isExporting ? LuLoader : LuDownload}
+            disabled={isExporting}
+            onClick={handleExportCsv}
+            title={t("exportCsv")}
           >
-            <LuX aria-hidden="true" size={16} />
-          </button>
-        )}
+            {t("exportCsv")}
+          </Button>
+          <Button
+            type="button"
+            variant="neutral"
+            size="sm"
+            icon={LuFileText}
+            onClick={handleExportPdf}
+            title={t("exportPdf")}
+          >
+            {t("exportPdf")}
+          </Button>
+        </div>
       </div>
 
       {progressQuery.isFetching ? (
@@ -308,44 +395,29 @@ export function ProgressOverview({
         </div>
       )}
 
-      {visibleCount > 0 && totalPages > 1 ? (
-        <nav
-          aria-label={t("paginationLabel")}
-          className="flex flex-wrap items-center justify-between gap-3"
-        >
-          <p className="text-sm text-[var(--color-ink-2)]" aria-live="polite">
-            {t("paginationRange", {
-              from: rangeStart,
-              to: rangeEnd,
-              total: visibleCount,
-            })}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="neutral"
-              size="sm"
-              disabled={displayedPage <= 1 || progressQuery.isFetching}
-              onClick={() => setPage(Math.max(1, displayedPage - 1))}
-              icon={LuArrowLeft}
-            >
-              {t("previousPage")}
-            </Button>
-            <span className="px-1 text-sm text-[var(--color-ink-2)]">
-              {t("pageOf", { page: displayedPage, pages: totalPages })}
-            </span>
-            <Button
-              type="button"
-              variant="neutral"
-              size="sm"
-              disabled={displayedPage >= totalPages || progressQuery.isFetching}
-              onClick={() => setPage(Math.min(totalPages, displayedPage + 1))}
-              icon={LuArrowRight}
-            >
-              {t("nextPage")}
-            </Button>
-          </div>
-        </nav>
+      {visibleCount > 0 ? (
+        <div className="pt-2 print:hidden">
+          <Pagination
+            page={displayedPage}
+            totalPages={totalPages}
+            totalItems={visibleCount}
+            pageSize={PAGE_SIZE}
+            onPageChange={(nextPage) => {
+              setPage(nextPage);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            isEs={locale === "es"}
+            itemLabel={
+              groupBy === "employee"
+                ? locale === "es"
+                  ? "empleados"
+                  : "employees"
+                : locale === "es"
+                  ? "cursos"
+                  : "courses"
+            }
+          />
+        </div>
       ) : null}
     </div>
   );

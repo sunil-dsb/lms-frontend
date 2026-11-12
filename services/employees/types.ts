@@ -59,5 +59,11 @@ export interface EmployeeTrainingRow {
   chapterCount: number;
   completedChapterCount: number;
   progressPercent: number;
-  status: "due" | "in_progress" | "complete" | "overdue";
+  status:
+    "due" | "in_progress" | "complete" | "overdue" | "not_started" | "due_soon";
+  overrideUntil?: string | null;
+  overriddenBy?: string | null;
+  overriddenAt?: string | null;
+  overrideReason?: string | null;
+  isOverridden?: boolean;
 }

@@ -66,7 +66,7 @@ export function Pagination({
         {totalItems} {label}
       </div>
 
-      {totalPages > 1 ? (
+      {totalPages >= 1 ? (
         <nav
           aria-label={isEs ? "Paginación" : "Pagination"}
           className="flex flex-wrap items-center justify-center gap-1 max-w-full"
@@ -83,7 +83,7 @@ export function Pagination({
             <LuChevronLeft aria-hidden="true" />
           </Button>
 
-          {pageNumbers(page, totalPages).map((n, i) =>
+          {pageNumbers(page, Math.max(1, totalPages)).map((n, i) =>
             n === "…" ? (
               <span key={`gap-${i}`} aria-hidden="true" className="px-1">
                 …
@@ -92,6 +92,7 @@ export function Pagination({
               <button
                 key={n}
                 type="button"
+                disabled={totalPages <= 1}
                 onClick={() => onPageChange(n)}
                 aria-label={`${isEs ? "Página" : "Page"} ${n}`}
                 aria-current={n === page ? "page" : undefined}

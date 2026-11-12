@@ -19,6 +19,9 @@ export const TRAINING_ENDPOINTS = {
 export interface AssignCoursePayload {
   courseId: string;
   employeeIds: string[];
+  stationIds?: string[];
+  locationIds?: string[];
+  jobIds?: string[];
   dueAt?: string;
   scope?: "everyone" | "station" | "people";
   isRequired?: boolean;
@@ -84,6 +87,8 @@ interface AssignableEmployeeItem extends AdminEmployee {
   stations?: Array<{ id: string; name: string }>;
   resolvedStations?: Array<{ id: string; name: string }>;
   avatar?: string;
+  jobIds?: string[];
+  jobs?: Array<{ id: string; name: string }>;
 }
 
 /**
@@ -120,6 +125,10 @@ export async function fetchAssignableEmployees(): Promise<TrainingEmployeesRespo
         station: displayStation,
         stations: stationNames,
         locationId: emp.locationId || "loc-roma",
+        jobIds:
+          (emp as AssignableEmployeeItem).jobIds ||
+          (emp as AssignableEmployeeItem).jobs?.map((j) => j.id) ||
+          [],
         avatar: (emp as AssignableEmployeeItem).avatar,
       };
     });
@@ -149,6 +158,9 @@ export async function assignCourse(
     payload.dueAt,
     "add",
     payload.isRequired ?? false,
+    payload.stationIds,
+    payload.locationIds,
+    payload.jobIds,
   );
 
   return {

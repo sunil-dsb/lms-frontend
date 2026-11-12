@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 import {
   LuCheck,
-  LuChevronRight,
+  LuChevronDown,
   LuFileText,
   LuSearch,
   LuSparkles,
@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { uploadMedia } from "@/lib/api";
 
 import type { AdminEmployee, Category, Role, Station } from "@/lib/types";
+import { PromoConfigModal, type PromoData } from "./promo-config-modal";
 
 export function CategoryAccordion({
   categories,
@@ -80,135 +81,149 @@ export function CategoryAccordion({
     isEs ? c.nameEs || c.nameEn : c.nameEn;
 
   return (
-    <div className="space-y-3">
+    // Dense flow reproduces the demo layout at any breakpoint: tiles fill
+    // rows of three, the open panel drops in right after its tile's row
+    // (the tiles that follow backfill the rest of that row), then the grid
+    // continues below — pure CSS, same accordion behaviour as before.
+    <div className="grid grid-flow-row-dense grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {categories.map((cat) => {
         const isOpen = openId === cat.id;
         const subs = cat.subcategories ?? [];
-        // A row is "active" when this parent owns the current selection —
-        // the whole header gets a brand tint and a brand icon tile, so the
-        // chosen category is unmissable. The checkmark on the right is the
-        // same affordance every selected list row wears.
+        // A tile is "active" when this parent owns the current selection —
+        // brand tint + brand icon tile, so the chosen category is
+        // unmissable. The checkmark on the right is the same affordance
+        // every selected list row wears.
         const isActiveParent = subs.some((s) => s.id === selectedSubcategoryId);
         const CatIcon = getCategoryIcon(cat);
         return (
-          <div
-            key={cat.id}
-            className={cn(
-              "overflow-hidden rounded-[var(--radius-lg)] border bg-[var(--color-surface)] shadow-2xs",
-              isActiveParent
-                ? "border-[var(--color-line-2)]"
-                : "border-[var(--color-line-2)]",
-            )}
-          >
-            <div
-              role="button"
-              tabIndex={0}
-              aria-expanded={isOpen}
-              onClick={() => setOpenId(isOpen ? null : cat.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setOpenId(isOpen ? null : cat.id);
-                }
-              }}
-              className={cn(
-                "flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]",
-                isActiveParent
-                  ? "bg-[var(--color-brand-tint)]"
-                  : isOpen
-                    ? "bg-[var(--color-wash)]"
-                    : "hover:bg-[var(--color-wash)]",
-              )}
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <IconTile
-                  size="sm"
-                  icon={CatIcon}
-                  tone={isActiveParent ? "quiet" : "neutral"}
-                />
-                <div className="min-w-0">
-                  <h3
-                    className={cn(
-                      "truncate text-sm font-semibold",
-                      isActiveParent
-                        ? "text-[var(--color-brand-700)]"
-                        : "text-[var(--color-ink)]",
-                    )}
-                  >
-                    {catName(cat)}
-                  </h3>
-                  <p
-                    className={cn(
-                      "mt-0.5 truncate text-xs leading-meta",
-                      isActiveParent
-                        ? "text-[var(--color-brand-700)] opacity-80"
-                        : "text-[var(--color-ink-3)]",
-                    )}
-                  >
-                    {subs.length === 0
-                      ? t("categoriesNoSubs")
-                      : t("categoriesCount", { count: subs.length })}
-                  </p>
+          <React.Fragment key={cat.id}>
+            <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xs">
+              <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={isOpen}
+                onClick={() => setOpenId(isOpen ? null : cat.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setOpenId(isOpen ? null : cat.id);
+                  }
+                }}
+                className={cn(
+                  "flex w-full cursor-pointer items-center justify-between gap-2 px-3 py-3 text-left transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]",
+                  isActiveParent
+                    ? "bg-[var(--color-brand-tint)]"
+                    : isOpen
+                      ? "bg-[var(--color-wash)]"
+                      : "hover:bg-[var(--color-wash)]",
+                )}
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <IconTile
+                    size="sm"
+                    icon={CatIcon}
+                    tone={isActiveParent ? "quiet" : "neutral"}
+                  />
+                  <div className="min-w-0">
+                    <h3
+                      className={cn(
+                        "truncate text-sm font-semibold",
+                        isActiveParent
+                          ? "text-[var(--color-brand-700)]"
+                          : "text-[var(--color-ink)]",
+                      )}
+                    >
+                      {catName(cat)}
+                    </h3>
+                    <p
+                      className={cn(
+                        "mt-0.5 truncate text-xs leading-meta",
+                        isActiveParent
+                          ? "text-[var(--color-brand-700)] opacity-80"
+                          : "text-[var(--color-ink-3)]",
+                      )}
+                    >
+                      {subs.length === 0
+                        ? t("categoriesNoSubs")
+                        : t("categoriesCount", { count: subs.length })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              {isActiveParent ? (
-                <span
-                  aria-hidden="true"
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-[var(--color-surface)]"
-                >
-                  <LuCheck aria-hidden="true" className="size-4" />
-                </span>
-              ) : (
-                <LuChevronRight
-                  aria-hidden="true"
-                  className={cn(
-                    "size-4 shrink-0 text-[var(--color-ink-3)] transition-transform",
-                    isOpen && "rotate-90 text-[var(--color-ink-2)]",
-                  )}
-                />
-              )}
-            </div>
-
-            {isOpen ? (
-              <div className="border-t border-[var(--color-line)] p-4">
-                {subs.length === 0 ? (
-                  <p className="text-sm text-[var(--color-ink-3)]">
-                    {t("categoriesNoSubs")}
-                  </p>
+                {isActiveParent ? (
+                  <span
+                    aria-hidden="true"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-[var(--color-surface)]"
+                  >
+                    <LuCheck aria-hidden="true" className="size-4" />
+                  </span>
                 ) : (
-                  <ul className="flex flex-wrap gap-2" role="list">
-                    {subs.map((sub) => {
-                      const isSelected = selectedSubcategoryId === sub.id;
-                      return (
-                        <li key={sub.id}>
-                          <button
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => onSelectSubcategory(cat.id, sub.id)}
-                            className={cn(
-                              "inline-flex items-center gap-2 rounded-full border bg-[var(--color-surface)] px-4 py-3 text-sm font-semibold transition-colors",
-                              isSelected
-                                ? "border-[var(--color-brand-600)] text-[var(--color-brand-700)] ring-2 ring-[var(--color-brand-tint)]"
-                                : "border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-line-hover)] hover:bg-[var(--color-wash)]",
-                            )}
-                          >
-                            {isSelected ? (
-                              <LuCheck
-                                aria-hidden="true"
-                                className="size-4 text-[var(--color-brand-600)]"
-                              />
-                            ) : null}
-                            <span>{subName(sub)}</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <LuChevronDown
+                    aria-hidden="true"
+                    className={cn(
+                      "size-4 shrink-0 text-[var(--color-ink-3)] transition-transform",
+                      isOpen && "-rotate-180 text-[var(--color-ink-2)]",
+                    )}
+                  />
                 )}
               </div>
+            </div>
+
+            {/* Full-width chips panel — sits directly under the row that
+                holds its tile (dense flow backfills the rest of that row). */}
+            {isOpen ? (
+              <div
+                className={cn(
+                  "col-span-full rounded-[var(--radius-lg)] border bg-[var(--color-surface)] p-4",
+                  isActiveParent
+                    ? "border-[var(--color-brand-600)]"
+                    : "border-[var(--color-line-2)]",
+                )}
+              >
+                <p className="text-xs leading-meta text-[var(--color-ink-3)]">
+                  {t("categoriesSubLabel", { name: catName(cat) })}
+                </p>
+                <div className="mt-3">
+                  {subs.length === 0 ? (
+                    <p className="text-sm text-[var(--color-ink-3)]">
+                      {t("categoriesNoSubs")}
+                    </p>
+                  ) : (
+                    <ul className="flex flex-wrap gap-2" role="list">
+                      {subs.map((sub) => {
+                        const isSelected = selectedSubcategoryId === sub.id;
+                        return (
+                          <li key={sub.id}>
+                            <button
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() =>
+                                onSelectSubcategory(cat.id, sub.id)
+                              }
+                              className={cn(
+                                "inline-flex items-center gap-2 rounded-full border bg-[var(--color-surface)] px-4 py-3 text-sm font-semibold transition-colors",
+                                isSelected
+                                  ? "border-[var(--color-brand-600)] text-[var(--color-brand-700)] ring-2 ring-[var(--color-brand-tint)]"
+                                  : "border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-line-hover)] hover:bg-[var(--color-wash)]",
+                              )}
+                            >
+                              {isSelected ? (
+                                <LuCheck
+                                  aria-hidden="true"
+                                  className="size-4 text-[var(--color-brand-600)]"
+                                />
+                              ) : null}
+                              <span>{subName(sub)}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
             ) : null}
-          </div>
+          </React.Fragment>
         );
       })}
     </div>
@@ -603,36 +618,78 @@ export function ProcedureIconPicker({
   );
 }
 
+function formatDateTime(iso: string, locale: string): string {
+  try {
+    const d = new Date(iso);
+    return new Intl.DateTimeFormat(locale, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(d);
+  } catch {
+    return iso;
+  }
+}
+
 export function PromoSection({
   isPromo,
   onChangeIsPromo,
+  promoStartsAt,
+  onChangePromoStartsAt,
   promoExpiresAt,
   onChangePromoExpiresAt,
+  promoEmployeeIds,
+  onChangePromoEmployeeIds,
+  title,
+  stations,
+  stationIds,
+  onChangeStationIds,
+  people,
   locale,
 }: {
   isPromo: boolean;
   onChangeIsPromo: (val: boolean) => void;
+  promoStartsAt: string | null;
+  onChangePromoStartsAt: (val: string | null) => void;
   promoExpiresAt: string | null;
   onChangePromoExpiresAt: (val: string | null) => void;
+  promoEmployeeIds: string[];
+  onChangePromoEmployeeIds: (ids: string[]) => void;
+  title?: string;
+  stations?: Station[];
+  stationIds?: string[];
+  onChangeStationIds?: (ids: string[]) => void;
+  people: AdminEmployee[];
   locale: string;
 }): React.ReactElement {
   const t = useTranslations("admin.library.editor");
   const isEs = locale === "es";
+  const [modalOpen, setModalOpen] = React.useState(false);
 
-  const setPreset = (days: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() + days);
-    onChangePromoExpiresAt(d.toISOString().slice(0, 10));
+  const handleSaveModal = (data: PromoData) => {
+    onChangeIsPromo(data.isPromo);
+    onChangePromoStartsAt(data.promoStartsAt);
+    onChangePromoExpiresAt(data.promoExpiresAt);
+    onChangePromoEmployeeIds(data.promoEmployeeIds);
+    if (data.stationIds && onChangeStationIds) {
+      onChangeStationIds(data.stationIds);
+    }
   };
+
+  const selectedIds = React.useMemo(
+    () => new Set(promoEmployeeIds),
+    [promoEmployeeIds],
+  );
+  const allSelected =
+    people.length > 0 && people.every((p) => selectedIds.has(p.id));
 
   return (
     <section
       id="proc-promo"
       className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-6 transition-colors"
     >
-      {/* Same header pattern as the other step-3 rows: icon tile, title,
-          status pill; the on/off control sits at the row's end. The state
-          is carried by the pill, so the card border stays neutral. */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-2">
           <IconTile size="xs" icon={LuSparkles} />
@@ -650,84 +707,123 @@ export function PromoSection({
           </StatusPill>
         </div>
 
-        {/* On/off control — the same checkbox-as-action pattern as the quiz
-            attach toggle: the label says what the control does, the state
-            lives in the pill. */}
-        <label className="flex shrink-0 cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={isPromo}
-            onChange={(event) => {
-              const next = event.target.checked;
-              onChangeIsPromo(next);
-              if (next && !promoExpiresAt) setPreset(30);
-            }}
-            className="size-5 cursor-pointer accent-[var(--color-brand-600)]"
-          />
-          <span className="text-xs font-semibold text-[var(--color-ink-2)] select-none">
-            {isEs ? "Activar promoción" : "Enable promo"}
-          </span>
-        </label>
+        {/* Action button + quick toggle */}
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant={isPromo ? "secondary" : "primary"}
+            size="sm"
+            icon={LuSparkles}
+            onClick={() => setModalOpen(true)}
+          >
+            {isPromo
+              ? isEs
+                ? "Configurar promoción"
+                : "Configure promo"
+              : isEs
+                ? "Activar promoción"
+                : "Enable promo"}
+          </Button>
+
+          <label className="flex shrink-0 cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isPromo}
+              onChange={(event) => {
+                const next = event.target.checked;
+                onChangeIsPromo(next);
+                if (next) {
+                  setModalOpen(true);
+                }
+              }}
+              className="size-5 cursor-pointer accent-[var(--color-brand-600)]"
+            />
+          </label>
+        </div>
       </div>
+
       <p className="mt-2 text-xs leading-meta text-[var(--color-ink-3)]">
         {t("promoSubtitle")}
       </p>
 
       {isPromo ? (
-        <div className="mt-5 pt-5 border-t border-[var(--color-line-2)] space-y-5">
-          {/* Expiration date + presets */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="proc-promo-expires"
-              className="text-xs font-semibold text-[var(--color-ink)] block"
-            >
-              {t("promoExpiresLabel")}
-            </Label>
-            <div className="flex flex-wrap items-center gap-3">
-              <Input
-                id="proc-promo-expires"
-                type="date"
-                min={new Date().toISOString().slice(0, 10)}
-                value={promoExpiresAt ?? ""}
-                onChange={(e) => onChangePromoExpiresAt(e.target.value || null)}
-                className="h-[38px] w-[180px] shrink-0 rounded-[var(--radius-md)] border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 text-xs text-[var(--color-ink)]"
-              />
-              <div className="flex items-center flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPreset(14)}
-                  className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
-                >
-                  {t("promoPreset2Weeks")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreset(30)}
-                  className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
-                >
-                  {t("promoPreset1Month")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreset(60)}
-                  className="rounded-full px-4 py-2 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
-                >
-                  {t("promoPreset2Months")}
-                </button>
-              </div>
+        <div className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)]/40 p-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="font-semibold text-[var(--color-ink)] block">
+                {isEs ? "Periodo de promoción" : "Promotion window"}
+              </span>
+              <span className="text-[var(--color-ink-2)] mt-0.5 block">
+                {promoStartsAt
+                  ? formatDateTime(promoStartsAt, locale)
+                  : isEs
+                    ? "Inicia de inmediato"
+                    : "Active immediately"}
+                {" → "}
+                {promoExpiresAt
+                  ? formatDateTime(promoExpiresAt, locale)
+                  : isEs
+                    ? "Sin fecha de expiración"
+                    : "No expiration date"}
+              </span>
             </div>
-            <p className="text-xs text-[var(--color-ink-3)] leading-relaxed mt-1">
-              {t("promoExpiresHint")}
-            </p>
+
+            <div>
+              <span className="font-semibold text-[var(--color-ink)] block">
+                {isEs ? "Audiencia asignada" : "Assigned audience"}
+              </span>
+              <span className="text-[var(--color-ink-2)] mt-0.5 block">
+                {allSelected
+                  ? isEs
+                    ? "Todos los empleados"
+                    : "All employees"
+                  : promoEmployeeIds.length > 0
+                    ? isEs
+                      ? `${promoEmployeeIds.length} empleados seleccionados`
+                      : `${promoEmployeeIds.length} employees selected`
+                    : isEs
+                      ? "Sin empleados específicos seleccionados"
+                      : "No specific employees selected"}
+              </span>
+            </div>
           </div>
 
-          <div className="pt-1">
-            <p className="text-xs leading-relaxed text-[var(--color-ink-2)]">
-              {t("promoStationsHint")}
-            </p>
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[var(--color-line-2)] text-xs">
+            <span className="text-[var(--color-ink-3)] text-[11px] leading-relaxed">
+              {isEs
+                ? "Al terminar la promoción, el platillo abandona automáticamente la sección de promoción y permanece en el menú de la estación."
+                : "When the promo ends, the dish automatically leaves the promo section and remains in the regular station menu."}
+            </span>
+
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              icon={LuSparkles}
+              onClick={() => setModalOpen(true)}
+            >
+              {isEs ? "Editar promoción" : "Edit promo"}
+            </Button>
           </div>
         </div>
       ) : null}
+
+      <PromoConfigModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        procedureTitle={title}
+        initialValues={{
+          isPromo,
+          promoStartsAt,
+          promoExpiresAt,
+          promoEmployeeIds,
+          stationIds,
+        }}
+        initialEmployees={people}
+        initialStations={stations}
+        onSave={handleSaveModal}
+        locale={locale}
+      />
     </section>
   );
 }

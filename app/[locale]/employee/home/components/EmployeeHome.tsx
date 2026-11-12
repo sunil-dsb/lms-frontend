@@ -1,6 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { LuClock } from "react-icons/lu";
 import type { StatusTone } from "@/components/ui/status-pill";
 import type {
   FlagLabels,
@@ -117,6 +118,7 @@ export function EmployeeHome({
   greetingTrailing?: React.ReactNode;
 }): React.ReactElement {
   const tTraining = useTranslations("employee.training");
+  const tOverride = useTranslations("admin.training.override");
   return (
     <>
       <Greeting
@@ -129,6 +131,26 @@ export function EmployeeHome({
         locale={locale}
         isOnboarding={isOnboarding}
       />
+
+      {requiredTraining?.isOverridden && requiredTraining.overrideUntil ? (
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-[var(--color-warn)]/40 bg-[var(--color-warn-tint)] p-4 text-sm text-[var(--color-warn-ink)] shadow-xs">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--color-warn)] text-white shadow-xs">
+            <LuClock className="size-4" />
+          </div>
+          <p className="leading-relaxed font-medium pt-0.5">
+            {tOverride("activeBanner", {
+              until: new Date(
+                requiredTraining.overrideUntil,
+              ).toLocaleDateString(locale || "en", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            })}
+          </p>
+        </div>
+      ) : null}
 
       {isOnboarding ? (
         <>

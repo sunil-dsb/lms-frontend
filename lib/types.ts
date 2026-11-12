@@ -583,6 +583,11 @@ export interface Procedure {
   isPromo?: boolean;
   /** Expiration timestamp for the promo status. After this time, reverts to regular procedure. */
   promoExpiresAt?: string | null;
+  /** Employees selected in the promo editor. Persisted via `assignUsers`. */
+  promoEmployeeIds?: string[] | null;
+  /** Start timestamp of the promo run window. Before this instant the dish
+   *  doesn't surface in the Promo section (null = active immediately). */
+  promoStartsAt?: string | null;
   /** Who sees this promo: 'station' (only employees on this procedure's station) or 'everyone'. */
   promoAudience?: "station" | "everyone";
 }
@@ -662,6 +667,13 @@ export interface CreateProcedureInput {
   isPromo?: boolean;
   /** Expiration timestamp for the promo status. After this time, reverts to regular procedure. */
   promoExpiresAt?: string | null;
+  /** Employee IDs selected for this promo; the API persists them in assignUsers. */
+  promoEmployeeIds?: string[];
+  /** Start timestamp of the promo run window. Before this instant the dish
+   *  doesn't surface in the Promo section (null = active immediately). For
+   *  promo dishes the promo audience reuses `assignUsers` — only listed
+   *  employees see the dish in their Promo section. */
+  promoStartsAt?: string | null;
   /** Who sees this promo: 'station' (only employees on this procedure's station) or 'everyone'. */
   promoAudience?: "station" | "everyone";
   /** Acknowledgement statement shown on read; null/undefined disables.
@@ -680,7 +692,7 @@ export interface CreateProcedureInput {
  *  derived status (dueAt < now && !complete) so it does not need to be
  *  persisted — the admin UI computes it from `dueAt` and `status`. */
 export type TrainingAssignmentStatus =
-  "due" | "in_progress" | "complete" | "overdue";
+  "due" | "in_progress" | "complete" | "overdue" | "not_started" | "due_soon";
 
 export interface TrainingAssignment {
   id: string;
@@ -694,7 +706,7 @@ export interface TrainingAssignment {
   dueAt: string;
   /** Last non-terminal status from the employee side. The admin list
    *  re-derives `overdue` from `dueAt` — see TrainingAssignmentRow below. */
-  status: Exclude<TrainingAssignmentStatus, "overdue">;
+  status: Exclude<TrainingAssignmentStatus, "overdue" | "due_soon">;
   /** Procedure step ids the employee marked done. Empty array until they
    *  start; the per-step list lets the receipt show "X of Y steps done"
    *  without leaking an overall % (forbidden by DESIGN.md §8). */
@@ -738,7 +750,13 @@ export interface TrainingAssignmentRow {
 /** A row's state as the Progress tab reads it: finished, going, or past its
  *  due date. `due` and `in_progress` collapse into `in_progress` — to the
  *  admin scanning the page both simply mean "not finished yet". */
-export type ProgressStatus = "complete" | "in_progress" | "overdue";
+export type ProgressStatus =
+  | "complete"
+  | "in_progress"
+  | "overdue"
+  | "not_started"
+  | "due_soon"
+  | "restricted";
 
 /** A course referenced by a progress row. Carries both titles so the view
  *  picks the reader's language the way the other training surfaces do. */
@@ -748,12 +766,14 @@ export interface ProgressCourseRef {
   titleEs: string;
 }
 
-/** The three stat cards. Counts are training items (assignments), not people:
- *  one person lands in a bucket once per assigned course. */
+/** The stat cards and bucket counts for assignments. */
 export interface TrainingProgressSummary {
   completed: number;
   inProgress: number;
   overdue: number;
+  notStarted?: number;
+  dueSoon?: number;
+  restricted?: number;
 }
 
 /** Minimal per-course fields used to build the admin home training card. */
@@ -772,9 +792,14 @@ export interface EmployeeProgressAssignment {
 export interface EmployeeProgressRow {
   employeeId: string;
   name: string;
+  email?: string | null;
   station: string;
   coursesDone: number;
   coursesTotal: number;
+  requiredCoursesDone?: number;
+  requiredCoursesTotal?: number;
+  isRestricted?: boolean;
+  isOverridden?: boolean;
   /** The unfinished course due soonest — what this person should be on.
    *  Null when every assigned course is finished. */
   currentCourse: ProgressCourseRef | null;

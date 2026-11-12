@@ -25,6 +25,9 @@ export interface BackendCourse {
   purposeEs: string;
   status: TrainingCourseStatus;
   assignUsers?: string[] | null;
+  stationIds?: string[] | null;
+  locationIds?: string[] | null;
+  jobIds?: string[] | null;
   assignedCount?: number;
   createdBy?: string | null;
   createdAt: string;
@@ -56,7 +59,12 @@ export interface EmployeeTrainingAssignment {
   chapterCount: number;
   completedChapterCount: number;
   progressPercent: number;
-  status: "complete" | "in_progress";
+  status: "complete" | "in_progress" | "not_started" | "due_soon" | "overdue";
+  overrideUntil?: string | null;
+  overriddenBy?: string | null;
+  overriddenAt?: string | null;
+  overrideReason?: string | null;
+  isOverridden?: boolean;
 }
 
 export interface EmployeeRequiredTrainingStatus {
@@ -64,6 +72,13 @@ export interface EmployeeRequiredTrainingStatus {
   completedCount: number;
   lockedCount: number;
   isComplete: boolean;
+  isOverridden?: boolean;
+  overrideUntil?: string | null;
+  overrideReason?: string | null;
+  /** Locks active: an incomplete required course is past its due date without an override. */
+  isRestricted?: boolean;
+  /** When locks begin (ISO) — midnight after the earliest incomplete due date. */
+  restrictAt?: string | null;
 }
 
 export interface EmployeeTrainingResponse {
@@ -93,7 +108,7 @@ export interface EmployeeTrainingCourseDetail {
     completedChapterCount: number;
     totalChapters: number;
     progressPercent: number;
-    status: "complete" | "in_progress";
+    status: "complete" | "in_progress" | "not_started" | "due_soon" | "overdue";
   };
   course: Pick<
     BackendCourse,
@@ -122,6 +137,7 @@ export interface CreateCourseInput {
   purposeEn: string;
   purposeEs: string;
   assignUsers?: string[];
+  stationIds?: string[];
   chapters?: ChapterInput[];
 }
 
@@ -131,6 +147,7 @@ export interface UpdateCourseInput {
   purposeEn?: string;
   purposeEs?: string;
   assignUsers?: string[];
+  stationIds?: string[];
   chapters?: ChapterInput[];
 }
 
@@ -194,7 +211,12 @@ export interface CourseAssignmentRow {
   /** `complete`, `in_progress`, or `overdue` (past due, unfinished) — note it
    *  does not collapse an untouched course into `due` like the per-employee
    *  endpoint does; the table highlights chapter progress instead. */
-  status: "complete" | "in_progress" | "overdue";
+  status: "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
+  overrideUntil?: string | null;
+  overriddenBy?: string | null;
+  overriddenAt?: string | null;
+  overrideReason?: string | null;
+  isOverridden?: boolean;
   employee: {
     id: string;
     name: string;

@@ -22,6 +22,7 @@ export interface MockEmployee {
   role?: "manager" | "employee";
   avatar?: string;
   locationId?: string;
+  jobIds?: string[];
 }
 
 export const mockTrainingEmployees: MockEmployee[] = [

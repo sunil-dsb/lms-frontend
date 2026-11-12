@@ -66,7 +66,6 @@ async function EmployeeTrainingContent({
       <EmployeeTrainingView
         pendingItems={pending}
         completedItems={completed}
-        requiredTraining={training?.requiredTraining ?? null}
         locale={locale}
       />
 

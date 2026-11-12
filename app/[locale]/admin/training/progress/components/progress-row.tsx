@@ -11,6 +11,9 @@ export const PROGRESS_STATUS_LABEL_KEY = {
   complete: "statusDone",
   in_progress: "statusInProgress",
   overdue: "statusOverdue",
+  not_started: "statusNotStarted",
+  due_soon: "statusDueSoon",
+  restricted: "statusRestricted",
 } as const;
 
 /** A row's status as the shared badge, toned by the one mapping the rest of

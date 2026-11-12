@@ -36,6 +36,9 @@ import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusPill } from "@/components/ui/status-pill";
 import { getProcedureIcon } from "@/lib/category-icons";
+import { updateProcedure } from "@/services/library/api";
+import { PromoConfigModal, type PromoData } from "./promo-config-modal";
+import * as React from "react";
 
 export function ProcedureExplorerResults({
   loading,
@@ -73,6 +76,26 @@ export function ProcedureExplorerResults({
   onDelete: (id: string) => Promise<void>;
 }) {
   const router = useRouter();
+  const [promoProcedure, setPromoProcedure] = React.useState<Procedure | null>(
+    null,
+  );
+
+  const handleSavePromo = async (data: PromoData) => {
+    if (!promoProcedure) return;
+    try {
+      await updateProcedure(promoProcedure.id, {
+        isPromo: data.isPromo,
+        promoStartsAt: data.promoStartsAt,
+        promoExpiresAt: data.promoExpiresAt,
+        promoAudience: data.promoAudience,
+        assignUsers: data.promoEmployeeIds,
+        stationIds: data.stationIds,
+      });
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to update promo settings:", err);
+    }
+  };
   return (
     <>
       {loading ? (
@@ -396,6 +419,19 @@ export function ProcedureExplorerResults({
                             icon: LuArchive,
                             onSelect: () => void onArchive(p.id),
                           },
+                      p.isArchived
+                        ? null
+                        : {
+                            label: p.isPromo
+                              ? isEs
+                                ? "Editar promoción"
+                                : "Edit promo"
+                              : isEs
+                                ? "Agregar a promoción"
+                                : "Add to promo",
+                            icon: LuSparkles,
+                            onSelect: () => setPromoProcedure(p),
+                          },
                       {
                         label: isEs ? "Eliminar" : "Delete",
                         icon: LuTrash2,
@@ -417,6 +453,14 @@ export function ProcedureExplorerResults({
           })}
         </ul>
       )}
+
+      <PromoConfigModal
+        open={Boolean(promoProcedure)}
+        onClose={() => setPromoProcedure(null)}
+        procedure={promoProcedure}
+        onSave={handleSavePromo}
+        locale={locale}
+      />
     </>
   );
 }

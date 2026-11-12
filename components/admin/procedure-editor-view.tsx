@@ -166,6 +166,10 @@ export function ProcedureEditorView({
     setIsPromo,
     promoExpiresAt,
     setPromoExpiresAt,
+    promoStartsAt,
+    setPromoStartsAt,
+    promoEmployeeIds,
+    setPromoEmployeeIds,
     nameOf,
     titleValue,
     purposeValue,
@@ -479,8 +483,23 @@ export function ProcedureEditorView({
               <PromoSection
                 isPromo={isPromo}
                 onChangeIsPromo={edit(setIsPromo)}
+                promoStartsAt={promoStartsAt}
+                onChangePromoStartsAt={edit(setPromoStartsAt)}
                 promoExpiresAt={promoExpiresAt}
                 onChangePromoExpiresAt={edit(setPromoExpiresAt)}
+                promoEmployeeIds={promoEmployeeIds}
+                onChangePromoEmployeeIds={edit(setPromoEmployeeIds)}
+                title={
+                  (locale === "es"
+                    ? title.es || title.en
+                    : title.en || title.es) || ""
+                }
+                stations={stations}
+                stationIds={audience.stationIds}
+                onChangeStationIds={(sIds) =>
+                  edit(setAudience)({ ...audience, stationIds: sIds })
+                }
+                people={people}
                 locale={locale}
               />
             ) : null}

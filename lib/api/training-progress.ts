@@ -28,7 +28,8 @@ const emptyProgress: TrainingProgressData = {
 export async function fetchTrainingProgress(
   cookieHeader?: string,
   options: {
-    status?: "complete" | "in_progress" | "overdue";
+    status?:
+      "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
     groupBy?: "employee" | "course";
     page?: number;
     limit?: number;

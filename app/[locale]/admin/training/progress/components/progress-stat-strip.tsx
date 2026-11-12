@@ -44,10 +44,25 @@ export function ProgressStatStrip({
       label: t("statOverdue"),
       tone: "text-[var(--color-bad)]",
     },
+    ...(summary.restricted !== undefined && summary.restricted > 0
+      ? [
+          {
+            key: "restricted" as keyof TrainingProgressSummary,
+            value: summary.restricted,
+            label: t("statusRestricted"),
+            tone: "text-[var(--color-bad)]",
+          },
+        ]
+      : []),
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-4",
+        stats.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3",
+      )}
+    >
       {stats.map((stat) => (
         <div
           key={stat.key}

@@ -75,11 +75,10 @@ export default async function ProceduresPage({
   // the query value into the x-lms-view-as request header.
   const tTraining = await getTranslations("employee.training");
   const requiredTraining = await requiredTrainingPromise;
+  // Locks only once restrictions are active (an incomplete required course
+  // past its due date) — being assigned alone leaves the sections open.
   const isTrainingLocked = Boolean(
-    effectiveRole === "employee" &&
-    requiredTraining &&
-    requiredTraining.requiredCount > 0 &&
-    !requiredTraining.isComplete,
+    effectiveRole === "employee" && requiredTraining?.isRestricted,
   );
 
   // The list itself (categories + procedures) is fetched by

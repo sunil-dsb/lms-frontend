@@ -261,12 +261,18 @@ export async function assignCourseApi(
   dueDate?: string,
   mode: "add" | "replace" = "add",
   isRequired = false,
+  stationIds?: string[],
+  locationIds?: string[],
+  jobIds?: string[],
 ): Promise<{ courseId: string; assignedCount: number; assignUsers: string[] }> {
   const payload: {
     employeeIds: string[];
     mode: "add" | "replace";
     isRequired: boolean;
     dueDate?: string;
+    stationIds?: string[];
+    locationIds?: string[];
+    jobIds?: string[];
   } = {
     employeeIds,
     mode,
@@ -274,6 +280,15 @@ export async function assignCourseApi(
   };
   if (dueDate) {
     payload.dueDate = dueDate;
+  }
+  if (stationIds) {
+    payload.stationIds = stationIds;
+  }
+  if (locationIds) {
+    payload.locationIds = locationIds;
+  }
+  if (jobIds) {
+    payload.jobIds = jobIds;
   }
 
   const { data } = await http.post<{
@@ -310,6 +325,32 @@ export async function unassignCourseApi(
 }
 
 /**
+ * PATCH /api/v1/courses/:id/assignments — Changes the due date on existing
+ * assignment rows (progress and membership untouched).
+ */
+export async function updateAssignmentDueDatesApi(
+  courseId: string,
+  employeeIds: string[],
+  dueDate: string,
+): Promise<{
+  courseId: string;
+  dueDate: string;
+  updatedCount: number;
+}> {
+  const { data } = await http.patch<{
+    success: boolean;
+    message: string;
+    data: {
+      courseId: string;
+      dueDate: string;
+      updatedCount: number;
+    };
+  }>(COURSES_ENDPOINTS.ASSIGNMENTS(courseId), { employeeIds, dueDate });
+
+  return data.data;
+}
+
+/**
  * GET /api/v1/courses/:id/assignments — Lists all assigned employees for a training course
  */
 export async function fetchCourseAssignmentsApi(
@@ -330,17 +371,40 @@ export async function fetchCourseAssignmentsApi(
 /**
  * GET /api/v1/courses/admin/progress — Aggregated training progress for Admin Progress tab
  */
+export type TrainingProgressOptions = {
+  status?:
+    | "complete"
+    | "in_progress"
+    | "overdue"
+    | "not_started"
+    | "due_soon"
+    | "restricted";
+  groupBy?: "employee" | "course";
+  page?: number;
+  limit?: number;
+  search?: string;
+  includeAssignments?: boolean;
+};
+
 export async function fetchTrainingProgressApi(
-  cookieHeader?: string,
-  options: {
-    status?: "complete" | "in_progress" | "overdue";
-    groupBy?: "employee" | "course";
-    page?: number;
-    limit?: number;
-    search?: string;
-    includeAssignments?: boolean;
-  } = {},
+  cookieHeaderOrOptions?: string | TrainingProgressOptions,
+  maybeOptions?: TrainingProgressOptions,
 ): Promise<TrainingProgressData> {
+  let cookieHeader: string | undefined;
+  let options: TrainingProgressOptions = {};
+
+  if (typeof cookieHeaderOrOptions === "string") {
+    cookieHeader = cookieHeaderOrOptions;
+    options = maybeOptions ?? {};
+  } else if (
+    cookieHeaderOrOptions &&
+    typeof cookieHeaderOrOptions === "object"
+  ) {
+    options = cookieHeaderOrOptions;
+  } else if (maybeOptions && typeof maybeOptions === "object") {
+    options = maybeOptions;
+  }
+
   const headers: Record<string, string> = {};
 
   // The axios auth interceptor only sees the browser's cookies — server
@@ -364,6 +428,45 @@ export async function fetchTrainingProgressApi(
   });
 
   return data.data;
+}
+
+/**
+ * Downloads a CSV compliance report from GET /api/v1/courses/admin/progress/export
+ */
+export async function downloadTrainingProgressCsvApi(options: {
+  status?: string;
+  groupBy?: "employee" | "course";
+  search?: string;
+}): Promise<void> {
+  const params: Record<string, string> = {};
+  if (options.status && options.status !== "all") {
+    params.status = options.status;
+  }
+  if (options.groupBy) {
+    params.groupBy = options.groupBy;
+  }
+  if (options.search) {
+    params.search = options.search;
+  }
+
+  const response = await http.get<string>(
+    `${COURSES_ENDPOINTS.PROGRESS}/export`,
+    {
+      params,
+      responseType: "text",
+    },
+  );
+
+  const blob = new Blob([response.data], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `training-compliance-${options.groupBy === "course" ? "courses" : "employees"}-${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 export interface SaveCourseChapterInput {
@@ -392,6 +495,7 @@ export interface SaveCourseInput {
   purposeEn?: string;
   purposeEs?: string;
   assignUsers?: string[];
+  stationIds?: string[];
   linkedSops?: string[];
   chapters?: SaveCourseChapterInput[];
 }
@@ -495,6 +599,9 @@ export async function saveCourse(
       ...(input.assignUsers !== undefined
         ? { assignUsers: input.assignUsers }
         : {}),
+      ...(input.stationIds !== undefined
+        ? { stationIds: input.stationIds }
+        : {}),
       chapters: backendChapters,
     });
   } else {
@@ -506,7 +613,48 @@ export async function saveCourse(
       ...(input.assignUsers !== undefined
         ? { assignUsers: input.assignUsers }
         : {}),
+      ...(input.stationIds !== undefined
+        ? { stationIds: input.stationIds }
+        : {}),
       chapters: backendChapters,
     });
   }
+}
+
+/**
+ * Grants a temporary training override to unblock LMS access.
+ */
+export async function grantTrainingOverrideApi(
+  employeeId: string,
+  input: {
+    overrideUntil: string;
+    reason?: string;
+    courseId?: string;
+  },
+): Promise<{
+  success: boolean;
+  overrideUntil: string;
+  reason?: string | null;
+}> {
+  const { data } = await http.post<{
+    success: boolean;
+    data: { success: boolean; overrideUntil: string; reason?: string | null };
+  }>(`/api/v1/courses/admin/override/${employeeId}`, input);
+  return data.data;
+}
+
+/**
+ * Revokes an active training override.
+ */
+export async function revokeTrainingOverrideApi(
+  employeeId: string,
+  courseId?: string,
+): Promise<{ success: boolean }> {
+  const { data } = await http.delete<{
+    success: boolean;
+    data: { success: boolean };
+  }>(`/api/v1/courses/admin/override/${employeeId}`, {
+    params: courseId ? { courseId } : undefined,
+  });
+  return data.data;
 }

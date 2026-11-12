@@ -79,6 +79,8 @@ export function ProcedureEditorReviewPanel({
     setAudience,
     isPromo,
     promoExpiresAt,
+    promoStartsAt,
+    promoEmployeeIds,
     previewOpen,
     setPreviewOpen,
     dirty,
@@ -383,16 +385,41 @@ export function ProcedureEditorReviewPanel({
                       {t("promoStatusActive")}
                     </StatusPill>
                   </div>
-                  {promoExpiresAt ? (
+                  {/* Run window — the datetime-local editor strings parse as
+                      the manager's wall clock, so format both edges with
+                      dateStyle + timeStyle. */}
+                  {promoStartsAt ? (
                     <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
+                      {t("promoStartsLabel")}:{" "}
+                      {new Intl.DateTimeFormat(locale, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(promoStartsAt))}
+                    </p>
+                  ) : null}
+                  {promoExpiresAt ? (
+                    <p className="mt-1 text-sm font-semibold text-[var(--color-ink)]">
                       {t("promoExpiresLabel")}:{" "}
                       {new Intl.DateTimeFormat(locale, {
                         dateStyle: "medium",
-                      }).format(new Date(`${promoExpiresAt}T00:00:00`))}
+                        timeStyle: "short",
+                      }).format(new Date(promoExpiresAt))}
                     </p>
                   ) : null}
+                  {promoEmployeeIds.length > 0 ? (
+                    <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
+                      {t("promoEmployeesTitle")}:{" "}
+                      {t("promoEmployeesCount", {
+                        count: promoEmployeeIds.length,
+                      })}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm font-semibold text-[var(--color-ink)]">
+                      {t("promoNoneSelected")}
+                    </p>
+                  )}
                   <p className="mt-1 text-sm text-[var(--color-ink-2)]">
-                    {t("promoStationsHint")}
+                    {t("promoEmployeesHint")}
                   </p>
                 </li>
               ) : null}

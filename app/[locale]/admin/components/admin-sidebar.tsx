@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { Employee } from "@/lib/types";
+import type { Employee, SystemRole } from "@/lib/types";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LocaleSwitch } from "@/components/ui/locale-switch";
 import {
@@ -14,6 +14,7 @@ import {
   LuClipboardList,
   LuFolders,
   LuGraduationCap,
+  LuHistory,
   LuHouse,
   LuUserPlus,
   LuUsers,
@@ -26,6 +27,12 @@ export type NavItem = {
   icon: IconType;
   labelKey: string;
   soon?: boolean;
+  /**
+   * Restrict this row to these system roles (omit = every role that can
+   * reach the admin shell). The audit log is super_admin-only, matching
+   * the API's `requireRoles(['super_admin'])`.
+   */
+  roles?: readonly SystemRole[];
 };
 
 export type NavGroup = {
@@ -75,7 +82,15 @@ export const NAV_GROUPS: NavGroup[] = [
   },
   {
     headingKey: "groupSettings",
-    items: [{ href: "/settings", icon: LuChefHat, labelKey: "navSettings" }],
+    items: [
+      { href: "/settings", icon: LuChefHat, labelKey: "navSettings" },
+      {
+        href: "/audit",
+        icon: LuHistory,
+        labelKey: "navAuditLog",
+        roles: ["super_admin"],
+      },
+    ],
   },
 ];
 

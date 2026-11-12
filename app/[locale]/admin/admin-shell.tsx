@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import type { Employee } from "@/lib/types";
+import type { Employee, SystemRole } from "@/lib/types";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LocaleSwitch } from "@/components/ui/locale-switch";
 import { LuArrowUpRight, LuMenu, LuX } from "react-icons/lu";
@@ -70,6 +70,18 @@ export function AdminShell({
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
+  // Rows some roles must not see. The audit log is super_admin-only — the
+  // API answers 403 for anyone else, so don't show a door that isn't theirs.
+  const visibleGroups = React.useMemo(() => {
+    const role = employee.role as SystemRole;
+    return NAV_GROUPS.map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) => item.roles === undefined || item.roles.includes(role),
+      ),
+    })).filter((group) => group.items.length > 0);
+  }, [employee.role]);
+
   const activeHref = React.useMemo(() => {
     // Longest matching href wins — the most specific item is "the"
     // current page. Initialised to `null` (not `''`) so the `Home` row,
@@ -78,7 +90,7 @@ export function AdminShell({
     // shared /procedures/* detail pages — admins there aren't "on Home",
     // they're on a procedure).
     let best: string | null = null;
-    for (const group of NAV_GROUPS) {
+    for (const group of visibleGroups) {
       for (const item of group.items) {
         const full = `/${locale}/admin${item.href}`;
         const matches =
@@ -91,7 +103,7 @@ export function AdminShell({
       }
     }
     return best;
-  }, [pathname, locale]);
+  }, [pathname, locale, visibleGroups]);
 
   function isActive(href: string): boolean {
     return activeHref === href;
@@ -125,7 +137,7 @@ export function AdminShell({
     locale,
     employee,
     workspace,
-    groups: NAV_GROUPS,
+    groups: visibleGroups,
     labelFor: (key: string) => t(key),
     headingFor: (key: string) => tShell(key),
     isActive,

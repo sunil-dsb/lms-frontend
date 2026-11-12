@@ -7,6 +7,8 @@ import {
   LuArrowLeft,
   LuGraduationCap,
   LuCircleCheck,
+  LuCalendarDays,
+  LuPencil,
   LuUserMinus,
   LuUserPlus,
   LuLoader,
@@ -19,15 +21,18 @@ import type { CourseAssignmentRow } from "@/services/courses/types";
 import {
   unassignCourseApi,
   fetchCourseAssignmentsApi,
+  updateAssignmentDueDatesApi,
 } from "@/services/courses/api";
 import { CourseAssignmentModal } from "../../../components/course-assignment-modal";
-import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { ChangeDueDateModal } from "@/components/admin/change-due-date-modal";
+import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
 import {
   PROGRESS_STATUS_LABEL_KEY,
   ProgressStatusPill,
   courseTitle,
 } from "../../components/progress-row";
 import { ProgressTableShell } from "../../components/progress-table-shell";
+import { useMe } from "@/services/auth/hooks";
 import { cn } from "@/lib/utils";
 
 interface CourseProgressDetailProps {
@@ -54,15 +59,22 @@ export function CourseProgressDetail({
   const t = useTranslations("admin.training.progress");
   const tTraining = useTranslations("admin.training");
   const isEs = locale === "es";
+  const { employee: me } = useMe();
+  // Due-date editing is super_admin-only on the API — hide it otherwise.
+  const canEditDueDate = me?.role === "super_admin";
 
   const [assignmentList, setAssignmentList] =
     React.useState<CourseAssignmentRow[]>(assignments);
   const [unassigningId, setUnassigningId] = React.useState<string | null>(null);
-  const [confirmUnassignEmployee, setConfirmUnassignEmployee] = React.useState<{
-    employeeId: string;
-    name: string;
-  } | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<ReadonlySet<string>>(
+    new Set(),
+  );
+  const [dueDateTarget, setDueDateTarget] = React.useState<{
+    employeeIds: string[];
+    name?: string;
+    currentDueDate?: string;
+  } | null>(null);
 
   React.useEffect(() => {
     setAssignmentList(assignments);
@@ -94,6 +106,47 @@ export function CourseProgressDetail({
     } catch (err) {
       console.error("Failed to refresh course assignments:", err);
     }
+  }
+
+  const allSelected =
+    assignmentList.length > 0 && selectedIds.size === assignmentList.length;
+
+  function toggleSelected(employeeId: string): void {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(employeeId)) next.delete(employeeId);
+      else next.add(employeeId);
+      return next;
+    });
+  }
+
+  function toggleSelectAll(): void {
+    setSelectedIds(
+      allSelected
+        ? new Set()
+        : new Set(assignmentList.map((row) => row.employeeId)),
+    );
+  }
+
+  function openSingleDueDate(row: CourseAssignmentRow): void {
+    setDueDateTarget({
+      employeeIds: [row.employeeId],
+      name: row.employee.name,
+      currentDueDate: row.dueDate,
+    });
+  }
+
+  function openBulkDueDate(): void {
+    const rows = assignmentList.filter((row) =>
+      selectedIds.has(row.employeeId),
+    );
+    if (rows.length === 0) return;
+    const dates = new Set(rows.map((row) => row.dueDate));
+    setDueDateTarget({
+      employeeIds: rows.map((row) => row.employeeId),
+      // Prefill only when every selected row already shares one date.
+      currentDueDate: dates.size === 1 ? [...dates][0] : "",
+    });
   }
 
   const title = meta ? courseTitle(meta.course, locale) : "—";
@@ -215,11 +268,34 @@ export function CourseProgressDetail({
                   : row.status === "complete"
                     ? row.chapterCount
                     : 0;
-                const isUnassigning = unassigningId === row.employeeId;
+
+                const mobileActionItems: RowActionItem[] = [
+                  ...(canEditDueDate
+                    ? [
+                        {
+                          label: t("changeDueDate"),
+                          icon: LuCalendarDays,
+                          onSelect: () => openSingleDueDate(row),
+                        },
+                      ]
+                    : []),
+                  {
+                    label: t("unassign"),
+                    icon: LuUserMinus,
+                    destructive: true,
+                    confirmTitle: t("unassignConfirmTitle"),
+                    confirmDescription: t("unassignConfirmEmployeeBody", {
+                      name: row.employee.name,
+                      course: title,
+                    }),
+                    confirmLabel: t("unassign"),
+                    onSelect: () => void handleUnassign(row.employeeId),
+                  },
+                ];
 
                 return (
                   <div key={row.id} className="p-4 space-y-3">
-                    {/* Top: Employee name + Status + Unassign button */}
+                    {/* Top: Employee name + Status + RowActions */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <Link
@@ -237,32 +313,10 @@ export function CourseProgressDetail({
                           status={row.status}
                           label={t(PROGRESS_STATUS_LABEL_KEY[row.status])}
                         />
-                        <button
-                          type="button"
-                          disabled={isUnassigning}
-                          onClick={() =>
-                            setConfirmUnassignEmployee({
-                              employeeId: row.employeeId,
-                              name: row.employee.name,
-                            })
-                          }
-                          className={cn(
-                            "inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
-                            "text-[var(--color-bad-700)] hover:text-[var(--color-bad-800)] hover:bg-[var(--color-bad-tint)] border border-[var(--color-bad)]/20",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
-                            isUnassigning && "opacity-60 cursor-not-allowed",
-                          )}
-                          title={
-                            isEs ? "Desasignar empleado" : "Unassign employee"
-                          }
-                        >
-                          {isUnassigning ? (
-                            <LuLoader className="size-3 animate-spin" />
-                          ) : (
-                            <LuUserMinus className="size-3" />
-                          )}
-                          <span>{t("unassign")}</span>
-                        </button>
+                        <RowActions
+                          items={mobileActionItems}
+                          triggerLabel={row.employee.name}
+                        />
                       </div>
                     </div>
 
@@ -327,17 +381,65 @@ export function CourseProgressDetail({
             </CardContent>
           </Card>
 
+          {/* Bulk retiming bar — the multi-select lives only in the desktop
+              table, so this stays hidden below md. */}
+          {canEditDueDate && selectedIds.size > 0 ? (
+            <div className="hidden md:flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--color-brand-600)]/30 bg-[var(--color-brand-50)] px-4 py-3 dark:bg-[var(--color-brand-950)]/40">
+              <span className="text-sm font-semibold text-[var(--color-brand-700)] dark:text-[var(--color-brand-300)]">
+                {t("dueDateSelected", { count: selectedIds.size })}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="neutral"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  {t("dueDateClear")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={openBulkDueDate}
+                >
+                  <LuCalendarDays className="size-4" />
+                  <span>{t("changeDueDate")}</span>
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           {/* Desktop Table (>= md) */}
           <div className="hidden md:block">
             <ProgressTableShell
               label={t("detailCourseTableLabel")}
               columns={[
+                ...(canEditDueDate
+                  ? [
+                      <label
+                        key="select"
+                        className="flex shrink-0 cursor-pointer items-center justify-center"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={toggleSelectAll}
+                          aria-label={t("dueDateSelectAll")}
+                          className="size-4 cursor-pointer accent-[var(--color-brand-600)]"
+                        />
+                      </label>,
+                    ]
+                  : []),
                 t("thEmployee"),
                 t("thChapters"),
                 t("thCurrentChapter"),
                 t("thDue"),
                 t("thStatus"),
-                t("thActions"),
+                <span key="actions" className="sr-only">
+                  {t("thActions")}
+                </span>,
               ]}
             >
               {assignmentList.map((row) => {
@@ -348,10 +450,46 @@ export function CourseProgressDetail({
                   : row.status === "complete"
                     ? row.chapterCount
                     : 0;
-                const isUnassigning = unassigningId === row.employeeId;
+
+                const tableActionItems: RowActionItem[] = [
+                  ...(canEditDueDate
+                    ? [
+                        {
+                          label: t("changeDueDate"),
+                          icon: LuCalendarDays,
+                          onSelect: () => openSingleDueDate(row),
+                        },
+                      ]
+                    : []),
+                  {
+                    label: t("unassign"),
+                    icon: LuUserMinus,
+                    destructive: true,
+                    confirmTitle: t("unassignConfirmTitle"),
+                    confirmDescription: t("unassignConfirmEmployeeBody", {
+                      name: row.employee.name,
+                      course: title,
+                    }),
+                    confirmLabel: t("unassign"),
+                    onSelect: () => void handleUnassign(row.employeeId),
+                  },
+                ];
 
                 return (
                   <tr key={row.id}>
+                    {canEditDueDate ? (
+                      <td>
+                        <label className="flex shrink-0 cursor-pointer items-center justify-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(row.employeeId)}
+                            onChange={() => toggleSelected(row.employeeId)}
+                            aria-label={row.employee.name}
+                            className="size-4 cursor-pointer accent-[var(--color-brand-600)]"
+                          />
+                        </label>
+                      </td>
+                    ) : null}
                     <td>
                       <Link
                         href={`/${locale}/admin/training/progress/${row.employeeId}`}
@@ -405,11 +543,26 @@ export function CourseProgressDetail({
                     <td
                       className={
                         row.status === "overdue"
-                          ? "tabular-nums text-[var(--color-bad)]"
+                          ? "tabular-nums font-semibold text-[var(--color-bad)]"
                           : "tabular-nums text-[var(--color-ink-2)]"
                       }
                     >
-                      {formatDate(row.dueDate, locale)}
+                      {canEditDueDate && row.status !== "complete" ? (
+                        <button
+                          type="button"
+                          onClick={() => openSingleDueDate(row)}
+                          className="group inline-flex cursor-pointer items-center gap-1.5 rounded-[var(--radius-sm)] py-0.5 px-1.5 -mx-1.5 text-left transition-colors hover:bg-[var(--color-surface-2)] hover:text-[var(--color-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-600)]"
+                          title={t("changeDueDate")}
+                        >
+                          <span>{formatDate(row.dueDate, locale)}</span>
+                          <LuPencil
+                            className="size-3 text-[var(--color-ink-3)] opacity-0 transition-opacity group-hover:opacity-100"
+                            aria-hidden="true"
+                          />
+                        </button>
+                      ) : (
+                        formatDate(row.dueDate, locale)
+                      )}
                     </td>
                     <td>
                       <ProgressStatusPill
@@ -417,33 +570,13 @@ export function CourseProgressDetail({
                         label={t(PROGRESS_STATUS_LABEL_KEY[row.status])}
                       />
                     </td>
-                    <td>
-                      <button
-                        type="button"
-                        disabled={isUnassigning}
-                        onClick={() =>
-                          setConfirmUnassignEmployee({
-                            employeeId: row.employeeId,
-                            name: row.employee.name,
-                          })
-                        }
-                        className={cn(
-                          "inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-[var(--radius-sm)] transition-colors cursor-pointer",
-                          "text-[var(--color-bad-700)] hover:text-[var(--color-bad-800)] hover:bg-[var(--color-bad-tint)] border border-[var(--color-bad)]/20",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]",
-                          isUnassigning && "opacity-60 cursor-not-allowed",
-                        )}
-                        title={
-                          isEs ? "Desasignar empleado" : "Unassign employee"
-                        }
-                      >
-                        {isUnassigning ? (
-                          <LuLoader className="size-3.5 animate-spin" />
-                        ) : (
-                          <LuUserMinus className="size-3.5" />
-                        )}
-                        <span>{t("unassign")}</span>
-                      </button>
+                    <td className="text-right">
+                      <div className="flex justify-end">
+                        <RowActions
+                          items={tableActionItems}
+                          triggerLabel={row.employee.name}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );
@@ -452,32 +585,6 @@ export function CourseProgressDetail({
           </div>
         </>
       )}
-
-      <ConfirmModal
-        open={confirmUnassignEmployee !== null}
-        title={t("unassignConfirmTitle")}
-        description={
-          confirmUnassignEmployee
-            ? t("unassignConfirmEmployeeBody", {
-                name: confirmUnassignEmployee.name,
-                course: title,
-              })
-            : ""
-        }
-        confirmLabel={t("unassign")}
-        cancelLabel={t("cancel")}
-        isLoading={unassigningId !== null}
-        onConfirm={async () => {
-          if (!confirmUnassignEmployee) return;
-          await handleUnassign(confirmUnassignEmployee.employeeId);
-          setConfirmUnassignEmployee(null);
-        }}
-        onClose={() => {
-          if (!unassigningId) {
-            setConfirmUnassignEmployee(null);
-          }
-        }}
-      />
 
       {pseudoCourse ? (
         <CourseAssignmentModal
@@ -488,6 +595,19 @@ export function CourseProgressDetail({
           onAssigned={() => {
             handleRefreshAssignments();
           }}
+        />
+      ) : null}
+
+      {courseId && dueDateTarget ? (
+        <ChangeDueDateModal
+          open
+          onClose={() => setDueDateTarget(null)}
+          courseId={courseId}
+          courseTitle={title}
+          employeeIds={dueDateTarget.employeeIds}
+          employeeName={dueDateTarget.name}
+          currentDueDate={dueDateTarget.currentDueDate}
+          onSuccess={() => window.location.reload()}
         />
       ) : null}
     </div>
