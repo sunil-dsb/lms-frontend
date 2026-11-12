@@ -87,14 +87,14 @@ export function AssignPeopleModalView({
   return (
     <div className="flex flex-col h-full justify-between">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="font-[family-name:var(--font-ui)] text-xl font-bold tracking-tight text-[var(--color-ink)] leading-snug">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1 min-w-0 flex-1">
+            <h2 className="font-[family-name:var(--font-ui)] text-base sm:text-lg md:text-xl font-bold tracking-tight text-[var(--color-ink)] leading-snug break-words">
               {isEs ? `Asignar ${title}` : `Assign ${title}`}
             </h2>
-            <p className="text-sm text-[var(--color-ink-2)]">
+            <p className="text-xs sm:text-sm text-[var(--color-ink-2)] leading-relaxed">
               {isEs
                 ? "Los empleados lo ven en cuanto se asigna. Puedes seguir editándolo después."
                 : "Employees see it as soon as you assign it. You can keep editing afterwards."}
@@ -104,10 +104,10 @@ export function AssignPeopleModalView({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
+            className="rounded-full p-1.5 sm:p-2 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer shrink-0"
             aria-label="Close"
           >
-            <LuX className="text-xl" />
+            <LuX className="text-lg sm:text-xl" />
           </button>
         </div>
 
@@ -439,7 +439,7 @@ export function AssignPeopleModalView({
       </div>
 
       {/* Pinned Bottom Bar matching Main view footer (no !dueAt blocker) */}
-      <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-line)] bg-[var(--color-wash)]/80 px-4 sm:px-6 py-3 sm:py-4 rounded-b-[var(--radius-xl)]">
+      <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 border-t border-[var(--color-line)] bg-[var(--color-wash)]/80 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-b-[var(--radius-xl)]">
         <div className="flex items-center gap-2 text-sm">
           <span className="font-semibold text-[var(--color-ink)]">
             {selectedPeopleIds.size} {isEs ? "seleccionados" : "selected"}

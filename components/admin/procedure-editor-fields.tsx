@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 import {
   LuCheck,
-  LuChevronRight,
+  LuChevronDown,
   LuFileText,
   LuSearch,
   LuSparkles,
@@ -81,135 +81,149 @@ export function CategoryAccordion({
     isEs ? c.nameEs || c.nameEn : c.nameEn;
 
   return (
-    <div className="space-y-3">
+    // Dense flow reproduces the demo layout at any breakpoint: tiles fill
+    // rows of three, the open panel drops in right after its tile's row
+    // (the tiles that follow backfill the rest of that row), then the grid
+    // continues below — pure CSS, same accordion behaviour as before.
+    <div className="grid grid-flow-row-dense grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {categories.map((cat) => {
         const isOpen = openId === cat.id;
         const subs = cat.subcategories ?? [];
-        // A row is "active" when this parent owns the current selection —
-        // the whole header gets a brand tint and a brand icon tile, so the
-        // chosen category is unmissable. The checkmark on the right is the
-        // same affordance every selected list row wears.
+        // A tile is "active" when this parent owns the current selection —
+        // brand tint + brand icon tile, so the chosen category is
+        // unmissable. The checkmark on the right is the same affordance
+        // every selected list row wears.
         const isActiveParent = subs.some((s) => s.id === selectedSubcategoryId);
         const CatIcon = getCategoryIcon(cat);
         return (
-          <div
-            key={cat.id}
-            className={cn(
-              "overflow-hidden rounded-[var(--radius-lg)] border bg-[var(--color-surface)] shadow-2xs",
-              isActiveParent
-                ? "border-[var(--color-line-2)]"
-                : "border-[var(--color-line-2)]",
-            )}
-          >
-            <div
-              role="button"
-              tabIndex={0}
-              aria-expanded={isOpen}
-              onClick={() => setOpenId(isOpen ? null : cat.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setOpenId(isOpen ? null : cat.id);
-                }
-              }}
-              className={cn(
-                "flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]",
-                isActiveParent
-                  ? "bg-[var(--color-brand-tint)]"
-                  : isOpen
-                    ? "bg-[var(--color-wash)]"
-                    : "hover:bg-[var(--color-wash)]",
-              )}
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <IconTile
-                  size="sm"
-                  icon={CatIcon}
-                  tone={isActiveParent ? "quiet" : "neutral"}
-                />
-                <div className="min-w-0">
-                  <h3
-                    className={cn(
-                      "truncate text-sm font-semibold",
-                      isActiveParent
-                        ? "text-[var(--color-brand-700)]"
-                        : "text-[var(--color-ink)]",
-                    )}
-                  >
-                    {catName(cat)}
-                  </h3>
-                  <p
-                    className={cn(
-                      "mt-0.5 truncate text-xs leading-meta",
-                      isActiveParent
-                        ? "text-[var(--color-brand-700)] opacity-80"
-                        : "text-[var(--color-ink-3)]",
-                    )}
-                  >
-                    {subs.length === 0
-                      ? t("categoriesNoSubs")
-                      : t("categoriesCount", { count: subs.length })}
-                  </p>
+          <React.Fragment key={cat.id}>
+            <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xs">
+              <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={isOpen}
+                onClick={() => setOpenId(isOpen ? null : cat.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setOpenId(isOpen ? null : cat.id);
+                  }
+                }}
+                className={cn(
+                  "flex w-full cursor-pointer items-center justify-between gap-2 px-3 py-3 text-left transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-ring)]",
+                  isActiveParent
+                    ? "bg-[var(--color-brand-tint)]"
+                    : isOpen
+                      ? "bg-[var(--color-wash)]"
+                      : "hover:bg-[var(--color-wash)]",
+                )}
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <IconTile
+                    size="sm"
+                    icon={CatIcon}
+                    tone={isActiveParent ? "quiet" : "neutral"}
+                  />
+                  <div className="min-w-0">
+                    <h3
+                      className={cn(
+                        "truncate text-sm font-semibold",
+                        isActiveParent
+                          ? "text-[var(--color-brand-700)]"
+                          : "text-[var(--color-ink)]",
+                      )}
+                    >
+                      {catName(cat)}
+                    </h3>
+                    <p
+                      className={cn(
+                        "mt-0.5 truncate text-xs leading-meta",
+                        isActiveParent
+                          ? "text-[var(--color-brand-700)] opacity-80"
+                          : "text-[var(--color-ink-3)]",
+                      )}
+                    >
+                      {subs.length === 0
+                        ? t("categoriesNoSubs")
+                        : t("categoriesCount", { count: subs.length })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              {isActiveParent ? (
-                <span
-                  aria-hidden="true"
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-[var(--color-surface)]"
-                >
-                  <LuCheck aria-hidden="true" className="size-4" />
-                </span>
-              ) : (
-                <LuChevronRight
-                  aria-hidden="true"
-                  className={cn(
-                    "size-4 shrink-0 text-[var(--color-ink-3)] transition-transform",
-                    isOpen && "rotate-90 text-[var(--color-ink-2)]",
-                  )}
-                />
-              )}
-            </div>
-
-            {isOpen ? (
-              <div className="border-t border-[var(--color-line)] p-4">
-                {subs.length === 0 ? (
-                  <p className="text-sm text-[var(--color-ink-3)]">
-                    {t("categoriesNoSubs")}
-                  </p>
+                {isActiveParent ? (
+                  <span
+                    aria-hidden="true"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-600)] text-[var(--color-surface)]"
+                  >
+                    <LuCheck aria-hidden="true" className="size-4" />
+                  </span>
                 ) : (
-                  <ul className="flex flex-wrap gap-2" role="list">
-                    {subs.map((sub) => {
-                      const isSelected = selectedSubcategoryId === sub.id;
-                      return (
-                        <li key={sub.id}>
-                          <button
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => onSelectSubcategory(cat.id, sub.id)}
-                            className={cn(
-                              "inline-flex items-center gap-2 rounded-full border bg-[var(--color-surface)] px-4 py-3 text-sm font-semibold transition-colors",
-                              isSelected
-                                ? "border-[var(--color-brand-600)] text-[var(--color-brand-700)] ring-2 ring-[var(--color-brand-tint)]"
-                                : "border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-line-hover)] hover:bg-[var(--color-wash)]",
-                            )}
-                          >
-                            {isSelected ? (
-                              <LuCheck
-                                aria-hidden="true"
-                                className="size-4 text-[var(--color-brand-600)]"
-                              />
-                            ) : null}
-                            <span>{subName(sub)}</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <LuChevronDown
+                    aria-hidden="true"
+                    className={cn(
+                      "size-4 shrink-0 text-[var(--color-ink-3)] transition-transform",
+                      isOpen && "-rotate-180 text-[var(--color-ink-2)]",
+                    )}
+                  />
                 )}
               </div>
+            </div>
+
+            {/* Full-width chips panel — sits directly under the row that
+                holds its tile (dense flow backfills the rest of that row). */}
+            {isOpen ? (
+              <div
+                className={cn(
+                  "col-span-full rounded-[var(--radius-lg)] border bg-[var(--color-surface)] p-4",
+                  isActiveParent
+                    ? "border-[var(--color-brand-600)]"
+                    : "border-[var(--color-line-2)]",
+                )}
+              >
+                <p className="text-xs leading-meta text-[var(--color-ink-3)]">
+                  {t("categoriesSubLabel", { name: catName(cat) })}
+                </p>
+                <div className="mt-3">
+                  {subs.length === 0 ? (
+                    <p className="text-sm text-[var(--color-ink-3)]">
+                      {t("categoriesNoSubs")}
+                    </p>
+                  ) : (
+                    <ul className="flex flex-wrap gap-2" role="list">
+                      {subs.map((sub) => {
+                        const isSelected = selectedSubcategoryId === sub.id;
+                        return (
+                          <li key={sub.id}>
+                            <button
+                              type="button"
+                              aria-pressed={isSelected}
+                              onClick={() =>
+                                onSelectSubcategory(cat.id, sub.id)
+                              }
+                              className={cn(
+                                "inline-flex items-center gap-2 rounded-full border bg-[var(--color-surface)] px-4 py-3 text-sm font-semibold transition-colors",
+                                isSelected
+                                  ? "border-[var(--color-brand-600)] text-[var(--color-brand-700)] ring-2 ring-[var(--color-brand-tint)]"
+                                  : "border-[var(--color-line)] text-[var(--color-ink)] hover:border-[var(--color-line-hover)] hover:bg-[var(--color-wash)]",
+                              )}
+                            >
+                              {isSelected ? (
+                                <LuCheck
+                                  aria-hidden="true"
+                                  className="size-4 text-[var(--color-brand-600)]"
+                                />
+                              ) : null}
+                              <span>{subName(sub)}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
             ) : null}
-          </div>
+          </React.Fragment>
         );
       })}
     </div>

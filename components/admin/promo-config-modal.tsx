@@ -105,6 +105,28 @@ export function PromoConfigModal({
       setStations(initialStations);
     }
 
+    // Initial employee IDs: default to ALL employees selected on
+    const initialRawIds =
+      initialValues?.promoEmployeeIds &&
+      initialValues.promoEmployeeIds.length > 0
+        ? initialValues.promoEmployeeIds
+        : Array.isArray(procedure?.assignUsers) &&
+            procedure.assignUsers.length > 0
+          ? (procedure.assignUsers as unknown[]).filter(
+              (u): u is string => typeof u === "string",
+            )
+          : null;
+
+    if (initialRawIds !== null) {
+      setSelectedEmployeeIds(new Set(initialRawIds));
+    } else {
+      const list =
+        initialEmployees && initialEmployees.length > 0 ? initialEmployees : [];
+      if (list.length > 0) {
+        setSelectedEmployeeIds(new Set(list.map((e) => e.id)));
+      }
+    }
+
     if (!initialEmployees || !initialStations) {
       setIsLoading(true);
       Promise.all([
@@ -112,7 +134,13 @@ export function PromoConfigModal({
         fetchStations().catch(() => ({ stations: [] })),
       ])
         .then(([empRes, stRes]) => {
-          if (!initialEmployees) setEmployees(empRes.employees || []);
+          if (!initialEmployees) {
+            const fetched = empRes.employees || [];
+            setEmployees(fetched);
+            if (initialRawIds === null && fetched.length > 0) {
+              setSelectedEmployeeIds(new Set(fetched.map((e) => e.id)));
+            }
+          }
           if (!initialStations) setStations(stRes.stations || []);
         })
         .finally(() => {
@@ -139,16 +167,6 @@ export function PromoConfigModal({
         procedure?.promoExpiresAt ??
         defaultEndStr,
     );
-
-    // Initial employee IDs
-    const empIds =
-      initialValues?.promoEmployeeIds ??
-      (Array.isArray(procedure?.assignUsers)
-        ? (procedure.assignUsers as unknown[]).filter(
-            (u): u is string => typeof u === "string",
-          )
-        : []);
-    setSelectedEmployeeIds(new Set(empIds));
 
     // Initial stations
     const rawProc = procedure as
@@ -177,6 +195,10 @@ export function PromoConfigModal({
     employees.length > 0 &&
     employees.every((e) => selectedEmployeeIds.has(e.id));
 
+  const allStationsSelected =
+    stations.length > 0 &&
+    stations.every((st) => selectedStationIds.has(st.id));
+
   const handleToggleAllEmployees = () => {
     if (allEmployeesSelected) {
       setSelectedEmployeeIds(new Set());
@@ -186,10 +208,33 @@ export function PromoConfigModal({
   };
 
   const empHasStation = (e: AdminEmployee, sId: string): boolean => {
+    if ((e as { stationId?: string }).stationId === sId) return true;
     if (Array.isArray(e.stationIds) && e.stationIds.includes(sId)) return true;
-    if (Array.isArray(e.stations) && e.stations.some((st) => st.id === sId))
-      return true;
+    if (Array.isArray(e.stations)) {
+      return e.stations.some((st) =>
+        typeof st === "string" ? st === sId : st.id === sId,
+      );
+    }
     return false;
+  };
+
+  const handleToggleAllStations = () => {
+    if (allStationsSelected) {
+      setSelectedStationIds(new Set());
+    } else {
+      setSelectedStationIds(new Set(stations.map((st) => st.id)));
+      // Automatically select employees belonging to all stations
+      const stationEmps = employees.filter((e) =>
+        stations.some((st) => empHasStation(e, st.id)),
+      );
+      if (stationEmps.length > 0) {
+        setSelectedEmployeeIds((prev) => {
+          const next = new Set(prev);
+          stationEmps.forEach((e) => next.add(e.id));
+          return next;
+        });
+      }
+    }
   };
 
   const handleToggleStation = (stationId: string) => {
@@ -298,16 +343,20 @@ export function PromoConfigModal({
     >
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-[var(--color-line)] flex items-start justify-between gap-4 bg-[var(--color-wash)]/40">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="p-1 rounded-md bg-[var(--color-brand-tint)] text-[var(--color-brand-600)]">
+        <div className="p-4 sm:p-6 border-b border-[var(--color-line)] bg-[var(--color-wash)]/40 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="p-1 rounded-md bg-[var(--color-brand-tint)] text-[var(--color-brand-600)] shrink-0">
                 <LuSparkles className="size-4" />
               </span>
-              <h2 className="font-[family-name:var(--font-ui)] text-lg font-bold text-[var(--color-ink)]">
+              <h2 className="font-[family-name:var(--font-ui)] text-base sm:text-lg font-bold text-[var(--color-ink)] truncate">
                 {isEs ? "Platillo en promoción" : "Promo dish"}
               </h2>
-              <StatusPill tone={isPromo ? "ok" : "neutral"} withDot={isPromo}>
+              <StatusPill
+                tone={isPromo ? "ok" : "neutral"}
+                withDot={isPromo}
+                className="shrink-0 text-[11px]"
+              >
                 {isPromo
                   ? isEs
                     ? "Activo"
@@ -317,34 +366,42 @@ export function PromoConfigModal({
                     : "Inactive"}
               </StatusPill>
             </div>
-            <p className="text-xs text-[var(--color-ink-2)]">
-              {isEs
-                ? `Destaca "${title}" como promoción por tiempo limitado en el panel del personal.`
-                : `Feature "${title}" as a limited-time promo on the staff dashboard.`}
-            </p>
-          </div>
 
-          <label className="flex shrink-0 cursor-pointer items-center gap-2 bg-[var(--color-surface)] border border-[var(--color-line-2)] rounded-full px-3 py-1.5 shadow-2xs hover:border-[var(--color-brand-600)] transition-colors">
-            <input
-              type="checkbox"
-              checked={isPromo}
-              onChange={(e) => setIsPromo(e.target.checked)}
-              className="size-4 cursor-pointer accent-[var(--color-brand-600)]"
-            />
-            <span className="text-xs font-semibold text-[var(--color-ink)] select-none">
-              {isEs ? "Activar promoción" : "Enable promo"}
-            </span>
-          </label>
+            <label
+              className={cn(
+                "flex shrink-0 cursor-pointer items-center rounded-full border transition-all select-none shadow-2xs",
+                isPromo
+                  ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border-[var(--color-brand-600)] font-semibold"
+                  : "bg-[var(--color-surface)] text-[var(--color-ink-2)] border-[var(--color-line-2)] hover:border-[var(--color-ink-3)]",
+              )}
+              style={{ padding: "4px 10px", gap: "6px" }}
+            >
+              <input
+                type="checkbox"
+                checked={isPromo}
+                onChange={(e) => setIsPromo(e.target.checked)}
+                className="size-4 cursor-pointer accent-[var(--color-brand-600)]"
+              />
+              <span className="text-xs font-semibold select-none">
+                {isEs ? "Activar promoción" : "Enable promo"}
+              </span>
+            </label>
+          </div>
+          <p className="text-xs text-[var(--color-ink-2)] leading-relaxed">
+            {isEs
+              ? `Destaca "${title}" como promoción por tiempo limitado en el panel del personal.`
+              : `Feature "${title}" as a limited-time promo on the staff dashboard.`}
+          </p>
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
           {/* Start Date & Time */}
           <div className="space-y-2">
             <Label className="text-xs font-semibold text-[var(--color-ink)] block">
               {isEs ? "Fecha y hora de inicio" : "Start date & time"}
             </Label>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <Input
                 type="date"
                 value={startDate}
@@ -353,7 +410,7 @@ export function PromoConfigModal({
                     e.target.value ? `${e.target.value}T${startTime}` : null,
                   )
                 }
-                className="h-9 w-[150px] text-xs bg-[var(--color-surface)] border-[var(--color-line-2)]"
+                className="h-9 w-full sm:w-[150px] text-xs bg-[var(--color-surface)] border-[var(--color-line-2)]"
               />
               <Input
                 type="time"
@@ -365,7 +422,7 @@ export function PromoConfigModal({
                       : null,
                   )
                 }
-                className="h-9 w-[120px] text-xs bg-[var(--color-surface)] border-[var(--color-line-2)]"
+                className="h-9 w-full sm:w-[120px] text-xs bg-[var(--color-surface)] border-[var(--color-line-2)]"
               />
             </div>
           </div>
@@ -375,7 +432,7 @@ export function PromoConfigModal({
             <Label className="text-xs font-semibold text-[var(--color-ink)] block">
               {isEs ? "Fecha y hora de fin" : "End date & time"}
             </Label>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <Input
                 type="date"
                 min={startDate || todayLocal}
@@ -385,7 +442,7 @@ export function PromoConfigModal({
                     e.target.value ? `${e.target.value}T${endTime}` : null,
                   )
                 }
-                className="h-9 w-[150px] text-xs bg-[var(--color-surface)] border-[var(--color-line-2)]"
+                className="h-9 w-full sm:w-[150px] text-xs bg-[var(--color-surface)] border-[var(--color-line-2)]"
               />
               <Input
                 type="time"
@@ -395,28 +452,34 @@ export function PromoConfigModal({
                     endDate ? `${endDate}T${e.target.value || "23:59"}` : null,
                   )
                 }
-                className="h-9 w-[120px] text-xs bg-[var(--color-surface)] border-[var(--color-line-2)]"
+                className="h-9 w-full sm:w-[120px] text-xs bg-[var(--color-surface)] border-[var(--color-line-2)]"
               />
 
-              <div className="flex items-center gap-2">
+              <div
+                className="flex items-center flex-wrap pt-1 sm:pt-0"
+                style={{ gap: "6px" }}
+              >
                 <button
                   type="button"
                   onClick={() => setExpiryPreset(14)}
-                  className="rounded-full px-3 py-1.5 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                  className="rounded-full text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                  style={{ padding: "4px 10px" }}
                 >
                   +2 Weeks
                 </button>
                 <button
                   type="button"
                   onClick={() => setExpiryPreset(30)}
-                  className="rounded-full px-3 py-1.5 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                  className="rounded-full text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                  style={{ padding: "4px 10px" }}
                 >
                   +1 Month
                 </button>
                 <button
                   type="button"
                   onClick={() => setExpiryPreset(60)}
-                  className="rounded-full px-3 py-1.5 text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                  className="rounded-full text-xs font-medium border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] text-[var(--color-ink-2)] transition-colors cursor-pointer"
+                  style={{ padding: "4px 10px" }}
                 >
                   +2 Months
                 </button>
@@ -425,7 +488,7 @@ export function PromoConfigModal({
 
             {/* Explanatory note */}
             <div className="flex items-start gap-2 pt-1 text-xs text-[var(--color-ink-3)] leading-relaxed">
-              <LuInfo className="size-3.5 shrink-0 mt-0.5 text-[var(--color-brand-600)]" />
+              <LuInfo className="size-4 shrink-0 mt-0.5 text-[var(--color-brand-600)]" />
               <span>
                 {isEs
                   ? "Después de esta fecha, el platillo abandona automáticamente la sección de promoción y permanece en el menú regular de la estación."
@@ -438,20 +501,52 @@ export function PromoConfigModal({
             {/* Stations Selection */}
             {stations.length > 0 && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <LuUtensils className="size-3.5 text-[var(--color-ink-2)]" />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center" style={{ gap: "8px" }}>
+                    <LuUtensils className="size-4 text-[var(--color-ink-2)]" />
                     <Label className="text-xs font-semibold text-[var(--color-ink)]">
                       {isEs ? "Seleccionar por estación" : "Select by station"}
                     </Label>
+                    <StatusPill
+                      tone={
+                        allStationsSelected
+                          ? "ok"
+                          : selectedStationIds.size > 0
+                            ? "info"
+                            : "neutral"
+                      }
+                      className="text-[11px]"
+                    >
+                      {selectedStationIds.size}{" "}
+                      {isEs ? "seleccionadas" : "selected"}
+                    </StatusPill>
                   </div>
-                  <span className="text-xs text-[var(--color-ink-3)]">
-                    {selectedStationIds.size}{" "}
-                    {isEs ? "estaciones seleccionadas" : "stations selected"}
-                  </span>
+
+                  <button
+                    type="button"
+                    onClick={handleToggleAllStations}
+                    className={cn(
+                      "inline-flex items-center rounded-full text-xs font-semibold border transition-all cursor-pointer",
+                      allStationsSelected
+                        ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border-[var(--color-brand-600)] shadow-2xs"
+                        : "bg-[var(--color-surface)] text-[var(--color-ink-2)] border-[var(--color-line-2)] hover:border-[var(--color-ink-3)]",
+                    )}
+                    style={{ padding: "4px 12px", gap: "6px" }}
+                  >
+                    <LuCheck className="text-xs" />
+                    <span>
+                      {allStationsSelected
+                        ? isEs
+                          ? "Deseleccionar todas"
+                          : "Deselect all"
+                        : isEs
+                          ? "Todas las estaciones"
+                          : "All stations"}
+                    </span>
+                  </button>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap pt-1" style={{ gap: "8px" }}>
                   {stations.map((st) => {
                     const isSelected = selectedStationIds.has(st.id);
                     return (
@@ -460,14 +555,15 @@ export function PromoConfigModal({
                         type="button"
                         onClick={() => handleToggleStation(st.id)}
                         className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-all cursor-pointer",
+                          "inline-flex items-center rounded-full text-xs font-medium border transition-all cursor-pointer select-none",
                           isSelected
                             ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border-[var(--color-brand-600)] font-semibold shadow-2xs"
-                            : "bg-[var(--color-surface)] text-[var(--color-ink-2)] border-[var(--color-line-2)] hover:border-[var(--color-ink-3)]",
+                            : "bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--color-line-2)] hover:border-[var(--color-brand-600)]",
                         )}
+                        style={{ padding: "6px 14px", gap: "6px" }}
                       >
                         {isSelected && (
-                          <LuCheck className="text-xs stroke-[3]" />
+                          <LuCheck className="text-xs stroke-[3] text-[var(--color-brand-600)]" />
                         )}
                         <span>{st.name}</span>
                       </button>
@@ -479,9 +575,9 @@ export function PromoConfigModal({
 
             {/* Assign to Employees */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <LuUsers className="size-3.5 text-[var(--color-ink-2)]" />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center" style={{ gap: "8px" }}>
+                  <LuUsers className="size-4 text-[var(--color-ink-2)]" />
                   <Label className="text-xs font-semibold text-[var(--color-ink)]">
                     {isEs ? "Asignar a empleados" : "Assign to employees"}
                   </Label>
@@ -493,6 +589,7 @@ export function PromoConfigModal({
                           ? "info"
                           : "neutral"
                     }
+                    className="text-[11px]"
                   >
                     {selectedEmployeeIds.size}{" "}
                     {isEs ? "seleccionados" : "selected"}
@@ -503,14 +600,23 @@ export function PromoConfigModal({
                   type="button"
                   onClick={handleToggleAllEmployees}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border transition-all cursor-pointer",
+                    "inline-flex items-center rounded-full text-xs font-semibold border transition-all cursor-pointer",
                     allEmployeesSelected
-                      ? "bg-[var(--color-ok-tint)] text-[var(--color-ok)] border-[var(--color-ok)]/40"
+                      ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border-[var(--color-brand-600)] shadow-2xs"
                       : "bg-[var(--color-surface)] text-[var(--color-ink-2)] border-[var(--color-line-2)] hover:border-[var(--color-ink-3)]",
                   )}
+                  style={{ padding: "4px 12px", gap: "6px" }}
                 >
                   <LuCheck className="text-xs" />
-                  <span>{isEs ? "Todos los empleados" : "All employees"}</span>
+                  <span>
+                    {allEmployeesSelected
+                      ? isEs
+                        ? "Deseleccionar todos"
+                        : "Deselect all"
+                      : isEs
+                        ? "Todos los empleados"
+                        : "All employees"}
+                  </span>
                 </button>
               </div>
 
@@ -534,8 +640,11 @@ export function PromoConfigModal({
                 />
               </div>
 
-              {/* Employee list */}
-              <div className="max-h-48 overflow-y-auto divide-y divide-[var(--color-line-2)] rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)]">
+              {/* Employee list - scrollable block */}
+              <div
+                style={{ maxHeight: "190px" }}
+                className="overflow-y-auto divide-y divide-[var(--color-line-2)] rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-inner"
+              >
                 {filteredEmployees.length === 0 ? (
                   <p className="p-3 text-center text-xs text-[var(--color-ink-3)]">
                     {isEs

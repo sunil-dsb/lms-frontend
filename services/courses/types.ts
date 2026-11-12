@@ -26,6 +26,8 @@ export interface BackendCourse {
   status: TrainingCourseStatus;
   assignUsers?: string[] | null;
   stationIds?: string[] | null;
+  locationIds?: string[] | null;
+  jobIds?: string[] | null;
   assignedCount?: number;
   createdBy?: string | null;
   createdAt: string;

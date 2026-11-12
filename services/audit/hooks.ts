@@ -18,5 +18,6 @@ export function useAuditLogs(filters: AuditLogFilters = {}) {
     // The log is append-only and changes on every admin action — keep it
     // fresh rather than serving a stale page after a mutation elsewhere.
     staleTime: 30_000,
+    placeholderData: (previousData) => previousData,
   });
 }

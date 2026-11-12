@@ -11,6 +11,8 @@ import { getChapterDefinitions } from "@/lib/course-chapters-data";
 import { fetchCourseById } from "@/services/courses/api";
 import type { BackendCourse } from "@/services/courses/types";
 import { fetchStations } from "@/services/stations/api";
+import { fetchLocations } from "@/services/locations/api";
+import { fetchJobs } from "@/services/jobs/api";
 import {
   assignCourse,
   unassignCourse,
@@ -67,6 +69,12 @@ export function CourseAssignmentModal({
   const [stationList, setStationList] = React.useState<
     Array<{ id: string; name: string }>
   >([]);
+  const [locationsList, setLocationsList] = React.useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [jobsList, setJobsList] = React.useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [dbStations, setDbStations] = React.useState<string[]>([]);
   const [existingAssignments, setExistingAssignments] = React.useState<
     CourseAssignmentRow[]
@@ -79,6 +87,12 @@ export function CourseAssignmentModal({
   // Main modal state
   const [scope, setScope] = React.useState<AssignScope>("everyone");
   const [selectedStations, setSelectedStations] = React.useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedLocations, setSelectedLocations] = React.useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedJobs, setSelectedJobs] = React.useState<Set<string>>(
     new Set(),
   );
 
@@ -128,8 +142,10 @@ export function CourseAssignmentModal({
       fetchCourseAssignments(course.id),
       fetchCourseById(course.id).catch(() => null),
       fetchStations().catch(() => ({ stations: [] })),
+      fetchLocations().catch(() => ({ locations: [] })),
+      fetchJobs().catch(() => ({ jobs: [] })),
     ])
-      .then(([empRes, assignRes, detailRes, stationsRes]) => {
+      .then(([empRes, assignRes, detailRes, stationsRes, locRes, jobsRes]) => {
         if (!isMounted) return;
         if (empRes.success) {
           setEmployees(empRes.data);
@@ -139,6 +155,12 @@ export function CourseAssignmentModal({
         }
         if (detailRes) {
           setCourseDetail(detailRes);
+          if (detailRes.locationIds && Array.isArray(detailRes.locationIds)) {
+            setSelectedLocations(new Set(detailRes.locationIds));
+          }
+          if (detailRes.jobIds && Array.isArray(detailRes.jobIds)) {
+            setSelectedJobs(new Set(detailRes.jobIds));
+          }
         }
 
         const rawStations = stationsRes?.stations || [];
@@ -147,6 +169,21 @@ export function CourseAssignmentModal({
           .map((s) => s.name.trim())
           .filter(Boolean);
         setDbStations(realStations);
+
+        const rawLocs = locRes?.locations || [];
+        setLocationsList(rawLocs);
+        setJobsList(jobsRes?.jobs || []);
+
+        // If there is only 1 location, select it by default
+        if (rawLocs.length === 1) {
+          setSelectedLocations(new Set([rawLocs[0].id]));
+        } else if (
+          detailRes?.locationIds &&
+          Array.isArray(detailRes.locationIds) &&
+          detailRes.locationIds.length > 0
+        ) {
+          setSelectedLocations(new Set(detailRes.locationIds));
+        }
 
         // Pre-select only stations that have unassigned employees (not already fully assigned)
         const assignedIds = new Set(
@@ -173,6 +210,8 @@ export function CourseAssignmentModal({
     setView("main");
     setScope("everyone");
     setSelectedPeopleIds(new Set());
+    setSelectedLocations(new Set());
+    setSelectedJobs(new Set());
     setPeopleSearch("");
     setStationFilter("all");
     setDueAt(defaultDueDate());
@@ -227,9 +266,31 @@ export function CourseAssignmentModal({
     if (scope === "station") {
       const stationEmpIds = unassignedEmployees
         .filter((e) => {
-          if (selectedStations.has(e.station)) return true;
-          if (e.stations?.some((s) => selectedStations.has(s))) return true;
-          return false;
+          // 1. Location filter (active when multiple locations exist)
+          if (
+            locationsList.length > 1 &&
+            selectedLocations.size > 0 &&
+            (!e.locationId || !selectedLocations.has(e.locationId))
+          ) {
+            return false;
+          }
+
+          const hasJobFilter = selectedJobs.size > 0;
+          const hasStationFilter = selectedStations.size > 0;
+
+          // If no job or station filter is specified, match all employees in the location
+          if (!hasJobFilter && !hasStationFilter) {
+            return true;
+          }
+
+          const matchesJob =
+            hasJobFilter && e.jobIds?.some((j) => selectedJobs.has(j));
+          const matchesStation =
+            hasStationFilter &&
+            (selectedStations.has(e.station) ||
+              e.stations?.some((s) => selectedStations.has(s)));
+
+          return Boolean(matchesJob || matchesStation);
         })
         .map((e) => e.id);
       // Combine station employees with any individually selected employees
@@ -238,7 +299,33 @@ export function CourseAssignmentModal({
       );
     }
     return Array.from(selectedPeopleIds);
-  }, [scope, unassignedEmployees, selectedStations, selectedPeopleIds]);
+  }, [
+    scope,
+    unassignedEmployees,
+    selectedStations,
+    selectedLocations,
+    selectedJobs,
+    selectedPeopleIds,
+    locationsList,
+  ]);
+
+  function toggleLocation(id: string): void {
+    setSelectedLocations((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleJob(id: string): void {
+    setSelectedJobs((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   // Map of all employees belonging to each station (for preview and status counts)
   const stationEmployees = React.useMemo(() => {
@@ -414,7 +501,7 @@ export function CourseAssignmentModal({
     if (!course || isSubmitting) return;
 
     const selectedStationIds =
-      scope === "station"
+      scope === "station" && selectedStations.size > 0
         ? stationList
             .filter(
               (s) =>
@@ -425,9 +512,21 @@ export function CourseAssignmentModal({
             .map((s) => s.id)
         : undefined;
 
+    const selectedLocationIds =
+      scope === "station" && selectedLocations.size > 0
+        ? Array.from(selectedLocations)
+        : undefined;
+
+    const selectedJobIds =
+      scope === "station" && selectedJobs.size > 0
+        ? Array.from(selectedJobs)
+        : undefined;
+
     if (
       targetIds.length === 0 &&
-      (!selectedStationIds || selectedStationIds.length === 0)
+      (!selectedStationIds || selectedStationIds.length === 0) &&
+      (!selectedLocationIds || selectedLocationIds.length === 0) &&
+      (!selectedJobIds || selectedJobIds.length === 0)
     ) {
       return;
     }
@@ -438,6 +537,8 @@ export function CourseAssignmentModal({
         courseId: course.id,
         employeeIds: targetIds,
         stationIds: selectedStationIds,
+        locationIds: selectedLocationIds,
+        jobIds: selectedJobIds,
         dueAt: dueAt && dueAt.trim() ? dueAt : undefined,
         scope,
         isRequired,
@@ -487,7 +588,7 @@ export function CourseAssignmentModal({
         open={open}
         onClose={onClose}
         size="xl"
-        className="p-0 overflow-hidden w-full max-w-[720px] h-[640px] max-h-[90vh] rounded-[var(--radius-xl)] shadow-xl flex flex-col border border-[var(--color-line)] bg-[var(--color-surface)]"
+        className="p-0 overflow-hidden w-full max-w-[720px] h-[92vh] sm:h-[640px] max-h-[94vh] rounded-[var(--radius-xl)] shadow-xl flex flex-col border border-[var(--color-line)] bg-[var(--color-surface)]"
       >
         <div className="flex flex-col h-full overflow-hidden">
           {view === "main" ? (
@@ -527,9 +628,18 @@ export function CourseAssignmentModal({
               stationEmployeeCounts={stationEmployeeCounts}
               stationEmployees={stationEmployees}
               allEmployees={employees}
+              locationsList={locationsList}
+              selectedLocations={selectedLocations}
+              toggleLocation={toggleLocation}
+              jobsList={jobsList}
+              selectedJobs={selectedJobs}
+              toggleJob={toggleJob}
               onSelectAllStations={handleSelectAllStations}
               onDeselectAllStations={handleDeselectAllStations}
               onOpenPeopleView={() => {
+                if (scope === "everyone" || selectedPeopleIds.size === 0) {
+                  setSelectedPeopleIds(new Set(mainScopeEmployeeIds));
+                }
                 setScope("people");
                 setView("people");
               }}

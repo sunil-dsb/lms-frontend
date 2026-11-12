@@ -262,6 +262,8 @@ export async function assignCourseApi(
   mode: "add" | "replace" = "add",
   isRequired = false,
   stationIds?: string[],
+  locationIds?: string[],
+  jobIds?: string[],
 ): Promise<{ courseId: string; assignedCount: number; assignUsers: string[] }> {
   const payload: {
     employeeIds: string[];
@@ -269,6 +271,8 @@ export async function assignCourseApi(
     isRequired: boolean;
     dueDate?: string;
     stationIds?: string[];
+    locationIds?: string[];
+    jobIds?: string[];
   } = {
     employeeIds,
     mode,
@@ -279,6 +283,12 @@ export async function assignCourseApi(
   }
   if (stationIds) {
     payload.stationIds = stationIds;
+  }
+  if (locationIds) {
+    payload.locationIds = locationIds;
+  }
+  if (jobIds) {
+    payload.jobIds = jobIds;
   }
 
   const { data } = await http.post<{

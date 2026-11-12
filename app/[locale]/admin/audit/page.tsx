@@ -100,6 +100,7 @@ export default async function AdminAuditPage({
     itemType: {
       course: t("auditTypeCourse"),
       chapter: t("auditTypeChapter"),
+      quiz: t("auditTypeQuiz"),
       procedure: t("auditTypeProcedure"),
       assignment: t("auditTypeAssignment"),
       station: t("auditTypeStation"),
@@ -149,6 +150,12 @@ export default async function AdminAuditPage({
       chapters: t("auditFieldChapters"),
       overrideUntil: t("auditFieldOverrideUntil"),
       reason: t("auditFieldReason"),
+      procedureId: t("auditFieldProcedureId"),
+      quizId: t("auditFieldQuizId"),
+      minCorrectAnswers: t("auditFieldMinCorrectAnswers"),
+      nameEn: t("auditFieldNameEn"),
+      nameEs: t("auditFieldNameEs"),
+      questions: t("auditFieldQuestions"),
     } as Record<string, string>,
   };
 

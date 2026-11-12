@@ -21,6 +21,12 @@ interface AssignMainModalViewProps {
   selectedStations: Set<string>;
   toggleStation: (station: string) => void;
   availableStations: string[];
+  locationsList?: Array<{ id: string; name: string }>;
+  selectedLocations?: Set<string>;
+  toggleLocation?: (id: string) => void;
+  jobsList?: Array<{ id: string; name: string }>;
+  selectedJobs?: Set<string>;
+  toggleJob?: (id: string) => void;
   dueAt: string;
   setDueAt: (dueAt: string) => void;
   isRequired: boolean;
@@ -55,6 +61,12 @@ export function AssignMainModalView({
   selectedStations,
   toggleStation,
   availableStations,
+  locationsList = [],
+  selectedLocations = new Set(),
+  toggleLocation,
+  jobsList = [],
+  selectedJobs = new Set(),
+  toggleJob,
   dueAt,
   setDueAt,
   isRequired,
@@ -93,14 +105,14 @@ export function AssignMainModalView({
   return (
     <div className="flex flex-col h-full justify-between">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h2 className="font-[family-name:var(--font-ui)] text-xl font-bold tracking-tight text-[var(--color-ink)] leading-snug">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1 min-w-0 flex-1">
+            <h2 className="font-[family-name:var(--font-ui)] text-base sm:text-lg md:text-xl font-bold tracking-tight text-[var(--color-ink)] leading-snug break-words">
               {isEs ? `Asignar ${title}` : `Assign ${title}`}
             </h2>
-            <p className="text-sm text-[var(--color-ink-2)]">
+            <p className="text-xs sm:text-sm text-[var(--color-ink-2)] leading-relaxed">
               {isEs
                 ? "Los empleados lo ven en cuanto se asigna. Puedes seguir editándolo después."
                 : "Employees see it as soon as you assign it. You can keep editing afterwards."}
@@ -110,10 +122,10 @@ export function AssignMainModalView({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
+            className="rounded-full p-1.5 sm:p-2 text-[var(--color-ink-3)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer shrink-0"
             aria-label="Close"
           >
-            <LuX className="text-xl" />
+            <LuX className="text-lg sm:text-xl" />
           </button>
         </div>
 
@@ -241,7 +253,7 @@ export function AssignMainModalView({
               type="button"
               onClick={() => setScope("everyone")}
               className={cn(
-                "flex-1 py-2 text-sm font-medium rounded-full transition-all duration-150 text-center cursor-pointer",
+                "flex-1 py-1.5 sm:py-2 px-1 text-xs sm:text-sm font-medium rounded-full transition-all duration-150 text-center cursor-pointer truncate",
                 scope === "everyone"
                   ? "bg-[var(--color-brand-600)] text-white shadow-xs font-semibold"
                   : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)]",
@@ -254,20 +266,20 @@ export function AssignMainModalView({
               type="button"
               onClick={() => setScope("station")}
               className={cn(
-                "flex-1 py-2 text-sm font-medium rounded-full transition-all duration-150 text-center cursor-pointer",
+                "flex-1 py-1.5 sm:py-2 px-1 text-xs sm:text-sm font-medium rounded-full transition-all duration-150 text-center cursor-pointer truncate",
                 scope === "station"
                   ? "bg-[var(--color-brand-600)] text-white shadow-xs font-semibold"
                   : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)]",
               )}
             >
-              {isEs ? "Por estación" : "By station"}
+              {isEs ? "Por rol y estación" : "By role & station"}
             </button>
 
             <button
               type="button"
               onClick={onOpenPeopleView}
               className={cn(
-                "flex-1 py-2 text-sm font-medium rounded-full transition-all duration-150 text-center cursor-pointer",
+                "flex-1 py-1.5 sm:py-2 px-1 text-xs sm:text-sm font-medium rounded-full transition-all duration-150 text-center cursor-pointer truncate",
                 scope === "people"
                   ? "bg-[var(--color-brand-600)] text-white shadow-xs font-semibold"
                   : "text-[var(--color-ink-2)] hover:text-[var(--color-ink)]",
@@ -283,9 +295,120 @@ export function AssignMainModalView({
               : `Already assigned: ${existingAssignedCount}. This assignment will add: ${targetEmployeeCount}.`}
           </p>
 
-          {/* Station cards when "By station" is active */}
+          {/* Multi-rule cards when "By rules & station" is active */}
           {scope === "station" ? (
             <div className="space-y-3 pt-2 animate-in fade-in duration-150">
+              {/* Location Rule Filter */}
+              {locationsList.length > 0 && (
+                <div className="space-y-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-2)]">
+                      {isEs ? "Ubicación" : "Location"}
+                    </span>
+                    <span className="text-xs text-[var(--color-ink-3)]">
+                      {locationsList.length === 1
+                        ? isEs
+                          ? "Ubicación predeterminada"
+                          : "Default location"
+                        : selectedLocations.size === 0
+                          ? isEs
+                            ? "Aplica a todas las ubicaciones"
+                            : "Applies to all locations"
+                          : `${selectedLocations.size} ${isEs ? "seleccionadas" : "selected"}`}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap pt-1" style={{ gap: "8px" }}>
+                    {locationsList.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (toggleLocation && selectedLocations.size > 0) {
+                            selectedLocations.forEach((id) =>
+                              toggleLocation(id),
+                            );
+                          }
+                        }}
+                        className={cn(
+                          "inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border transition-all cursor-pointer select-none",
+                          selectedLocations.size === 0
+                            ? "bg-[var(--color-brand-600)] text-white border-[var(--color-brand-600)] font-semibold shadow-xs"
+                            : "bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--color-line)] hover:border-[var(--color-ink-2)]",
+                        )}
+                      >
+                        {isEs ? "Todas las ubicaciones" : "All locations"}
+                      </button>
+                    )}
+                    {locationsList.map((loc) => {
+                      const isSel =
+                        locationsList.length === 1 ||
+                        selectedLocations.has(loc.id);
+                      return (
+                        <button
+                          key={loc.id}
+                          type="button"
+                          onClick={() => {
+                            if (locationsList.length > 1) {
+                              toggleLocation?.(loc.id);
+                            }
+                          }}
+                          className={cn(
+                            "inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border transition-all select-none",
+                            locationsList.length > 1
+                              ? "cursor-pointer"
+                              : "cursor-default",
+                            isSel
+                              ? "bg-[var(--color-brand-600)] text-white border-[var(--color-brand-600)] font-semibold shadow-xs"
+                              : "bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--color-line)] hover:border-[var(--color-ink-2)]",
+                          )}
+                        >
+                          {loc.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Job Role Rule Filter */}
+              {jobsList.length > 0 && (
+                <div className="space-y-2 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface-subtle)] p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-2)]">
+                      {isEs
+                        ? "Puestos / Roles (opcional)"
+                        : "Job roles (optional)"}
+                    </span>
+                    <span className="text-xs text-[var(--color-ink-3)]">
+                      {selectedJobs.size === 0
+                        ? isEs
+                          ? "Cualquier puesto"
+                          : "Any job role"
+                        : `${selectedJobs.size} ${isEs ? "seleccionados" : "selected"}`}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap pt-1" style={{ gap: "8px" }}>
+                    {jobsList.map((job) => {
+                      const isSel = selectedJobs.has(job.id);
+                      return (
+                        <button
+                          key={job.id}
+                          type="button"
+                          onClick={() => toggleJob?.(job.id)}
+                          className={cn(
+                            "inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border transition-all cursor-pointer select-none",
+                            isSel
+                              ? "bg-[var(--color-brand-600)] text-white border-[var(--color-brand-600)] font-semibold shadow-xs"
+                              : "bg-[var(--color-surface)] text-[var(--color-ink)] border-[var(--color-line)] hover:border-[var(--color-ink-2)]",
+                          )}
+                        >
+                          {job.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Header with Quick Action */}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-2)]">
@@ -454,7 +577,7 @@ export function AssignMainModalView({
               </div>
             </div>
           ) : scope === "everyone" ? (
-            <div className="mt-2 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-wash)]/40 p-4 flex items-center justify-between gap-4 animate-in fade-in duration-150">
+            <div className="mt-2 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-wash)]/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-150">
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-[var(--color-ink)]">
                   {isEs
@@ -482,6 +605,19 @@ export function AssignMainModalView({
                             .length || 0
                         } pending).`}
                 </p>
+                {onOpenPeopleView && targetEmployeeCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={onOpenPeopleView}
+                    className="text-xs font-semibold text-[var(--color-brand-600)] hover:underline cursor-pointer inline-flex items-center gap-1 pt-1"
+                  >
+                    <span>
+                      {isEs
+                        ? `Ver todos los empleados seleccionados (${targetEmployeeCount}) →`
+                        : `View all selected employees (${targetEmployeeCount}) →`}
+                    </span>
+                  </button>
+                )}
               </div>
               <span
                 style={{ padding: "6px 14px" }}
@@ -612,25 +748,25 @@ export function AssignMainModalView({
       </div>
 
       {/* Pinned Footer Actions */}
-      <div className="shrink-0 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-[var(--color-line)] bg-[var(--color-wash)]/80 px-4 sm:px-6 py-3 sm:py-4 rounded-b-[var(--radius-xl)]">
+      <div className="shrink-0 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 border-t border-[var(--color-line)] bg-[var(--color-wash)]/80 px-3 sm:px-6 py-2.5 sm:py-3.5 rounded-b-[var(--radius-xl)]">
         <Button
           type="button"
           variant="surface"
           size="sm"
           onClick={() => router.push(`/${locale}/admin/training/${course.id}`)}
-          className="text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] rounded-full px-4 py-2 shadow-2xs hover:bg-[var(--color-wash)] cursor-pointer justify-center"
+          className="text-xs font-medium bg-[var(--color-surface)] border border-[var(--color-line)] rounded-full px-3 py-1.5 sm:px-4 sm:py-2 shadow-2xs hover:bg-[var(--color-wash)] cursor-pointer justify-center"
         >
-          <LuEye className="mr-2 text-sm" />
+          <LuEye className="mr-1.5 text-sm" />
           {isEs ? "Vista previa" : "Preview as employee"}
         </Button>
 
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex items-center justify-end gap-2 sm:gap-3">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="text-sm text-[var(--color-ink-2)] hover:text-[var(--color-ink)] cursor-pointer px-3"
+            className="text-xs sm:text-sm text-[var(--color-ink-2)] hover:text-[var(--color-ink)] cursor-pointer px-2.5 sm:px-3"
           >
             {tForm("cancel")}
           </Button>
@@ -648,7 +784,7 @@ export function AssignMainModalView({
                   : "Add quiz questions to each chapter to assign this course"
                 : undefined
             }
-            className="text-sm font-semibold px-5 py-2 rounded-full shadow-xs cursor-pointer flex-1 sm:flex-none justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className="text-xs sm:text-sm font-semibold px-4 sm:px-5 py-1.5 sm:py-2 rounded-full shadow-xs cursor-pointer flex-1 sm:flex-none justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting
               ? isEs

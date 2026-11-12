@@ -2,6 +2,7 @@
 export type AuditItemType =
   | "course"
   | "chapter"
+  | "quiz"
   | "procedure"
   | "assignment"
   | "station"
