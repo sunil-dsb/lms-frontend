@@ -73,7 +73,7 @@ export function ProgressOverview({
   } as const;
   const progressQuery = useQuery({
     queryKey: ["admin-training-progress", queryOptions],
-    queryFn: () => fetchTrainingProgressApi(undefined, queryOptions),
+    queryFn: () => fetchTrainingProgressApi(queryOptions),
     initialData:
       groupBy === "employee" &&
       statusFilter === "all" &&
@@ -88,19 +88,25 @@ export function ProgressOverview({
     },
     staleTime: 30_000,
   });
-  const progressData = progressQuery.data ?? {
-    summary: { completed: 0, inProgress: 0, overdue: 0 },
-    counts: { employees: 0, courses: 0 },
-    employees: [],
-    courses: [],
-    pagination: { page, limit: PAGE_SIZE, total: 0, totalPages: 0 },
-  };
+  const progressData = progressQuery.data ??
+    data ?? {
+      summary: { completed: 0, inProgress: 0, overdue: 0 },
+      counts: { employees: 0, courses: 0 },
+      employees: [],
+      courses: [],
+      pagination: { page, limit: PAGE_SIZE, total: 0, totalPages: 0 },
+    };
 
-  const visibleEmployeeRows = progressData.employees;
-  const visibleCourseRows = progressData.courses;
+  const visibleEmployeeRows = progressData.employees ?? [];
+  const visibleCourseRows = progressData.courses ?? [];
   const pagination = progressData.pagination;
-  const visibleCount = pagination?.total ?? 0;
-  const totalPages = pagination?.totalPages ?? 1;
+  const visibleCount =
+    pagination?.total ??
+    (groupBy === "employee"
+      ? (progressData.counts?.employees ?? visibleEmployeeRows.length)
+      : (progressData.counts?.courses ?? visibleCourseRows.length));
+  const totalPages =
+    pagination?.totalPages ?? Math.max(1, Math.ceil(visibleCount / PAGE_SIZE));
   const displayedPage = pagination?.page ?? page;
   const rangeStart =
     visibleCount === 0 ? 0 : (displayedPage - 1) * PAGE_SIZE + 1;

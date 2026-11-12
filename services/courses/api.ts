@@ -315,6 +315,32 @@ export async function unassignCourseApi(
 }
 
 /**
+ * PATCH /api/v1/courses/:id/assignments — Changes the due date on existing
+ * assignment rows (progress and membership untouched).
+ */
+export async function updateAssignmentDueDatesApi(
+  courseId: string,
+  employeeIds: string[],
+  dueDate: string,
+): Promise<{
+  courseId: string;
+  dueDate: string;
+  updatedCount: number;
+}> {
+  const { data } = await http.patch<{
+    success: boolean;
+    message: string;
+    data: {
+      courseId: string;
+      dueDate: string;
+      updatedCount: number;
+    };
+  }>(COURSES_ENDPOINTS.ASSIGNMENTS(courseId), { employeeIds, dueDate });
+
+  return data.data;
+}
+
+/**
  * GET /api/v1/courses/:id/assignments — Lists all assigned employees for a training course
  */
 export async function fetchCourseAssignmentsApi(
@@ -335,18 +361,34 @@ export async function fetchCourseAssignmentsApi(
 /**
  * GET /api/v1/courses/admin/progress — Aggregated training progress for Admin Progress tab
  */
+export type TrainingProgressOptions = {
+  status?: "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
+  groupBy?: "employee" | "course";
+  page?: number;
+  limit?: number;
+  search?: string;
+  includeAssignments?: boolean;
+};
+
 export async function fetchTrainingProgressApi(
-  cookieHeader?: string,
-  options: {
-    status?:
-      "complete" | "in_progress" | "overdue" | "not_started" | "due_soon";
-    groupBy?: "employee" | "course";
-    page?: number;
-    limit?: number;
-    search?: string;
-    includeAssignments?: boolean;
-  } = {},
+  cookieHeaderOrOptions?: string | TrainingProgressOptions,
+  maybeOptions?: TrainingProgressOptions,
 ): Promise<TrainingProgressData> {
+  let cookieHeader: string | undefined;
+  let options: TrainingProgressOptions = {};
+
+  if (typeof cookieHeaderOrOptions === "string") {
+    cookieHeader = cookieHeaderOrOptions;
+    options = maybeOptions ?? {};
+  } else if (
+    cookieHeaderOrOptions &&
+    typeof cookieHeaderOrOptions === "object"
+  ) {
+    options = cookieHeaderOrOptions;
+  } else if (maybeOptions && typeof maybeOptions === "object") {
+    options = maybeOptions;
+  }
+
   const headers: Record<string, string> = {};
 
   // The axios auth interceptor only sees the browser's cookies — server

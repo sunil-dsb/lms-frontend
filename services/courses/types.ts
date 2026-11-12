@@ -73,6 +73,10 @@ export interface EmployeeRequiredTrainingStatus {
   isOverridden?: boolean;
   overrideUntil?: string | null;
   overrideReason?: string | null;
+  /** Locks active: an incomplete required course is past its due date without an override. */
+  isRestricted?: boolean;
+  /** When locks begin (ISO) — midnight after the earliest incomplete due date. */
+  restrictAt?: string | null;
 }
 
 export interface EmployeeTrainingResponse {

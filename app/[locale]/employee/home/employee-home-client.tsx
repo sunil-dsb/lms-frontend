@@ -122,6 +122,12 @@ export function EmployeeHomeClient({
     );
   }
 
+  // The lock state must be known before any procedure rows paint: while
+  // `my-training` is still resolving, keep the sections in their skeleton so
+  // restricted employees never see a flash of unlocked content.
+  const trainingKnown =
+    trainingQuery.data !== undefined || trainingQuery.isError;
+
   return (
     <HomeContent
       locale={locale}
@@ -129,7 +135,7 @@ export function EmployeeHomeClient({
       titleOf={titleOf}
       employee={employee}
       procedures={procedures}
-      proceduresLoading={proceduresLoading}
+      proceduresLoading={proceduresLoading || !trainingKnown}
       trainingAssignments={trainingQuery.data?.assignments}
       requiredTraining={trainingQuery.data?.requiredTraining ?? null}
       trainingFailed={trainingQuery.isError}
@@ -455,12 +461,11 @@ function HomeContent({
             critical: t("flagCritical"),
             english: t("flagEnglishOnly"),
           }}
-          isOnboarding={Boolean(
-            requiredTraining &&
-            requiredTraining.requiredCount > 0 &&
-            !requiredTraining.isComplete &&
-            !requiredTraining.isOverridden,
-          )}
+          isOnboarding={
+            // Fail closed: if `my-training` errored the lock state is
+            // unknown, so render the locked view rather than content.
+            trainingFailed || Boolean(requiredTraining?.isRestricted)
+          }
           requiredTraining={requiredTraining}
         />
       </main>
