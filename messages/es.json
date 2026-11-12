@@ -1609,6 +1609,10 @@
     "clearFilter": "Mostrar a todos",
     "filteredCount": "Mostrando {shown} de {total}",
     "clearFilters": "Quitar filtro",
+    "searchLabel": "Buscar empleados",
+    "searchPlaceholder": "Buscar nombre, correo o código…",
+    "clearSearch": "Borrar búsqueda",
+    "noMatches": "Ningún empleado coincide con tu búsqueda.",
     "training": {
       "progress": {
         "title": "Progreso",

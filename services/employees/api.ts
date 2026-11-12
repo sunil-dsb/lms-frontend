@@ -130,6 +130,8 @@ export async function fetchEmployees(
       // Backend paginates (default 10) — ask for the whole roster: the
       // dashboard counts and People filters need every row to be correct.
       limit: 200,
+      // ?search= filters name / email / employee code server-side.
+      search: opts.q?.trim() || undefined,
     },
   });
 
