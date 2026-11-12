@@ -1609,6 +1609,10 @@
     "clearFilter": "Show everyone",
     "filteredCount": "Showing {shown} of {total}",
     "clearFilters": "Clear filter",
+    "searchLabel": "Search employees",
+    "searchPlaceholder": "Search name, email or code…",
+    "clearSearch": "Clear search",
+    "noMatches": "No employees match your search.",
     "training": {
       "progress": {
         "title": "Progress",
