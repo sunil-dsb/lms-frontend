@@ -59,6 +59,10 @@ export default async function AdminEmployeesPage({
     jobRolesEmpty: t("jobRolesEmpty"),
     stationsEmpty: t("stationsEmpty"),
     emailMissing: t("emailMissing"),
+    searchLabel: t("searchLabel"),
+    searchPlaceholder: t("searchPlaceholder"),
+    clearSearch: t("clearSearch"),
+    noMatches: t("noMatches"),
   };
 
   const statusBadge = (s: EmployeeStatus): string => {
@@ -101,7 +105,11 @@ export default async function AdminEmployeesPage({
         }))}
       />
 
+      {/* Keyed on the URL filters: client state survives same-route
+          navigations, so a chip / clear-link click must re-seed the
+          table's local search instead of carrying it over. */}
       <EmployeesClientTable
+        key={`${status}-${q}`}
         statusFilter={status}
         searchQuery={q}
         locale={locale}

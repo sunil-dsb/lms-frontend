@@ -5,6 +5,17 @@ import type {
   TrainingAssignmentStatus,
 } from "@/lib/types";
 
+/** Folded training counts for one employee — what the table row shows.
+ *  Sourced from GET /api/v1/courses/admin/progress (groupBy=employee). */
+export interface TrainingCounts {
+  /** Assigned courses. */
+  total: number;
+  /** Finished courses. */
+  complete: number;
+  /** Unfinished courses past their due date — flips the label to `--bad`. */
+  overdue: number;
+}
+
 /**
  * Compact training count for a single employee on a table row:
  *
@@ -19,18 +30,19 @@ import type {
  * row stands out in a scan — colour, not chrome, does the work.
  *
  * When `total === 0` there is nothing to train on, and a meter would be
- * invented. We render `—` in `--ink-3` instead.
+ * invented. We render `—` in `--ink-3` instead — `undefined` counts mean
+ * the person has no assigned courses at all.
  */
 export function TrainingSummary({
-  rows,
+  counts,
   className,
 }: {
-  rows: TrainingAssignmentRow[];
+  counts?: TrainingCounts | null;
   className?: string;
 }): React.ReactElement {
-  const total = rows.length;
-  const complete = rows.filter((r) => r.effectiveStatus === "complete").length;
-  const overdue = rows.filter((r) => r.effectiveStatus === "overdue").length;
+  const total = counts?.total ?? 0;
+  const complete = counts?.complete ?? 0;
+  const overdue = counts?.overdue ?? 0;
 
   if (total === 0) {
     return (

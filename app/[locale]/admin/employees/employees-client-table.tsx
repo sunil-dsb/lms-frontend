@@ -3,26 +3,25 @@
 import * as React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type {
-  AdminEmployee,
-  EmployeeStatus,
-  TrainingAssignmentRow,
-} from "@/lib/types";
+import { LuSearch, LuX } from "react-icons/lu";
+import type { AdminEmployee, EmployeeStatus } from "@/lib/types";
 import { StatusPill, type StatusTone } from "@/components/ui/status-pill";
 import { Avatar } from "@/components/ui/avatar";
-import { TrainingSummary } from "@/components/admin/training-summary";
+import {
+  TrainingSummary,
+  type TrainingCounts,
+} from "@/components/admin/training-summary";
 import { EmployeeRowActions } from "./employee-row-actions";
 import { EditRolesModal } from "./[id]/edit-roles-modal";
 import { Card, CardContent } from "@/components/ui/card";
-import { getTrainingRowsForEmployee } from "@/lib/mock-training";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchTrainingProgressApi } from "@/services/courses/api";
 import { useEmployees, EMPLOYEES_QUERY_KEY } from "@/services/employees/hooks";
 import { Pagination } from "@/components/ui/pagination";
 import { useRoles } from "@/services/jobs/hooks";
 import { useStations } from "@/services/stations/hooks";
 import { useLocations } from "@/services/locations/hooks";
 import type { UpdateEmployeeInput } from "@/services/employees/types";
-import { fold } from "@/lib/utils";
 
 interface EmployeesClientTableProps {
   statusFilter: EmployeeStatus | "all";
@@ -46,6 +45,10 @@ interface EmployeesClientTableProps {
     jobRolesEmpty: string;
     stationsEmpty: string;
     emailMissing: string;
+    searchLabel: string;
+    searchPlaceholder: string;
+    clearSearch: string;
+    noMatches: string;
   };
 }
 
@@ -58,10 +61,24 @@ export function EmployeesClientTable({
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  // The box owns its value so typing feels instant; the list query runs
+  // on the debounced copy (backend ?search=). Seeded from ?q= on mount —
+  // external URL changes re-seed it through the `key` the server page sets.
+  const [search, setSearch] = useState(searchQuery);
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+  React.useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearch(search), 300);
+    return () => window.clearTimeout(id);
+  }, [search]);
+
   // The list call is client-side (visible in the Network tab). The query
-  // key carries the status filter, so chip changes refetch through the
-  // same cache; StrictMode's double-mount dedupes into one request.
-  const { employees, isLoading } = useEmployees({ status: statusFilter });
+  // key carries the status filter and the debounced search, so chip or
+  // search changes refetch through the same cache; StrictMode's
+  // double-mount dedupes into one request.
+  const { employees, isLoading } = useEmployees({
+    status: statusFilter,
+    q: debouncedSearch,
+  });
 
   // Label + edit-modal catalogs from the shared session cache — same
   // queries the employee detail page uses, so switching between list
@@ -70,6 +87,43 @@ export function EmployeesClientTable({
   const { data: stations = [] } = useStations();
   const { data: locationsData } = useLocations();
   const locations = locationsData?.locations ?? [];
+
+  // Real training counts for the Training column — one request to the same
+  // endpoint the Progress tab uses, folded to one counts record per person.
+  // (This column used to read lib/mock-training rows keyed to demo ids like
+  // `emp-001`, so every real employee showed the "no training" dash.)
+  const { data: progress } = useQuery({
+    queryKey: [
+      "admin-training-progress",
+      { groupBy: "employee", includeAssignments: true, limit: 100 },
+    ],
+    queryFn: () =>
+      fetchTrainingProgressApi({
+        groupBy: "employee",
+        includeAssignments: true,
+        limit: 100,
+      }),
+    staleTime: 30_000,
+  });
+
+  const trainingByEmployee = React.useMemo(() => {
+    const map = new Map<string, TrainingCounts>();
+    for (const row of progress?.employees ?? []) {
+      // `assignments` carries the per-course due flags; without it, fall
+      // back to the row's overall status so the overdue tone still lands.
+      const overdue = row.assignments
+        ? row.assignments.filter((a) => a.isOverdue && !a.isComplete).length
+        : row.status === "overdue"
+          ? 1
+          : 0;
+      map.set(row.employeeId, {
+        total: row.coursesTotal,
+        complete: row.coursesDone,
+        overdue,
+      });
+    }
+    return map;
+  }, [progress]);
 
   // In-place edit modal. The kebab's Edit item calls `openEdit(employee)`
   // instead of navigating to the detail page — so the user can edit
@@ -95,9 +149,9 @@ export function EmployeesClientTable({
     void queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
   }
 
-  // Filter the live list on the client so the chip / search changes
-  // reflect in the same render frame. Server already filtered by status
-  // for the initial render; client reapplies on every refresh.
+  // The server already applied ?search= (name / email / employee code)
+  // and status — rows arrive filtered, so the client only reapplies the
+  // status chip defensively (as before) and sorts.
   //
   // After filtering, sort so anyone with training assigned rises to the
   // top — this is the People triage screen, and the people who need the
@@ -109,23 +163,12 @@ export function EmployeesClientTable({
       statusFilter === "all"
         ? employees
         : employees.filter((e) => e.status === statusFilter);
-    const bySearch = searchQuery.trim()
-      ? (() => {
-          const q = fold(searchQuery);
-          return byStatus.filter(
-            (e) =>
-              fold(e.name).includes(q) ||
-              fold(e.employeeCode ?? "").includes(q) ||
-              fold(e.email ?? "").includes(q),
-          );
-        })()
-      : byStatus;
-    return [...bySearch].sort((a, b) => {
-      const aHas = getTrainingRowsForEmployee(a.id).length > 0 ? 0 : 1;
-      const bHas = getTrainingRowsForEmployee(b.id).length > 0 ? 0 : 1;
+    return [...byStatus].sort((a, b) => {
+      const aHas = trainingByEmployee.get(a.id)?.total ? 0 : 1;
+      const bHas = trainingByEmployee.get(b.id)?.total ? 0 : 1;
       return aHas - bHas;
     });
-  }, [employees, statusFilter, searchQuery]);
+  }, [employees, statusFilter, trainingByEmployee]);
 
   // Reset to page 1 whenever the filter set changes; clamp when the list
   // shrinks under the current page (e.g. deactivation).
@@ -136,11 +179,29 @@ export function EmployeesClientTable({
 
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, searchQuery]);
+  }, [statusFilter, debouncedSearch]);
 
   React.useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
+
+  // Mirror the typed query into ?q= with a shallow history update — no
+  // navigation, so the shareable URL stays in step without racing the
+  // list query. The server's "showing people matching …" notice picks the
+  // value up on the next real render (same trick as the audit page).
+  React.useEffect(() => {
+    const id = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      const q = search.trim();
+      if (q) params.set("q", q);
+      else params.delete("q");
+      const qs = params.toString();
+      const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (next !== current) window.history.replaceState(null, "", next);
+    }, 300);
+    return () => window.clearTimeout(id);
+  }, [search]);
 
   // Lookup maps for the role/station cells. The whole catalog is small and
   // stable for the lifetime of the page, so we pay the map cost once.
@@ -159,6 +220,21 @@ export function EmployeesClientTable({
     return labels.statusDeactivated;
   };
 
+  function clearSearch(): void {
+    setSearch("");
+    // The page's notice is server-rendered from the original ?q=; a
+    // shallow history update can't clear it, so navigate only when the
+    // server actually rendered one.
+    if (searchQuery) {
+      const params = new URLSearchParams(window.location.search);
+      params.delete("q");
+      const qs = params.toString();
+      router.replace(`/${locale}/admin/employees${qs ? `?${qs}` : ""}`, {
+        scroll: false,
+      });
+    }
+  }
+
   /** Whole-row navigation. Click anywhere on the row to open the detail
    *  page; the kebab cell calls `stopPropagation` so its menu still opens
    *  independently. Enter / Space activate the row when focused. */
@@ -168,6 +244,31 @@ export function EmployeesClientTable({
 
   return (
     <>
+      {/* Search filters the rows client-side; the query is mirrored into
+          ?q= so the page's notice and shared links keep working. */}
+      <div className="find max-w-sm w-full sm:w-auto" role="search">
+        <LuSearch aria-hidden="true" className="i" />
+        <label className="sr-only" htmlFor="employees-search">
+          {labels.searchLabel}
+        </label>
+        <input
+          id="employees-search"
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={labels.searchPlaceholder}
+        />
+        {search ? (
+          <button
+            type="button"
+            onClick={clearSearch}
+            aria-label={labels.clearSearch}
+            className="shrink-0 text-[var(--color-ink-3)] hover:text-[var(--color-ink)]"
+          >
+            <LuX aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -176,7 +277,7 @@ export function EmployeesClientTable({
             </p>
           ) : visible.length === 0 ? (
             <p className="px-6 py-8 text-center text-sm text-[var(--color-muted-foreground)]">
-              {labels.empty}
+              {debouncedSearch.trim() ? labels.noMatches : labels.empty}
             </p>
           ) : (
             <>
@@ -207,8 +308,7 @@ export function EmployeesClientTable({
                             Boolean(s),
                           );
 
-                  const trainingRows: TrainingAssignmentRow[] =
-                    getTrainingRowsForEmployee(e.id);
+                  const training = trainingByEmployee.get(e.id);
 
                   return (
                     <div
@@ -272,12 +372,12 @@ export function EmployeesClientTable({
                       </div>
 
                       {/* Training row */}
-                      {trainingRows.length > 0 && (
+                      {(training?.total ?? 0) > 0 && (
                         <div className="mt-3 pt-3 border-t border-[var(--color-line-2)] flex items-center justify-between">
                           <span className="text-xs font-semibold text-[var(--color-ink-3)] uppercase tracking-wider">
                             {labels.thTraining}
                           </span>
-                          <TrainingSummary rows={trainingRows} />
+                          <TrainingSummary counts={training} />
                         </div>
                       )}
                     </div>
@@ -326,8 +426,7 @@ export function EmployeesClientTable({
                                 Boolean(s),
                               );
 
-                      const trainingRows: TrainingAssignmentRow[] =
-                        getTrainingRowsForEmployee(e.id);
+                      const training = trainingByEmployee.get(e.id);
 
                       return (
                         <tr
@@ -375,7 +474,7 @@ export function EmployeesClientTable({
                               : "—"}
                           </td>
                           <td>
-                            <TrainingSummary rows={trainingRows} />
+                            <TrainingSummary counts={training} />
                           </td>
                           <td>
                             <StatusPill tone={tone}>
