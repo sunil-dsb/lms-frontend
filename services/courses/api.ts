@@ -122,46 +122,18 @@ export async function fetchCourses(
   return data.data;
 }
 
-// In-memory course cache and in-flight request deduplication to prevent duplicate API hits
-const courseCache = new Map<
-  string,
-  { data: BackendCourse; timestamp: number }
->();
+// No result cache — every call hits the API (in-flight requests only are coalesced).
 const courseInFlight = new Map<string, Promise<BackendCourse>>();
-
-export function setCachedCourse(course: BackendCourse): void {
-  if (!course?.id) return;
-  courseCache.set(course.id, { data: course, timestamp: Date.now() });
-}
-
-export function clearCourseCache(id?: string): void {
-  if (id) {
-    courseCache.delete(id);
-    courseInFlight.delete(id);
-  } else {
-    courseCache.clear();
-    courseInFlight.clear();
-  }
-}
 
 /**
  * GET /api/v1/courses/:id — Fetches a course by UUID along with its ordered chapters
  */
-export async function fetchCourseById(
-  id: string,
-  bypassCache = false,
-): Promise<BackendCourse> {
+export async function fetchCourseById(id: string): Promise<BackendCourse> {
   if (!id) throw new Error("Course ID is required");
 
-  if (!bypassCache) {
-    const cached = courseCache.get(id);
-    if (cached && Date.now() - cached.timestamp < 10000) {
-      return cached.data;
-    }
-    const inFlight = courseInFlight.get(id);
-    if (inFlight) {
-      return inFlight;
-    }
+  const inFlight = courseInFlight.get(id);
+  if (inFlight) {
+    return inFlight;
   }
 
   const promise = (async () => {
@@ -172,9 +144,7 @@ export async function fetchCourseById(
         data: { course: BackendCourse };
       }>(COURSES_ENDPOINTS.GET(id));
 
-      const course = data.data.course;
-      courseCache.set(id, { data: course, timestamp: Date.now() });
-      return course;
+      return data.data.course;
     } finally {
       courseInFlight.delete(id);
     }
@@ -196,9 +166,7 @@ export async function createCourse(
     data: { course: BackendCourse };
   }>(COURSES_ENDPOINTS.CREATE, input);
 
-  const course = data.data.course;
-  setCachedCourse(course);
-  return course;
+  return data.data.course;
 }
 
 /**
@@ -214,9 +182,7 @@ export async function updateCourse(
     data: { course: BackendCourse };
   }>(COURSES_ENDPOINTS.UPDATE(id), input);
 
-  const course = data.data.course;
-  setCachedCourse(course);
-  return course;
+  return data.data.course;
 }
 
 /**

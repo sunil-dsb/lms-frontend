@@ -162,14 +162,9 @@ export async function verifyResetToken(token: string): Promise<{
 }
 
 const inFlightMe = new Map<string, Promise<{ employee: Employee }>>();
-const cachedMe = new Map<
-  string,
-  { data: { employee: Employee }; expiresAt: number }
->();
-const ME_CACHE_TTL_MS = 15 * 60_000; // 15 minutes sliding TTL
 
+// No result cache — every call hits the API (in-flight requests only are coalesced).
 export function clearMeCache(): void {
-  cachedMe.clear();
   inFlightMe.clear();
 }
 
@@ -180,12 +175,6 @@ export async function fetchMe(
   const cacheKey =
     cookieHeader ||
     (typeof window !== "undefined" ? "client" : "server_default");
-  const now = Date.now();
-
-  const cached = cachedMe.get(cacheKey);
-  if (cached && cached.expiresAt > now) {
-    return cached.data;
-  }
 
   const existing = inFlightMe.get(cacheKey);
   if (existing) {
@@ -218,17 +207,12 @@ export async function fetchMe(
       });
 
       if (data.data?.employee) {
-        const res = { employee: data.data.employee };
-        cachedMe.set(cacheKey, {
-          data: res,
-          expiresAt: Date.now() + ME_CACHE_TTL_MS,
-        });
-        return res;
+        return { employee: data.data.employee };
       }
 
       if (data.data?.user) {
         const userRole = (data.data.role as EmployeeRole) || "super_admin";
-        const res = {
+        return {
           employee: {
             id: data.data.user.id,
             name: data.data.user.name,
@@ -240,24 +224,9 @@ export async function fetchMe(
             languagePref: "en" as const,
           },
         };
-        cachedMe.set(cacheKey, {
-          data: res,
-          expiresAt: Date.now() + ME_CACHE_TTL_MS,
-        });
-        return res;
       }
     } catch (err) {
-      // If we have a previously cached session and this is a non-401 transient error,
-      // preserve the session rather than kicking the user to the login screen.
-      if (
-        cached &&
-        err instanceof ApiException &&
-        err.status !== 401 &&
-        err.status !== 403
-      ) {
-        cached.expiresAt = Date.now() + 60_000;
-        return cached.data;
-      }
+      // Non-ApiException errors fall through to the SESSION_INVALID throw below.
       if (err instanceof ApiException) {
         throw err;
       }

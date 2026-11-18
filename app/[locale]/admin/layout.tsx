@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import * as React from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cookies } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
 import { fetchMe, listLocations, logout } from "@/lib/api";
@@ -31,6 +32,14 @@ export default async function AdminLayout({
   children,
   params,
 }: AdminLayoutProps): Promise<React.ReactElement> {
+  // Auth must only run against a real user request. Without this, the dev
+  // prerender pass evaluates this layout with an empty cookie set, the
+  // `redirect()` below counts as a *successful* prerendered result, and every
+  // later request — even authenticated — is answered from that cached 307
+  // (login succeeds, then bounces straight back to the login screen).
+  // `connection()` stops prerendering here; keep it outside the try/catch so
+  // the bailout error is never swallowed.
+  await connection();
   const { locale } = await params;
   setRequestLocale(locale);
 

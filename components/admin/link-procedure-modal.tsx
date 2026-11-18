@@ -87,9 +87,6 @@ export function LinkProcedureModal({
     if (selectedIds.includes(id)) {
       setSelectedIds(selectedIds.filter((item) => item !== id));
     } else {
-      if (selectedIds.length >= 3) {
-        return; // Max 3 reached
-      }
       setSelectedIds([...selectedIds, id]);
     }
   };
@@ -120,29 +117,20 @@ export function LinkProcedureModal({
             </h3>
             <p className="mt-0.5 sm:mt-1 text-xs text-[var(--color-ink-2)]">
               {isEs
-                ? "Selecciona hasta 3 procedimientos para vincular a este contenido."
-                : "Select up to 3 procedures to link into this content."}
+                ? "Selecciona procedimientos para vincular a este contenido."
+                : "Select procedures to link into this content."}
             </p>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0 pt-0.5">
             <span
-              className={`inline-flex items-center justify-center px-2 py-0.5 rounded-[var(--radius-sm)] text-xs font-semibold whitespace-nowrap min-w-[68px] text-center shrink-0 ${
-                selectedIds.length === 3
-                  ? "bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)] border border-[var(--color-warn-tint-2)]"
-                  : selectedIds.length > 0
-                    ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)] dark:bg-[var(--color-brand-950)]/60 dark:text-[var(--color-brand-300)] border border-[var(--color-brand-200)] dark:border-[var(--color-brand-800)]"
-                    : "bg-[var(--color-wash)] text-[var(--color-ink-2)] border border-[var(--color-line-2)]"
+              className={`inline-flex items-center justify-center px-2 py-0.5 rounded-[var(--radius-sm)] text-xs font-semibold whitespace-nowrap text-center shrink-0 ${
+                selectedIds.length > 0
+                  ? "bg-[var(--color-brand-50)] text-[var(--color-brand-700)] dark:bg-[var(--color-brand-950)]/60 dark:text-[var(--color-brand-300)] border border-[var(--color-brand-200)] dark:border-[var(--color-brand-800)]"
+                  : "bg-[var(--color-wash)] text-[var(--color-ink-2)] border border-[var(--color-line-2)]"
               }`}
             >
-              {selectedIds.length}/3{" "}
-              {selectedIds.length === 3
-                ? isEs
-                  ? "máx."
-                  : "max"
-                : isEs
-                  ? "sel."
-                  : "selected"}
+              {selectedIds.length} {isEs ? "seleccionados" : "selected"}
             </span>
 
             <button
@@ -201,7 +189,6 @@ export function LinkProcedureModal({
           ) : (
             filteredProcedures.map((proc) => {
               const isSelected = selectedIds.includes(proc.id);
-              const isMaxAndUnselected = selectedIds.length >= 3 && !isSelected;
               const title = isEs
                 ? proc.titleEs || proc.titleEn
                 : proc.titleEn || proc.titleEs;
@@ -212,23 +199,20 @@ export function LinkProcedureModal({
               return (
                 <div
                   key={proc.id}
-                  onClick={() => !isMaxAndUnselected && handleToggle(proc.id)}
+                  onClick={() => handleToggle(proc.id)}
                   role="checkbox"
                   aria-checked={isSelected}
-                  aria-disabled={isMaxAndUnselected}
-                  tabIndex={isMaxAndUnselected ? -1 : 0}
+                  tabIndex={0}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      if (!isMaxAndUnselected) handleToggle(proc.id);
+                      handleToggle(proc.id);
                     }
                   }}
                   className={`group flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] sm:px-4 ${
-                    isMaxAndUnselected
-                      ? "cursor-not-allowed border-[var(--color-line-2)] opacity-50"
-                      : isSelected
-                        ? "cursor-pointer border-[var(--color-brand-200)] bg-[var(--color-brand-50)]/70 shadow-2xs dark:border-[var(--color-brand-800)]/60 dark:bg-[var(--color-brand-950)]/40"
-                        : "cursor-pointer border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)]"
+                    isSelected
+                      ? "cursor-pointer border-[var(--color-brand-200)] bg-[var(--color-brand-50)]/70 shadow-2xs dark:border-[var(--color-brand-800)]/60 dark:bg-[var(--color-brand-950)]/40"
+                      : "cursor-pointer border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)]"
                   }`}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -273,7 +257,7 @@ export function LinkProcedureModal({
           <div className="flex items-center justify-between text-xs font-semibold text-[var(--color-ink)]">
             <span>
               {isEs ? "Procedimientos seleccionados" : "Selected procedures"} (
-              {selectedIds.length}/3):
+              {selectedIds.length}):
             </span>
             {selectedIds.length > 0 && (
               <button
@@ -289,8 +273,8 @@ export function LinkProcedureModal({
           {selectedIds.length === 0 ? (
             <p className="text-xs text-[var(--color-ink-3)] italic py-0.5">
               {isEs
-                ? "Ninguno seleccionado. Elige hasta 3 arriba."
-                : "None selected. Pick up to 3 from the list above."}
+                ? "Ninguno seleccionado. Elige procedimientos de la lista superior."
+                : "None selected. Pick procedures from the list above."}
             </p>
           ) : (
             <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">

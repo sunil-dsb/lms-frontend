@@ -103,7 +103,6 @@ export function EmployeesClientTable({
         includeAssignments: true,
         limit: 100,
       }),
-    staleTime: 30_000,
   });
 
   const trainingByEmployee = React.useMemo(() => {
@@ -283,7 +282,7 @@ export function EmployeesClientTable({
             <>
               {/* Mobile Card List (< md) */}
               <div className="divide-y divide-[var(--color-line)] md:hidden">
-                {visible.map((e) => {
+                {paged.map((e) => {
                   const tone: StatusTone =
                     e.status === "active"
                       ? "ok"
@@ -401,7 +400,7 @@ export function EmployeesClientTable({
                     </tr>
                   </thead>
                   <tbody>
-                    {visible.map((e) => {
+                    {paged.map((e) => {
                       const tone: StatusTone =
                         e.status === "active"
                           ? "ok"

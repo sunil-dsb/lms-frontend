@@ -41,8 +41,6 @@ export function useCourse(id: string) {
     queryKey: [...COURSES_QUERY_KEY, id],
     queryFn: () => fetchCourseById(id),
     enabled: Boolean(id),
-    staleTime: 60 * 1000,
-    refetchOnWindowFocus: false,
   });
 }
 

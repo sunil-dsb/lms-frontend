@@ -7,9 +7,10 @@ export const JOBS_QUERY_KEY = ["jobs"] as const;
 export const ROLES_QUERY_KEY = ["roles"] as const;
 
 /**
- * Jobs / roles through TanStack Query (5 min staleTime, no refetch on
- * focus — provider defaults). Previously hand-rolled useState+useEffect
- * loaders with no dedup or TTL, so every mount paid a backend round-trip.
+ * Jobs / roles through TanStack Query (provider defaults: staleTime 0 —
+ * a fresh API call whenever the data is needed). Previously hand-rolled
+ * useState+useEffect loaders with no dedup, so concurrent mounts each paid
+ * a backend round-trip.
  */
 export function useJobs() {
   const query = useQuery({

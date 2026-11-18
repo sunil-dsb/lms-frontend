@@ -7,9 +7,10 @@ import type { EmployeeFilterOptions } from "./types";
 export const EMPLOYEES_QUERY_KEY = ["employees"] as const;
 
 /**
- * Employees list through TanStack Query (5 min staleTime, no refetch on
- * focus — provider defaults). Previously a hand-rolled useState+useEffect
- * loader with no dedup or TTL, so every mount paid a backend round-trip.
+ * Employees list through TanStack Query (provider defaults: staleTime 0 —
+ * a fresh API call whenever the data is needed). Previously a hand-rolled
+ * useState+useEffect loader with no dedup, so concurrent mounts each paid a
+ * backend round-trip.
  */
 export function useEmployees(options: EmployeeFilterOptions = {}) {
   const status = options.status ?? "all";

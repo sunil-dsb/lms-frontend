@@ -81,6 +81,9 @@ export function PromoConfigModal({
     Set<string>
   >(new Set());
   const [employeeSearch, setEmployeeSearch] = React.useState("");
+  const [validationError, setValidationError] = React.useState<string | null>(
+    null,
+  );
 
   // Setup defaults
   const today = new Date();
@@ -99,29 +102,34 @@ export function PromoConfigModal({
     if (!open) return;
 
     if (initialEmployees && initialEmployees.length > 0) {
-      setEmployees(initialEmployees);
+      setEmployees(initialEmployees.filter((e) => e.role === "employee"));
     }
     if (initialStations && initialStations.length > 0) {
       setStations(initialStations);
     }
 
-    // Initial employee IDs: default to ALL employees selected on
+    // Initial employee IDs: default to ALL employees selected
+    const extractIds = (list: unknown[]): string[] =>
+      list
+        .map((u: any) => (typeof u === "string" ? u : u?.id))
+        .filter((id): id is string => typeof id === "string" && id.length > 0);
+
     const initialRawIds =
       initialValues?.promoEmployeeIds &&
       initialValues.promoEmployeeIds.length > 0
-        ? initialValues.promoEmployeeIds
+        ? extractIds(initialValues.promoEmployeeIds)
         : Array.isArray(procedure?.assignUsers) &&
             procedure.assignUsers.length > 0
-          ? (procedure.assignUsers as unknown[]).filter(
-              (u): u is string => typeof u === "string",
-            )
+          ? extractIds(procedure.assignUsers)
           : null;
 
     if (initialRawIds !== null) {
       setSelectedEmployeeIds(new Set(initialRawIds));
     } else {
       const list =
-        initialEmployees && initialEmployees.length > 0 ? initialEmployees : [];
+        initialEmployees && initialEmployees.length > 0
+          ? initialEmployees.filter((e) => e.role === "employee")
+          : [];
       if (list.length > 0) {
         setSelectedEmployeeIds(new Set(list.map((e) => e.id)));
       }
@@ -135,7 +143,9 @@ export function PromoConfigModal({
       ])
         .then(([empRes, stRes]) => {
           if (!initialEmployees) {
-            const fetched = empRes.employees || [];
+            const fetched = (empRes.employees || []).filter(
+              (e) => e.role === "employee",
+            );
             setEmployees(fetched);
             if (initialRawIds === null && fetched.length > 0) {
               setSelectedEmployeeIds(new Set(fetched.map((e) => e.id)));
@@ -148,25 +158,29 @@ export function PromoConfigModal({
         });
     }
 
-    // Populate initial values
+    // Populate initial values:
+    // If the modal was opened, the user's intent is to make it a promo (Active) by default,
+    // unless an explicit boolean override was passed in initialValues.
     const effectiveIsPromo =
-      initialValues?.isPromo ?? procedure?.isPromo ?? true;
+      typeof initialValues?.isPromo === "boolean"
+        ? initialValues.isPromo
+        : true;
     setIsPromo(effectiveIsPromo);
 
     const now = new Date();
     const defaultStart = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T00:00`;
-    setPromoStartsAt(
-      initialValues?.promoStartsAt ?? procedure?.promoStartsAt ?? defaultStart,
-    );
+    const rawStart = initialValues?.promoStartsAt ?? procedure?.promoStartsAt;
+    const isPastStart = rawStart
+      ? new Date(rawStart).getTime() < Date.now() - 30 * 24 * 3600 * 1000
+      : false;
+    setPromoStartsAt(rawStart && !isPastStart ? rawStart : defaultStart);
 
     const defaultEnd = new Date();
     defaultEnd.setDate(defaultEnd.getDate() + 30);
     const defaultEndStr = `${defaultEnd.getFullYear()}-${pad(defaultEnd.getMonth() + 1)}-${pad(defaultEnd.getDate())}T23:59`;
-    setPromoExpiresAt(
-      initialValues?.promoExpiresAt ??
-        procedure?.promoExpiresAt ??
-        defaultEndStr,
-    );
+    const rawEnd = initialValues?.promoExpiresAt ?? procedure?.promoExpiresAt;
+    const isPastEnd = rawEnd ? new Date(rawEnd).getTime() <= Date.now() : false;
+    setPromoExpiresAt(rawEnd && !isPastEnd ? rawEnd : defaultEndStr);
 
     // Initial stations
     const rawProc = procedure as
@@ -179,6 +193,7 @@ export function PromoConfigModal({
     setSelectedStationIds(new Set(stIds));
 
     setEmployeeSearch("");
+    setValidationError(null);
     setIsSaving(false);
   }, [open, procedure, initialValues, initialEmployees, initialStations]);
 
@@ -293,6 +308,18 @@ export function PromoConfigModal({
 
   const handleSubmit = async () => {
     if (isSaving) return;
+    if (isPromo && promoExpiresAt) {
+      const expTime = new Date(promoExpiresAt).getTime();
+      if (!Number.isNaN(expTime) && expTime <= Date.now()) {
+        setValidationError(
+          isEs
+            ? "La fecha de fin de la promoción debe ser en el futuro."
+            : "The promo end date must be in the future (an expired promo will be automatically archived).",
+        );
+        return;
+      }
+    }
+    setValidationError(null);
     setIsSaving(true);
     try {
       await onSave({
@@ -686,6 +713,12 @@ export function PromoConfigModal({
             </div>
           </div>
         </div>
+
+        {validationError && (
+          <div className="px-4 sm:px-6 py-2 bg-red-500/10 border-t border-red-500/20 text-xs font-semibold text-red-600 dark:text-red-400">
+            {validationError}
+          </div>
+        )}
 
         {/* Footer */}
         <div className="p-4 border-t border-[var(--color-line)] flex items-center justify-between gap-3 bg-[var(--color-wash)]/40">

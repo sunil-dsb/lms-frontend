@@ -9,35 +9,18 @@ import type {
 } from "./types";
 
 const inFlightStations = new Map<string, Promise<{ stations: Station[] }>>();
-const cachedStations = new Map<
-  string,
-  { data: { stations: Station[] }; expiresAt: number }
->();
-const STATIONS_CACHE_TTL_MS = 15_000;
-
-export function clearStationsCache(): void {
-  cachedStations.clear();
-  inFlightStations.clear();
-}
 
 export async function fetchStations(
   opts: StationFilterOptions = {},
   cookieHeader?: string,
 ): Promise<{ stations: Station[] }> {
-  // Browser-only cache: the module-level Maps persist in the server process
-  // across requests, so a cached server response would hide freshly created
-  // stations from the re-render after router.refresh() (same staleness bug
-  // as the jobs cache — see services/jobs/api.ts → fetchJobs).
-  const useCache = typeof window !== "undefined";
-  const cacheKey = `${JSON.stringify(opts)}_${cookieHeader || (useCache ? "client" : "server_default")}`;
-  const now = Date.now();
+  // No result cache — every call hits the API. In-flight coalescing stays
+  // browser-only: the module-level Map persists in the server process across
+  // requests, so server renders must never share a promise.
+  const coalesce = typeof window !== "undefined";
+  const cacheKey = `${JSON.stringify(opts)}_${cookieHeader || (coalesce ? "client" : "server_default")}`;
 
-  if (useCache) {
-    const cached = cachedStations.get(cacheKey);
-    if (cached && cached.expiresAt > now) {
-      return cached.data;
-    }
-
+  if (coalesce) {
     const existing = inFlightStations.get(cacheKey);
     if (existing) {
       return existing;
@@ -73,20 +56,13 @@ export async function fetchStations(
         name: s.name,
       }));
 
-      const res = { stations };
-      if (useCache) {
-        cachedStations.set(cacheKey, {
-          data: res,
-          expiresAt: Date.now() + STATIONS_CACHE_TTL_MS,
-        });
-      }
-      return res;
+      return { stations };
     } finally {
       inFlightStations.delete(cacheKey);
     }
   })();
 
-  if (useCache) {
+  if (coalesce) {
     inFlightStations.set(cacheKey, stationsPromise);
   }
   return stationsPromise;

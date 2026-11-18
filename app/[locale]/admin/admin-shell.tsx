@@ -1,14 +1,13 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { Employee, SystemRole } from "@/lib/types";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LocaleSwitch } from "@/components/ui/locale-switch";
-import { LuArrowUpRight, LuMenu, LuX } from "react-icons/lu";
+import { LuMenu, LuX } from "react-icons/lu";
 import {
   Sidebar,
   NAV_GROUPS,
@@ -143,7 +142,6 @@ export function AdminShell({
     isActive,
     onNavigate: () => setDrawerOpen(false),
     signOutLabel: t("signOut"),
-    backToAppLabel: t("backToApp"),
     titleLabel: tShell("title"),
     soonLabel: tShell("soon"),
     langLabel: tShell("langLabel"),
@@ -279,29 +277,15 @@ export function AdminShell({
 
       {/* Main column. Pad-top accounts for the fixed mobile header. */}
       <div className="flex min-w-0 max-w-full flex-1 flex-col overflow-x-hidden">
-        {/* The desktop bar. It holds the link to what the cooks see, the theme
-            toggle, and which language you are reading it in — the things that
-            belong to the whole admin area rather than to one page. The page's
-            own title stays on the page — repeating it here would be the same
-            words twice on one screen.
+        {/* The desktop bar. It holds the theme toggle and which language you
+            are reading it in — the things that belong to the whole admin area
+            rather than to one page. The page's own title stays on the page —
+            repeating it here would be the same words twice on one screen.
 
             It is not shown below 900px: there the mobile header already occupies
             that row, and a phone has no space for a field this wide. */}
         <header className="sticky top-0 z-sticky hidden h-[75px] min-h-[75px] items-center border-b border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 sm:px-6 lg:px-10 shadow-[var(--e-1)] backdrop-blur-xl backdrop-saturate-150 supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--color-surface)_80%,transparent)] lg:flex">
           <div className="mx-auto flex w-full max-w-page items-center justify-end gap-3">
-            {/* The way across to what the cooks see. The employee bar has the same
-                link back, under the name of the area it opens — so this one is
-                "Employee", not "Preview" or "Back": the two sides name each other
-                the same way. The sidebar footer has it too, for the phone, where
-                this bar is not shown. */}
-            <Link
-              href={`/${locale}/employee/home`}
-              className="inline-flex min-h-tap-admin items-center gap-1 rounded-full px-3 text-sm font-medium text-[var(--color-ink-2)] transition-colors duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]"
-            >
-              {t("backToApp")}
-              {/* The mark for a link that leaves this area for the other one. */}
-              <LuArrowUpRight aria-hidden="true" />
-            </Link>
             <ThemeToggle
               labels={{
                 toDark: tApp("themeToDark"),

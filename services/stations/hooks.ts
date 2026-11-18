@@ -3,7 +3,8 @@
 /**
  * Stations data layer (TanStack Query). Same pattern as categories and
  * library: exported query key for invalidation, provider defaults apply
- * (5 min staleTime). Consumers read `data` (a plain Station[]).
+ * (staleTime 0 — a fresh API call whenever the data is needed; tab focus
+ * does not refetch). Consumers read `data` (a plain Station[]).
  */
 
 import { useQuery } from "@tanstack/react-query";

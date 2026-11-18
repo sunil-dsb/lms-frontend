@@ -5,14 +5,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApiException } from "@/lib/errors";
 
 /**
- * TanStack Query provider with sensible defaults for the LMS.
+ * TanStack Query provider — fresh data whenever it is needed, no result cache.
  *
- * - `staleTime` 5 min: most LMS content (procedures, library, employees)
- *   changes on a timescale of minutes-to-days. Five minutes keeps a
- *   back-button navigation instant while still feeling fresh on reload.
- * - `refetchOnWindowFocus: false`: the kitchen's working set is large and
- *   re-rendering all cards on every alt-tab is jarring. Mutations invalidate
- *   their query keys explicitly.
+ * - `staleTime: 0`: every query is stale the moment it is created, so each
+ *   page view fetches fresh from the API — nothing is ever served from a
+ *   previous visit.
+ * - `refetchOnWindowFocus: false`: focusing a tab is not a data need, so it
+ *   does not fire API calls (this was the request-storm source).
+ * - `gcTime` only controls how long an unused response stays in memory as an
+ *   instant placeholder; it never triggers a fetch.
  * - `retry` skips 4xx: those are caller errors (validation, auth,
  *   not-found), retrying just spams the backend. Network errors and 5xx
  *   get the default `failureCount < 2` retry.
@@ -29,7 +30,7 @@ export function QueryProvider({
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 1000 * 60 * 5,
+            staleTime: 0,
             gcTime: 1000 * 60 * 30,
             refetchOnWindowFocus: false,
             retry: (failureCount, error) => {

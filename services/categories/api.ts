@@ -169,23 +169,16 @@ function mapBackendCategory(c: BackendCategoryRow): Category {
   };
 }
 
+// Concurrent-request coalescing only — no result cache. Every call hits
+// GET /api/v1/categories, so a category created on another view appears
+// without a reload; promises are dropped the moment they settle.
 const inFlightBackendCategories = new Map<string, Promise<Category[]>>();
-const cachedBackendCategories = new Map<
-  string,
-  { data: Category[]; expiresAt: number }
->();
-const BACKEND_CATEGORIES_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour in-memory cache
 
 export function clearBackendCategoriesCache(): void {
   inFlightBackendCategories.clear();
-  cachedBackendCategories.clear();
 }
 
 export function clearBackendSubcategoriesCache(categoryId?: string): void {
-  for (const key of cachedBackendSubcategories.keys()) {
-    if (!categoryId || key.endsWith(`::${categoryId}`))
-      cachedBackendSubcategories.delete(key);
-  }
   for (const key of inFlightBackendSubcategories.keys()) {
     if (!categoryId || key.endsWith(`::${categoryId}`))
       inFlightBackendSubcategories.delete(key);
@@ -196,18 +189,10 @@ export async function fetchBackendCategories(
   options: BackendCategoryOptions = {},
   cookieHeader?: string,
 ): Promise<Category[]> {
-  // The server-rendered categories page is refreshed after a create. A
-  // process-wide server cache would keep showing the old list because the
-  // browser-side POST cannot clear that server memory. Keep the cache only
-  // in the browser, where mutations can invalidate it locally.
-  const useLocalCache = typeof window !== "undefined";
+  // No result cache: every call hits the API, so a category created on
+  // another view shows up without a reload. Only concurrent identical
+  // requests are coalesced, and only until they settle.
   const cacheKey = `${cookieHeader || "client"}::${options.search || ""}::${options.page || 1}::${options.limit || 100}`;
-  const now = Date.now();
-
-  const cached = cachedBackendCategories.get(cacheKey);
-  if (useLocalCache && cached && cached.expiresAt > now) {
-    return cached.data;
-  }
 
   const inFlight = inFlightBackendCategories.get(cacheKey);
   if (inFlight) {
@@ -237,15 +222,7 @@ export async function fetchBackendCategories(
       const rawList = Array.isArray(data.data?.categories)
         ? data.data.categories
         : [];
-      const res = rawList.map(mapBackendCategory);
-
-      if (useLocalCache) {
-        cachedBackendCategories.set(cacheKey, {
-          data: res,
-          expiresAt: Date.now() + BACKEND_CATEGORIES_CACHE_TTL_MS,
-        });
-      }
-      return res;
+      return rawList.map(mapBackendCategory);
     } finally {
       inFlightBackendCategories.delete(cacheKey);
     }
@@ -305,21 +282,16 @@ const inFlightBackendSubcategories = new Map<
   string,
   Promise<LiveSubcategory[]>
 >();
-const cachedBackendSubcategories = new Map<
-  string,
-  { data: LiveSubcategory[]; expiresAt: number }
->();
-const BACKEND_SUBCATEGORIES_CACHE_TTL_MS = 60 * 60 * 1000;
 
 /** Live subcategories of one backend category.
- *  GET /api/v1/categories/:categoryId/subcategories (any logged-in employee). */
+ *  GET /api/v1/categories/:categoryId/subcategories (any logged-in employee).
+ *  No result cache — every call hits the API (in-flight requests only are
+ *  coalesced). */
 export async function fetchBackendSubcategories(
   categoryId: string,
   cookieHeader?: string,
 ): Promise<LiveSubcategory[]> {
   const cacheKey = `${cookieHeader || "client"}::${categoryId}`;
-  const cached = cachedBackendSubcategories.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) return cached.data;
 
   const inFlight = inFlightBackendSubcategories.get(cacheKey);
   if (inFlight) return inFlight;
@@ -339,18 +311,13 @@ export async function fetchBackendSubcategories(
       const list = Array.isArray(data.data?.subcategories)
         ? data.data.subcategories
         : [];
-      const mapped: LiveSubcategory[] = list.map((s) => ({
+      return list.map((s) => ({
         id: s.id,
         categoryId: s.categoryId,
         nameEn: s.nameEn,
         nameEs: s.nameEs,
         subcategoryIcon: s.subcategoryIcon || "",
       }));
-      cachedBackendSubcategories.set(cacheKey, {
-        data: mapped,
-        expiresAt: Date.now() + BACKEND_SUBCATEGORIES_CACHE_TTL_MS,
-      });
-      return mapped;
     } finally {
       inFlightBackendSubcategories.delete(cacheKey);
     }
@@ -422,6 +389,29 @@ export async function createBackendSubcategory(
   }>(`/api/v1/categories/${categoryId}/subcategories`, input);
   clearBackendSubcategoriesCache(categoryId);
   return data.data.subcategory;
+}
+
+export async function updateBackendSubcategory(
+  categoryId: string,
+  subcategoryId: string,
+  input: { nameEn?: string; nameEs?: string; subcategoryIcon?: string },
+): Promise<LiveSubcategory> {
+  const { data } = await http.patch<{
+    success: boolean;
+    data: { subcategory: LiveSubcategory };
+  }>(`/api/v1/categories/${categoryId}/subcategories/${subcategoryId}`, input);
+  clearBackendSubcategoriesCache(categoryId);
+  return data.data.subcategory;
+}
+
+export async function deleteBackendSubcategory(
+  categoryId: string,
+  subcategoryId: string,
+): Promise<void> {
+  await http.delete(
+    `/api/v1/categories/${categoryId}/subcategories/${subcategoryId}`,
+  );
+  clearBackendSubcategoriesCache(categoryId);
 }
 
 /** Resolve a wizard-picked subcategory to a live backend UUID.

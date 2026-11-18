@@ -30,7 +30,6 @@ export function AdminProcedureDetailLoader({
   const query = useQuery<Procedure, Error>({
     queryKey: [...PROCEDURES_QUERY_KEY, "detail", id],
     queryFn: () => getProcedureBySlug(id).then((r) => r.procedure),
-    staleTime: 0,
   });
 
   if (query.isLoading) {

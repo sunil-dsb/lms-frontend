@@ -8,9 +8,8 @@ import type { Procedure } from "@/lib/types";
  * 1. Marked as `isPromo === true`
  * 2. Not expired: `now < promoExpiresAt` (or no expiration date set)
  *
- * Once expired (`now >= promoExpiresAt`), `isPromoActive` returns false,
- * automatically removing it from the Promo section and leaving it in the
- * standard station procedures list.
+ * Once expired (`now >= promoExpiresAt`), the dish is automatically archived
+ * and is not visible to kitchen staff.
  */
 export const MAX_PROMOS = 3;
 
@@ -64,6 +63,18 @@ export function isPromoActive(
   }
   if (!procedure.promoExpiresAt) return true;
   return new Date(procedure.promoExpiresAt).getTime() > now;
+}
+
+/**
+ * Checks if a promo dish has expired.
+ * Once expired, the dish is archived and must not be visible on the kitchen floor.
+ */
+export function isPromoExpired(
+  procedure: Procedure,
+  now: number = Date.now(),
+): boolean {
+  if (!procedure.isPromo || !procedure.promoExpiresAt) return false;
+  return new Date(procedure.promoExpiresAt).getTime() <= now;
 }
 
 /**

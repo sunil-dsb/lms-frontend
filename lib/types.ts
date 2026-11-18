@@ -146,7 +146,7 @@ export interface UpdateLocationInput {
 // Library — procedures (SOPs, recipes, training chapters)
 // ============================================================================
 
-export type ProcedureStatus = "draft" | "published";
+export type ProcedureStatus = "draft" | "published" | "archived";
 export type ProcedureSeason = "summer" | "winter";
 export type ActiveSeason = ProcedureSeason | null;
 

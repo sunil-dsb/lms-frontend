@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useId, useState, useRef } from "react";
+import { useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { useBilingualTranslation } from "@/lib/use-bilingual-translation";
@@ -53,8 +54,9 @@ export const dummyTranslate = (
   _to: "en" | "es",
 ): string => text;
 
-// Self-contained strings rather than new i18n keys — the label language follows
-// the field being written, which is the only thing that can change here.
+// Same self-contained strings as LocalisedInput — they follow the UI locale
+// (the language the admin is reading), not the translation target, so an
+// English UI always shows English even when translating into Spanish.
 const STATUS_TEXT: Record<"en" | "es", { translating: string; error: string }> =
   {
     en: { translating: "Translating…", error: "Translation failed" },
@@ -95,6 +97,7 @@ export function BilingualInput({
     onChange(next);
   };
 
+  const locale = useLocale();
   const { markUserEdit, status, activeTarget } = useBilingualTranslation({
     englishValue: value?.en ?? "",
     spanishValue: value?.es ?? "",
@@ -228,7 +231,7 @@ export function BilingualInput({
           )}
           <span>
             {
-              STATUS_TEXT[activeTarget][
+              STATUS_TEXT[locale === "es" ? "es" : "en"][
                 status === "error" ? "error" : "translating"
               ]
             }

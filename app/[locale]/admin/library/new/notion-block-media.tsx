@@ -342,7 +342,6 @@ export function VideoBody({
                 className="aspect-video w-full"
                 allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                referrerPolicy="no-referrer"
               />
             ) : null}
           </div>

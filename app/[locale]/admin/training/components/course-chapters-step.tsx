@@ -26,6 +26,8 @@ import type { Procedure } from "@/lib/types";
 import type { EditorChapter } from "./course-editor";
 import { CourseChapterItem } from "./course-chapter-item";
 import { CourseAssignmentModal } from "./course-assignment-modal";
+import { toast } from "@/components/ui/toast";
+import { validateCourseForm, scrollToTarget } from "./course-editor-validation";
 
 interface CourseChaptersStepProps {
   locale: string;
@@ -86,6 +88,12 @@ export function CourseChaptersStep({
     React.useState<BilingualValue>(courseTitle);
   const [editPurposeDraft, setEditPurposeDraft] =
     React.useState<BilingualValue>(coursePurpose);
+  const [editTitleError, setEditTitleError] = React.useState<string | null>(
+    null,
+  );
+  const [editPurposeError, setEditPurposeError] = React.useState<string | null>(
+    null,
+  );
 
   const courseName =
     (isEs ? courseTitle.es : courseTitle.en) ||
@@ -120,10 +128,27 @@ export function CourseChaptersStep({
   const handleOpenEditDetails = () => {
     setEditTitleDraft({ ...courseTitle });
     setEditPurposeDraft({ ...coursePurpose });
+    setEditTitleError(null);
+    setEditPurposeError(null);
     setIsEditingDetails(true);
   };
 
   const handleSaveDetailsEdit = async () => {
+    const valErr = validateCourseForm({
+      scope: "details",
+      title: editTitleDraft,
+      purpose: editPurposeDraft,
+      isEs,
+    });
+    if (valErr) {
+      if (valErr.field === "title") setEditTitleError(valErr.message);
+      if (valErr.field === "purpose") setEditPurposeError(valErr.message);
+      toast.error(valErr.message);
+      scrollToTarget(valErr.target);
+      return;
+    }
+    setEditTitleError(null);
+    setEditPurposeError(null);
     await onSaveDetails(editTitleDraft, editPurposeDraft);
     setIsEditingDetails(false);
   };
@@ -180,31 +205,67 @@ export function CourseChaptersStep({
             </div>
 
             {/* Field 1: Course Name */}
-            <BilingualInput
-              label={isEs ? "Nombre del curso *" : "Course name *"}
-              value={editTitleDraft}
-              onChange={setEditTitleDraft}
-              defaultLang={isEs ? "es" : "en"}
-              required
-              placeholder={{
-                en: "e.g. Tacos al Pastor",
-                es: "ej. Tacos al Pastor",
-              }}
-            />
+            <div
+              id="field-edit-course-title"
+              className="rounded-[var(--radius-md)]"
+            >
+              <BilingualInput
+                label={isEs ? "Nombre del curso *" : "Course name *"}
+                value={editTitleDraft}
+                onChange={(val) => {
+                  setEditTitleDraft(val);
+                  if (editTitleError) setEditTitleError(null);
+                }}
+                defaultLang={isEs ? "es" : "en"}
+                required
+                maxLength={200}
+                placeholder={{
+                  en: "e.g. Tacos al Pastor",
+                  es: "ej. Tacos al Pastor",
+                }}
+              />
+              {editTitleError && (
+                <p
+                  role="alert"
+                  className="mt-2 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+                >
+                  <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
+                  <span>{editTitleError}</span>
+                </p>
+              )}
+            </div>
 
             {/* Field 2: Course Purpose */}
-            <BilingualInput
-              label={isEs ? "Para qué sirve *" : "What it is for *"}
-              value={editPurposeDraft}
-              onChange={setEditPurposeDraft}
-              defaultLang={isEs ? "es" : "en"}
-              multiline
-              required
-              placeholder={{
-                en: "Describe the objective and what employees will learn...",
-                es: "Describe el objetivo y lo que aprenderán los empleados...",
-              }}
-            />
+            <div
+              id="field-edit-course-purpose"
+              className="rounded-[var(--radius-md)]"
+            >
+              <BilingualInput
+                label={isEs ? "Para qué sirve *" : "What it is for *"}
+                value={editPurposeDraft}
+                onChange={(val) => {
+                  setEditPurposeDraft(val);
+                  if (editPurposeError) setEditPurposeError(null);
+                }}
+                defaultLang={isEs ? "es" : "en"}
+                multiline
+                required
+                maxLength={1000}
+                placeholder={{
+                  en: "Describe the objective and what employees will learn...",
+                  es: "Describe el objetivo y lo que aprenderán los empleados...",
+                }}
+              />
+              {editPurposeError && (
+                <p
+                  role="alert"
+                  className="mt-2 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+                >
+                  <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
+                  <span>{editPurposeError}</span>
+                </p>
+              )}
+            </div>
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--color-line-2)]">
@@ -221,11 +282,7 @@ export function CourseChaptersStep({
                 variant="primary"
                 size="sm"
                 onClick={handleSaveDetailsEdit}
-                disabled={
-                  !(editTitleDraft.en.trim() || editTitleDraft.es.trim()) ||
-                  !(editPurposeDraft.en.trim() || editPurposeDraft.es.trim()) ||
-                  isSaving
-                }
+                disabled={isSaving}
                 className={
                   saveSuccess
                     ? "!bg-[var(--color-ok)] !text-white !border-[var(--color-ok)] hover:!bg-[var(--color-ok-700)] shadow-sm transition-all duration-200 !opacity-100 font-semibold"
@@ -334,7 +391,10 @@ export function CourseChaptersStep({
         )}
 
         {/* Chapters Container matching Screenshot 2 */}
-        <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-xs overflow-hidden">
+        <div
+          id="course-chapters-container"
+          className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-xs overflow-hidden"
+        >
           {/* Card Header */}
           <div className="border-b border-[var(--color-line-2)] px-6 py-4 flex items-center justify-between">
             <h2 className="text-base font-semibold text-[var(--color-ink)]">

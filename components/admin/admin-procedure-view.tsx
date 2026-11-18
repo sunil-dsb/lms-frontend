@@ -21,9 +21,15 @@ import {
   getQuizById,
   setProcedureState,
   updateQuiz,
+  clearLibraryListCache,
 } from "@/lib/api";
-import { updateProcedure } from "@/services/library/api";
+import { updateProcedure, updateProcedurePromo } from "@/services/library/api";
 import { PromoConfigModal, type PromoData } from "./promo-config-modal";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  PROCEDURES_QUERY_KEY,
+  ASSIGNED_PROCEDURES_QUERY_KEY,
+} from "@/services/library/hooks";
 import type { Employee, Procedure, ProcedureStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
@@ -46,6 +52,7 @@ export function AdminProcedureView({
   const tRow = useTranslations("admin");
   const router = useRouter();
 
+  const queryClient = useQueryClient();
   const [proc, setProc] = React.useState<Procedure>(initial);
   const [error, setError] = React.useState<string | null>(null);
   const [promoModalOpen, setPromoModalOpen] = React.useState(false);
@@ -53,7 +60,7 @@ export function AdminProcedureView({
   const handleSavePromo = async (data: PromoData) => {
     if (!proc) return;
     try {
-      const updated = await updateProcedure(proc.id, {
+      const updated = await updateProcedurePromo(proc.id, {
         isPromo: data.isPromo,
         promoStartsAt: data.promoStartsAt,
         promoExpiresAt: data.promoExpiresAt,
@@ -62,6 +69,19 @@ export function AdminProcedureView({
         stationIds: data.stationIds,
       });
       setProc(updated);
+      clearLibraryListCache();
+      await queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY });
+      await queryClient.invalidateQueries({
+        queryKey: ASSIGNED_PROCEDURES_QUERY_KEY,
+      });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("lms_procedures_updated"));
+        try {
+          localStorage.setItem("lms_promo_sync", Date.now().toString());
+        } catch {
+          // ignore
+        }
+      }
       router.refresh();
     } catch (err) {
       console.error("Failed to update promo settings:", err);

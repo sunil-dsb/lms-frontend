@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLocale } from "next-intl";
 
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
@@ -35,8 +36,9 @@ export interface LocalisedInputProps extends Omit<
   wrapperClassName?: string;
 }
 
-// Same self-contained strings as BilingualInput — the label follows the target
-// language, so no new i18n keys are needed.
+// Same self-contained strings as BilingualInput — they follow the UI locale
+// (the language the admin is reading), not the translation target, so an
+// English UI always shows English even when translating into Spanish.
 const STATUS_TEXT: Record<"en" | "es", { translating: string; error: string }> =
   {
     en: { translating: "Translating…", error: "Translation failed" },
@@ -65,6 +67,7 @@ export function LocalisedInput({
   type: _type,
   ...inputProps
 }: LocalisedInputProps): React.ReactElement {
+  const locale = useLocale();
   const { markUserEdit, status, activeTarget } = useBilingualTranslation({
     englishValue: value?.en ?? "",
     spanishValue: value?.es ?? "",
@@ -144,7 +147,7 @@ export function LocalisedInput({
           )}
           <span>
             {
-              STATUS_TEXT[activeTarget][
+              STATUS_TEXT[locale === "es" ? "es" : "en"][
                 status === "error" ? "error" : "translating"
               ]
             }

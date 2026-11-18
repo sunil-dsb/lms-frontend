@@ -12,6 +12,7 @@ import {
   LuTriangleAlert,
 } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import {
   BilingualInput,
   type BilingualValue,
@@ -20,6 +21,7 @@ import { WizardStepper } from "@/components/ui/wizard-stepper";
 import { FormSection } from "@/components/admin/form-section";
 import { NotionBlockList } from "@/app/[locale]/admin/library/new/notion-block-list";
 import { QuizEditor } from "@/components/admin/quiz-editor";
+import { scrollToTarget } from "./course-editor-validation";
 import type {
   ProcedureBlock,
   ProcedureQuiz,
@@ -127,30 +129,48 @@ export function ChapterContentEditor({
   const hasPurpose = Boolean(purpose.en.trim() || purpose.es.trim());
 
   const handleNext = () => {
-    let valid = true;
-    if (!hasTitle) {
-      setTitleError(isEs ? "El título es obligatorio." : "Title is required.");
-      valid = false;
-    } else {
-      setTitleError(null);
-    }
+    const titleEn = title.en.trim();
+    const titleEs = title.es.trim();
+    const purposeEn = purpose.en.trim();
+    const purposeEs = purpose.es.trim();
 
-    if (!hasPurpose) {
-      setPurposeError(
-        isEs ? "El propósito es obligatorio." : "What it is for is required.",
-      );
-      valid = false;
-    } else {
-      setPurposeError(null);
-    }
-
-    if (!valid) {
-      const firstErrEl =
-        document.getElementById("chapter-field-title") ||
-        document.getElementById("chapter-field-purpose");
-      firstErrEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!titleEn && !titleEs) {
+      const msg = isEs ? "El título es obligatorio." : "Title is required.";
+      setTitleError(msg);
+      toast.error(msg);
+      scrollToTarget("chapter-field-title");
       return;
     }
+    if (titleEn.length > 200 || titleEs.length > 200) {
+      const msg = isEs
+        ? "El título no debe exceder los 200 caracteres."
+        : "Title must not exceed 200 characters.";
+      setTitleError(msg);
+      toast.error(msg);
+      scrollToTarget("chapter-field-title");
+      return;
+    }
+    setTitleError(null);
+
+    if (!purposeEn && !purposeEs) {
+      const msg = isEs
+        ? "El propósito es obligatorio."
+        : "What it is for is required.";
+      setPurposeError(msg);
+      toast.error(msg);
+      scrollToTarget("chapter-field-purpose");
+      return;
+    }
+    if (purposeEn.length > 1000 || purposeEs.length > 1000) {
+      const msg = isEs
+        ? "El propósito no debe exceder los 1000 caracteres."
+        : "Purpose must not exceed 1000 characters.";
+      setPurposeError(msg);
+      toast.error(msg);
+      scrollToTarget("chapter-field-purpose");
+      return;
+    }
+    setPurposeError(null);
 
     setStep("quiz");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -158,26 +178,58 @@ export function ChapterContentEditor({
 
   const handleSave = () => {
     if (isSaving) return;
-    let valid = true;
-    if (!hasTitle) {
-      setTitleError(isEs ? "El título es obligatorio." : "Title is required.");
-      valid = false;
-    }
-    if (!hasPurpose) {
-      setPurposeError(
-        isEs ? "El propósito es obligatorio." : "What it is for is required.",
-      );
-      valid = false;
-    }
-    if (!valid) {
+    const titleEn = title.en.trim();
+    const titleEs = title.es.trim();
+    const purposeEn = purpose.en.trim();
+    const purposeEs = purpose.es.trim();
+
+    if (!titleEn && !titleEs) {
+      const msg = isEs ? "El título es obligatorio." : "Title is required.";
+      setTitleError(msg);
+      toast.error(msg);
       setStep("content");
+      scrollToTarget("chapter-field-title");
       return;
     }
+    if (titleEn.length > 200 || titleEs.length > 200) {
+      const msg = isEs
+        ? "El título no debe exceder los 200 caracteres."
+        : "Title must not exceed 200 characters.";
+      setTitleError(msg);
+      toast.error(msg);
+      setStep("content");
+      scrollToTarget("chapter-field-title");
+      return;
+    }
+    setTitleError(null);
+
+    if (!purposeEn && !purposeEs) {
+      const msg = isEs
+        ? "El propósito es obligatorio."
+        : "What it is for is required.";
+      setPurposeError(msg);
+      toast.error(msg);
+      setStep("content");
+      scrollToTarget("chapter-field-purpose");
+      return;
+    }
+    if (purposeEn.length > 1000 || purposeEs.length > 1000) {
+      const msg = isEs
+        ? "El propósito no debe exceder los 1000 caracteres."
+        : "Purpose must not exceed 1000 characters.";
+      setPurposeError(msg);
+      toast.error(msg);
+      setStep("content");
+      scrollToTarget("chapter-field-purpose");
+      return;
+    }
+    setPurposeError(null);
 
     // Frontend quiz validation
     const validationErr = validateChapterQuiz(quiz, isEs);
     if (validationErr) {
       setQuizError(validationErr);
+      toast.error(validationErr);
       setStep("quiz");
       return;
     }

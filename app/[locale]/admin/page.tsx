@@ -195,7 +195,7 @@ export default async function AdminHomePage({
       meter: training.total
         ? { value: training.complete, total: training.total }
         : undefined,
-      href: `/${locale}/admin/training`,
+      href: `/${locale}/admin/training/progress`,
     },
     {
       label: t("stat.overdue"),
@@ -203,7 +203,7 @@ export default async function AdminHomePage({
       value: String(training.overdue.length),
       note: t("stat.overdueNote", { count: training.overdue.length }),
       tone: training.overdue.length ? "bad" : undefined,
-      href: `/${locale}/admin/training`,
+      href: `/${locale}/admin/training/progress?status=overdue`,
     },
     {
       label: t("stat.team"),
@@ -213,7 +213,9 @@ export default async function AdminHomePage({
         ? t("stat.teamInvited", { count: invited })
         : t("stat.teamAllJoined"),
       tone: invited ? "caution" : undefined,
-      href: `/${locale}/admin/employees`,
+      href: invited
+        ? `/${locale}/admin/employees?status=pending`
+        : `/${locale}/admin/employees`,
     },
     {
       label: t("stat.library"),
@@ -231,7 +233,9 @@ export default async function AdminHomePage({
               .join(" · ")
           : t("stat.libraryClear"),
       tone: drafts || noSpanish ? "caution" : undefined,
-      href: `/${locale}/admin/library`,
+      href: drafts
+        ? `/${locale}/admin/library?status=draft`
+        : `/${locale}/admin/library`,
     },
   ];
 
@@ -344,9 +348,10 @@ export default async function AdminHomePage({
           total: training.total,
         })}
         seeAll={{
-          href: `/${locale}/admin/training`,
+          href: `/${locale}/admin/training/progress`,
           label: t("training.seeAll"),
         }}
+        locale={locale}
         groups={{
           overdue: t("training.overdue"),
           dueThisWeek: t("training.dueThisWeek"),
@@ -357,8 +362,6 @@ export default async function AdminHomePage({
           })
         }
         more={(count) => t("training.more", { count })}
-        remind={{ label: t("training.remind"), sent: t("training.reminded") }}
-        person={{ open: t("training.openPerson"), close: t("training.close") }}
         empty={{
           title: t("training.clearTitle"),
           body: t("training.clearBody"),
