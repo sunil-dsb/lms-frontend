@@ -197,9 +197,8 @@ export function TeamTraining({
   groups,
   dueLabel,
   more,
-  remind,
-  person,
   empty,
+  locale,
 }: {
   summary: TrainingSummary;
   heading: string;
@@ -208,9 +207,8 @@ export function TeamTraining({
   groups: { overdue: string; dueThisWeek: string };
   dueLabel: (person: TrainingPerson, overdue: boolean) => string;
   more: (count: number) => string;
-  remind: { label: string; sent: string };
-  person: { open: string; close: string };
   empty: { title: string; body: string };
+  locale: string;
 }): React.ReactElement {
   const sections = [
     {
@@ -303,35 +301,22 @@ export function TeamTraining({
               {s.people.slice(0, SHOWN).map((p) => (
                 <PersonTrainingRow
                   key={p.key}
+                  href={`/${locale}/admin/training/progress/${p.key}`}
                   name={p.name}
                   initials={p.initials}
                   courses={p.courses.join(" · ")}
                   due={dueLabel(p, s.overdue)}
                   overdue={s.overdue}
-                  trainings={p.trainings.map((l) => ({
-                    key: l.key,
-                    course: l.course,
-                    href: l.href,
-                    label: l.label,
-                    tone:
-                      l.state === "overdue"
-                        ? "bad"
-                        : l.state === "complete"
-                          ? "ok"
-                          : "neutral",
-                  }))}
-                  labels={{
-                    open: person.open,
-                    close: person.close,
-                    remind: remind.label,
-                    reminded: remind.sent,
-                  }}
                 />
               ))}
             </ul>
             {s.people.length > SHOWN ? (
               <Link
-                href={seeAll.href}
+                href={
+                  s.overdue
+                    ? `/${locale}/admin/training/progress?status=overdue`
+                    : `/${locale}/admin/training/progress?status=due_soon`
+                }
                 className="mt-1 inline-flex min-h-tap-admin items-center gap-1 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
               >
                 {more(s.people.length - SHOWN)}

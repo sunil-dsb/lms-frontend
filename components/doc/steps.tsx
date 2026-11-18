@@ -349,7 +349,6 @@ function StepVideo({ src, caption }: { src: string; caption?: string }) {
           className="aspect-video w-full rounded-[var(--radius-md)]"
           allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          referrerPolicy="no-referrer"
         />
       ) : null}
       {caption ? <figcaption>{caption}</figcaption> : null}

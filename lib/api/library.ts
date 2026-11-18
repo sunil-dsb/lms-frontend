@@ -15,6 +15,7 @@ import { ApiException } from "../errors";
 import { SEED_QUIZZES, type Quiz } from "../quizzes";
 import { getStored, setStored } from "../api-storage";
 import { fetchMe } from "./account";
+import { isPromoExpired } from "../promos";
 
 let mockProcedures: Procedure[] = getStored("procedures_v2", []);
 // Centralised quizzes table. The wizard authors quizzes locally in form
@@ -166,7 +167,8 @@ export function canRead(p: Procedure, viewer: Employee): boolean {
     viewer.accessLevel === "manager"
   )
     return true;
-  if (p.status !== "published" || p.isArchived) return false;
+  if (p.status !== "published" || p.isArchived || isPromoExpired(p))
+    return false;
   const a = p.audience;
   if (a && a.mode === "some") {
     const meant =
@@ -187,29 +189,22 @@ export function canRead(p: Procedure, viewer: Employee): boolean {
 }
 
 // ----------------------------------------------------------------------------
-// Server-side list cache (procedures & categories)
+// Server-side list reads (procedures & categories)
 // ----------------------------------------------------------------------------
-// Every server page (library, procedures browse, edit wizard, …) re-calls
-// listProcedures on each request, so even a second look pays
-// the full API round-trip. Server calls (the ones that carry a cookieHeader)
-// are cached per session for a short TTL and concurrent loads are deduped —
-// the same pattern fetchMe uses. Client calls (no cookieHeader) pass straight
-// through: TanStack Query already caches there, and caching would also break
-// the storage-event cross-tab freshness. Every mutation below clears the map —
-// an edit must be visible to every session on the next request.
+// No result cache: every server page (library, procedures browse, edit
+// wizard, …) re-calls listProcedures and hits the API on each request.
+// Concurrent identical reads are deduped through proceduresListInFlight —
+// a promise merge that never serves stale data. Client calls (no
+// cookieHeader) pass straight through: TanStack Query already caches there,
+// and caching here would also break the storage-event cross-tab freshness.
+// Every mutation below clears the in-flight map — a saved change must never
+// be joined to a read that started before it.
 
-const LIST_CACHE_TTL_MS = 30_000;
-
-const proceduresListCache = new Map<
-  string,
-  { data: Procedure[]; expiresAt: number }
->();
 const proceduresListInFlight = new Map<string, Promise<Procedure[]>>();
 
-/** Drop every cached/in-flight list read. Called by each mutation so a saved
- *  change shows up on the very next request, not up to the TTL later. */
+/** Drop every in-flight list read. Called by each mutation so a saved
+ *  change is refetched rather than joined to a read that started before it. */
 export function clearLibraryListCache(): void {
-  proceduresListCache.clear();
   proceduresListInFlight.clear();
 }
 
@@ -217,27 +212,17 @@ export async function listProcedures(
   filter: { status?: Procedure["status"] } = {},
   cookieHeader?: string,
 ): Promise<{ procedures: Procedure[] }> {
-  // Client-side or cookieless: no shared cache.
+  // Client-side or cookieless: no shared in-flight map.
   if (!cookieHeader)
     return { procedures: await loadProceduresList(filter, cookieHeader) };
 
   const cacheKey = `${cookieHeader}::${filter.status ?? "*"}`;
-  const cached = proceduresListCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now())
-    return { procedures: cached.data };
-
   const inFlight = proceduresListInFlight.get(cacheKey);
   if (inFlight) return { procedures: await inFlight };
 
-  const promise = loadProceduresList(filter, cookieHeader)
-    .then((procedures) => {
-      proceduresListCache.set(cacheKey, {
-        data: procedures,
-        expiresAt: Date.now() + LIST_CACHE_TTL_MS,
-      });
-      return procedures;
-    })
-    .finally(() => proceduresListInFlight.delete(cacheKey));
+  const promise = loadProceduresList(filter, cookieHeader).finally(() =>
+    proceduresListInFlight.delete(cacheKey),
+  );
   proceduresListInFlight.set(cacheKey, promise);
   return { procedures: await promise };
 }
@@ -460,20 +445,13 @@ export async function listQuizzes(): Promise<{ quizzes: Quiz[] }> {
   return { quizzes: [...getQuizzesStore()] };
 }
 
-const quizCache = new Map<string, Quiz>();
 const quizInFlight = new Map<string, Promise<Quiz | null>>();
 
-export function invalidateQuizCache(id?: string): void {
-  if (id) quizCache.delete(id);
-  else quizCache.clear();
-}
-
-/** Fetch a single quiz from GET /api/v1/quizzes/:id and cache it locally. */
+/** Fetch a single quiz from GET /api/v1/quizzes/:id — no result cache, so
+ *  every call hits the API (in-flight requests only are coalesced); falls
+ *  back to the local store when the API is unreachable. */
 export async function fetchQuizById(id: string): Promise<Quiz | null> {
   if (!id) return null;
-  if (quizCache.has(id)) {
-    return quizCache.get(id)!;
-  }
   if (quizInFlight.has(id)) {
     return quizInFlight.get(id)!;
   }
@@ -492,21 +470,17 @@ export async function fetchQuizById(id: string): Promise<Quiz | null> {
           store.unshift(q);
         }
         setStored("quizzes", store);
-        quizCache.set(id, q);
-        if (q.id) quizCache.set(q.id, q);
         return q;
       }
     } catch (err) {
       console.warn(
-        `fetchQuizById(${id}) API call failed, using cached fallback:`,
+        `fetchQuizById(${id}) API call failed, using local-store fallback:`,
         err,
       );
     } finally {
       quizInFlight.delete(id);
     }
-    const fallback = getQuizById(id);
-    if (fallback) quizCache.set(id, fallback);
-    return fallback;
+    return getQuizById(id);
   })();
 
   quizInFlight.set(id, promise);

@@ -1271,7 +1271,6 @@
       "langLabel": "Idioma",
       "searchResults": "{count, plural, one {# resultado} other {# resultados}}"
     },
-    "backToApp": "Empleado",
     "signOut": "Cerrar sesión",
     "listHeading": "Empleados",
     "peopleSubtitle": "Todos los que tienen acceso, qué pueden abrir y quién falta por unirse.",

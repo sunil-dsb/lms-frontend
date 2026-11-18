@@ -25,8 +25,10 @@ import {
   LuCheck,
   LuChevronDown,
   LuChevronRight,
+  LuPencil,
   LuPlus,
   LuSparkles,
+  LuTrash2,
   LuX,
 } from "react-icons/lu";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -42,9 +44,12 @@ import {
   backendSlug,
   categorySlugsMatch,
   createBackendSubcategory,
+  updateBackendSubcategory,
+  deleteBackendSubcategory,
   fetchBackendCategories,
   fetchBackendSubcategories,
 } from "@/services/categories/api";
+import { CATEGORIES_QUERY_KEY } from "@/services/categories/hooks";
 import { StatusPill } from "@/components/ui/status-pill";
 import {
   ProcedureListItem,
@@ -100,6 +105,87 @@ export function SubcategoryAccordion({
   // General categories apply to every station — the header shows one
   // "All stations" pill instead of per-station chips.
   const isGeneral = category.kind === "general";
+
+  const queryClient = useQueryClient();
+  const [renameOpen, setRenameOpen] = React.useState(false);
+  const [draft, setDraft] = React.useState<BilingualValue>({
+    en: "",
+    es: "",
+  });
+  const [pending, setPending] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  function closeRename(): void {
+    setRenameOpen(false);
+    setError(null);
+  }
+
+  function openRename(): void {
+    setDraft({ en: subcategory.nameEn, es: subcategory.nameEs });
+    setError(null);
+    setRenameOpen(true);
+  }
+
+  async function saveRename(): Promise<void> {
+    if (!category.id || !subcategory.id) return;
+    if (!draft.en.trim() && !draft.es.trim()) {
+      setError(
+        isEs
+          ? "Al menos uno de los dos nombres es obligatorio."
+          : "At least one of the two names is required.",
+      );
+      return;
+    }
+    setPending(true);
+    setError(null);
+    try {
+      await updateBackendSubcategory(category.id, subcategory.id, {
+        nameEn: draft.en.trim() || undefined,
+        nameEs: draft.es.trim() || undefined,
+      });
+      await queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+      closeRename();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function runDelete(): Promise<void> {
+    if (!category.id || !subcategory.id) return;
+    setPending(true);
+    setError(null);
+    try {
+      await deleteBackendSubcategory(category.id, subcategory.id);
+      await queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const items: RowActionItem[] = [
+    {
+      label: isEs ? "Renombrar subcategoría" : "Rename subcategory",
+      onSelect: openRename,
+      icon: LuPencil,
+    },
+    {
+      label: isEs ? "Eliminar subcategoría" : "Delete subcategory",
+      onSelect: runDelete,
+      destructive: true,
+      icon: LuTrash2,
+      confirmLabel: isEs ? "Eliminar" : "Delete",
+      confirmTitle: isEs
+        ? "¿Eliminar subcategoría?"
+        : "Delete this subcategory?",
+      confirmDescription: isEs
+        ? `“${subName}” se eliminará. Esta acción no se puede deshacer.`
+        : `“${subName}” will be removed. This can't be undone.`,
+    },
+  ];
 
   return (
     <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xs">
@@ -178,6 +264,12 @@ export function SubcategoryAccordion({
             <span>{isEs ? "Añadir procedimiento" : "Add procedure"}</span>
           </Button>
 
+          <RowActions
+            items={items}
+            triggerLabel={`${isEs ? "Acciones" : "Actions"}: ${subName}`}
+            className={pending ? "pointer-events-none opacity-50" : undefined}
+          />
+
           <LuChevronRight
             aria-hidden="true"
             className={cn(
@@ -230,6 +322,75 @@ export function SubcategoryAccordion({
           )}
         </div>
       )}
+
+      {error && !renameOpen ? (
+        <span role="alert" className="sr-only">
+          {error}
+        </span>
+      ) : null}
+
+      <Modal open={renameOpen} onClose={closeRename} size="md">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void saveRename();
+          }}
+          className="flex flex-col"
+        >
+          <ModalHeader
+            title={isEs ? "Renombrar subcategoría" : "Rename subcategory"}
+            description={
+              isEs
+                ? "Cambia el nombre en cualquiera de los dos idiomas."
+                : "Change the name in either language."
+            }
+            onClose={closeRename}
+            closeLabel={isEs ? "Cerrar" : "Close"}
+          />
+          <ModalBody className="max-h-[calc(100dvh-14rem)] overscroll-contain space-y-4">
+            <div className="space-y-2">
+              <BilingualInput
+                label={isEs ? "Nombre de la subcategoría" : "Subcategory name"}
+                value={draft}
+                onChange={setDraft}
+                maxLength={100}
+                placeholder={{
+                  en: "e.g. Allergens",
+                  es: "p. ej. Alérgenos",
+                }}
+              />
+              <p className="text-xs text-[var(--color-ink-3)]">
+                {isEs
+                  ? "Al menos uno de los dos nombres es obligatorio."
+                  : "At least one of the two names is required."}
+              </p>
+              {error ? (
+                <p role="alert" className="text-sm text-[var(--color-bad)]">
+                  {error}
+                </p>
+              ) : null}
+            </div>
+          </ModalBody>
+          <ModalFooter className="mb-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeRename}
+              disabled={pending}
+            >
+              {isEs ? "Cancelar" : "Cancel"}
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={pending}
+              className="font-semibold"
+            >
+              {isEs ? "Guardar" : "Save"}
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
     </div>
   );
 }

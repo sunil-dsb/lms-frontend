@@ -16,6 +16,6 @@ export default async function AdminLibraryNewPage({
 
   // No server-side data fetching: the shell renders immediately and
   // the client loader resolves categories/locations through TanStack
-  // Query (cached, so revisiting the wizard is instant).
+  // Query (fresh fetch on each visit; the shell paints immediately).
   return <NewProcedureLoader locale={locale} />;
 }

@@ -1271,7 +1271,6 @@
       "langLabel": "Language",
       "searchResults": "{count, plural, one {# result} other {# results}}"
     },
-    "backToApp": "Employee",
     "signOut": "Sign out",
     "listHeading": "Employees",
     "peopleSubtitle": "Everyone with access, what they can open, and who is still waiting to join.",

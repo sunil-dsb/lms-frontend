@@ -14,6 +14,7 @@ import {
 import { BlockRenderer } from "@/components/doc/block-renderer";
 import { ProcedureArticleBody } from "@/components/doc/procedure-article-body";
 import { CookModeLauncher } from "@/components/doc/cook-mode-launcher";
+import { ContentProtection } from "@/components/security/content-protection";
 import { completeMyTrainingChapter } from "@/services/courses/api";
 import { cn } from "@/lib/utils";
 import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
@@ -200,192 +201,202 @@ export function ChapterLearnView({
   }, [recipeBlocks, methodBlocks, ingBlock, courseId, chapterNumber]);
 
   return (
-    <div className="relative min-h-screen bg-[var(--color-bg)]">
-      <main
-        className="mx-auto w-full max-w-doc space-y-5 px-3 pt-5 sm:px-6 sm:pt-6"
-        style={{ paddingBottom: "120px" }}
-      >
-        {/* Top Back Header */}
-        <div>
-          <Link
-            href={backHref ?? effectiveBasePath}
-            className="inline-flex min-h-tap items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
-          >
-            <LuChevronLeft className="text-lg" aria-hidden="true" />
-            <span>
-              {t("backToCourseChapter", {
-                title: courseTitle,
-                current: chapterNumber,
-                total: totalChapters,
-              })}
-            </span>
-          </Link>
-        </div>
-
-        {/* Progress Bar (2-Segment if quiz exists, 1-segment if no quiz) */}
-        <div
-          role="progressbar"
-          aria-label={hasQuiz ? "Chapter progress: Learn" : "Chapter progress"}
-          aria-valuenow={1}
-          aria-valuemin={1}
-          aria-valuemax={hasQuiz ? 2 : 1}
-          className="flex items-center gap-2 pt-1"
+    <ContentProtection
+      employeeName={employee?.name || ""}
+      locale={locale}
+      enabled={true}
+      enableCopyProtection={true}
+      enablePrintProtection={true}
+    >
+      <div className="relative min-h-screen bg-[var(--color-bg)]">
+        <main
+          className="mx-auto w-full max-w-doc space-y-5 px-3 pt-5 sm:px-6 sm:pt-6"
+          style={{ paddingBottom: "120px" }}
         >
-          <div className="h-2 flex-1 rounded-full bg-[var(--color-brand-600)]" />
-          {hasQuiz && (
-            <div className="h-2 flex-1 rounded-full bg-[var(--color-panel-2)]" />
-          )}
-        </div>
+          {/* Top Back Header */}
+          <div>
+            <Link
+              href={backHref ?? effectiveBasePath}
+              className="inline-flex min-h-tap items-center gap-2 text-sm font-semibold text-[var(--color-ink-2)] hover:text-[var(--color-ink)] transition-colors active:translate-x-[-2px]"
+            >
+              <LuChevronLeft className="text-lg" aria-hidden="true" />
+              <span>
+                {t("backToCourseChapter", {
+                  title: courseTitle,
+                  current: chapterNumber,
+                  total: totalChapters,
+                })}
+              </span>
+            </Link>
+          </div>
 
-        {/* Chapter Eyebrow, Title & Subtitle */}
-        <div className="space-y-2 pt-1 pb-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-brand-700)]">
-            {t("eyebrowLearn")}
-          </p>
-          <h1 className="font-[family-name:var(--font-ui)] text-xl sm:text-2xl font-medium tracking-tight text-[var(--color-ink)]">
-            {chapterTitle}
-          </h1>
-          {chapterSubtitle ? (
-            <p className="text-sm font-normal text-[var(--color-ink-2)] leading-relaxed">
-              {chapterSubtitle}
-            </p>
-          ) : null}
-        </div>
-
-        {/* Render chapter blocks if available */}
-        {hasBlocks ? (
-          <div className="doc pt-2 pb-1 space-y-5">
-            {hasCookMode && (
-              <div className="doc-sec-cta flex justify-end pb-1">
-                <button
-                  type="button"
-                  onClick={handleOpenCookMode}
-                  className="btn btn-primary cook-start inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer"
-                >
-                  <LuPlay
-                    aria-hidden="true"
-                    className="i fill-current text-xs"
-                  />
-                  <span>
-                    {locale === "es" ? "Empezar a cocinar" : "Start cooking"}
-                  </span>
-                </button>
-              </div>
+          {/* Progress Bar (2-Segment if quiz exists, 1-segment if no quiz) */}
+          <div
+            role="progressbar"
+            aria-label={
+              hasQuiz ? "Chapter progress: Learn" : "Chapter progress"
+            }
+            aria-valuenow={1}
+            aria-valuemin={1}
+            aria-valuemax={hasQuiz ? 2 : 1}
+            className="flex items-center gap-2 pt-1"
+          >
+            <div className="h-2 flex-1 rounded-full bg-[var(--color-brand-600)]" />
+            {hasQuiz && (
+              <div className="h-2 flex-1 rounded-full bg-[var(--color-panel-2)]" />
             )}
-            <BlockRenderer
-              blocks={blocks!}
-              locale={locale === "es" ? "es" : "en"}
-              trainingCourseId={trainingCourseId ?? courseId}
-            />
-            {standaloneProcedure ? (
-              <div className="pt-4">
-                <ProcedureArticleBody
-                  proc={standaloneProcedure}
-                  employee={employee}
-                  effectiveRole="employee"
-                  locale={locale}
-                  hideQuiz={true}
-                />
-              </div>
+          </div>
+
+          {/* Chapter Eyebrow, Title & Subtitle */}
+          <div className="space-y-2 pt-1 pb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-brand-700)]">
+              {t("eyebrowLearn")}
+            </p>
+            <h1 className="font-[family-name:var(--font-ui)] text-xl sm:text-2xl font-medium tracking-tight text-[var(--color-ink)]">
+              {chapterTitle}
+            </h1>
+            {chapterSubtitle ? (
+              <p className="text-sm font-normal text-[var(--color-ink-2)] leading-relaxed">
+                {chapterSubtitle}
+              </p>
             ) : null}
           </div>
-        ) : standaloneProcedure ? (
-          /* When there are no custom chapter blocks, render the procedure in full */
-          <div className="pt-2">
-            <ProcedureArticleBody
-              proc={standaloneProcedure}
-              employee={employee}
-              effectiveRole="employee"
-              locale={locale}
-              hideQuiz={true}
-              docBar={
-                hasCookMode ? (
-                  <div className="flex items-center justify-end pb-3">
-                    <button
-                      type="button"
-                      onClick={handleOpenCookMode}
-                      className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all"
-                    >
-                      <LuPlay className="fill-current text-xs" />
-                      <span>
-                        {locale === "es"
-                          ? "Empezar a cocinar"
-                          : "Start cooking"}
-                      </span>
-                    </button>
-                  </div>
-                ) : null
-              }
-            />
-          </div>
-        ) : null}
 
-        {/* Cook Mode Modal Launcher (when standaloneProcedure wasn't already rendering via ProcedureArticleBody without blocks) */}
-        {(!standaloneProcedure || hasBlocks) && cookModeBlock && (
-          <CookModeLauncher
-            key={`cook-mode-${courseId}-${chapterNumber}`}
-            block={cookModeBlock}
-            procedureId={courseId}
-            procedureTitle={chapterTitle}
-            locale={locale === "es" ? "es" : "en"}
-            modalOnly
-          />
-        )}
-      </main>
-
-      {/* Sticky Bottom CTA Button: Continue to quiz or Advance to next chapter */}
-      <div
-        className={cn(
-          "fixed bottom-0 right-0 z-30 flex justify-center left-0",
-          sidebarOffsetPx > 0 && "lg:left-[280px]",
-        )}
-      >
-        <div
-          className="w-full max-w-doc px-3 sm:px-6 pt-4"
-          style={{
-            paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
-            background:
-              "linear-gradient(to top, var(--color-bg) 60%, color-mix(in srgb, var(--color-bg) 95%, transparent) 80%, transparent 100%)",
-          }}
-        >
-          {hasQuiz ? (
-            <Link
-              href={`${effectiveBasePath}?chapter=${chapterNumber}&mode=quiz`}
-              className="flex w-full min-h-[52px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
-            >
-              {t("continueToQuiz")}
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={handleAdvance}
-              disabled={isAdvancing}
-              className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
-            >
-              {isAdvancing ? (
-                <LuLoader className="animate-spin text-xl" />
-              ) : (
-                <>
-                  <span>
-                    {chapterNumber < totalChapters
-                      ? locale === "es"
-                        ? `Continuar al Capítulo ${chapterNumber + 1}`
-                        : `Continue to Chapter ${chapterNumber + 1}`
-                      : locale === "es"
-                        ? "Completar curso"
-                        : "Complete course"}
-                  </span>
-                  {chapterNumber < totalChapters ? (
-                    <LuArrowRight className="text-lg" />
-                  ) : (
-                    <LuCheck className="text-lg" />
-                  )}
-                </>
+          {/* Render chapter blocks if available */}
+          {hasBlocks ? (
+            <div className="doc pt-2 pb-1 space-y-5">
+              {hasCookMode && (
+                <div className="doc-sec-cta flex justify-end pb-1">
+                  <button
+                    type="button"
+                    onClick={handleOpenCookMode}
+                    className="btn btn-primary cook-start inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all cursor-pointer"
+                  >
+                    <LuPlay
+                      aria-hidden="true"
+                      className="i fill-current text-xs"
+                    />
+                    <span>
+                      {locale === "es" ? "Empezar a cocinar" : "Start cooking"}
+                    </span>
+                  </button>
+                </div>
               )}
-            </button>
+              <BlockRenderer
+                blocks={blocks!}
+                locale={locale === "es" ? "es" : "en"}
+                trainingCourseId={trainingCourseId ?? courseId}
+              />
+              {standaloneProcedure ? (
+                <div className="pt-4">
+                  <ProcedureArticleBody
+                    proc={standaloneProcedure}
+                    employee={employee}
+                    effectiveRole="employee"
+                    locale={locale}
+                    hideQuiz={true}
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : standaloneProcedure ? (
+            /* When there are no custom chapter blocks, render the procedure in full */
+            <div className="pt-2">
+              <ProcedureArticleBody
+                proc={standaloneProcedure}
+                employee={employee}
+                effectiveRole="employee"
+                locale={locale}
+                hideQuiz={true}
+                docBar={
+                  hasCookMode ? (
+                    <div className="flex items-center justify-end pb-3">
+                      <button
+                        type="button"
+                        onClick={handleOpenCookMode}
+                        className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-[var(--color-brand-600)] px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-brand-700)] active:scale-95 transition-all"
+                      >
+                        <LuPlay className="fill-current text-xs" />
+                        <span>
+                          {locale === "es"
+                            ? "Empezar a cocinar"
+                            : "Start cooking"}
+                        </span>
+                      </button>
+                    </div>
+                  ) : null
+                }
+              />
+            </div>
+          ) : null}
+
+          {/* Cook Mode Modal Launcher (when standaloneProcedure wasn't already rendering via ProcedureArticleBody without blocks) */}
+          {(!standaloneProcedure || hasBlocks) && cookModeBlock && (
+            <CookModeLauncher
+              key={`cook-mode-${courseId}-${chapterNumber}`}
+              block={cookModeBlock}
+              procedureId={courseId}
+              procedureTitle={chapterTitle}
+              locale={locale === "es" ? "es" : "en"}
+              modalOnly
+            />
           )}
+        </main>
+
+        {/* Sticky Bottom CTA Button: Continue to quiz or Advance to next chapter */}
+        <div
+          className={cn(
+            "fixed bottom-0 right-0 z-30 flex justify-center left-0",
+            sidebarOffsetPx > 0 && "lg:left-[280px]",
+          )}
+        >
+          <div
+            className="w-full max-w-doc px-3 sm:px-6 pt-4"
+            style={{
+              paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))",
+              background:
+                "linear-gradient(to top, var(--color-bg) 60%, color-mix(in srgb, var(--color-bg) 95%, transparent) 80%, transparent 100%)",
+            }}
+          >
+            {hasQuiz ? (
+              <Link
+                href={`${effectiveBasePath}?chapter=${chapterNumber}&mode=quiz`}
+                className="flex w-full min-h-[52px] items-center justify-center rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
+              >
+                {t("continueToQuiz")}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={handleAdvance}
+                disabled={isAdvancing}
+                className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-[var(--color-brand-600)] px-6 py-3 text-center font-[family-name:var(--font-ui)] text-base font-semibold text-white shadow-lg transition-all duration-[var(--dur)] ease-[var(--ease)] hover:bg-[var(--color-brand-700)] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-3 focus-visible:outline-[var(--color-brand-600)] focus-visible:outline-offset-2"
+              >
+                {isAdvancing ? (
+                  <LuLoader className="animate-spin text-xl" />
+                ) : (
+                  <>
+                    <span>
+                      {chapterNumber < totalChapters
+                        ? locale === "es"
+                          ? `Continuar al Capítulo ${chapterNumber + 1}`
+                          : `Continue to Chapter ${chapterNumber + 1}`
+                        : locale === "es"
+                          ? "Completar curso"
+                          : "Complete course"}
+                    </span>
+                    {chapterNumber < totalChapters ? (
+                      <LuArrowRight className="text-lg" />
+                    ) : (
+                      <LuCheck className="text-lg" />
+                    )}
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </ContentProtection>
   );
 }

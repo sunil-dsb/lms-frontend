@@ -7,7 +7,6 @@ import type { Employee, SystemRole } from "@/lib/types";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LocaleSwitch } from "@/components/ui/locale-switch";
 import {
-  LuArrowLeft,
   LuChartColumn,
   LuChefHat,
   LuCirclePlus,
@@ -16,6 +15,7 @@ import {
   LuGraduationCap,
   LuHistory,
   LuHouse,
+  LuLogOut,
   LuUserPlus,
   LuUsers,
 } from "react-icons/lu";
@@ -104,7 +104,6 @@ export interface SidebarProps {
   isActive: (href: string) => boolean;
   onNavigate: () => void;
   signOutLabel: string;
-  backToAppLabel: string;
   titleLabel: string;
   soonLabel: string;
   langLabel: string;
@@ -123,14 +122,13 @@ export function Sidebar({
   headingFor,
   isActive,
   onNavigate,
-  signOutLabel: _signOutLabel,
-  backToAppLabel,
+  signOutLabel,
   titleLabel,
   soonLabel,
   langLabel,
   themeToDarkLabel,
   themeToLightLabel,
-  signOutAction: _signOutAction,
+  signOutAction,
   className,
 }: SidebarProps): React.ReactElement {
   return (
@@ -205,20 +203,26 @@ export function Sidebar({
             {employee.name}
           </span>
         </p>
-        <Link
-          href={`/${locale}/employee/home`}
-          onClick={onNavigate}
-          className={cn(
-            "flex min-h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 py-2",
-            "text-sm font-medium text-[var(--color-ink-2)]",
-            "transition-colors duration-[var(--dur)] ease-[var(--ease)]",
-            "hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2",
-          )}
-        >
-          <LuArrowLeft aria-hidden="true" className="text-md" />
-          <span className="flex-1 truncate">{backToAppLabel}</span>
-        </Link>
+        {/* Sign out — a form so the server action runs directly on submit
+            (same pattern as the employee top bar). Sits in the footer so it
+            is present on desktop and in the mobile drawer. */}
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            onClick={onNavigate}
+            className={cn(
+              "flex min-h-10 w-full items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left",
+              "text-sm font-medium text-[var(--color-ink-2)]",
+              "transition-colors duration-[var(--dur)] ease-[var(--ease)]",
+              "hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-2",
+              "cursor-pointer",
+            )}
+          >
+            <LuLogOut aria-hidden="true" className="text-md" />
+            <span className="flex-1 truncate">{signOutLabel}</span>
+          </button>
+        </form>
         <div className="mt-2 flex items-center justify-between border-t border-[var(--color-line)] pt-3 px-1 lg:hidden">
           <LocaleSwitch locale={locale} label={langLabel} />
           <ThemeToggle

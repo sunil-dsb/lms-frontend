@@ -9,7 +9,7 @@
 
 import http from "@/lib/http";
 import { LIBRARY_ENDPOINTS } from "./endpoints";
-import type { Procedure, CreateProcedureInput } from "@/lib/types";
+import type { Procedure, CreateProcedureInput, Category } from "@/lib/types";
 import type {
   ProcedureFilterOptions,
   AssignedProceduresFilterOptions,
@@ -70,6 +70,7 @@ export async function fetchProcedures(
   options: ProcedureFilterOptions = {},
   _isAdmin = false,
   cookieHeader?: string,
+  categoriesPromise?: Promise<Category[]>,
 ): Promise<{ procedures: Procedure[]; total?: number }> {
   const headers = makeHeaders(cookieHeader);
   const limit = options.limit ?? PROCEDURES_LIST_LIMIT;
@@ -121,15 +122,19 @@ export async function fetchProcedures(
     ? data.data.procedures
     : [];
   const procedures = rawList.map(normalizeBackendProcedure);
-  await resolveBackendCategories(procedures, cookieHeader);
+  await resolveBackendCategories(procedures, cookieHeader, categoriesPromise);
   const total = data.data?.meta?.total ?? procedures.length;
   return { procedures, total };
 }
 
-/** Resolves each row's category from backend category list. */
+/** Resolves each row's category from backend category list. When the caller
+ *  already fetches the list (the page's own useBackendCategories query), it
+ *  passes that promise so this reuses the same single GET /categories instead
+ *  of firing a second, sequential one. */
 async function resolveBackendCategories(
   procedures: Procedure[],
   cookieHeader?: string,
+  categoriesPromise?: Promise<Category[]>,
 ): Promise<void> {
   const needsResolution = procedures.some(
     (p) => !p.category && p.subcategoryId,
@@ -138,7 +143,9 @@ async function resolveBackendCategories(
   try {
     const { fetchBackendCategories, backendSlug } =
       await import("@/services/categories/api");
-    const cats = await fetchBackendCategories({}, cookieHeader);
+    const cats = categoriesPromise
+      ? await categoriesPromise
+      : await fetchBackendCategories({}, cookieHeader);
     const byId = new Map(cats.map((c) => [c.id, c]));
     const subSeen = new Set<string>();
     for (const p of procedures) {
@@ -176,6 +183,7 @@ async function resolveBackendCategories(
 export async function fetchAssignedProcedures(
   options: AssignedProceduresFilterOptions = {},
   cookieHeader?: string,
+  categoriesPromise?: Promise<Category[]>,
 ): Promise<{
   procedures: Procedure[];
   total: number;
@@ -215,31 +223,17 @@ export async function fetchAssignedProcedures(
     ? data.data.procedures
     : [];
   const procedures = rawList.map(normalizeBackendProcedure);
-  await resolveBackendCategories(procedures, cookieHeader);
+  await resolveBackendCategories(procedures, cookieHeader, categoriesPromise);
   const total = data.data?.meta?.total ?? procedures.length;
   return { procedures, total, meta: data.data?.meta };
 }
 
-const procedureCache = new Map<string, Procedure>();
 const procedureInFlight = new Map<string, Promise<Procedure>>();
 
-export function invalidateProcedureCache(idOrSlug?: string): void {
-  if (idOrSlug) procedureCache.delete(idOrSlug);
-  else procedureCache.clear();
-}
-
-export function getCachedProcedure(idOrSlug: string): Procedure | undefined {
-  if (!idOrSlug) return undefined;
-  return procedureCache.get(idOrSlug);
-}
-
-function hasProcedureBlocks(proc: Procedure | null | undefined): boolean {
-  if (!proc) return false;
-  return (
-    (proc as any)._isDetail === true ||
-    (proc.bodyEn?.blocks?.length ?? 0) > 0 ||
-    (proc.bodyEs?.blocks?.length ?? 0) > 0
-  );
+/** Result cache removed — always returns undefined so callers fall through
+ *  to fetchProcedureById; kept because components still call it. */
+export function getCachedProcedure(_idOrSlug: string): Procedure | undefined {
+  return undefined;
 }
 
 export async function fetchProcedureById(
@@ -249,14 +243,6 @@ export async function fetchProcedureById(
   trainingCourseId?: string,
 ): Promise<Procedure> {
   if (!slugOrId) throw new Error("Missing procedure id or slug");
-  if (!cookieHeader && procedureCache.has(slugOrId)) {
-    const cached = procedureCache.get(slugOrId)!;
-    if (hasProcedureBlocks(cached)) {
-      return cached;
-    }
-    // Evict shallow procedure that lacks body blocks
-    procedureCache.delete(slugOrId);
-  }
   if (!cookieHeader && procedureInFlight.has(slugOrId)) {
     return procedureInFlight.get(slugOrId)!;
   }
@@ -276,11 +262,6 @@ export async function fetchProcedureById(
         const proc = normalizeBackendProcedure(data.data.procedure);
         (proc as any)._isDetail = true;
         await resolveBackendCategories([proc], cookieHeader);
-        if (!cookieHeader) {
-          if (proc.id) procedureCache.set(proc.id, proc);
-          if (proc.slug) procedureCache.set(proc.slug, proc);
-          procedureCache.set(slugOrId, proc);
-        }
         return proc;
       }
     } catch (err) {
@@ -556,6 +537,32 @@ export async function updateProcedureStation(
 
 export const updateProcedureStations = updateProcedureStation;
 
+export interface UpdateProcedurePromoInput {
+  isPromo: boolean;
+  promoStartsAt?: string | null;
+  promoExpiresAt?: string | null;
+  promoAudience?: "station" | "everyone";
+  assignUsers?: string[];
+  stationIds?: string[];
+}
+
+export async function updateProcedurePromo(
+  id: string,
+  input: UpdateProcedurePromoInput,
+): Promise<Procedure> {
+  const { data } = await http.patch<{
+    success: boolean;
+    message: string;
+    data: { procedure: Procedure };
+  }>(LIBRARY_ENDPOINTS.UPDATE_PROMO(id), input);
+
+  if (data.data?.procedure) {
+    return normalizeBackendProcedure(data.data.procedure);
+  }
+
+  throw new Error("Backend did not return updated procedure");
+}
+
 /** POST /api/v1/procedures/:id/publish — one-click draft → published.
  *  409 when already published or archived. */
 export async function publishProcedure(id: string): Promise<Procedure> {
@@ -622,10 +629,15 @@ export interface ProcedurePatchInput {
   purposeEs?: string;
   subcategoryId?: string | null;
   stationId?: string | null;
+  stationIds?: string[] | null;
   quizId?: string | null;
   procedureImage?: string | null;
-  assignUsers?: string[];
+  assignUsers?: string[] | null;
   status?: Procedure["status"];
+  isPromo?: boolean;
+  promoStartsAt?: string | null;
+  promoExpiresAt?: string | null;
+  promoAudience?: "station" | "everyone";
 }
 
 /** PATCH /api/v1/procedures/:id — partial update: only changed fields.

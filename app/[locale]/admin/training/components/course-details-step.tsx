@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { LuTriangleAlert } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import {
   BilingualInput,
@@ -15,6 +16,10 @@ interface CourseDetailsStepProps {
   setCourseTitle: (val: BilingualValue) => void;
   coursePurpose: BilingualValue;
   setCoursePurpose: (val: BilingualValue) => void;
+  titleError?: string | null;
+  setTitleError?: (err: string | null) => void;
+  purposeError?: string | null;
+  setPurposeError?: (err: string | null) => void;
   error: string | null;
   setError: (err: string | null) => void;
   onProceed: () => void;
@@ -27,6 +32,10 @@ export function CourseDetailsStep({
   setCourseTitle,
   coursePurpose,
   setCoursePurpose,
+  titleError,
+  setTitleError,
+  purposeError,
+  setPurposeError,
   error,
   setError,
   onProceed,
@@ -66,39 +75,63 @@ export function CourseDetailsStep({
       {/* Input Card */}
       <div className="rounded-2xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-6 sm:p-8 shadow-xs space-y-6">
         {/* Field 1: Course Name */}
-        <BilingualInput
-          label={isEs ? "Nombre del curso" : "Course name"}
-          value={courseTitle}
-          onChange={(val) => {
-            setCourseTitle(val);
-            if (error) setError(null);
-          }}
-          defaultLang={isEs ? "es" : "en"}
-          required
-          maxLength={500}
-          placeholder={{
-            en: "e.g. Tacos al Pastor",
-            es: "ej. Tacos al Pastor",
-          }}
-        />
+        <div id="field-course-title" className="rounded-[var(--radius-md)]">
+          <BilingualInput
+            label={isEs ? "Nombre del curso" : "Course name"}
+            value={courseTitle}
+            onChange={(val) => {
+              setCourseTitle(val);
+              if (titleError) setTitleError?.(null);
+              if (error) setError(null);
+            }}
+            defaultLang={isEs ? "es" : "en"}
+            required
+            maxLength={200}
+            placeholder={{
+              en: "e.g. Tacos al Pastor",
+              es: "ej. Tacos al Pastor",
+            }}
+          />
+          {titleError ? (
+            <p
+              role="alert"
+              className="mt-2 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+            >
+              <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
+              <span>{titleError}</span>
+            </p>
+          ) : null}
+        </div>
 
         {/* Field 2: Purpose */}
-        <BilingualInput
-          label={isEs ? "Propósito" : "Purpose"}
-          value={coursePurpose}
-          onChange={(val) => {
-            setCoursePurpose(val);
-            if (error) setError(null);
-          }}
-          defaultLang={isEs ? "es" : "en"}
-          multiline
-          required
-          maxLength={1000}
-          placeholder={{
-            en: "How we make tacos al pastor, from marinade to plating.",
-            es: "Cómo preparamos tacos al pastor, desde el marinado hasta el emplatado.",
-          }}
-        />
+        <div id="field-course-purpose" className="rounded-[var(--radius-md)]">
+          <BilingualInput
+            label={isEs ? "Propósito" : "Purpose"}
+            value={coursePurpose}
+            onChange={(val) => {
+              setCoursePurpose(val);
+              if (purposeError) setPurposeError?.(null);
+              if (error) setError(null);
+            }}
+            defaultLang={isEs ? "es" : "en"}
+            multiline
+            required
+            maxLength={1000}
+            placeholder={{
+              en: "How we make tacos al pastor, from marinade to plating.",
+              es: "Cómo preparamos tacos al pastor, desde el marinado hasta el emplatado.",
+            }}
+          />
+          {purposeError ? (
+            <p
+              role="alert"
+              className="mt-2 flex items-center gap-2 text-xs font-normal text-[var(--color-warn-ink)] animate-in fade-in"
+            >
+              <LuTriangleAlert className="size-[13px] shrink-0 text-[var(--color-warn)]" />
+              <span>{purposeError}</span>
+            </p>
+          ) : null}
+        </div>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
@@ -107,15 +140,7 @@ export function CourseDetailsStep({
               {isEs ? "Cancelar" : "Cancel"}
             </Button>
           </Link>
-          <Button
-            type="button"
-            variant="primary"
-            disabled={
-              !(courseTitle.en.trim() || courseTitle.es.trim()) ||
-              !(coursePurpose.en.trim() || coursePurpose.es.trim())
-            }
-            onClick={onProceed}
-          >
+          <Button type="button" variant="primary" onClick={onProceed}>
             {isEs ? "Agregar capítulo" : "Add chapter"}
           </Button>
         </div>

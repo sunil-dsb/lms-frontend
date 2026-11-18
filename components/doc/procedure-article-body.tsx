@@ -15,6 +15,7 @@ import { BlockRenderer, findAllergen } from "@/components/doc/block-renderer";
 import { CookModeLauncher } from "@/components/doc/cook-mode-launcher";
 import { QuizAttachBanner, QuizReader } from "@/components/doc/quiz-reader";
 import { Watermark } from "@/components/doc/watermark";
+import { ContentProtection } from "@/components/security/content-protection";
 import { getQuizById } from "@/lib/api";
 import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
 
@@ -171,137 +172,142 @@ export function ProcedureArticleBody({
   );
   const showAttachBanner = isAdmin && quizExists && !quizVisible;
   return (
-    <article className="doc" suppressHydrationWarning>
-      <DocBehaviour />
-      {docBar}
-      {proc.protection === "confidential" || proc.protection === "master" ? (
-        <Watermark name={employee?.name || "Staff"} locale={locale} />
-      ) : null}
-      {showAttachBanner && !bannerDismissed ? (
-        <div className="mx-auto w-full max-w-doc px-4 pt-6 sm:px-6">
-          <QuizAttachBanner
-            onAttach={onAttachQuiz ?? ((): void => {})}
-            onDismiss={onDismissBanner ?? ((): void => {})}
-            isAttaching={Boolean(isAttaching)}
-          />
-        </div>
-      ) : null}
+    <ContentProtection
+      employeeName={employee?.name || ""}
+      locale={locale}
+      enabled={true}
+      enableCopyProtection={true}
+      enablePrintProtection={true}
+    >
+      <article className="doc" suppressHydrationWarning>
+        <DocBehaviour />
+        {docBar}
+        {showAttachBanner && !bannerDismissed ? (
+          <div className="mx-auto w-full max-w-doc px-4 pt-6 sm:px-6">
+            <QuizAttachBanner
+              onAttach={onAttachQuiz ?? ((): void => {})}
+              onDismiss={onDismissBanner ?? ((): void => {})}
+              isAttaching={Boolean(isAttaching)}
+            />
+          </div>
+        ) : null}
 
-      {cover ? <Cover src={cover.src} alt={cover.alt} /> : null}
+        {cover ? <Cover src={cover.src} alt={cover.alt} /> : null}
 
-      {/* For a cook: the category once, with when it last changed, and no tile.
+        {/* For a cook: the category once, with when it last changed, and no tile.
           The status, the languages and the document control are the manager's
           facts; they stay on the admin's view. */}
-      <DocHead
-        icon={isAdmin ? iconName : undefined}
-        iconImageUrl={proc.iconImageUrl}
-        category={
-          isAdmin
-            ? categoryLabel
-            : `${categoryLabel} · ${labels.updatedOn.replace("{date}", updated)}`
-        }
-        title={title || "Untitled Procedure"}
-        withCover={Boolean(cover)}
-        isPromo={Boolean(proc.isPromo)}
-        isEs={isEs}
-      />
-
-      {allergen ? (
-        <Allergen
-          summary={allergen.summary}
-          detail={allergen.detail}
-          selectedAllergens={allergen.selectedAllergens}
-          locale={isEs ? "es" : "en"}
+        <DocHead
+          icon={isAdmin ? iconName : undefined}
+          iconImageUrl={proc.iconImageUrl}
+          category={
+            isAdmin
+              ? categoryLabel
+              : `${categoryLabel} · ${labels.updatedOn.replace("{date}", updated)}`
+          }
+          title={title || "Untitled Procedure"}
+          withCover={Boolean(cover)}
+          isPromo={Boolean(proc.isPromo)}
+          isEs={isEs}
         />
-      ) : null}
 
-      {purpose ? <DocPurpose>{purpose}</DocPurpose> : null}
+        {allergen ? (
+          <Allergen
+            summary={allergen.summary}
+            detail={allergen.detail}
+            selectedAllergens={allergen.selectedAllergens}
+            locale={isEs ? "es" : "en"}
+          />
+        ) : null}
 
-      {englishOnly ? (
-        <p className="doc-sec">
-          <span className="pill pill-due">{labels.englishOnly}</span>
-        </p>
-      ) : null}
+        {purpose ? <DocPurpose>{purpose}</DocPurpose> : null}
 
-      {/* One cook-mode launcher per recipe block. The launcher owns the block's
-       *  full body (allergen banner, Yield section, Method list with side
-       *  thumbnails, modal) and exposes a CTA inside the Yield section. We
-       *  collect the consumed recipe ids so `<BlockRenderer>` can skip them
-       *  below — otherwise the same recipe body would render twice. */}
-      {(() => {
-        const recipeBlocks = (rest ?? []).filter(
-          (b): b is Extract<ProcedureBlock, { kind: "recipe" }> =>
-            b.kind === "recipe",
-        );
-        if (recipeBlocks.length > 0) {
-          return recipeBlocks.map((b) => (
-            <CookModeLauncher
-              key={b.id ?? "recipe"}
-              block={b}
-              procedureId={proc.id}
-              procedureTitle={title || "Recipe"}
-              locale={isEs ? "es" : "en"}
-              skipAllergen={Boolean(
-                allergen && (hoisted?.id === b.id || !hoisted?.id),
-              )}
-            />
-          ));
-        }
+        {englishOnly ? (
+          <p className="doc-sec">
+            <span className="pill pill-due">{labels.englishOnly}</span>
+          </p>
+        ) : null}
 
-        // Discrete blocks: ingredients + numbered steps (method)
-        const methodBlocks = (rest ?? []).filter(
-          (b): b is Extract<ProcedureBlock, { kind: "method" }> =>
-            b.kind === "method",
-        );
-        if (methodBlocks.length > 0) {
-          const ingBlock = (rest ?? []).find(
-            (b): b is Extract<ProcedureBlock, { kind: "ingredients" }> =>
-              b.kind === "ingredients",
+        {/* One cook-mode launcher per recipe block. The launcher owns the block's
+         *  full body (allergen banner, Yield section, Method list with side
+         *  thumbnails, modal) and exposes a CTA inside the Yield section. We
+         *  collect the consumed recipe ids so `<BlockRenderer>` can skip them
+         *  below — otherwise the same recipe body would render twice. */}
+        {(() => {
+          const recipeBlocks = (rest ?? []).filter(
+            (b): b is Extract<ProcedureBlock, { kind: "recipe" }> =>
+              b.kind === "recipe",
           );
-          const allSteps = methodBlocks.flatMap((b) => b.steps);
-          return (
-            <CookModeLauncher
-              key={`cook-steps-${proc.id}`}
-              block={{
-                id: `steps-${proc.id}`,
-                factors: ingBlock?.factors ?? [1],
-                yieldItems: ingBlock?.yieldItems ?? [],
-                ingredients: ingBlock?.ingredients ?? [],
-                steps: allSteps,
-                allergen: ingBlock?.allergen,
-              }}
-              procedureId={proc.id}
-              procedureTitle={title || "Procedure"}
-              locale={isEs ? "es" : "en"}
-              modalOnly
-            />
+          if (recipeBlocks.length > 0) {
+            return recipeBlocks.map((b) => (
+              <CookModeLauncher
+                key={b.id ?? "recipe"}
+                block={b}
+                procedureId={proc.id}
+                procedureTitle={title || "Recipe"}
+                locale={isEs ? "es" : "en"}
+                skipAllergen={Boolean(
+                  allergen && (hoisted?.id === b.id || !hoisted?.id),
+                )}
+              />
+            ));
+          }
+
+          // Discrete blocks: ingredients + numbered steps (method)
+          const methodBlocks = (rest ?? []).filter(
+            (b): b is Extract<ProcedureBlock, { kind: "method" }> =>
+              b.kind === "method",
           );
-        }
+          if (methodBlocks.length > 0) {
+            const ingBlock = (rest ?? []).find(
+              (b): b is Extract<ProcedureBlock, { kind: "ingredients" }> =>
+                b.kind === "ingredients",
+            );
+            const allSteps = methodBlocks.flatMap((b) => b.steps);
+            return (
+              <CookModeLauncher
+                key={`cook-steps-${proc.id}`}
+                block={{
+                  id: `steps-${proc.id}`,
+                  factors: ingBlock?.factors ?? [1],
+                  yieldItems: ingBlock?.yieldItems ?? [],
+                  ingredients: ingBlock?.ingredients ?? [],
+                  steps: allSteps,
+                  allergen: ingBlock?.allergen,
+                }}
+                procedureId={proc.id}
+                procedureTitle={title || "Procedure"}
+                locale={isEs ? "es" : "en"}
+                modalOnly
+              />
+            );
+          }
 
-        return null;
-      })()}
+          return null;
+        })()}
 
-      <BlockRenderer
-        blocks={rest}
-        locale={isEs ? "es" : "en"}
-        hoistedAllergenId={hoisted?.id}
-        consumedRecipeIds={
-          new Set(
-            (rest ?? [])
-              .filter(
-                (b): b is Extract<ProcedureBlock, { kind: "recipe" }> =>
-                  b.kind === "recipe",
-              )
-              .map((b) => b.id ?? ""),
-          )
-        }
-      />
+        <BlockRenderer
+          blocks={rest}
+          locale={isEs ? "es" : "en"}
+          hoistedAllergenId={hoisted?.id}
+          consumedRecipeIds={
+            new Set(
+              (rest ?? [])
+                .filter(
+                  (b): b is Extract<ProcedureBlock, { kind: "recipe" }> =>
+                    b.kind === "recipe",
+                )
+                .map((b) => b.id ?? ""),
+            )
+          }
+        />
 
-      {/* Quiz: visible when manually attached OR when the procedure is part of
-       *  training, unless hideQuiz is set (e.g. inside course chapter learn view). */}
-      {!hideQuiz && quiz && (quiz.attached || proc.attachedToTraining) ? (
-        <QuizReader quiz={quiz} locale={isEs ? "es" : "en"} />
-      ) : null}
-    </article>
+        {/* Quiz: visible when manually attached OR when the procedure is part of
+         *  training, unless hideQuiz is set (e.g. inside course chapter learn view). */}
+        {!hideQuiz && quiz && (quiz.attached || proc.attachedToTraining) ? (
+          <QuizReader quiz={quiz} locale={isEs ? "es" : "en"} />
+        ) : null}
+      </article>
+    </ContentProtection>
   );
 }

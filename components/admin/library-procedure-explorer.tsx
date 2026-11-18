@@ -10,6 +10,7 @@ import {
   canPublishProcedure,
   setProcedureState,
 } from "@/lib/api";
+import { isPromoExpired } from "@/lib/promos";
 import type {
   Procedure,
   Category,
@@ -417,7 +418,6 @@ export function LibraryProcedureExplorer({
       );
     },
     enabled: hasActiveBackendFilters,
-    staleTime: 5000,
   });
 
   const allProcedures = React.useMemo(() => {
@@ -430,7 +430,7 @@ export function LibraryProcedureExplorer({
       .map((p) => {
         let item = p;
         if (archivedIds.has(p.id) || archivedIds.has(p.slug)) {
-          item = { ...item, isArchived: true };
+          item = { ...item, isArchived: true, status: "archived" };
         }
         const statusOverride =
           statusOverrides.get(p.id) || statusOverrides.get(p.slug);
@@ -594,11 +594,14 @@ export function LibraryProcedureExplorer({
             return false;
         }
 
-        // Status Filter
+        // Status Filter: expired promo dishes automatically qualify as archived
+        const isRowArchived = Boolean(
+          p.isArchived || p.status === "archived" || isPromoExpired(p),
+        );
         if (statusFilter === "archived") {
-          if (!p.isArchived) return false;
+          if (!isRowArchived) return false;
         } else {
-          if (p.isArchived) return false;
+          if (isRowArchived) return false;
           if (statusFilter !== "all" && p.status !== statusFilter) return false;
         }
 

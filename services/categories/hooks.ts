@@ -16,15 +16,17 @@ export const CATEGORIES_QUERY_KEY = ["categories"] as const;
 /**
  * Live categories from the backend (GET /api/v1/categories, limit 100).
  * Rows carry `status` and `proceduresCount` straight from the API.
+ *
+ * Fresh on every view: `staleTime: 0` means each page view fetches from the
+ * API (never a previous visit's result), so a category created on another
+ * view appears without a reload. Tab focus does not refetch. `gcTime`
+ * only keeps the last list as an instant placeholder while the new one loads.
  */
 export function useBackendCategories() {
   return useQuery({
     queryKey: [...CATEGORIES_QUERY_KEY, "backend"],
     queryFn: () => fetchBackendCategories(),
-    staleTime: 1000 * 60 * 60, // 1 hour stale time
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours in cache
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 }
 
@@ -87,10 +89,7 @@ export function useAllSubcategories(options: AllSubcategoriesOptions = {}) {
       { categoryId, search, page, limit },
     ],
     queryFn: () => fetchAllSubcategories(options),
-    staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60 * 24,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
   });
 }
 

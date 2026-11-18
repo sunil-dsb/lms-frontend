@@ -14,9 +14,11 @@ import {
 } from "@/services/chapters/hooks";
 import { isUuid } from "@/services/courses/api";
 import type { BilingualValue } from "@/components/ui/bilingual-input";
+import { toast } from "@/components/ui/toast";
 import { ChapterContentEditor } from "./chapter-content-editor";
 import { CourseDetailsStep } from "./course-details-step";
 import { CourseChaptersStep } from "./course-chapters-step";
+import { validateCourseForm, scrollToTarget } from "./course-editor-validation";
 
 export interface EditorChapter {
   id: string;
@@ -222,21 +224,26 @@ export function CourseEditor({
   const [isSaving, setIsSaving] = React.useState(false);
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [titleError, setTitleError] = React.useState<string | null>(null);
+  const [purposeError, setPurposeError] = React.useState<string | null>(null);
 
   // Transition from Step 1 (Details) to Chapter Content Creation
   const handleProceedToAddChapter = () => {
-    const hasTitle = Boolean(courseTitle.en.trim() || courseTitle.es.trim());
-    const hasPurpose = Boolean(
-      coursePurpose.en.trim() || coursePurpose.es.trim(),
-    );
-    if (!hasTitle || !hasPurpose) {
-      setError(
-        isEs
-          ? "El nombre y el propósito son obligatorios."
-          : "Course name and purpose are both required.",
-      );
+    const valErr = validateCourseForm({
+      scope: "details",
+      title: courseTitle,
+      purpose: coursePurpose,
+      isEs,
+    });
+    if (valErr) {
+      if (valErr.field === "title") setTitleError(valErr.message);
+      if (valErr.field === "purpose") setPurposeError(valErr.message);
+      toast.error(valErr.message);
+      scrollToTarget(valErr.target);
       return;
     }
+    setTitleError(null);
+    setPurposeError(null);
     setError(null);
     setEditingChapter(null);
     setStep("chapter-editor");
@@ -246,11 +253,22 @@ export function CourseEditor({
     nextTitle: BilingualValue,
     nextPurpose: BilingualValue,
   ) => {
+    const valErr = validateCourseForm({
+      scope: "details",
+      title: nextTitle,
+      purpose: nextPurpose,
+      isEs,
+    });
+    if (valErr) {
+      toast.error(valErr.message);
+      scrollToTarget(valErr.target);
+      return;
+    }
+
     const nextTitleEn = nextTitle.en.trim() || nextTitle.es.trim();
     const nextTitleEs = nextTitle.es.trim() || nextTitle.en.trim();
     const nextPurposeEn = nextPurpose.en.trim() || nextPurpose.es.trim();
     const nextPurposeEs = nextPurpose.es.trim() || nextPurpose.en.trim();
-    if (!nextTitleEn || !nextPurposeEn) return;
 
     setCourseTitle({ en: nextTitleEn, es: nextTitleEs });
     setCoursePurpose({ en: nextPurposeEn, es: nextPurposeEs });
@@ -291,13 +309,27 @@ export function CourseEditor({
   const handleSaveCourse = async (options?: {
     redirectAfter?: boolean;
   }): Promise<string | null> => {
+    const valErr = validateCourseForm({
+      scope: "all",
+      title: courseTitle,
+      purpose: coursePurpose,
+      chapters,
+      isEs,
+    });
+    if (valErr) {
+      if (valErr.field === "title") setTitleError(valErr.message);
+      if (valErr.field === "purpose") setPurposeError(valErr.message);
+      toast.error(valErr.message);
+      scrollToTarget(valErr.target);
+      return null;
+    }
+
     const effectiveTitleEn = courseTitle.en.trim() || courseTitle.es.trim();
     const effectiveTitleEs = courseTitle.es.trim() || courseTitle.en.trim();
     const effectivePurposeEn =
       coursePurpose.en.trim() || coursePurpose.es.trim();
     const effectivePurposeEs =
       coursePurpose.es.trim() || coursePurpose.en.trim();
-    if (!effectiveTitleEn || !effectivePurposeEn) return null;
 
     setIsSaving(true);
     setError(null);
@@ -440,6 +472,10 @@ export function CourseEditor({
         setCourseTitle={setCourseTitle}
         coursePurpose={coursePurpose}
         setCoursePurpose={setCoursePurpose}
+        titleError={titleError}
+        setTitleError={setTitleError}
+        purposeError={purposeError}
+        setPurposeError={setPurposeError}
         error={error}
         setError={setError}
         onProceed={handleProceedToAddChapter}

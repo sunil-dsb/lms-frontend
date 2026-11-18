@@ -90,7 +90,6 @@ export function EmployeeDetailClient({
       }
       throw new Error("Employee not found");
     },
-    staleTime: 60_000,
   });
   const employee = employeeQuery.data ?? null;
 
@@ -111,9 +110,9 @@ export function EmployeeDetailClient({
   }, [id, queryClient]);
 
   // Label + edit-modal catalogs come from the shared TanStack Query cache
-  // (5-min staleTime, provider defaults): one jobs + one stations + one
-  // locations call per session, reused across this page, the list page
-  // and the modal — no per-mount or per-location reloads.
+  // (staleTime 0, always fresh): concurrent views still share one in-flight
+  // jobs/stations/locations call, and every mount refetches so the data is
+  // never stale.
   const { roles } = useRoles();
   const { data: stations = [] } = useStations();
   const { data: locationsData } = useLocations();
@@ -150,8 +149,8 @@ export function EmployeeDetailClient({
     if (id) {
       // Re-read the row: the PUT response only carries `inviteUrl` when it
       // just re-invited (email change). A pending employee may still hold
-      // an older active link that only GET returns — refetch so the banner
-      // below converges instead of waiting out the query staleTime.
+      // an older active link that only GET returns — invalidate so the
+      // banner below converges now rather than on the next refetch trigger.
       void queryClient.invalidateQueries({ queryKey: ["employee", id] });
     }
     router.refresh();
@@ -235,7 +234,6 @@ export function EmployeeDetailClient({
     queryKey: ["employee", "training", id],
     enabled: Boolean(id),
     queryFn: () => fetchEmployeeTraining(id),
-    staleTime: 60_000,
   });
 
   // The API returns one raw row per assigned course; the view consumes the

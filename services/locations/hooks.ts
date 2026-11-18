@@ -5,8 +5,8 @@
  *
  * Same pattern as services/categories and services/library: the query
  * key is exported so mutations elsewhere can invalidate the list, and
- * the provider defaults apply (5 min staleTime, no refetch on focus,
- * 4xx never retried). Consumers read `data?.locations`.
+ * the provider defaults apply (staleTime 0 — a fresh API call whenever
+ * the data is needed; 4xx never retried). Consumers read `data?.locations`.
  */
 
 import { useQuery } from "@tanstack/react-query";

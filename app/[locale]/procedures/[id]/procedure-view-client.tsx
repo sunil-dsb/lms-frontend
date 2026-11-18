@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  ApiException,
   canRead,
   deleteProcedure,
   fetchQuizById,
@@ -25,6 +26,7 @@ import {
   logout,
   updateQuiz,
 } from "@/lib/api";
+import { isPromoExpired } from "@/lib/promos";
 import { PROCEDURES_QUERY_KEY } from "@/services/library/hooks";
 import type { Employee, Procedure, ProcedureBlock } from "@/lib/types";
 import { withAs, type ViewAs } from "@/lib/view-as";
@@ -109,9 +111,16 @@ export function ProcedureViewClient({
     (cached?.bodyEn?.blocks?.length ?? 0) > 0 ||
     (cached?.bodyEs?.blocks?.length ?? 0) > 0,
   );
-  const [proc, setProc] = React.useState<Procedure | null>(() =>
-    cached && canRead(cached, employee) ? cached : null,
-  );
+  const [proc, setProc] = React.useState<Procedure | null>(() => {
+    if (!cached) return null;
+    if (
+      effectiveRole === "employee" &&
+      (cached.status === "archived" || isPromoExpired(cached))
+    ) {
+      return null;
+    }
+    return canRead(cached, employee) ? cached : null;
+  });
   const [isLoading, setIsLoading] = React.useState(!proc || !cachedHasBlocks);
   const [notFoundState, setNotFoundState] = React.useState(false);
 
@@ -127,12 +136,28 @@ export function ProcedureViewClient({
       try {
         const result = await getProcedureBySlug(slugOrId);
         if (isMounted && result.procedure) {
-          setProc(result.procedure);
-          setNotFoundState(false);
+          if (
+            effectiveRole === "employee" &&
+            (result.procedure.status === "archived" ||
+              isPromoExpired(result.procedure))
+          ) {
+            setProc(null);
+            setNotFoundState(true);
+          } else {
+            setProc(result.procedure);
+            setNotFoundState(false);
+          }
         }
-      } catch {
-        if (isMounted && !proc) {
-          setNotFoundState(true);
+      } catch (err) {
+        if (isMounted) {
+          if (
+            !proc ||
+            (err instanceof ApiException &&
+              (err.status === 404 || err.status === 403))
+          ) {
+            setProc(null);
+            setNotFoundState(true);
+          }
         }
       } finally {
         if (isMounted) setIsLoading(false);

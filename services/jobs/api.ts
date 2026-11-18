@@ -9,19 +9,8 @@ import type {
   UpdateRoleInput,
 } from "./types";
 
-const cacheTtlMs = 5 * 60 * 1000;
-const jobsCache = new Map<
-  string,
-  { value: { jobs: Job[] }; expiresAt: number }
->();
+// No result cache — every call hits the API (in-flight requests only are coalesced).
 const jobsRequests = new Map<string, Promise<{ jobs: Job[] }>>();
-const stationsCache = new Map<
-  string,
-  {
-    value: { stations: Array<{ id: string; name: string }> };
-    expiresAt: number;
-  }
->();
 const stationsRequests = new Map<
   string,
   Promise<{ stations: Array<{ id: string; name: string }> }>
@@ -38,10 +27,9 @@ function requestHeaders(
   return headers;
 }
 
+// Drops in-flight reads only — there is no result cache left to clear.
 export function clearJobsCache(): void {
-  jobsCache.clear();
   jobsRequests.clear();
-  stationsCache.clear();
   stationsRequests.clear();
 }
 
@@ -60,8 +48,6 @@ export async function fetchJobs(
     return { jobs: data.data?.jobs ?? [] };
   }
   const key = cookieHeader || "client";
-  const cached = jobsCache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.value;
   const pending = jobsRequests.get(key);
   if (pending) return pending;
   const request = http
@@ -70,11 +56,7 @@ export async function fetchJobs(
       // Backend paginates (default 10) — org scale fits one page.
       params: { page: 1, limit: 200 },
     })
-    .then(({ data }) => {
-      const value = { jobs: data.data?.jobs ?? [] };
-      jobsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
-      return value;
-    })
+    .then(({ data }) => ({ jobs: data.data?.jobs ?? [] }))
     .finally(() => jobsRequests.delete(key));
   jobsRequests.set(key, request);
   return request;
@@ -111,7 +93,7 @@ export async function fetchJobStations(
 ): Promise<{ stations: Array<{ id: string; name: string }> }> {
   if (!jobIds.length) return { stations: [] };
   const ids = [...new Set(jobIds)].sort();
-  // Browser-only cache (see fetchJobs) — the server always reads fresh.
+  // Browser-only in-flight coalescing (see fetchJobs) — the server always reads fresh.
   if (typeof window === "undefined") {
     const { data } = await http.request<{
       success: boolean;
@@ -125,8 +107,6 @@ export async function fetchJobStations(
     return { stations: data.data?.stations ?? [] };
   }
   const key = `${cookieHeader || "client"}:${ids.join(",")}`;
-  const cached = stationsCache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.value;
   const pending = stationsRequests.get(key);
   if (pending) return pending;
   const request = http
@@ -139,11 +119,7 @@ export async function fetchJobStations(
       params: { jobIds: ids.join(",") },
       headers: requestHeaders(cookieHeader),
     })
-    .then(({ data }) => {
-      const value = { stations: data.data?.stations ?? [] };
-      stationsCache.set(key, { value, expiresAt: Date.now() + cacheTtlMs });
-      return value;
-    })
+    .then(({ data }) => ({ stations: data.data?.stations ?? [] }))
     .finally(() => stationsRequests.delete(key));
   stationsRequests.set(key, request);
   return request;

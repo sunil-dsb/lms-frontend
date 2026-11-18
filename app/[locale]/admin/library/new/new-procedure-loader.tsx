@@ -12,8 +12,9 @@ import { ProcedureEditor } from "@/components/admin/procedure-editor";
  * Client data layer for the new-procedure wizard.
  *
  * The page shell renders instantly; categories resolve through TanStack
- * Query (cached, so reopening the wizard is immediate). Subcategories
- * arrive in ONE call (GET /api/v1/categories/subcategories) and are
+ * Query with no cache — every visit fetches fresh, so a category created
+ * elsewhere is already there. Subcategories arrive in ONE call
+ * (GET /api/v1/categories/subcategories) and are
  * grouped by `categoryId` client-side — never one request per category.
  * The editor mounts with an empty picker and fills in when the queries
  * resolve.

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { queryWords, scoreProcedure } from "@/lib/procedure-search";
+import { isPromoExpired } from "@/lib/promos";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -96,9 +97,9 @@ export function ProceduresClientList({
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Categories resolve through TanStack Query (1-hour cache for categories so
-  // tab-back navigation is instant and no redundant API calls are made).
-  // Backend only — no mock merge.
+  // Categories resolve through TanStack Query with no result cache: every
+  // visit fetches fresh from the API, so a category created in admin shows
+  // up without a reload. Backend only — no mock merge.
   const queryClient = useQueryClient();
   const { data: backendCategories = [] } = useBackendCategories();
   const categories = React.useMemo(() => {
@@ -201,7 +202,7 @@ export function ProceduresClientList({
     p.isDirectlyAssigned === true ||
     Boolean(employeeId && p.assignUsers?.includes(employeeId));
   const published = procedures.filter(
-    (p) => p.status === "published" && !p.isArchived,
+    (p) => p.status === "published" && !p.isArchived && !isPromoExpired(p),
   );
   const results = published
     .filter((p) => {

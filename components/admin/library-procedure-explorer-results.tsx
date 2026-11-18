@@ -36,8 +36,15 @@ import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusPill } from "@/components/ui/status-pill";
 import { getProcedureIcon } from "@/lib/category-icons";
-import { updateProcedure } from "@/services/library/api";
+import { updateProcedurePromo } from "@/services/library/api";
+import { clearLibraryListCache } from "@/lib/api";
+import { isPromoExpired } from "@/lib/promos";
 import { PromoConfigModal, type PromoData } from "./promo-config-modal";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  PROCEDURES_QUERY_KEY,
+  ASSIGNED_PROCEDURES_QUERY_KEY,
+} from "@/services/library/hooks";
 import * as React from "react";
 
 export function ProcedureExplorerResults({
@@ -76,6 +83,7 @@ export function ProcedureExplorerResults({
   onDelete: (id: string) => Promise<void>;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [promoProcedure, setPromoProcedure] = React.useState<Procedure | null>(
     null,
   );
@@ -83,7 +91,7 @@ export function ProcedureExplorerResults({
   const handleSavePromo = async (data: PromoData) => {
     if (!promoProcedure) return;
     try {
-      await updateProcedure(promoProcedure.id, {
+      await updateProcedurePromo(promoProcedure.id, {
         isPromo: data.isPromo,
         promoStartsAt: data.promoStartsAt,
         promoExpiresAt: data.promoExpiresAt,
@@ -91,6 +99,19 @@ export function ProcedureExplorerResults({
         assignUsers: data.promoEmployeeIds,
         stationIds: data.stationIds,
       });
+      clearLibraryListCache();
+      await queryClient.invalidateQueries({ queryKey: PROCEDURES_QUERY_KEY });
+      await queryClient.invalidateQueries({
+        queryKey: ASSIGNED_PROCEDURES_QUERY_KEY,
+      });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("lms_procedures_updated"));
+        try {
+          localStorage.setItem("lms_promo_sync", Date.now().toString());
+        } catch {
+          // ignore
+        }
+      }
       router.refresh();
     } catch (err) {
       console.error("Failed to update promo settings:", err);
@@ -205,6 +226,10 @@ export function ProcedureExplorerResults({
                     ].filter((n): n is string => Boolean(n))
                   : [];
 
+            const isRowArchived = Boolean(
+              p.isArchived || p.status === "archived" || isPromoExpired(p),
+            );
+
             return (
               <li
                 key={p.id}
@@ -294,7 +319,7 @@ export function ProcedureExplorerResults({
                         </h4>
                         <StatusPill
                           tone={
-                            p.isArchived
+                            isRowArchived
                               ? "neutral"
                               : p.status === "published"
                                 ? "ok"
@@ -302,7 +327,7 @@ export function ProcedureExplorerResults({
                           }
                           withDot
                         >
-                          {p.isArchived
+                          {isRowArchived
                             ? isEs
                               ? "Archivado"
                               : "Archived"
@@ -351,21 +376,14 @@ export function ProcedureExplorerResults({
                             </span>
                           </>
                         ) : null}
-                        {p.protection === "confidential" ||
-                        p.protection === "master" ? (
+                        {p.protection === "master" ? (
                           <>
                             {catName || subName || scopeStations.length > 0 ? (
                               <span aria-hidden="true">·</span>
                             ) : null}
                             <span className="inline-flex items-center gap-1 font-semibold text-[var(--color-ink-2)]">
                               <LuLock aria-hidden="true" />
-                              {p.protection === "master"
-                                ? isEs
-                                  ? "Receta maestra"
-                                  : "Master recipe"
-                                : isEs
-                                  ? "Confidencial"
-                                  : "Confidential"}
+                              {isEs ? "Receta maestra" : "Master recipe"}
                             </span>
                           </>
                         ) : null}
@@ -377,7 +395,7 @@ export function ProcedureExplorerResults({
                   triggerLabel={`${isEs ? "Acciones" : "Actions"}: ${title}`}
                   items={
                     [
-                      p.isArchived
+                      isRowArchived
                         ? null
                         : {
                             label: isEs ? "Editar" : "Edit",
@@ -387,12 +405,15 @@ export function ProcedureExplorerResults({
                                 `/${locale}/admin/library/${p.slug || p.id}/edit`,
                               ),
                           },
-                      p.isArchived
+                      isRowArchived
                         ? {
                             label: isEs ? "Restaurar" : "Restore",
                             icon: LuArchiveRestore,
                             onSelect: () =>
-                              void act(p.id, { isArchived: false }),
+                              void act(p.id, {
+                                isArchived: false,
+                                status: "published",
+                              }),
                           }
                         : p.status === "draft"
                           ? {
@@ -412,14 +433,14 @@ export function ProcedureExplorerResults({
                               },
                             }
                           : null,
-                      p.isArchived
+                      isRowArchived
                         ? null
                         : {
                             label: isEs ? "Archivar" : "Archive",
                             icon: LuArchive,
                             onSelect: () => void onArchive(p.id),
                           },
-                      p.isArchived
+                      isRowArchived
                         ? null
                         : {
                             label: p.isPromo

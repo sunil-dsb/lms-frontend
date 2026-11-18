@@ -8,6 +8,7 @@ export const LIBRARY_ENDPOINTS = {
   UPDATE: (id: string) => `/api/v1/procedures/${id}`,
   FILTER: "/api/v1/procedures/filter",
   UPDATE_STATION: (id: string) => `/api/v1/procedures/${id}/station`,
+  UPDATE_PROMO: (id: string) => `/api/v1/procedures/${id}/promo`,
   PUBLISH: (id: string) => `/api/v1/procedures/${id}/publish`,
   ARCHIVE: (id: string) => `/api/v1/procedures/${id}/archive`,
   UNARCHIVE: (id: string) => `/api/v1/procedures/${id}/unarchive`,

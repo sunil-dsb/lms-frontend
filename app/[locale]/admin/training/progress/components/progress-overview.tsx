@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import {
   LuCircleCheck,
   LuDownload,
@@ -42,6 +43,8 @@ const PAGE_SIZE = 10;
 interface ProgressOverviewProps {
   locale: string;
   data: TrainingProgressData;
+  initialStatus?: StatusFilter;
+  initialGroupBy?: GroupBy;
 }
 
 /**
@@ -54,18 +57,51 @@ interface ProgressOverviewProps {
 export function ProgressOverview({
   locale,
   data,
+  initialStatus = "all",
+  initialGroupBy = "employee",
 }: ProgressOverviewProps): React.ReactElement {
   const t = useTranslations("admin.training.progress");
   const tTraining = useTranslations("admin.training");
   const tAdmin = useTranslations("admin");
 
-  const [groupBy, setGroupBy] = React.useState<GroupBy>("employee");
-  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>("all");
+  const searchParams = useSearchParams();
+  const urlStatus =
+    (searchParams?.get("status") as StatusFilter) || initialStatus;
+  const urlGroupBy =
+    (searchParams?.get("groupBy") as GroupBy) || initialGroupBy;
+
+  const [groupBy, setGroupBy] = React.useState<GroupBy>(urlGroupBy);
+  const [statusFilter, setStatusFilter] =
+    React.useState<StatusFilter>(urlStatus);
   const [page, setPage] = React.useState(1);
   const [employeeSearch, setEmployeeSearch] = React.useState("");
   const [courseSearch, setCourseSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [isExporting, setIsExporting] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!searchParams) return;
+    const s = searchParams.get("status") as StatusFilter | null;
+    if (s && s !== statusFilter) {
+      setStatusFilter(s);
+      setPage(1);
+    }
+    const g = searchParams.get("groupBy") as GroupBy | null;
+    if (g && g !== groupBy) {
+      setGroupBy(g);
+      setPage(1);
+    }
+  }, [searchParams]);
+
+  const updateUrl = (newGroup: GroupBy, newStatus: StatusFilter) => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (newGroup !== "employee") url.searchParams.set("groupBy", newGroup);
+    else url.searchParams.delete("groupBy");
+    if (newStatus !== "all") url.searchParams.set("status", newStatus);
+    else url.searchParams.delete("status");
+    window.history.replaceState(null, "", url.toString());
+  };
 
   async function handleExportCsv(): Promise<void> {
     if (isExporting) return;
@@ -114,8 +150,8 @@ export function ProgressOverview({
     queryKey: ["admin-training-progress", queryOptions],
     queryFn: () => fetchTrainingProgressApi(queryOptions),
     initialData:
-      groupBy === "employee" &&
-      statusFilter === "all" &&
+      groupBy === (initialGroupBy || "employee") &&
+      statusFilter === (initialStatus || "all") &&
       page === 1 &&
       debouncedSearch === ""
         ? data
@@ -125,7 +161,6 @@ export function ProgressOverview({
         { groupBy?: GroupBy } | undefined;
       return previousOptions?.groupBy === groupBy ? previous : undefined;
     },
-    staleTime: 30_000,
   });
   const progressData = progressQuery.data ??
     data ?? {
@@ -158,10 +193,13 @@ export function ProgressOverview({
     setDebouncedSearch(
       (nextGroup === "employee" ? employeeSearch : courseSearch).trim(),
     );
+    updateUrl(nextGroup, statusFilter);
   };
   const setStatus = (value: string): void => {
-    setStatusFilter(value as StatusFilter);
+    const nextStatus = value as StatusFilter;
+    setStatusFilter(nextStatus);
     setPage(1);
+    updateUrl(groupBy, nextStatus);
   };
 
   return (

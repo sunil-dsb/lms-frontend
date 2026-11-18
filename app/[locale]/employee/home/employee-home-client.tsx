@@ -19,7 +19,7 @@ import {
   type TrainingSummary,
 } from "./components/EmployeeHome";
 import { allergenWords, factsOf } from "./components/procedure-facts";
-import { pickPromoProcedures } from "@/lib/promos";
+import { pickPromoProcedures, isPromoExpired } from "@/lib/promos";
 import EmployeeHomeLoading from "./loading";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -83,6 +83,19 @@ export function EmployeeHomeClient({
   const assignedProceduresQuery = useAssignedProcedures({ limit: 100 });
   const trainingQuery = useMyTraining(employee?.id);
 
+  // Cross-tab and window sync: refetch assigned procedures when promo or procedure changes
+  React.useEffect(() => {
+    const handleSync = () => {
+      void assignedProceduresQuery.refetch();
+    };
+    window.addEventListener("lms_procedures_updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("lms_procedures_updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, [assignedProceduresQuery]);
+
   React.useEffect(() => {
     if (!meLoading && (meError || !employee))
       router.replace(`/${locale}/login`);
@@ -98,6 +111,22 @@ export function EmployeeHomeClient({
       ),
     [assignedProceduresQuery.data?.procedures],
   );
+
+  React.useEffect(() => {
+    if (assignedProceduresQuery.data?.procedures) {
+      console.log(
+        "[LMS Employee Home] Procedures from API:",
+        assignedProceduresQuery.data.procedures.map((p) => ({
+          id: p.id,
+          title: p.titleEn || p.titleEs,
+          status: p.status,
+          isPromo: p.isPromo,
+          promoStartsAt: p.promoStartsAt,
+          promoExpiresAt: p.promoExpiresAt,
+        })),
+      );
+    }
+  }, [assignedProceduresQuery.data]);
   const proceduresLoading = assignedProceduresQuery.isLoading;
 
   const titleOf = (p: { titleEn: string; titleEs: string }): string =>
@@ -370,7 +399,12 @@ function HomeContent({
         : p.category.nameEn
       : t("uncategorised");
 
-  const promoRows = pickPromoProcedures(procedures, now).map((p) =>
+  // Active non-archived procedures: expired promo dishes are archived and must never be visible to staff
+  const activeProcedures = procedures.filter(
+    (p) => !isPromoExpired(p, now) && p.status !== "archived" && !p.isArchived,
+  );
+
+  const promoRows = pickPromoProcedures(activeProcedures, now).map((p) =>
     toRow(p, promoMeta(p, isEs, categoryOf(p))),
   );
   const promoIds = new Set(promoRows.map((p) => p.key));
@@ -379,7 +413,7 @@ function HomeContent({
     p.id === "proc-guacamole-fresco" || p.slug === "guacamole-fresco";
   // Directly assigned to this person — its own section above the station's.
   // Assigned rows leave the station list so nothing appears twice.
-  const assignedRows = procedures
+  const assignedRows = activeProcedures
     .filter(
       (p) =>
         !promoIds.has(p.id) &&
@@ -393,7 +427,7 @@ function HomeContent({
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     });
   const assignedIds = new Set(assignedRows.map((p) => p.id));
-  const stationRows = procedures
+  const stationRows = activeProcedures
     .filter((p) => !promoIds.has(p.id) && !assignedIds.has(p.id))
     .sort((a, b) => {
       const gA = isGuac(a) ? 1 : 0;

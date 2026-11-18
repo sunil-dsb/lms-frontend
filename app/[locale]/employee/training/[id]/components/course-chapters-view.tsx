@@ -6,6 +6,7 @@ import type { CourseChaptersViewData } from "@/lib/course-chapters-data";
 import { CourseChaptersHeader } from "./course-chapters-header";
 import { CourseChapterItem } from "./course-chapter-item";
 import { StickyContinueButton } from "./sticky-continue-button";
+import { ContentProtection } from "@/components/security/content-protection";
 
 interface CourseChaptersViewProps {
   data: CourseChaptersViewData;
@@ -94,49 +95,57 @@ export function CourseChaptersView({
   }
 
   return (
-    <div className="relative min-h-screen bg-[var(--color-bg)]">
-      <main
-        className="mx-auto w-full max-w-doc space-y-6 px-4 pt-5 sm:px-6 sm:pt-6"
-        style={{ paddingBottom: "140px" }}
-      >
-        {/* Header with Title, Purpose, Badges (Due date, time left) & Progress */}
-        <CourseChaptersHeader
-          locale={locale}
-          title={title}
-          purpose={purpose}
-          progressPercent={effectiveProgressPercent}
-          completedChaptersCount={effectiveCompletedCount}
-          totalChaptersCount={totalChaptersCount}
-          dueAt={dueAt}
-          estimatedMinutesLeft={estimatedMinutesLeft}
-          backLabel={backLabel ?? t("navTraining")}
-          backHref={backHref}
-          extraActions={extraHeaderActions}
-          showProgress={showProgress}
+    <ContentProtection
+      employeeName=""
+      locale={locale}
+      enabled={true}
+      enableCopyProtection={true}
+      enablePrintProtection={true}
+    >
+      <div className="relative min-h-screen bg-[var(--color-bg)]">
+        <main
+          className="mx-auto w-full max-w-doc space-y-6 px-4 pt-5 sm:px-6 sm:pt-6"
+          style={{ paddingBottom: "140px" }}
+        >
+          {/* Header with Title, Purpose, Badges (Due date, time left) & Progress */}
+          <CourseChaptersHeader
+            locale={locale}
+            title={title}
+            purpose={purpose}
+            progressPercent={effectiveProgressPercent}
+            completedChaptersCount={effectiveCompletedCount}
+            totalChaptersCount={totalChaptersCount}
+            dueAt={dueAt}
+            estimatedMinutesLeft={estimatedMinutesLeft}
+            backLabel={backLabel ?? t("navTraining")}
+            backHref={backHref}
+            extraActions={extraHeaderActions}
+            showProgress={showProgress}
+          />
+
+          {/* Course Chapters Cards List */}
+          <section aria-label="Course chapters" className="pt-2">
+            <ul className="flex flex-col gap-4">
+              {effectiveChapters.map((ch) => (
+                <CourseChapterItem
+                  key={ch.id}
+                  chapter={ch}
+                  locale={locale}
+                  courseId={courseId}
+                  basePath={effectiveBasePath}
+                />
+              ))}
+            </ul>
+          </section>
+        </main>
+
+        {/* Sticky Bottom Action Button matching Image 2 */}
+        <StickyContinueButton
+          label={ctaLabel}
+          href={ctaHref}
+          sidebarOffsetPx={sidebarOffsetPx}
         />
-
-        {/* Course Chapters Cards List */}
-        <section aria-label="Course chapters" className="pt-2">
-          <ul className="flex flex-col gap-4">
-            {effectiveChapters.map((ch) => (
-              <CourseChapterItem
-                key={ch.id}
-                chapter={ch}
-                locale={locale}
-                courseId={courseId}
-                basePath={effectiveBasePath}
-              />
-            ))}
-          </ul>
-        </section>
-      </main>
-
-      {/* Sticky Bottom Action Button matching Image 2 */}
-      <StickyContinueButton
-        label={ctaLabel}
-        href={ctaHref}
-        sidebarOffsetPx={sidebarOffsetPx}
-      />
-    </div>
+      </div>
+    </ContentProtection>
   );
 }

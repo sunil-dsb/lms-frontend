@@ -31,6 +31,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/admin/page-header";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { CategoryDetailSkeleton } from "@/components/admin/category-detail-skeleton";
 import {
   fetchProcedures,
@@ -41,6 +42,8 @@ import {
   backendSlug,
   categorySlugsMatch,
   createBackendSubcategory,
+  updateBackendSubcategory,
+  deleteBackendSubcategory,
   fetchBackendCategories,
   fetchBackendSubcategories,
 } from "@/services/categories/api";
@@ -136,7 +139,8 @@ export function CategoryDetailClient({
     queryKey: ["categories", "backend-subcategories", categoryId],
     queryFn: () => fetchBackendSubcategories(categoryId!),
     enabled: canFetchSubcategories,
-    staleTime: 60 * 60 * 1000,
+    // Always fresh — same policy as the category list hooks: a subcategory
+    // created elsewhere appears without a reload.
   });
   const subcategories = React.useMemo(() => {
     const live = subcategoriesQuery.data;
@@ -167,7 +171,6 @@ export function CategoryDetailClient({
     queryKey: [...PROCEDURES_QUERY_KEY, "category-detail", { categoryId }],
     queryFn: () => fetchProcedures({}, true).then((r) => r.procedures),
     enabled: category !== null,
-    staleTime: 5000,
   });
 
   const showSkeleton =

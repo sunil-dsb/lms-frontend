@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import {
   fetchProcedures,
   fetchAssignedProcedures,
@@ -8,6 +13,8 @@ import {
   archiveProcedure,
 } from "./api";
 import { listProcedures } from "@/lib/api";
+import { CATEGORIES_QUERY_KEY } from "@/services/categories/hooks";
+import type { Category } from "@/lib/types";
 import type {
   CreateProcedureInput,
   ProcedureFilterOptions,
@@ -16,11 +23,30 @@ import type {
 
 export const PROCEDURES_QUERY_KEY = ["procedures"] as const;
 
+/** The page's categories list through the shared TanStack entry — joins the
+ *  mounted `useBackendCategories` fetch (a single GET /categories) and hands
+ *  the promise to the procedures fetch, whose row→category resolver would
+ *  otherwise fire a second, sequential GET /categories of its own. */
+function sharedCategoriesPromise(
+  queryClient: QueryClient,
+): Promise<Category[]> {
+  return queryClient.fetchQuery({
+    queryKey: [...CATEGORIES_QUERY_KEY, "backend"],
+    queryFn: async () => {
+      const { fetchBackendCategories } =
+        await import("@/services/categories/api");
+      return fetchBackendCategories();
+    },
+    staleTime: 0,
+  });
+}
+
 export function useProcedures(
   options: ProcedureFilterOptions = {},
   isAdmin = false,
   enabled = true,
 ) {
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: [
       ...PROCEDURES_QUERY_KEY,
@@ -30,9 +56,14 @@ export function useProcedures(
       options.limit || 200,
       { isAdmin },
     ],
-    queryFn: () => fetchProcedures(options, isAdmin),
+    queryFn: () =>
+      fetchProcedures(
+        options,
+        isAdmin,
+        undefined,
+        sharedCategoriesPromise(queryClient),
+      ),
     enabled,
-    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -41,7 +72,6 @@ export function useProcedure(id: string, isAdmin = false) {
     queryKey: [...PROCEDURES_QUERY_KEY, id, { isAdmin }],
     queryFn: () => fetchProcedureById(id, isAdmin),
     enabled: Boolean(id),
-    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -116,8 +146,14 @@ export const ASSIGNED_PROCEDURES_QUERY_KEY = [
 export function useAssignedProcedures(
   options: AssignedProceduresFilterOptions = {},
 ) {
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: [...ASSIGNED_PROCEDURES_QUERY_KEY, options],
-    queryFn: () => fetchAssignedProcedures(options),
+    queryFn: () =>
+      fetchAssignedProcedures(
+        options,
+        undefined,
+        sharedCategoriesPromise(queryClient),
+      ),
   });
 }

@@ -11,6 +11,8 @@ import {
   BilingualInput,
   type BilingualValue,
 } from "@/components/ui/bilingual-input";
+import { toast } from "@/components/ui/toast";
+import { validateCourseForm } from "./course-editor-validation";
 
 interface NewCourseModalProps {
   open: boolean;
@@ -76,20 +78,15 @@ export function NewCourseModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!titleEn || !purposeEn) {
-      setError(
-        !titleEn && !purposeEn
-          ? isEs
-            ? "El nombre del curso y el propósito son obligatorios."
-            : "Course name and purpose are required."
-          : !titleEn
-            ? isEs
-              ? "El nombre del curso es obligatorio."
-              : "Course name is required."
-            : isEs
-              ? "El propósito/descripción es obligatorio."
-              : "Description/purpose is required.",
-      );
+    const valErr = validateCourseForm({
+      scope: "details",
+      title: name,
+      purpose,
+      isEs,
+    });
+    if (valErr) {
+      setError(valErr.message);
+      toast.error(valErr.message);
       return;
     }
 

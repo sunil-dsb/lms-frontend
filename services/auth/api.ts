@@ -101,22 +101,17 @@ async function loginAttempt(
     document.cookie = `lms_emp_id=${emp.id}; path=/; max-age=864000; SameSite=Lax`;
   }
 
-  // Drop any cached session from a previous user on this browser — otherwise
-  // fetchMe() can serve the wrong employee for up to 60s after account switch.
+  // Drop any in-flight fetchMe() from a previous user on this browser — an
+  // account switch must never join the old session's pending request.
   clearAuthMeCache();
 
   return { employee: emp, token };
 }
 
 const inFlightAuthMe = new Map<string, Promise<{ employee: Employee }>>();
-const cachedAuthMe = new Map<
-  string,
-  { data: { employee: Employee }; expiresAt: number }
->();
-const AUTH_ME_CACHE_TTL_MS = 15 * 60_000; // 15 minutes sliding TTL
 
+// No result cache — every call hits the API (in-flight requests only are coalesced).
 export function clearAuthMeCache(): void {
-  cachedAuthMe.clear();
   inFlightAuthMe.clear();
 }
 
@@ -127,12 +122,6 @@ export async function fetchMe(
   const cacheKey =
     cookieHeader ||
     (typeof window !== "undefined" ? "client" : "server_default");
-  const now = Date.now();
-
-  const cached = cachedAuthMe.get(cacheKey);
-  if (cached && cached.expiresAt > now) {
-    return cached.data;
-  }
 
   const existing = inFlightAuthMe.get(cacheKey);
   if (existing) {
@@ -184,10 +173,6 @@ export async function fetchMe(
             jobs: Array.isArray(raw.jobs) ? raw.jobs : [],
           },
         };
-        cachedAuthMe.set(cacheKey, {
-          data: res,
-          expiresAt: Date.now() + AUTH_ME_CACHE_TTL_MS,
-        });
         return res;
       }
 
@@ -205,10 +190,6 @@ export async function fetchMe(
             languagePref: "en" as const,
           },
         };
-        cachedAuthMe.set(cacheKey, {
-          data: res,
-          expiresAt: Date.now() + AUTH_ME_CACHE_TTL_MS,
-        });
         return res;
       }
 
@@ -217,19 +198,6 @@ export async function fetchMe(
         "SESSION_INVALID",
         "Session expired or invalid",
       );
-    } catch (err) {
-      // If we have a previously cached session and this is a non-401 transient error (500, network, timeout),
-      // keep the session alive by extending cache rather than dropping the user.
-      if (
-        cached &&
-        err instanceof ApiException &&
-        err.status !== 401 &&
-        err.status !== 403
-      ) {
-        cached.expiresAt = Date.now() + 60_000;
-        return cached.data;
-      }
-      throw err;
     } finally {
       inFlightAuthMe.delete(cacheKey);
     }
