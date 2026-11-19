@@ -198,6 +198,7 @@
       "noProceduresBody": "Your procedures will appear here once published.",
       "promoHeading": "Promo dishes",
       "promoEmpty": "No promo dishes right now.",
+      "promoSeeAll": "See all promo dishes",
       "orientationEyebrow": "Required",
       "orientationHeading": "Complete your orientation training",
       "orientationSubtitle": "Finish all 3 chapters to unlock procedures and promos.",
@@ -216,6 +217,7 @@
       "all": "All",
       "myStation": "My station",
       "assignedToMe": "Assigned to me",
+      "promoDishes": "Promo dishes",
       "count": "{count, plural, =0 {No procedures} one {# procedure} other {# procedures}}",
       "none": "Nothing here yet.",
       "noneFor": "None of our procedures answers “{query}”. Ask your manager rather than guess, above all for anything about food safety.",
@@ -261,6 +263,10 @@
         "correct": "Correct",
         "incorrect": "Incorrect",
         "selected": "Selected",
+        "checkOrder": "Check order",
+        "orderCorrect": "All steps are in the correct sequence!",
+        "orderIncorrect": "The order is not quite right yet. Drag or use arrows to rearrange.",
+        "shuffleAgain": "Shuffle again",
         "bannerTitle": "This procedure has an unpublished quiz",
         "bannerBody": "Attach it now so readers see it next time they open this procedure. If the procedure becomes part of training, the quiz will show automatically.",
         "bannerAttach": "Attach quiz",
@@ -369,7 +375,13 @@
       "incorrectFeedback": "Not quite right. Please review the options.",
       "tryAgain": "Try again",
       "quizPassedHeading": "Quiz passed!",
-      "quizPassedSubtext": "You got {score} of {total} correct."
+      "quizPassedSubtext": "You got {score} of {total} correct.",
+      "sequenceInstructions": "Drag or use the arrows to arrange these steps in the correct order:",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "stepNumber": "Step {number}",
+      "yourOrder": "Your order",
+      "correctOrder": "Correct order"
     }
   },
   "admin": {
@@ -747,7 +759,14 @@
           "deleteOption": "Delete option",
           "markCorrect": "Mark this option as correct",
           "noCorrect": "Mark one option as the correct answer.",
-          "answerRequiredForPublish": "Select a correct answer for every quiz question before continuing or publishing."
+          "answerRequiredForPublish": "Select a correct answer for every quiz question before continuing or publishing.",
+          "typeMultipleChoice": "Multiple Choice",
+          "typeSequence": "Arrange in Sequence",
+          "sequenceHelp": "Define the steps in their correct order. They will be shuffled for employees.",
+          "addStep": "Add step",
+          "deleteStep": "Delete step",
+          "stepPlaceholder": "Step {n} (in correct order)",
+          "minStepsRequired": "At least 2 steps required in sequence"
         },
         "recipe": {
           "pageTitle": "New Recipe",
@@ -1909,5 +1928,23 @@
   },
   "common": {
     "loading": "Loading..."
+  },
+  "pdfViewer": {
+    "document": "PDF Document",
+    "download": "Download",
+    "openNewTab": "Open in new tab",
+    "close": "Close",
+    "loading": "Loading document…",
+    "failed": "Couldn't load this document.",
+    "zoom": "Zoom",
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
+    "fit": "Fit"
+  },
+  "attachments": {
+    "view": "View",
+    "open": "Open",
+    "downloadFile": "Download file",
+    "untitled": "Attachment"
   }
 }

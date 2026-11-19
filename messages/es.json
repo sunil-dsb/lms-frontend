@@ -198,6 +198,7 @@
       "noProceduresBody": "Tus procedimientos aparecerán aquí cuando se publiquen.",
       "promoHeading": "Platos en promoción",
       "promoEmpty": "No hay platos en promoción por ahora.",
+      "promoSeeAll": "Ver todos los platillos",
       "orientationEyebrow": "Obligatorio",
       "orientationHeading": "Termina tu inducción",
       "orientationSubtitle": "Termina los 3 capítulos para desbloquear procedimientos y promociones.",
@@ -216,6 +217,7 @@
       "all": "Todos",
       "myStation": "Mi estación",
       "assignedToMe": "Asignados a ti",
+      "promoDishes": "Platillos promocionales",
       "count": "{count, plural, =0 {Sin procedimientos} one {# procedimiento} other {# procedimientos}}",
       "none": "Todavía no hay nada aquí.",
       "noneFor": "Ninguno de nuestros procedimientos responde a «{query}». Pregunta a tu gerente en vez de adivinar, sobre todo si es de seguridad alimentaria.",
@@ -261,6 +263,10 @@
         "correct": "Correcta",
         "incorrect": "Incorrecta",
         "selected": "Seleccionada",
+        "checkOrder": "Verificar orden",
+        "orderCorrect": "¡Todos los pasos están en el orden correcto!",
+        "orderIncorrect": "El orden aún no es correcto. Arrastra o usa las flechas para reordenar.",
+        "shuffleAgain": "Mezclar de nuevo",
         "bannerTitle": "Este procedimiento tiene un cuestionario sin publicar",
         "bannerBody": "Adjúntalo ahora para que los lectores lo vean la próxima vez que abran este procedimiento. Si el procedimiento pasa a formar parte de una capacitación, el cuestionario aparecerá automáticamente.",
         "bannerAttach": "Adjuntar cuestionario",
@@ -369,7 +375,13 @@
       "incorrectFeedback": "No es correcto. Revisa las opciones.",
       "tryAgain": "Intentar de nuevo",
       "quizPassedHeading": "¡Cuestionario aprobado!",
-      "quizPassedSubtext": "Obtuviste {score} de {total} correctas."
+      "quizPassedSubtext": "Obtuviste {score} de {total} correctas.",
+      "sequenceInstructions": "Arrastra o usa las flechas para ordenar estos pasos en el orden correcto:",
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "stepNumber": "Paso {number}",
+      "yourOrder": "Tu orden",
+      "correctOrder": "Orden correcto"
     }
   },
   "admin": {
@@ -747,7 +759,14 @@
           "deleteOption": "Eliminar opción",
           "markCorrect": "Marcar esta opción como correcta",
           "noCorrect": "Marca una opción como respuesta correcta.",
-          "answerRequiredForPublish": "Selecciona una respuesta correcta para cada pregunta antes de continuar o publicar."
+          "answerRequiredForPublish": "Selecciona una respuesta correcta para cada pregunta antes de continuar o publicar.",
+          "typeMultipleChoice": "Opción Múltiple",
+          "typeSequence": "Ordenar en Secuencia",
+          "sequenceHelp": "Define los pasos en su orden correcto. Se mostrarán desordenados a los empleados.",
+          "addStep": "Añadir paso",
+          "deleteStep": "Eliminar paso",
+          "stepPlaceholder": "Paso {n} (en orden correcto)",
+          "minStepsRequired": "Se requieren al menos 2 pasos en la secuencia"
         },
         "recipe": {
           "pageTitle": "Nueva Receta",
@@ -1909,5 +1928,23 @@
   },
   "common": {
     "loading": "Cargando..."
+  },
+  "pdfViewer": {
+    "document": "Documento PDF",
+    "download": "Descargar",
+    "openNewTab": "Abrir en nueva pestaña",
+    "close": "Cerrar",
+    "loading": "Cargando documento…",
+    "failed": "No se pudo cargar el documento.",
+    "zoom": "Zoom",
+    "zoomOut": "Alejar",
+    "zoomIn": "Acercar",
+    "fit": "Ajustar"
+  },
+  "attachments": {
+    "view": "Ver",
+    "open": "Abrir",
+    "downloadFile": "Descargar archivo",
+    "untitled": "Archivo adjunto"
   }
 }

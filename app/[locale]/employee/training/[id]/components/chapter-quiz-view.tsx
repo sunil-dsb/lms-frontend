@@ -17,7 +17,7 @@ import {
 import type { ProcedureQuizQuestion } from "@/lib/types";
 import { completeMyTrainingChapter } from "@/services/courses/api";
 import { MY_TRAINING_QUERY_KEY } from "@/services/courses/hooks";
-import { ApiException } from "@/lib/api";
+import { ApiException, checkQuizBatchAnswersApi } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import {
@@ -26,10 +26,15 @@ import {
 } from "./chapter-quiz-results";
 import { ChapterQuizFooterNav } from "./chapter-quiz-footer-nav";
 import { ContentProtection } from "@/components/security/content-protection";
+import {
+  SequenceSortableList,
+  shuffleSequence,
+} from "@/components/quiz/sequence-sortable-list";
 
 interface ChapterQuizViewProps {
   courseId: string;
   chapterId?: string;
+  quizId?: string;
   courseTitle?: string;
   chapterNumber: number;
   totalChapters?: number;
@@ -56,6 +61,7 @@ interface ChapterQuizViewProps {
 export function ChapterQuizView({
   courseId,
   chapterId,
+  quizId,
   courseTitle,
   chapterNumber,
   totalChapters = 3,
@@ -86,11 +92,29 @@ export function ChapterQuizView({
   // Current question index & recorded answers: { [questionIndex]: selectedChoiceId }
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [answers, setAnswers] = React.useState<Record<number, string>>({});
+  const [sequenceAnswers, setSequenceAnswers] = React.useState<
+    Record<number, string[]>
+  >({});
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [score, setScore] = React.useState(0);
   const [hasPassed, setHasPassed] = React.useState(false);
   const [submissionError, setSubmissionError] = React.useState(false);
+
+  // Initialize sequence questions with shuffled items on mount
+  React.useEffect(() => {
+    const initial: Record<number, string[]> = {};
+    questions.forEach((q, idx) => {
+      if (
+        q.type === "sequence" &&
+        q.sequenceItems &&
+        q.sequenceItems.length > 0
+      ) {
+        initial[idx] = shuffleSequence(q.sequenceItems);
+      }
+    });
+    setSequenceAnswers(initial);
+  }, [questions]);
 
   const currentQuestion = questions[currentIndex] || questions[0];
 
@@ -116,6 +140,13 @@ export function ChapterQuizView({
     }));
   };
 
+  const handleSequenceChange = (newOrder: string[]): void => {
+    setSequenceAnswers((prev) => ({
+      ...prev,
+      [currentIndex]: newOrder,
+    }));
+  };
+
   const handleNext = (): void => {
     if (currentIndex + 1 < totalQuestions) {
       setCurrentIndex((i) => i + 1);
@@ -134,14 +165,62 @@ export function ChapterQuizView({
     setSubmissionError(false);
 
     try {
-      // Calculate final score
+      // Prepare all question answers for 1 single batch check call
+      const batchAnswers = questions.map((q, idx) => ({
+        questionId: q.id,
+        sequenceOrder:
+          q.type === "sequence"
+            ? sequenceAnswers[idx] ||
+              (q.sequenceItems || []).map((s) => s.id)
+            : undefined,
+        choiceId: q.type !== "sequence" ? answers[idx] : undefined,
+      }));
+
+      const targetQuizId =
+        quizId ||
+        (questions[0] as any)?.quizId ||
+        (questions[0] as any)?.sourceProcedureId;
+
       let calculatedScore = 0;
-      questions.forEach((q, idx) => {
-        const selected = answers[idx];
-        if (selected && selected === q.correctChoiceId) {
-          calculatedScore += 1;
+
+      if (targetQuizId) {
+        try {
+          const batchRes = await checkQuizBatchAnswersApi(
+            targetQuizId,
+            batchAnswers,
+          );
+          calculatedScore = batchRes.score;
+        } catch {
+          // fallback to client evaluation if endpoint is unreachable
+          calculatedScore = questions.filter((q, idx) => {
+            if (q.type === "sequence") {
+              const userOrder = sequenceAnswers[idx] || [];
+              const correctOrder = (q.sequenceItems || []).map(
+                (item) => item.id,
+              );
+              return (
+                userOrder.length === correctOrder.length &&
+                userOrder.length > 0 &&
+                userOrder.every((id, i) => id === correctOrder[i])
+              );
+            }
+            return Boolean(answers[idx] && answers[idx] === q.correctChoiceId);
+          }).length;
         }
-      });
+      } else {
+        calculatedScore = questions.filter((q, idx) => {
+          if (q.type === "sequence") {
+            const userOrder = sequenceAnswers[idx] || [];
+            const correctOrder = (q.sequenceItems || []).map((item) => item.id);
+            return (
+              userOrder.length === correctOrder.length &&
+              userOrder.length > 0 &&
+              userOrder.every((id, i) => id === correctOrder[i])
+            );
+          }
+          return Boolean(answers[idx] && answers[idx] === q.correctChoiceId);
+        }).length;
+      }
 
       const passed = calculatedScore >= passingRequirement;
 
@@ -188,6 +267,17 @@ export function ChapterQuizView({
 
   const handleRetryQuiz = (): void => {
     setAnswers({});
+    const reshuffled: Record<number, string[]> = {};
+    questions.forEach((q, idx) => {
+      if (
+        q.type === "sequence" &&
+        q.sequenceItems &&
+        q.sequenceItems.length > 0
+      ) {
+        reshuffled[idx] = shuffleSequence(q.sequenceItems);
+      }
+    });
+    setSequenceAnswers(reshuffled);
     setCurrentIndex(0);
     setIsSubmitted(false);
     setScore(0);
@@ -349,7 +439,12 @@ export function ChapterQuizView({
               className="flex items-center gap-2 pt-1 pb-1"
             >
               {Array.from({ length: totalQuestions }).map((_, i) => {
-                const answered = Boolean(answers[i]);
+                const answered =
+                  questions[i]?.type === "sequence"
+                    ? Boolean(
+                        sequenceAnswers[i] && sequenceAnswers[i].length > 0,
+                      )
+                    : Boolean(answers[i]);
                 const isCurrent = i === currentIndex;
 
                 return (
@@ -399,85 +494,109 @@ export function ChapterQuizView({
             </h2>
           </div>
 
-          {/* Answer Choices List */}
-          <fieldset
-            className="space-y-3 pt-2"
-            aria-label={t("questionOfN", {
-              current: currentIndex + 1,
-              total: totalQuestions,
-            })}
-          >
-            <legend className="sr-only">{questionPrompt}</legend>
+          {/* Question Body: Sequence vs Multiple Choice */}
+          {currentQuestion.type === "sequence" ? (
+            <div className="space-y-3 pt-2">
+              <p className="text-xs font-semibold text-[var(--color-ink-2)]">
+                {t("sequenceInstructions") ||
+                  "Drag or use the arrows to arrange these steps in the correct order:"}
+              </p>
+              <SequenceSortableList
+                items={currentQuestion.sequenceItems || []}
+                orderedIds={
+                  isCompleted
+                    ? (currentQuestion.sequenceItems || []).map((item) => item.id)
+                    : sequenceAnswers[currentIndex] ||
+                      (currentQuestion.sequenceItems || []).map((item) => item.id)
+                }
+                onChange={handleSequenceChange}
+                locale={locale}
+                disabled={isCompleted}
+                isReview={isCompleted}
+                correctIds={(currentQuestion.sequenceItems || []).map((item) => item.id)}
+              />
+            </div>
+          ) : (
+            /* Answer Choices List (Multiple Choice) */
+            <fieldset
+              className="space-y-3 pt-2"
+              aria-label={t("questionOfN", {
+                current: currentIndex + 1,
+                total: totalQuestions,
+              })}
+            >
+              <legend className="sr-only">{questionPrompt}</legend>
 
-            {choices.map((choice, cIdx) => {
-              const isSelected = selectedChoiceId === choice.id;
-              const isCorrect =
-                isAdmin && choice.id === currentQuestion.correctChoiceId;
-              const letter = String.fromCharCode(65 + cIdx); // A, B, C, D...
+              {choices.map((choice, cIdx) => {
+                const isSelected = selectedChoiceId === choice.id;
+                const isCorrect =
+                  isAdmin && choice.id === currentQuestion.correctChoiceId;
+                const letter = String.fromCharCode(65 + cIdx); // A, B, C, D...
 
-              const rawText =
-                (choice as any)?.text ??
-                (choice as any)?.label ??
-                (choice as any)?.title;
-              const choiceLabel =
-                typeof rawText === "string"
-                  ? rawText
-                  : isEs
-                    ? rawText?.es || rawText?.en || ""
-                    : rawText?.en || rawText?.es || "";
+                const rawText =
+                  (choice as any)?.text ??
+                  (choice as any)?.label ??
+                  (choice as any)?.title;
+                const choiceLabel =
+                  typeof rawText === "string"
+                    ? rawText
+                    : isEs
+                      ? rawText?.es || rawText?.en || ""
+                      : rawText?.en || rawText?.es || "";
 
-              return (
-                <label
-                  key={choice.id || cIdx}
-                  onClick={() => handleSelectOption(choice.id)}
-                  style={{ gap: "12px", padding: "12px 16px" }}
-                  className={`group flex items-center rounded-2xl transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer select-none ${
-                    isCorrect
-                      ? "border-2 border-[var(--color-ok)] bg-[var(--color-ok-tint)] text-[var(--color-ink)] shadow-xs"
-                      : isSelected
-                        ? "border-2 border-[var(--color-brand-600)] bg-[var(--color-brand-tint-2)]/30 shadow-xs"
-                        : "border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line)] hover:shadow-xs"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`quiz-choice-${currentIndex}`}
-                    checked={isSelected}
-                    onChange={() => handleSelectOption(choice.id)}
-                    className="sr-only"
-                  />
-
-                  {/* Option letter chip */}
-                  <span
-                    aria-hidden="true"
-                    style={{ marginRight: "12px" }}
-                    className={`flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
+                return (
+                  <label
+                    key={choice.id || cIdx}
+                    onClick={() => handleSelectOption(choice.id)}
+                    style={{ gap: "12px", padding: "12px 16px" }}
+                    className={`group flex items-center rounded-2xl transition-all duration-[var(--dur)] ease-[var(--ease)] cursor-pointer select-none ${
                       isCorrect
-                        ? "bg-[var(--color-ok)] text-white shadow-xs"
+                        ? "border-2 border-[var(--color-ok)] bg-[var(--color-ok-tint)] text-[var(--color-ink)] shadow-xs"
                         : isSelected
-                          ? "bg-[var(--color-brand-600)] text-white shadow-xs"
-                          : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] group-hover:bg-[var(--color-panel)]"
+                          ? "border-2 border-[var(--color-brand-600)] bg-[var(--color-brand-tint-2)]/30 shadow-xs"
+                          : "border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line)] hover:shadow-xs"
                     }`}
                   >
-                    {letter}
-                  </span>
+                    <input
+                      type="radio"
+                      name={`quiz-choice-${currentIndex}`}
+                      checked={isSelected}
+                      onChange={() => handleSelectOption(choice.id)}
+                      className="sr-only"
+                    />
 
-                  {/* Label text */}
-                  <span
-                    className={`text-sm leading-snug flex-1 ${
-                      isCorrect
-                        ? "font-semibold text-[var(--color-ink)]"
-                        : isSelected
-                          ? "font-bold text-[var(--color-ink)]"
-                          : "font-medium text-[var(--color-ink)]"
-                    }`}
-                  >
-                    {choiceLabel}
-                  </span>
-                </label>
-              );
-            })}
-          </fieldset>
+                    {/* Option letter chip */}
+                    <span
+                      aria-hidden="true"
+                      style={{ marginRight: "12px" }}
+                      className={`flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
+                        isCorrect
+                          ? "bg-[var(--color-ok)] text-white shadow-xs"
+                          : isSelected
+                            ? "bg-[var(--color-brand-600)] text-white shadow-xs"
+                            : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] group-hover:bg-[var(--color-panel)]"
+                      }`}
+                    >
+                      {letter}
+                    </span>
+
+                    {/* Label text */}
+                    <span
+                      className={`text-sm leading-snug flex-1 ${
+                        isCorrect
+                          ? "font-semibold text-[var(--color-ink)]"
+                          : isSelected
+                            ? "font-bold text-[var(--color-ink)]"
+                            : "font-medium text-[var(--color-ink)]"
+                      }`}
+                    >
+                      {choiceLabel}
+                    </span>
+                  </label>
+                );
+              })}
+            </fieldset>
+          )}
         </main>
 
         {/* Sticky Bottom Navigation Footer */}
@@ -489,7 +608,14 @@ export function ChapterQuizView({
           totalQuestions={totalQuestions}
           chapterNumber={chapterNumber}
           totalChapters={totalChapters}
-          isCurrentAnswered={isCurrentAnswered}
+          isCurrentAnswered={
+            currentQuestion?.type === "sequence"
+              ? Boolean(
+                  sequenceAnswers[currentIndex] &&
+                    sequenceAnswers[currentIndex].length > 0,
+                )
+              : Boolean(answers[currentIndex])
+          }
           isSubmitting={isSubmitting}
           sidebarOffsetPx={sidebarOffsetPx}
           effectiveBasePath={effectiveBasePath}
