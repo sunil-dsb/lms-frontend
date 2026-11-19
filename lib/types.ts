@@ -17,6 +17,7 @@ export interface Employee {
   stationIds: string[];
   role: EmployeeRole;
   languagePref: LanguagePref;
+  status?: EmployeeStatus;
   roleClearance?: ClearanceLevel | null;
   createdAt?: string;
   /** Denormalised names from GET /api/auth/me — prefer these over extra lookups. */

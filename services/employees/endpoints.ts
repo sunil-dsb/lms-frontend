@@ -5,6 +5,7 @@ export const EMPLOYEES_ENDPOINTS = {
   UPDATE: (id: string) => `/api/v1/employees/${id}`,
   RESEND_INVITE: (id: string) => `/api/v1/employees/${id}/invites`,
   DEACTIVATE: (id: string) => `/api/v1/employees/${id}/deactivate`,
-  REACTIVATE: (id: string) => `/api/v1/employees/${id}/reactivate`,
+  // Reactivation removed — a deactivated employee stays deactivated.
+  // REACTIVATE: (id: string) => `/api/v1/employees/${id}/reactivate`,
   TRAINING: (id: string) => `/api/v1/employees/${id}/training`,
 } as const;

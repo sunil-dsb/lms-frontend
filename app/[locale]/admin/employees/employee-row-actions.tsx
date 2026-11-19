@@ -5,13 +5,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import {
-  deactivateEmployee,
-  reactivateEmployee,
-} from "@/services/employees/api";
+import { deactivateEmployee } from "@/services/employees/api";
 import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
 import type { AdminEmployee } from "@/lib/types";
-import { LuBan, LuPencil, LuRotateCw, LuSend } from "react-icons/lu";
+import { LuBan, LuPencil, LuSend } from "react-icons/lu";
 import { ResendInviteModal } from "./resend-invite-modal";
 import { EMPLOYEES_QUERY_KEY } from "@/services/employees/hooks";
 
@@ -68,6 +65,8 @@ export function EmployeeRowActions({
     });
   }
 
+  // Reactivation removed — a deactivated employee stays deactivated.
+  /*
   function onReactivate(): void {
     startTransition(async () => {
       try {
@@ -79,6 +78,7 @@ export function EmployeeRowActions({
       }
     });
   }
+  */
 
   function buildItems(): RowActionItem[] {
     // Edit is always the first item — non-destructive, navigation. The
@@ -105,8 +105,8 @@ export function EmployeeRowActions({
             locale === "es" ? "¿Desactivar empleado?" : "Deactivate employee?",
           confirmDescription:
             locale === "es"
-              ? "El empleado quedará inactivo y podrás reactivarlo más adelante. Se conservarán sus datos."
-              : "This employee will be deactivated. You can reactivate them later, and their records will be kept.",
+              ? "El empleado quedará inactivo y se conservarán sus datos."
+              : "This employee will be deactivated and their records will be kept.",
           confirmLabel: locale === "es" ? "Desactivar" : "Deactivate",
           onSelect: onDeactivate,
         },
@@ -123,14 +123,15 @@ export function EmployeeRowActions({
             locale === "es" ? "¿Desactivar empleado?" : "Deactivate employee?",
           confirmDescription:
             locale === "es"
-              ? "El empleado quedará inactivo y podrás reactivarlo más adelante. Se conservarán sus datos."
-              : "This employee will be deactivated. You can reactivate them later, and their records will be kept.",
+              ? "El empleado quedará inactivo y se conservarán sus datos."
+              : "This employee will be deactivated and their records will be kept.",
           confirmLabel: locale === "es" ? "Desactivar" : "Deactivate",
           onSelect: onDeactivate,
         },
       ];
     }
-    // deactivated
+    // deactivated — no reactivate action anymore, edit only.
+    /*
     return [
       editItem,
       {
@@ -139,6 +140,8 @@ export function EmployeeRowActions({
         onSelect: onReactivate,
       },
     ];
+    */
+    return [editItem];
   }
 
   return (

@@ -36,7 +36,8 @@
     "quickDemoAdmin": "Raúl (Admin de Turno)",
     "helpNotice": "¿Problemas para ingresar? Contacta a tu jefe de cocina o supervisor de turno.",
     "haveInvite": "¿Tienes una invitación? Actívala aquí",
-    "sessionExpiredNotice": "No se pudo verificar tu sesión — puede haber expirado. Inicia sesión de nuevo."
+    "sessionExpiredNotice": "No se pudo verificar tu sesión — puede haber expirado. Inicia sesión de nuevo.",
+    "passwordSetSuccess": "¡Contraseña establecida con éxito! Por favor inicia sesión con tu nueva contraseña."
   },
   "forgotPassword": {
     "badge": "Recuperación de Cuenta",

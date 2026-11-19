@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { LuEye, LuEyeOff, LuCircleAlert, LuLoader } from "react-icons/lu";
+import { LuEye, LuEyeOff, LuCircleAlert, LuLoader, LuCheck } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,22 +20,32 @@ import { login, ApiException } from "@/lib/api";
 
 interface LoginFormProps {
   locale: string;
+  initialEmail?: string;
+  status?: string;
 }
 
-export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
+export function LoginForm({
+  locale,
+  initialEmail,
+  status,
+}: LoginFormProps): React.ReactElement {
   const t = useTranslations("login");
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail || "");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(
+    status === "password_set" ? t("passwordSetSuccess") : null,
+  );
   const [isPending, startTransition] = useTransition();
 
   function handleLogin(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     setError(null);
+    setSuccessMessage(null);
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
@@ -94,6 +104,16 @@ export function LoginForm({ locale }: LoginFormProps): React.ReactElement {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4 px-4 sm:px-8 pt-2 pb-4">
+          {successMessage ? (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-xl bg-[var(--color-good-tint)]/70 border border-[var(--color-good)]/30 px-3 py-2 text-xs font-medium text-[var(--color-good-hover)] animate-in fade-in duration-150"
+            >
+              <LuCheck className="shrink-0 text-sm text-[var(--color-good)]" />
+              <span>{successMessage}</span>
+            </div>
+          ) : null}
+
           {error ? (
             <div
               role="alert"

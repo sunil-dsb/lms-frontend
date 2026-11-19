@@ -36,7 +36,8 @@
     "quickDemoAdmin": "Raúl (Shift Admin)",
     "helpNotice": "Need help logging in? Reach out to your shift supervisor or kitchen lead.",
     "haveInvite": "Have an invite? Activate here",
-    "sessionExpiredNotice": "Your session could not be verified — it may have expired. Please sign in again."
+    "sessionExpiredNotice": "Your session could not be verified — it may have expired. Please sign in again.",
+    "passwordSetSuccess": "Password set successfully! Please sign in with your new password."
   },
   "forgotPassword": {
     "badge": "Account Recovery",

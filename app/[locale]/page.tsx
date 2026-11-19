@@ -21,6 +21,9 @@ export default async function LocaleRootPage({
     if (me.employee.role === "admin" || me.employee.role === "super_admin") {
       redirect(`/${locale}/admin`);
     } else {
+      if (me.employee.status === "pending") {
+        redirect(`/${me.employee.languagePref || locale}/set-password`);
+      }
       // An employee's interface is in their own language (PROJECT_OVERVIEW §02:
       // "the interface, training, quizzes and AI answers all follow it").
       redirect(`/${me.employee.languagePref || locale}/employee/home`);

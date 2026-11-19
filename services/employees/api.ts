@@ -200,6 +200,9 @@ export async function deactivateEmployee(
   return { employee: normalizeEmployee<AdminEmployee>(data.data.employee) };
 }
 
+// Reactivation removed — an employee can only be pending, active or
+// deactivated; once deactivated there is no path back to active.
+/*
 export async function reactivateEmployee(
   employeeId: string,
 ): Promise<{ employee: AdminEmployee }> {
@@ -212,6 +215,7 @@ export async function reactivateEmployee(
 
   return { employee: normalizeEmployee<AdminEmployee>(data.data.employee) };
 }
+*/
 
 export async function fetchEmployeeTraining(
   id: string,
