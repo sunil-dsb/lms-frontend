@@ -115,7 +115,13 @@ export function createProcedureSaveHandler(
   return function save(status: "draft" | "published"): void {
     if (status === "published" && quizQuestionMissingAnswer) {
       setStep("quiz");
-      toast.error(tQuizDesc("answerRequiredForPublish"));
+      const isSeq = quizQuestionMissingAnswer.type === "sequence";
+      const errorMsg = isSeq
+        ? isEs
+          ? "Las preguntas de secuencia deben tener al menos 2 pasos con texto válido."
+          : "Sequence questions must have at least 2 steps with valid text."
+        : tQuizDesc("answerRequiredForPublish");
+      toast.error(errorMsg);
       requestAnimationFrame(() => {
         document
           .getElementById(`quiz-question-${quizQuestionMissingAnswer.id}`)

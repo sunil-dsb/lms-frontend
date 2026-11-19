@@ -19,7 +19,11 @@ import {
   type TrainingSummary,
 } from "./components/EmployeeHome";
 import { allergenWords, factsOf } from "./components/procedure-facts";
-import { pickPromoProcedures, isPromoExpired } from "@/lib/promos";
+import {
+  pickPromoProcedures,
+  getActivePromoProcedures,
+  isPromoExpired,
+} from "@/lib/promos";
 import EmployeeHomeLoading from "./loading";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -404,10 +408,14 @@ function HomeContent({
     (p) => !isPromoExpired(p, now) && p.status !== "archived" && !p.isArchived,
   );
 
-  const promoRows = pickPromoProcedures(activeProcedures, now).map((p) =>
+  const allActivePromos = getActivePromoProcedures(activeProcedures, now);
+  const displayPromos = allActivePromos.slice(0, 3);
+  const hasMorePromos = allActivePromos.length > 3;
+
+  const promoRows = displayPromos.map((p) =>
     toRow(p, promoMeta(p, isEs, categoryOf(p))),
   );
-  const promoIds = new Set(promoRows.map((p) => p.key));
+  const promoIds = new Set(allActivePromos.map((p) => p.id));
 
   const isGuac = (p: Procedure) =>
     p.id === "proc-guacamole-fresco" || p.slug === "guacamole-fresco";
@@ -468,6 +476,14 @@ function HomeContent({
             heading: t("promoHeading"),
             rows: promoRows,
             empty: t("promoEmpty"),
+            all: hasMorePromos
+              ? {
+                  href: withAs(`/${locale}/procedures?filter=promos`, viewAs),
+                  label:
+                    t("promoSeeAll") ||
+                    (isEs ? "Ver todos los platillos" : "See all promo dishes"),
+                }
+              : null,
           }}
           assigned={
             assignedRows.length > 0

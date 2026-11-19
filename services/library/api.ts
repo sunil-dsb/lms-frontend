@@ -192,8 +192,15 @@ export async function fetchAssignedProcedures(
   const headers = makeHeaders(cookieHeader);
   const params: Record<string, any> = {};
 
-  if (options.scope === "mine" || options.scope === "all") {
+  if (
+    options.scope === "mine" ||
+    options.scope === "all" ||
+    options.scope === "promos"
+  ) {
     params.scope = options.scope;
+  }
+  if (options.isPromo !== undefined) {
+    params.isPromo = options.isPromo;
   }
   if (options.categoryId && isUuid(options.categoryId)) {
     params.categoryId = options.categoryId;

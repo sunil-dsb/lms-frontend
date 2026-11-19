@@ -48,6 +48,7 @@ export function Drawer({
   footer,
   size = "md",
 }: DrawerProps): React.ReactElement | null {
+  const rootRef = React.useRef<HTMLDivElement>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
   const triggerRef = React.useRef<HTMLElement | null>(null);
 
@@ -63,7 +64,16 @@ export function Drawer({
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // Escape belongs to the topmost dialog only. A PDF viewer opened from
+      // the drawer's preview is stacked above this drawer; closing it must
+      // not slam the preview shut with it.
+      const dialogs = document.querySelectorAll(
+        '[role="dialog"][aria-modal="true"]',
+      );
+      const top = dialogs[dialogs.length - 1];
+      if (top && top !== rootRef.current) return;
+      onClose();
     };
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
@@ -89,6 +99,7 @@ export function Drawer({
 
   return (
     <div
+      ref={rootRef}
       className="fixed inset-0 z-backdrop"
       role="dialog"
       aria-modal="true"

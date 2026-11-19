@@ -26,6 +26,7 @@ export function useBackendCategories() {
   return useQuery({
     queryKey: [...CATEGORIES_QUERY_KEY, "backend"],
     queryFn: () => fetchBackendCategories(),
+    staleTime: 5 * 60 * 1000,
     gcTime: 1000 * 60 * 60 * 24,
   });
 }

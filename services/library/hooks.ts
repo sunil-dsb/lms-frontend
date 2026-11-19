@@ -30,6 +30,13 @@ export const PROCEDURES_QUERY_KEY = ["procedures"] as const;
 function sharedCategoriesPromise(
   queryClient: QueryClient,
 ): Promise<Category[]> {
+  const cached = queryClient.getQueryData<Category[]>([
+    ...CATEGORIES_QUERY_KEY,
+    "backend",
+  ]);
+  if (cached && cached.length > 0) {
+    return Promise.resolve(cached);
+  }
   return queryClient.fetchQuery({
     queryKey: [...CATEGORIES_QUERY_KEY, "backend"],
     queryFn: async () => {
@@ -37,7 +44,7 @@ function sharedCategoriesPromise(
         await import("@/services/categories/api");
       return fetchBackendCategories();
     },
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -155,5 +162,6 @@ export function useAssignedProcedures(
         undefined,
         sharedCategoriesPromise(queryClient),
       ),
+    staleTime: 60 * 1000,
   });
 }

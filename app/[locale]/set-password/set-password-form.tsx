@@ -24,7 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { activate, ApiException } from "@/lib/api";
+import { activate, logout, ApiException } from "@/lib/api";
 
 interface SetPasswordFormProps {
   locale: string;
@@ -96,11 +96,12 @@ export function SetPasswordForm({
     startTransition(async () => {
       try {
         const res = await activate({ token, password, email: employeeEmail });
-        const role = res.employee?.role;
-        const defaultDest =
-          role === "admin" || role === "super_admin"
-            ? `/${locale}/admin`
-            : `/${locale}/employee/home`;
+        // Clear lingering magic link session so user must log in manually
+        await logout();
+        const fallbackEmail = employeeEmail
+          ? `&email=${encodeURIComponent(employeeEmail)}`
+          : "";
+        const defaultDest = `/${locale}/login?status=password_set${fallbackEmail}`;
         const destination = res.redirectTo || defaultDest;
         router.replace(destination);
         router.refresh();

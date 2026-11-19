@@ -17,6 +17,12 @@ interface ModalProps {
   children: React.ReactNode;
   className?: string;
   size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  /**
+   * The card fills most of the viewport (88vh) with no body padding — for
+   * viewers, where the content is the point. A prop, so call sites get the
+   * shape instead of restyling half of the card from outside.
+   */
+  fullHeight?: boolean;
 }
 
 const sizeClasses: Record<NonNullable<ModalProps["size"]>, string> = {
@@ -34,6 +40,7 @@ export function Modal({
   children,
   className,
   size = "md",
+  fullHeight = false,
 }: ModalProps): React.ReactElement | null {
   const modalRef = React.useRef<HTMLDivElement>(null);
   const titleId = React.useId();
@@ -80,8 +87,9 @@ export function Modal({
         ref={modalRef}
         tabIndex={-1}
         className={cn(
-          "dialog-in relative flex max-h-[calc(100vh-2.5rem)] w-full flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] shadow-e3 focus:outline-none sm:max-h-[calc(100vh-4rem)]",
+          "dialog-in relative flex max-h-[calc(100vh-2.5rem)] w-full flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-e3 focus:outline-none sm:max-h-[calc(100vh-4rem)]",
           sizeClasses[size],
+          fullHeight && "h-[88vh] max-h-[88vh] p-0",
           className,
         )}
       >
@@ -105,37 +113,49 @@ export function ModalHeader({
   description,
   onClose,
   closeLabel = "Close",
+  actions,
 }: {
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   onClose: () => void;
   closeLabel?: string;
+  /** Extra controls beside the close button — the viewer's zoom and links. */
+  actions?: React.ReactNode;
 }): React.ReactElement {
   const id = React.useContext(ModalTitleId);
+  const hasActions = actions != null;
   return (
-    <header className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--color-line)] px-5 py-4">
-      <div className="min-w-0">
+    <header className="flex shrink-0 flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-4">
+      <div className={cn("min-w-0", hasActions && "flex-1")}>
         <h2
           id={id}
-          className="font-[family-name:var(--font-ui)] text-md font-semibold tracking-snug text-[var(--color-ink)]"
+          className="font-ui text-md font-semibold tracking-snug text-ink"
         >
           {title}
         </h2>
         {description ? (
-          <p className="mt-0.5 text-sm text-[var(--color-ink-2)]">
-            {description}
-          </p>
+          <p className="mt-0.5 text-sm text-ink-2">{description}</p>
         ) : null}
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={onClose}
-        aria-label={closeLabel}
+      {/* With controls in the header (the viewer's zoom and links), the row
+          drops beneath the title on narrow screens instead of crushing it. */}
+      <div
+        className={cn(
+          "flex shrink-0 items-center gap-2",
+          hasActions && "w-full justify-between sm:w-auto sm:justify-start",
+        )}
       >
-        <LuX aria-hidden="true" className="text-lg" />
-      </Button>
+        {actions}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          aria-label={closeLabel}
+        >
+          <LuX aria-hidden="true" className="text-lg" />
+        </Button>
+      </div>
     </header>
   );
 }
@@ -174,7 +194,7 @@ export function ModalFooter({
   return (
     <footer
       className={cn(
-        "flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--color-line)] bg-[var(--color-wash)] px-5 py-3",
+        "flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-line bg-wash px-5 py-3",
         className,
       )}
     >

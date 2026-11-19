@@ -96,7 +96,12 @@ export function EmployeeHome({
   roleName?: string | null;
   stationName?: string | null;
   training: TrainingSummary | null;
-  promo: { heading: string; rows: HomeRow[]; empty: string };
+  promo: {
+    heading: string;
+    rows: HomeRow[];
+    empty: string;
+    all?: { href: string; label: string } | null;
+  };
   /** Procedures directly assigned to this person (assignUsers). Rendered
    *  above the station section; null when none. */
   assigned?: { heading: string; rows: HomeRow[] } | null;
@@ -196,6 +201,7 @@ export function EmployeeHome({
               lockedHref: undefined,
               lockedReason: undefined,
             }))}
+            all={promo.all}
             empty={promo.empty}
             flagLabels={flagLabels}
             loading={loading}

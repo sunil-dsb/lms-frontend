@@ -88,6 +88,12 @@ export function useProcedureEditorDerivedData(
       const hasPrompt = Boolean(
         question.prompt?.en?.trim() || question.prompt?.es?.trim(),
       );
+      if (question.type === "sequence") {
+        const hasStep = question.sequenceItems?.some((item) =>
+          Boolean(item.label?.en?.trim() || item.label?.es?.trim()),
+        );
+        return hasPrompt || hasStep;
+      }
       const hasChoice = question.choices?.some((choice) =>
         Boolean(choice.label?.en?.trim() || choice.label?.es?.trim()),
       );
@@ -98,6 +104,25 @@ export function useProcedureEditorDerivedData(
     if (!quiz || !hasQuizContent) return null;
     return (
       quiz.questions.find((question) => {
+        if (question.type === "sequence") {
+          const authored = Boolean(
+            question.prompt?.en?.trim() ||
+            question.prompt?.es?.trim() ||
+            question.sequenceItems?.some(
+              (item) => item.label?.en?.trim() || item.label?.es?.trim(),
+            ),
+          );
+          if (!authored) return false;
+          const items = question.sequenceItems || [];
+          const filledSteps = items.filter(
+            (item) => item.label?.en?.trim() || item.label?.es?.trim(),
+          );
+          const hasEmptyStep = items.some(
+            (item) => !item.label?.en?.trim() && !item.label?.es?.trim(),
+          );
+          return filledSteps.length < 2 || hasEmptyStep;
+        }
+
         const authored = Boolean(
           question.prompt?.en?.trim() ||
           question.prompt?.es?.trim() ||

@@ -148,6 +148,7 @@ export default async function EmployeeTrainingCoursePage({
         );
         if (loadedQuiz?.questions?.length) {
           chapterQuiz = {
+            id: loadedQuiz.id || chapterDetail.quizId,
             attached: true,
             questions: loadedQuiz.questions,
             minCorrectAnswers:
@@ -174,6 +175,7 @@ export default async function EmployeeTrainingCoursePage({
             );
             if (loadedQuiz?.questions?.length) {
               chapterQuiz = {
+                id: loadedQuiz.id || proc.quizId,
                 attached: true,
                 questions: loadedQuiz.questions,
                 minCorrectAnswers:
@@ -222,6 +224,7 @@ export default async function EmployeeTrainingCoursePage({
       <ChapterQuizView
         courseId={id}
         chapterId={currentChapterObj?.id}
+        quizId={chapterQuiz?.id || chapterDetail?.quizId || (currentChapterObj as any)?.quizId}
         courseTitle={courseTitle}
         chapterNumber={chapterNumber}
         totalChapters={chapterDetail.totalChapters}

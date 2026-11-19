@@ -78,17 +78,16 @@ export function isPromoExpired(
 }
 
 /**
- * Filter an already-readable list of procedures down to the active promos,
- * capped at `MAX_PROMOS`.
+ * Filter an already-readable list of procedures down to all active promos (uncapped).
  */
-export function pickPromoProcedures(
-  procedures: readonly Procedure[],
-  now: number = Date.now(),
-): Procedure[] {
+  export function getActivePromoProcedures(
+    procedures: readonly Procedure[],
+    now: number = Date.now(),
+  ): Procedure[] {
   // 1. Pick live database promos where isPromo === true and not expired
   const livePromos = procedures.filter((p) => isPromoActive(p, now));
   if (livePromos.length > 0) {
-    return livePromos.slice(0, MAX_PROMOS);
+    return livePromos;
   }
 
   // 2. Fallback to matching legacy slugs if no live database promos are set
@@ -96,9 +95,19 @@ export function pickPromoProcedures(
   for (const slug of PROMO_SLUGS) {
     const match = procedures.find((p) => p.slug === slug);
     if (match) fallback.push(match);
-    if (fallback.length === MAX_PROMOS) break;
   }
   return fallback;
+}
+
+/**
+ * Filter an already-readable list of procedures down to the active promos,
+ * capped at `MAX_PROMOS`.
+ */
+export function pickPromoProcedures(
+  procedures: readonly Procedure[],
+  now: number = Date.now(),
+): Procedure[] {
+  return getActivePromoProcedures(procedures, now).slice(0, MAX_PROMOS);
 }
 
 /** Convenience predicate for callers that only need a yes/no (e.g. row rendering). */

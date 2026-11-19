@@ -338,6 +338,13 @@
   }
 }
 
+/* A PDF's page pixels are baked white, so in dark mode the sheet is dimmed
+   a step rather than inverted — photographs and colour charts would go wrong.
+   Components read var(--paper-dim); light mode leaves it off. */
+:root {
+  --paper-dim: none;
+}
+
 /* ============================================================
    DARK
    The same token names with a different scale under them, so no component
@@ -349,6 +356,7 @@
    ============================================================ */
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --paper-dim: brightness(0.92);
   /* 1-2 · the two page backgrounds. Warm, never neutral grey, and never #000:
      bright content on pure black is what causes the halation Material warns
      about, and a lighter surface cannot be seen against it. */
@@ -452,6 +460,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
+    --paper-dim: brightness(0.92);
     /* 1-2 · the two page backgrounds. Warm, never neutral grey, and never #000:
        bright content on pure black is what causes the halation Material warns
        about, and a lighter surface cannot be seen against it. */

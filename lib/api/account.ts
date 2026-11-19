@@ -318,6 +318,8 @@ export async function deactivateEmployee(
   return apiDeactivate(employeeId);
 }
 
+// Reactivation removed — a deactivated employee stays deactivated.
+/*
 export async function reactivateEmployee(
   employeeId: string,
 ): Promise<{ employee: AdminEmployee }> {
@@ -325,6 +327,7 @@ export async function reactivateEmployee(
     await import("@/services/employees/api");
   return apiReactivate(employeeId);
 }
+*/
 
 // ----------------------------------------------------------------------------
 // Admin settings — stations, roles, locations

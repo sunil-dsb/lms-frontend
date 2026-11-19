@@ -3,8 +3,29 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import type { ProcedureQuiz, ProcedureQuizQuestion } from "@/lib/types";
+import type {
+  ProcedureQuiz,
+  ProcedureQuizQuestion,
+  QuizSequenceItem,
+} from "@/lib/types";
 import { LocalisedInput } from "@/components/ui/localised-input";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   LuBookOpen,
   LuCheck,
@@ -13,18 +34,24 @@ import {
   LuSparkles,
   LuTarget,
   LuTrash2,
+  LuArrowUp,
+  LuArrowDown,
+  LuListOrdered,
+  LuSquareCheck,
+  LuGripVertical,
 } from "react-icons/lu";
 
 const MIN_CHOICES = 2;
 const MAX_CHOICES = 6;
 const LANGS: Array<"en" | "es"> = ["en", "es"];
 
-function emptyQuestion(): ProcedureQuizQuestion {
+function emptyQuestion(type: "multiple_choice" | "sequence" = "multiple_choice"): ProcedureQuizQuestion {
   return {
     id:
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `q-${Math.random().toString(36).slice(2, 10)}`,
+    type,
     prompt: { en: "", es: "" },
     choices: Array.from({ length: 4 }, () => ({
       id:
@@ -34,7 +61,259 @@ function emptyQuestion(): ProcedureQuizQuestion {
       label: { en: "", es: "" },
     })),
     correctChoiceId: "",
+    sequenceItems: Array.from({ length: 3 }, () => ({
+      id:
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `s-${Math.random().toString(36).slice(2, 10)}`,
+      label: { en: "", es: "" },
+    })),
   };
+}
+
+function SortableSequenceStep({
+  step,
+  index,
+  total,
+  lang,
+  isSaving,
+  onUpdateText,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+  placeholder,
+  deleteTitle,
+}: {
+  step: QuizSequenceItem;
+  index: number;
+  total: number;
+  lang: "en" | "es";
+  isSaving?: boolean;
+  onUpdateText: (lang: "en" | "es", text: string) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onDelete: () => void;
+  placeholder?: string;
+  deleteTitle?: string;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: step.id, disabled: isSaving });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group flex items-center gap-2 rounded-xl p-1.5 transition-all select-none",
+        isDragging
+          ? "z-50 bg-[var(--color-surface)] border-2 border-[var(--color-brand-600)] shadow-lg opacity-95 scale-[1.01]"
+          : "hover:bg-[var(--color-wash)]/60",
+      )}
+    >
+      {/* Drag handle */}
+      <button
+        type="button"
+        aria-label="Drag to reorder"
+        title="Drag to reorder"
+        className="flex size-7 cursor-grab items-center justify-center rounded-md text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] active:cursor-grabbing transition-colors shrink-0"
+        {...attributes}
+        {...listeners}
+      >
+        <LuGripVertical className="size-4" />
+      </button>
+
+      {/* Step Number - simple black text */}
+      <span className="flex size-6 shrink-0 items-center justify-center text-sm font-bold text-[var(--color-ink)] select-none">
+        {index + 1}
+      </span>
+
+      {/* Input */}
+      <div className="flex-1 min-w-0">
+        <LocalisedInput
+          lang={lang}
+          value={step.label}
+          onText={onUpdateText}
+          type="text"
+          placeholder={placeholder}
+          disabled={isSaving}
+          className="w-full rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-ring)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-tint)]"
+        />
+      </div>
+
+      {/* Up / Down reorder */}
+      <div className="flex items-center gap-0.5 shrink-0">
+        <button
+          type="button"
+          onClick={onMoveUp}
+          disabled={index === 0 || isSaving}
+          title="Move up"
+          aria-label="Move step up"
+          className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:text-[var(--color-ink)] hover:bg-[var(--color-wash)] disabled:opacity-20 transition-colors cursor-pointer"
+        >
+          <LuArrowUp className="size-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onMoveDown}
+          disabled={index === total - 1 || isSaving}
+          title="Move down"
+          aria-label="Move step down"
+          className="flex size-8 items-center justify-center rounded-lg border border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:text-[var(--color-ink)] hover:bg-[var(--color-wash)] disabled:opacity-20 transition-colors cursor-pointer"
+        >
+          <LuArrowDown className="size-4" />
+        </button>
+      </div>
+
+      {/* Delete Step */}
+      {total > 2 ? (
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={isSaving}
+          aria-label={deleteTitle || "Delete step"}
+          title={deleteTitle || "Delete step"}
+          className="flex size-8 shrink-0 items-center justify-center rounded-full text-[var(--color-ink-3)] hover:bg-[var(--color-bad-tint)] hover:text-[var(--color-bad)] disabled:opacity-50 transition-colors cursor-pointer"
+        >
+          <LuTrash2 className="size-4" aria-hidden="true" />
+        </button>
+      ) : (
+        <div className="size-8 shrink-0" aria-hidden="true" />
+      )}
+    </li>
+  );
+}
+
+function SequenceStepList({
+  qi,
+  q,
+  lang,
+  isSaving,
+  t,
+  updateSequenceItem,
+  moveSequenceItem,
+  deleteSequenceItem,
+  addSequenceItem,
+  onReorderSteps,
+}: {
+  qi: number;
+  q: ProcedureQuizQuestion;
+  lang: "en" | "es";
+  isSaving?: boolean;
+  t: (key: string, values?: Record<string, any>) => string;
+  updateSequenceItem: (
+    qi: number,
+    si: number,
+    lang: "en" | "es",
+    text: string,
+  ) => void;
+  moveSequenceItem: (qi: number, from: number, to: number) => void;
+  deleteSequenceItem: (qi: number, si: number) => void;
+  addSequenceItem: (qi: number) => void;
+  onReorderSteps: (qi: number, newItems: QuizSequenceItem[]) => void;
+}) {
+  const items = q.sequenceItems || [];
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      onReorderSteps(qi, arrayMove(items, oldIndex, newIndex));
+    }
+  };
+
+  return (
+    <div className="space-y-3 pt-2">
+      <div className="flex items-center justify-between">
+        <span className="block text-xs font-semibold uppercase text-[var(--color-ink-3)] tracking-wider">
+          {lang === "en"
+            ? "Steps (in correct order)"
+            : "Pasos (en orden correcto)"}
+        </span>
+        <span className="text-xs text-[var(--color-ink-3)] font-mono">
+          {items.length} {lang === "en" ? "steps" : "pasos"}
+        </span>
+      </div>
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={items.map((s) => s.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <ul className="space-y-1">
+            {items.map((step, si) => (
+              <SortableSequenceStep
+                key={step.id}
+                step={step}
+                index={si}
+                total={items.length}
+                lang={lang}
+                isSaving={isSaving}
+                onUpdateText={(nextLang, text) =>
+                  updateSequenceItem(qi, si, nextLang, text)
+                }
+                onMoveUp={() => moveSequenceItem(qi, si, si - 1)}
+                onMoveDown={() => moveSequenceItem(qi, si, si + 1)}
+                onDelete={() => deleteSequenceItem(qi, si)}
+                placeholder={
+                  lang === "en"
+                    ? t("stepPlaceholder", { n: si + 1 }) ||
+                    `Step ${si + 1} (in correct order)...`
+                    : `Paso ${si + 1} (en orden correcto)...`
+                }
+                deleteTitle={t("deleteStep") || "Delete step"}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
+
+      <div className="pt-1 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => addSequenceItem(qi)}
+          disabled={isSaving || items.length >= 20}
+          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[var(--color-brand-700)] hover:bg-[var(--color-panel)] disabled:opacity-40 transition-colors cursor-pointer"
+        >
+          <LuPlus className="size-4" />
+          {t("addStep") || "Add step"}
+        </button>
+        {items.length >= 20 && (
+          <span className="text-xs text-[var(--color-ink-3)] font-medium">
+            {lang === "es"
+              ? "Máximo 20 pasos permitidos"
+              : "Maximum 20 steps allowed"}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 interface QuizEditorProps {
@@ -75,6 +354,7 @@ export function QuizEditor({
       passingScorePercent: initialValue.passingScorePercent,
       questions: initialValue.questions.map((q) => ({
         id: q.id || makeId(),
+        type: q.type || "multiple_choice",
         sourceProcedureId: q.sourceProcedureId,
         sourceProcedureTitle: q.sourceProcedureTitle,
         prompt: {
@@ -95,6 +375,20 @@ export function QuizEditor({
           },
         })),
         correctChoiceId: q.correctChoiceId ?? "",
+        sequenceItems: (
+          q.sequenceItems && q.sequenceItems.length > 0
+            ? q.sequenceItems
+            : Array.from({ length: 3 }, () => ({
+              id: makeId(),
+              label: { en: "", es: "" },
+            }))
+        ).map((s) => ({
+          id: s.id || makeId(),
+          label: {
+            en: typeof s.label === "string" ? s.label : (s.label?.en ?? ""),
+            es: typeof s.label === "string" ? s.label : (s.label?.es ?? ""),
+          },
+        })),
       })),
     };
   });
@@ -122,6 +416,7 @@ export function QuizEditor({
             Math.max(1, Math.ceil(value.questions.length * 0.7)),
           questions: value.questions.map((q) => ({
             id: q.id || makeId(),
+            type: q.type || "multiple_choice",
             sourceProcedureId: q.sourceProcedureId,
             sourceProcedureTitle: q.sourceProcedureTitle,
             prompt: {
@@ -142,6 +437,20 @@ export function QuizEditor({
               },
             })),
             correctChoiceId: q.correctChoiceId ?? "",
+            sequenceItems: (
+              q.sequenceItems && q.sequenceItems.length > 0
+                ? q.sequenceItems
+                : Array.from({ length: 3 }, () => ({
+                  id: makeId(),
+                  label: { en: "", es: "" },
+                }))
+            ).map((s) => ({
+              id: s.id || makeId(),
+              label: {
+                en: typeof s.label === "string" ? s.label : (s.label?.en ?? ""),
+                es: typeof s.label === "string" ? s.label : (s.label?.es ?? ""),
+              },
+            })),
           })),
         };
       });
@@ -159,8 +468,8 @@ export function QuizEditor({
         typeof p === "string"
           ? p
           : (p as { en?: string; es?: string })?.en ||
-            (p as { en?: string; es?: string })?.es ||
-            "";
+          (p as { en?: string; es?: string })?.es ||
+          "";
       if (promptText.trim()) return true;
       return q.choices?.some((c) => {
         const l = c.label as unknown;
@@ -168,8 +477,8 @@ export function QuizEditor({
           typeof l === "string"
             ? l
             : (l as { en?: string; es?: string })?.en ||
-              (l as { en?: string; es?: string })?.es ||
-              "";
+            (l as { en?: string; es?: string })?.es ||
+            "";
         return Boolean(labelText.trim());
       });
     });
@@ -260,6 +569,80 @@ export function QuizEditor({
     updateQuestion(qi, { choices, correctChoiceId });
   };
 
+  const setQuestionType = (
+    qi: number,
+    type: "multiple_choice" | "sequence",
+  ): void => {
+    const q = working.questions[qi];
+    if (!q || q.type === type) return;
+
+    let sequenceItems = q.sequenceItems;
+    if (type === "sequence" && (!sequenceItems || sequenceItems.length < 2)) {
+      sequenceItems =
+        q.choices && q.choices.length >= 2
+          ? q.choices.map((c) => ({ id: c.id, label: { ...c.label } }))
+          : Array.from({ length: 3 }, () => ({
+            id: makeId(),
+            label: { en: "", es: "" },
+          }));
+    }
+
+    updateQuestion(qi, { type, sequenceItems });
+  };
+
+  const updateSequenceItem = (
+    qi: number,
+    si: number,
+    lang: "en" | "es",
+    text: string,
+  ): void => {
+    const q = working.questions[qi];
+    if (!q || !q.sequenceItems) return;
+    const sequenceItems = q.sequenceItems.map((item, j) =>
+      j === si ? { ...item, label: { ...item.label, [lang]: text } } : item,
+    );
+    updateQuestion(qi, { sequenceItems });
+  };
+
+  const addSequenceItem = (qi: number): void => {
+    const q = working.questions[qi];
+    if (!q) return;
+    const current = q.sequenceItems || [];
+    if (current.length >= 20) return;
+    updateQuestion(qi, {
+      sequenceItems: [...current, { id: makeId(), label: { en: "", es: "" } }],
+    });
+  };
+
+  const reorderSequenceItems = (
+    qi: number,
+    sequenceItems: QuizSequenceItem[],
+  ): void => {
+    updateQuestion(qi, { sequenceItems });
+  };
+
+  const deleteSequenceItem = (qi: number, si: number): void => {
+    const q = working.questions[qi];
+    if (!q || !q.sequenceItems || q.sequenceItems.length <= 2) return;
+    updateQuestion(qi, {
+      sequenceItems: q.sequenceItems.filter((_, j) => j !== si),
+    });
+  };
+
+  const moveSequenceItem = (
+    qi: number,
+    fromIndex: number,
+    toIndex: number,
+  ): void => {
+    const q = working.questions[qi];
+    if (!q || !q.sequenceItems) return;
+    if (toIndex < 0 || toIndex >= q.sequenceItems.length) return;
+    const next = [...q.sequenceItems];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    updateQuestion(qi, { sequenceItems: next });
+  };
+
   return (
     <div className="space-y-6">
       {hideHeader ? null : (
@@ -315,7 +698,7 @@ export function QuizEditor({
                     ((working.minCorrectAnswers ??
                       Math.max(1, Math.ceil(working.questions.length * 0.7))) /
                       working.questions.length) *
-                      100,
+                    100,
                   )}
                   % required
                 </span>
@@ -340,7 +723,7 @@ export function QuizEditor({
                     isSaving ||
                     (working.minCorrectAnswers ??
                       Math.max(1, Math.ceil(working.questions.length * 0.7))) <=
-                      1
+                    1
                   }
                   onClick={() =>
                     setMinCorrect(
@@ -375,7 +758,7 @@ export function QuizEditor({
                     isSaving ||
                     (working.minCorrectAnswers ??
                       Math.max(1, Math.ceil(working.questions.length * 0.7))) >=
-                      working.questions.length
+                    working.questions.length
                   }
                   onClick={() =>
                     setMinCorrect(
@@ -447,8 +830,12 @@ export function QuizEditor({
                             type="text"
                             placeholder={
                               lang === "en"
-                                ? t("promptPlaceholder")
-                                : "Escribe la pregunta en español..."
+                                ? q.type === "sequence"
+                                  ? "Arrange the following steps in the correct order..."
+                                  : t("promptPlaceholder")
+                                : q.type === "sequence"
+                                  ? "Organiza los siguientes pasos en el orden correcto..."
+                                  : "Escribe la pregunta en español..."
                             }
                             disabled={isSaving}
                             className="w-full rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 py-2 text-sm font-medium text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-ring)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-tint)]"
@@ -475,117 +862,173 @@ export function QuizEditor({
                       </header>
 
                       <div className="p-4 space-y-4">
-                        {q.choices.every(
-                          (c) => !(c.label[lang] ?? "").trim(),
-                        ) ? null : !q.correctChoiceId ? (
-                          <p className="text-sm font-medium text-[var(--color-warn-ink)]">
-                            {t("noCorrect")}
-                          </p>
-                        ) : null}
+                        {/* Question Type Switcher */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-[var(--color-line-2)]/60">
+                          <div className="flex items-center gap-1 p-1 bg-[var(--color-wash)] rounded-lg border border-[var(--color-line-2)] text-xs font-medium w-fit">
+                            <button
+                              type="button"
+                              onClick={() => setQuestionType(qi, "multiple_choice")}
+                              className={cn(
+                                "flex items-center gap-1   px-3 py-1 rounded-md transition-all cursor-pointer",
+                                (q.type || "multiple_choice") === "multiple_choice"
+                                  ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-xs font-semibold"
+                                  : "text-[var(--color-ink-3)] hover:text-[var(--color-ink)]",
+                              )}
+                            >
+                              <LuSquareCheck className="size-3.5" />
+                              {t("typeMultipleChoice") || "Multiple Choice"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setQuestionType(qi, "sequence")}
+                              className={cn(
+                                "flex items-center gap-1 px-3 py-1 rounded-md transition-all cursor-pointer",
+                                q.type === "sequence"
+                                  ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-xs font-semibold"
+                                  : "text-[var(--color-ink-3)] hover:text-[var(--color-ink)]",
+                              )}
+                            >
+                              <LuListOrdered className="size-3.5" />
+                              {t("typeSequence") || "Arrange Sequence"}
+                            </button>
+                          </div>
 
-                        {/* Options in active language */}
-                        <div className="space-y-2">
-                          <span className="block text-xs font-semibold uppercase text-[var(--color-ink-3)] tracking-wider">
-                            {lang === "en" ? "Options" : "Opciones"}
-                          </span>
-                          <ul className="space-y-2">
-                            {q.choices.map((c, ci) => {
-                              const isCorrect = q.correctChoiceId === c.id;
-                              return (
-                                <li
-                                  key={c.id}
-                                  className="flex items-center gap-2"
-                                >
-                                  <button
-                                    type="button"
-                                    onClick={() => setCorrect(qi, ci)}
-                                    disabled={isSaving}
-                                    aria-pressed={isCorrect}
-                                    aria-label={t("markCorrect")}
-                                    title={
-                                      isCorrect
-                                        ? "Correct option"
-                                        : "Click to mark as correct"
-                                    }
-                                    className={cn(
-                                      "flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-tint)]",
-                                      isCorrect
-                                        ? "border-[var(--color-ok)] bg-[var(--color-ok)] text-white shadow-xs"
-                                        : "border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line-3)]",
-                                    )}
-                                  >
-                                    {isCorrect ? (
-                                      <LuCheck
-                                        className="size-4 stroke-[3] text-white"
-                                        aria-hidden="true"
-                                      />
-                                    ) : null}
-                                  </button>
-                                  <div className="flex-1 min-w-0">
-                                    <LocalisedInput
-                                      lang={lang}
-                                      value={c.label}
-                                      onText={(nextLang, text) =>
-                                        updateChoice(qi, ci, nextLang, text)
-                                      }
-                                      type="text"
-                                      placeholder={
-                                        lang === "en"
-                                          ? t("choicePlaceholder", {
-                                              n: ci + 1,
-                                            })
-                                          : `Opción ${ci + 1}`
-                                      }
-                                      disabled={isSaving}
-                                      className={cn(
-                                        "w-full rounded-[var(--radius-sm)] border bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none focus:ring-2",
-                                        isCorrect
-                                          ? "border-[var(--color-ok)] focus:border-[var(--color-ok)] focus:ring-[var(--color-ok-tint)]"
-                                          : "border-[var(--color-line-2)] focus:border-[var(--color-ring)] focus:ring-[var(--color-brand-tint)]",
+                          {q.type === "sequence" ? (
+                            <span className="text-xs text-[var(--color-ink-3)]">
+                              {t("sequenceHelp") ||
+                                "Define in correct order. Shuffled for employees."}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        {q.type === "sequence" ? (
+                          <SequenceStepList
+                            qi={qi}
+                            q={q}
+                            lang={lang}
+                            isSaving={isSaving}
+                            t={t}
+                            updateSequenceItem={updateSequenceItem}
+                            moveSequenceItem={moveSequenceItem}
+                            deleteSequenceItem={deleteSequenceItem}
+                            addSequenceItem={addSequenceItem}
+                            onReorderSteps={reorderSequenceItems}
+                          />
+                        ) : (
+                          /* Multiple Choice Options */
+                          <>
+                            {q.choices.every(
+                              (c) => !(c.label[lang] ?? "").trim(),
+                            ) ? null : !q.correctChoiceId ? (
+                              <p className="text-sm font-medium text-[var(--color-warn-ink)]">
+                                {t("noCorrect")}
+                              </p>
+                            ) : null}
+
+                            <div className="space-y-2">
+                              <span className="block text-xs font-semibold uppercase text-[var(--color-ink-3)] tracking-wider">
+                                {lang === "en" ? "Options" : "Opciones"}
+                              </span>
+                              <ul className="space-y-2">
+                                {q.choices.map((c, ci) => {
+                                  const isCorrect = q.correctChoiceId === c.id;
+                                  return (
+                                    <li
+                                      key={c.id}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => setCorrect(qi, ci)}
+                                        disabled={isSaving}
+                                        aria-pressed={isCorrect}
+                                        aria-label={t("markCorrect")}
+                                        title={
+                                          isCorrect
+                                            ? "Correct option"
+                                            : "Click to mark as correct"
+                                        }
+                                        className={cn(
+                                          "flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-tint)]",
+                                          isCorrect
+                                            ? "border-[var(--color-ok)] bg-[var(--color-ok)] text-white shadow-xs"
+                                            : "border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line-3)]",
+                                        )}
+                                      >
+                                        {isCorrect ? (
+                                          <LuCheck
+                                            className="size-4 stroke-[3] text-white"
+                                            aria-hidden="true"
+                                          />
+                                        ) : null}
+                                      </button>
+                                      <div className="flex-1 min-w-0">
+                                        <LocalisedInput
+                                          lang={lang}
+                                          value={c.label}
+                                          onText={(nextLang, text) =>
+                                            updateChoice(qi, ci, nextLang, text)
+                                          }
+                                          type="text"
+                                          placeholder={
+                                            lang === "en"
+                                              ? t("choicePlaceholder", {
+                                                n: ci + 1,
+                                              })
+                                              : `Opción ${ci + 1}`
+                                          }
+                                          disabled={isSaving}
+                                          className={cn(
+                                            "w-full rounded-[var(--radius-sm)] border bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none focus:ring-2",
+                                            isCorrect
+                                              ? "border-[var(--color-ok)] focus:border-[var(--color-ok)] focus:ring-[var(--color-ok-tint)]"
+                                              : "border-[var(--color-line-2)] focus:border-[var(--color-ring)] focus:ring-[var(--color-brand-tint)]",
+                                          )}
+                                        />
+                                      </div>
+                                      {q.choices.length > MIN_CHOICES ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => deleteChoice(qi, ci)}
+                                          disabled={isSaving}
+                                          aria-label={t("deleteOption")}
+                                          title={t("deleteOption")}
+                                          className="flex size-8 shrink-0 items-center justify-center rounded-full text-[var(--color-ink-3)] hover:bg-[var(--color-bad-tint)] hover:text-[var(--color-bad)] disabled:opacity-50 transition-colors"
+                                        >
+                                          <LuTrash2
+                                            className="size-4"
+                                            aria-hidden="true"
+                                          />
+                                        </button>
+                                      ) : (
+                                        <div
+                                          className="size-8 shrink-0"
+                                          aria-hidden="true"
+                                        />
                                       )}
-                                    />
-                                  </div>
-                                  {q.choices.length > MIN_CHOICES ? (
+                                    </li>
+                                  );
+                                })}
+                                {q.choices.length < MAX_CHOICES ? (
+                                  <li className="pt-2">
                                     <button
                                       type="button"
-                                      onClick={() => deleteChoice(qi, ci)}
+                                      onClick={() => addChoice(qi)}
                                       disabled={isSaving}
-                                      aria-label={t("deleteOption")}
-                                      title={t("deleteOption")}
-                                      className="flex size-8 shrink-0 items-center justify-center rounded-full text-[var(--color-ink-3)] hover:bg-[var(--color-bad-tint)] hover:text-[var(--color-bad)] disabled:opacity-50 transition-colors"
+                                      className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[var(--color-brand-700)] hover:bg-[var(--color-panel)] disabled:opacity-50 transition-colors"
                                     >
-                                      <LuTrash2
+                                      <LuPlus
                                         className="size-4"
                                         aria-hidden="true"
                                       />
+                                      {t("addOption")}
                                     </button>
-                                  ) : (
-                                    <div
-                                      className="size-8 shrink-0"
-                                      aria-hidden="true"
-                                    />
-                                  )}
-                                </li>
-                              );
-                            })}
-                            {q.choices.length < MAX_CHOICES ? (
-                              <li className="pt-2">
-                                <button
-                                  type="button"
-                                  onClick={() => addChoice(qi)}
-                                  disabled={isSaving}
-                                  className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-[var(--color-brand-700)] hover:bg-[var(--color-panel)] disabled:opacity-50 transition-colors"
-                                >
-                                  <LuPlus
-                                    className="size-4"
-                                    aria-hidden="true"
-                                  />
-                                  {t("addOption")}
-                                </button>
-                              </li>
-                            ) : null}
-                          </ul>
-                        </div>
+                                  </li>
+                                ) : null}
+                              </ul>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   );

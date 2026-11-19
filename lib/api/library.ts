@@ -394,8 +394,12 @@ function normalizeQuiz(raw: any): Quiz {
   const rawQuestions = Array.isArray(raw?.questions) ? raw.questions : [];
   const questions = rawQuestions.map((q: any) => {
     const promptText = q.prompt ?? q.question ?? { en: "", es: "" };
+    const isSeq =
+      q.type === "sequence" ||
+      (Array.isArray(q.sequenceItems) && q.sequenceItems.length > 0);
     return {
       id: q.id || `q-${Math.random().toString(36).slice(2, 7)}`,
+      type: isSeq ? ("sequence" as const) : ("multiple_choice" as const),
       prompt: promptText,
       question: promptText,
       choices: (q.choices ?? []).map((c: any) => ({
@@ -403,6 +407,12 @@ function normalizeQuiz(raw: any): Quiz {
         label: c.label ?? { en: "", es: "" },
       })),
       correctChoiceId: q.correctChoiceId ?? "",
+      sequenceItems: Array.isArray(q.sequenceItems)
+        ? q.sequenceItems.map((s: any) => ({
+            id: s.id,
+            label: s.label ?? { en: "", es: "" },
+          }))
+        : undefined,
     };
   });
 
@@ -534,7 +544,19 @@ export function isQuizQuestionAuthored(
       );
     });
 
-  return Boolean(promptText || hasChoices);
+  const sequenceItems = q.sequenceItems;
+  const hasSequenceItems =
+    Array.isArray(sequenceItems) &&
+    sequenceItems.some((s: any) => {
+      if (!s) return false;
+      const lbl = s.label ?? s.text;
+      if (typeof lbl === "string") return lbl.trim().length > 0;
+      return Boolean(
+        String(lbl?.en ?? "").trim() || String(lbl?.es ?? "").trim(),
+      );
+    });
+
+  return Boolean(promptText || hasChoices || hasSequenceItems);
 }
 
 /** Editor questions → backend payload. New rows drop their client `id`;
@@ -542,15 +564,55 @@ export function isQuizQuestionAuthored(
 function mapQuestionsForBackend(
   questions: Quiz["questions"],
 ): Record<string, any>[] {
-  return questions.filter(isQuizQuestionAuthored).map((q) => ({
-    ...(isUuidLike(q.id) ? { id: q.id } : {}),
-    question: q.question ?? q.prompt,
-    choices: (q.choices ?? []).map((c) => ({
-      ...(c.id ? { id: c.id } : {}),
-      label: c.label ?? { en: "", es: "" },
-    })),
-    correctChoiceId: q.correctChoiceId,
-  }));
+  return questions.filter(isQuizQuestionAuthored).map((q) => {
+    const isSeq = q.type === "sequence";
+    const prompt = q.prompt ?? q.question ?? { en: "", es: "" };
+    const rawEn =
+      typeof prompt === "string" ? prompt : prompt.en || prompt.es || "";
+    const rawEs =
+      typeof prompt === "string" ? prompt : prompt.es || prompt.en || "";
+
+    const defaultSeqEn = "Arrange the following steps in the correct order:";
+    const defaultSeqEs = "Organiza los siguientes pasos en el orden correcto:";
+
+    const promptEn = rawEn.trim() || (isSeq ? defaultSeqEn : "");
+    const promptEs = rawEs.trim() || (isSeq ? defaultSeqEs : "");
+
+    if (isSeq) {
+      return {
+        ...(isUuidLike(q.id) ? { id: q.id } : {}),
+        type: "sequence",
+        question: { en: promptEn, es: promptEs },
+        prompt: { en: promptEn, es: promptEs },
+        sequenceItems: (q.sequenceItems ?? []).map((s: any) => {
+          const lbl = s.label ?? { en: "", es: "" };
+          const en = typeof lbl === "string" ? lbl : lbl.en || lbl.es || "";
+          const es = typeof lbl === "string" ? lbl : lbl.es || lbl.en || "";
+          return {
+            id: s.id,
+            label: { en: en || es, es: es || en },
+          };
+        }),
+      };
+    }
+
+    return {
+      ...(isUuidLike(q.id) ? { id: q.id } : {}),
+      type: "multiple_choice",
+      question: { en: promptEn, es: promptEs },
+      prompt: { en: promptEn, es: promptEs },
+      choices: (q.choices ?? []).map((c: any) => {
+        const lbl = c.label ?? { en: "", es: "" };
+        const en = typeof lbl === "string" ? lbl : lbl.en || lbl.es || "";
+        const es = typeof lbl === "string" ? lbl : lbl.es || lbl.en || "";
+        return {
+          ...(c.id ? { id: c.id } : {}),
+          label: { en: en || es, es: es || en },
+        };
+      }),
+      correctChoiceId: q.correctChoiceId,
+    };
+  });
 }
 
 /** Create a quiz via POST /api/v1/quizzes.
@@ -583,7 +645,8 @@ export async function createQuiz(input: {
       return { quiz: created };
     }
   } catch (err) {
-    console.warn("createQuiz API call failed, saving to local store:", err);
+    console.error("createQuiz API call failed:", err);
+    if (err instanceof ApiException) throw err;
   }
 
   const now = new Date().toISOString();
@@ -640,10 +703,8 @@ export async function updateQuiz(
       return { quiz: updated };
     }
   } catch (err) {
-    console.warn(
-      `updateQuiz(${id}) API call failed, updating local store:`,
-      err,
-    );
+    console.error(`updateQuiz(${id}) API call failed:`, err);
+    if (err instanceof ApiException) throw err;
   }
 
   const store = getQuizzesStore();
@@ -679,6 +740,40 @@ export async function deleteQuiz(id: string): Promise<{ ok: true }> {
   mockQuizzes = store;
   setStored("quizzes", store);
   return { ok: true };
+}
+
+/** Check an answer via POST /api/v1/quizzes/:id/check-answer.
+ *  Validates sequence order or multiple-choice answer against server state. */
+export async function checkQuizAnswerApi(
+  quizId: string,
+  input: { questionId: string; sequenceOrder?: string[]; choiceId?: string },
+): Promise<{ questionId: string; isCorrect: boolean; type: string }> {
+  const res = await http.post<any>(
+    `/api/v1/quizzes/${quizId}/check-answer`,
+    input,
+  );
+  const data = res.data?.data ?? res.data;
+  return data;
+}
+
+/** Check batch answers via POST /api/v1/quizzes/:id/check-answers in 1 single call. */
+export async function checkQuizBatchAnswersApi(
+  quizId: string,
+  answers: Array<{
+    questionId: string;
+    sequenceOrder?: string[];
+    choiceId?: string;
+  }>,
+): Promise<{
+  score: number;
+  total: number;
+  results: Array<{ questionId: string; isCorrect: boolean; type: string }>;
+}> {
+  const res = await http.post<any>(`/api/v1/quizzes/${quizId}/check-answers`, {
+    answers,
+  });
+  const data = res.data?.data ?? res.data;
+  return data;
 }
 
 export async function getProcedureBySlug(

@@ -20,7 +20,8 @@ export interface ProcedureFilterOptions {
 }
 
 export interface AssignedProceduresFilterOptions {
-  scope?: "all" | "mine";
+  scope?: "all" | "mine" | "promos";
+  isPromo?: boolean;
   categoryId?: string;
   page?: number;
   limit?: number;

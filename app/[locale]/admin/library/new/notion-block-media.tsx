@@ -40,6 +40,11 @@ import { Label } from "@/components/ui/label";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { RowActions } from "@/components/ui/row-actions";
 import { Popover } from "@/components/ui/popover";
+import dynamic from "next/dynamic";
+import {
+  AttachmentCard,
+  isPdfUrl,
+} from "@/components/doc/attachment-cards-block";
 import {
   LuTriangleAlert,
   LuClock,
@@ -85,6 +90,17 @@ import {
   setLoc,
   setOpt,
 } from "./notion-block-shared";
+
+// react-pdf reads `document` at module scope, so it must never be
+// server-rendered (react-pdf README → skip SSR; Next 16: `ssr: false` only
+// inside client components, which this file is).
+const PdfViewerModal = dynamic(
+  () =>
+    import("@/components/doc/pdf-viewer-modal").then((m) => ({
+      default: m.PdfViewerModal,
+    })),
+  { ssr: false },
+);
 
 export function ImageBody({
   block,
@@ -538,12 +554,9 @@ export function AttachmentBody({
     state: "idle" | "uploading" | "failed";
     error?: string;
   }>({ state: "idle" });
+  const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [showEdit, setShowEdit] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
-
-  const metaInfo = React.useMemo(
-    () => getAttachmentMeta(block.href),
-    [block.href],
-  );
 
   const startUpload = async (file: File): Promise<void> => {
     if (file.size > MAX_DOCUMENT_BYTES) {
@@ -589,85 +602,7 @@ export function AttachmentBody({
   };
 
   return (
-    <div className="space-y-3 pt-0.5">
-      {/* URL input row with upload button outside */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <div
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            const f = e.dataTransfer.files?.[0];
-            if (f) void startUpload(f);
-          }}
-          className="flex flex-1 items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-2 min-h-9 focus-within:border-[var(--color-ring)] focus-within:bg-[var(--color-surface)] transition-all min-w-0"
-        >
-          <Icon
-            icon={block.href ? metaInfo.icon : "ri-attachment-line"}
-            className={cn(
-              "text-base shrink-0",
-              block.href ? metaInfo.color : "text-[var(--color-ink-3)]",
-            )}
-          />
-          <input
-            type="url"
-            value={block.href}
-            onChange={(e) => onPatch({ ...block, href: e.target.value })}
-            placeholder="https://example.com/file.pdf"
-            className="flex-1 min-w-0 bg-transparent text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none"
-          />
-
-          {block.href ? (
-            <div className="flex items-center gap-1 shrink-0">
-              <a
-                href={block.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 text-[var(--color-ink-3)] hover:text-[var(--color-brand)] transition-colors"
-                title="Open file"
-              >
-                <Icon icon="ri-external-link-line" className="text-sm" />
-              </a>
-              <button
-                type="button"
-                onClick={() => {
-                  if (block.href && !block.href.startsWith("blob:")) {
-                    void deleteUpload({ url: block.href }).catch(
-                      () => undefined,
-                    );
-                  }
-                  onPatch({ ...block, href: "", meta: undefined });
-                }}
-                className="p-1 text-[var(--color-ink-3)] hover:text-[var(--color-bad)] transition-colors cursor-pointer"
-                title="Clear"
-              >
-                <Icon icon="ri-close-line" className="text-sm" />
-              </button>
-            </div>
-          ) : null}
-        </div>
-
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          disabled={upload.state === "uploading"}
-          onClick={() => fileRef.current?.click()}
-          className="h-9 shrink-0 gap-2 px-4 text-xs font-semibold whitespace-nowrap justify-center w-full sm:w-auto"
-        >
-          {upload.state === "uploading" ? (
-            <>
-              <span className="spinner mr-0.5" aria-hidden="true" />
-              <span>Uploading…</span>
-            </>
-          ) : (
-            <>
-              <Icon icon="ri-upload-2-line" className="text-sm" />
-              <span>{block.href ? "Replace file" : "Upload file"}</span>
-            </>
-          )}
-        </Button>
-      </div>
-
+    <div className="pt-0.5">
       <input
         ref={fileRef}
         type="file"
@@ -677,56 +612,160 @@ export function AttachmentBody({
       />
 
       {upload.state === "failed" && (
-        <div className="flex items-center gap-2 text-xs text-[var(--color-bad)] px-1">
+        <div className="flex items-center gap-2 text-xs text-[var(--color-bad)] mb-2">
           <Icon icon="ri-error-warning-line" />
           <span>{upload.error}</span>
         </div>
       )}
 
-      {/* Bilingual title input */}
-      <BilingualInput
-        value={block.title}
-        maxLength={120}
-        onChange={(val) => onPatch({ ...block, title: val })}
-        size="compact"
-        placeholder={{
-          en: "e.g. HACCP checklist (English)",
-          es: "e.g. Lista HACCP (Español)",
-        }}
-      />
+      {!block.href ? (
+        /* Empty State: Clean, minimal single-row dropzone without empty input clutter */
+        <div
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            const f = e.dataTransfer.files?.[0];
+            if (f) void startUpload(f);
+          }}
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-2)] hover:border-[var(--color-brand)] bg-[var(--color-wash)]/60 hover:bg-[var(--color-panel)]/40 transition-all cursor-pointer min-h-[44px]"
+        >
+          <div className="flex items-center gap-2 text-xs text-[var(--color-ink-2)] min-w-0">
+            <span className="flex items-center justify-center size-7 rounded-md bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-brand)] shrink-0">
+              <Icon icon="ri-attachment-line" className="text-sm" />
+            </span>
+            <span className="truncate">
+              {upload.state === "uploading"
+                ? "Uploading document…"
+                : "Click to upload PDF or document, or drop file here"}
+            </span>
+          </div>
 
-      {/* Badge label input */}
-      <div className="pt-2">
-        <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-2 min-h-9 focus-within:border-[var(--color-ring)] focus-within:bg-[var(--color-surface)] transition-all">
-          <Icon
-            icon="ri-price-tag-3-line"
-            className="text-base text-[var(--color-ink-3)] shrink-0"
-          />
-          <input
-            type="text"
-            maxLength={60}
-            value={block.meta ?? ""}
-            onChange={(e) =>
-              onPatch({ ...block, meta: e.target.value || undefined })
-            }
-            placeholder="Badge label (optional, e.g. PDF · 2.4 MB, Revision 3)…"
-            className="flex-1 min-w-0 bg-transparent text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none"
-          />
-          <span className="font-mono text-xs text-[var(--color-ink-3)] pointer-events-none select-none shrink-0">
-            {(block.meta ?? "").length} / 60
-          </span>
-          {block.meta ? (
-            <button
-              type="button"
-              onClick={() => onPatch({ ...block, meta: undefined })}
-              className="p-1 text-[var(--color-ink-3)] hover:text-[var(--color-bad)] transition-colors cursor-pointer"
-              title="Clear badge"
-            >
-              <Icon icon="ri-close-line" className="text-sm" />
-            </button>
-          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={upload.state === "uploading"}
+            className="h-7 px-3 text-xs shrink-0 pointer-events-none gap-1"
+          >
+            {upload.state === "uploading" ? (
+              <span className="spinner mr-1" />
+            ) : (
+              <Icon icon="ri-upload-2-line" className="text-sm" />
+            )}
+            Upload file
+          </Button>
         </div>
-      </div>
+      ) : (
+        /* Attached State: Single compact document card */
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-line-2 bg-surface shadow-sm">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="flex items-center justify-center size-8 rounded-lg bg-bad-tint text-bad shrink-0">
+                <Icon icon="ri-file-pdf-2-line" className="text-base" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-xs sm:text-sm text-ink truncate">
+                  {block.title?.en || block.title?.es || "Attachment"}
+                </p>
+                {block.meta ? (
+                  <span className="font-ui text-xs text-ink-2 truncate block mt-2">
+                    {block.meta}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {isPdfUrl(block.href, block.meta) && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPreviewOpen(true)}
+                  className="min-h-8 px-2 text-xs font-semibold gap-1"
+                >
+                  <Icon icon="ri-eye-line" className="text-sm" />
+                  <span>View</span>
+                </Button>
+              )}
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+                className="min-h-8 px-2 text-xs text-ink-2 hover:text-ink"
+                title="Replace file"
+              >
+                <Icon icon="ri-upload-2-line" className="text-sm" />
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => onPatch({ ...block, href: "", meta: undefined })}
+                className="p-1 rounded text-ink-3 hover:text-bad transition-colors cursor-pointer"
+                title="Remove attachment"
+              >
+                <Icon icon="ri-close-line" className="text-base" />
+              </button>
+            </div>
+          </div>
+
+          {/* Optional: Collapsed customize name toggle. A system ghost
+              button rather than a bare text link: same pill shape, font
+              and colours as every other control here, plus a 40px
+              touch target. */}
+          <div className="px-1 flex items-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowEdit(!showEdit)}
+              className="min-h-10"
+            >
+              {showEdit ? "Hide name editing" : "Edit document name / details"}
+            </Button>
+          </div>
+
+          {showEdit && (
+            <div className="p-3 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)]/40 space-y-2.5 animate-in fade-in duration-150">
+              <BilingualInput
+                value={block.title}
+                maxLength={120}
+                onChange={(val) => onPatch({ ...block, title: val })}
+                size="compact"
+                placeholder={{
+                  en: "e.g. HACCP checklist (English)",
+                  es: "e.g. Lista HACCP (Español)",
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  maxLength={60}
+                  value={block.meta ?? ""}
+                  onChange={(e) =>
+                    onPatch({ ...block, meta: e.target.value || undefined })
+                  }
+                  placeholder="Badge label (e.g. PDF · 18 KB)…"
+                  className="flex-1 rounded-[var(--radius-sm)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-2 py-1 text-xs text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:outline-none focus:border-[var(--color-ring)]"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {previewOpen && block.href ? (
+        <PdfViewerModal
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          title={block.title?.en || block.title?.es || "PDF Document"}
+          url={block.href}
+          meta={block.meta}
+        />
+      ) : null}
     </div>
   );
 }

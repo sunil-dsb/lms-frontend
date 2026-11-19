@@ -140,14 +140,20 @@ export function getQuestionNormalizedPrompt(
   q: ProcedureQuizQuestion | undefined | null,
 ): { en: string; es: string } {
   if (!q) return { en: "", es: "" };
-  const en =
+  let en =
     (typeof q.prompt === "string" ? q.prompt : q.prompt?.en) ||
     (typeof q.question === "string" ? q.question : q.question?.en) ||
     "";
-  const es =
+  let es =
     (typeof q.prompt === "object" ? q.prompt?.es : undefined) ||
     (typeof q.question === "object" ? q.question?.es : undefined) ||
     "";
+
+  if (!en.trim() && !es.trim() && q.type === "sequence") {
+    en = "Arrange the following steps in the correct order:";
+    es = "Organiza los siguientes pasos en el orden correcto:";
+  }
+
   return { en: en || es, es: es || en };
 }
 
@@ -167,6 +173,41 @@ export function validateChapterQuiz(
         return isEs
           ? `La pregunta ${i + 1} no tiene texto.`
           : `Question ${i + 1} is missing its question text.`;
+      }
+
+      if (q.type === "sequence") {
+        const items = q.sequenceItems || [];
+        if (items.length < 2) {
+          return isEs
+            ? `La pregunta ${i + 1} debe tener al menos 2 pasos.`
+            : `Question ${i + 1} must have at least 2 steps.`;
+        }
+        const hasEmptyStep = items.some((item) => {
+          const l = item.label as unknown as string | { en?: string; es?: string } | undefined;
+          if (!l) return true;
+          if (typeof l === "string") return !l.trim();
+          return !(l.en?.trim() || l.es?.trim());
+        });
+        if (hasEmptyStep) {
+          return isEs
+            ? `La pregunta ${i + 1} tiene pasos vacíos.`
+            : `Question ${i + 1} has empty steps.`;
+        }
+
+        const seenLabels = new Set<string>();
+        for (let sIdx = 0; sIdx < items.length; sIdx++) {
+          const l = items[sIdx].label as unknown as string | { en?: string; es?: string } | undefined;
+          const en = typeof l === "string" ? l.trim().toLowerCase() : (l?.en || "").trim().toLowerCase();
+          const es = typeof l === "string" ? l.trim().toLowerCase() : (l?.es || "").trim().toLowerCase();
+          const key = `${en}|||${es}`;
+          if (key !== "|||" && seenLabels.has(key)) {
+            return isEs
+              ? `La pregunta ${i + 1} tiene pasos con texto duplicado (paso ${sIdx + 1}).`
+              : `Question ${i + 1} has duplicate steps (step ${sIdx + 1}). Each step must be distinct.`;
+          }
+          seenLabels.add(key);
+        }
+        continue;
       }
 
       const rawChoices = (q.choices ||

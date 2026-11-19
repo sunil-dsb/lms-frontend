@@ -17,6 +17,7 @@ export interface Employee {
   stationIds: string[];
   role: EmployeeRole;
   languagePref: LanguagePref;
+  status?: EmployeeStatus;
   roleClearance?: ClearanceLevel | null;
   createdAt?: string;
   /** Denormalised names from GET /api/auth/me — prefer these over extra lookups. */
@@ -399,14 +400,22 @@ export interface ProcedureBody {
   blocks: ProcedureBlock[];
 }
 
-/** One quiz question. Bilingual prompt and choices. `correctChoiceId`
- *  references the choice the admin marked as right. */
+export type QuizQuestionType = 'multiple_choice' | 'sequence';
+
+export interface QuizSequenceItem {
+  id: string;
+  label: Localised;
+}
+
+/** One quiz question. Can be multiple choice or arrange-in-sequence. */
 export interface ProcedureQuizQuestion {
   id: string;
+  type?: QuizQuestionType;
   prompt: Localised;
   question?: Localised;
   choices: { id: string; label: Localised }[];
   correctChoiceId: string;
+  sequenceItems?: QuizSequenceItem[];
   sourceProcedureId?: string;
   sourceProcedureTitle?: string;
 }
@@ -415,6 +424,7 @@ export interface ProcedureQuizQuestion {
  *  the admin in the wizard; visibility on the reader side is the OR of
  *  `attached` and `procedure.attachedToTraining` (either path renders it). */
 export interface ProcedureQuiz {
+  id?: string;
   questions: ProcedureQuizQuestion[];
   attached: boolean;
   minCorrectAnswers?: number;
