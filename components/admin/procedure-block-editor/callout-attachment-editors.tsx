@@ -52,6 +52,8 @@ import {
   LuCirclePlay,
   LuCloudUpload,
   LuCopy,
+  LuEye,
+  LuFileText,
   LuFocus,
   LuGripVertical,
   LuHeading1,
@@ -80,6 +82,11 @@ import {
 } from "react-icons/lu";
 import { Icon } from "@/components/ui/icon";
 import type { IconType } from "react-icons";
+import dynamic from "next/dynamic";
+import {
+  isPdfUrl,
+  AttachmentCard,
+} from "@/components/doc/attachment-cards-block";
 
 // Must stay in sync with the backend whitelist at lms-backend/src/services/uploads.ts.
 // SVG is intentionally omitted — it can carry inline JS.
@@ -102,6 +109,17 @@ import {
   setOpt,
   textareaCls,
 } from "./shared";
+
+// react-pdf reads `document` at module scope, so it must never be
+// server-rendered (react-pdf README → skip SSR; Next 16: `ssr: false` only
+// inside client components, which this file is).
+const PdfViewerModal = dynamic(
+  () =>
+    import("@/components/doc/pdf-viewer-modal").then((m) => ({
+      default: m.PdfViewerModal,
+    })),
+  { ssr: false },
+);
 
 export function WarningEditor({
   block,
@@ -182,6 +200,7 @@ export function AttachmentEditor({
   const t = useTranslations("admin.library.new.form.composer");
   const [lang, setLang] = React.useState<"en" | "es">("en");
   const [uploading, setUploading] = React.useState(false);
+  const [previewOpen, setPreviewOpen] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   const handleUpload = async (
@@ -221,63 +240,115 @@ export function AttachmentEditor({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <Field label={t("attachmentHref")} required>
-            <Input
-              value={block.href}
-              onChange={(e) => onChange({ ...block, href: e.target.value })}
-              placeholder="https://example.com/file.pdf"
-            />
-          </Field>
-        </div>
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={uploading}
-          onClick={() => fileRef.current?.click()}
-          className="mb-0.5 shrink-0"
-        >
-          {uploading ? (
-            <span className="spinner mr-2" />
-          ) : (
-            <LuUpload className="mr-2" />
-          )}
-          {uploading ? "Uploading…" : "Upload file"}
-        </Button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.md,image/jpeg,image/png,image/webp,image/avif"
-          onChange={(e) => void handleUpload(e)}
-          className="hidden"
-        />
-      </div>
-      <BilingualTabs
-        active={lang}
-        onChange={setLang}
-        enLabel={t("tabs.en")}
-        esLabel={t("tabs.es")}
+    <div className="pt-0.5">
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt,.md,image/jpeg,image/png,image/webp,image/avif"
+        onChange={(e) => void handleUpload(e)}
+        className="hidden"
       />
-      <Field label={t("attachmentTitle")} required>
-        <Input
-          value={asLocalised(block.title, lang)}
-          onChange={(e) =>
-            onChange({
-              ...block,
-              title: setLocalised(block.title, lang, e.target.value),
-            })
-          }
+
+      {!block.href ? (
+        /* Empty State: Clean, minimal single-row dropzone */
+        <div
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-2)] hover:border-[var(--color-brand)] bg-[var(--color-wash)]/60 hover:bg-[var(--color-panel)]/40 transition-all cursor-pointer min-h-[44px]"
+        >
+          <div className="flex items-center gap-2.5 text-xs text-[var(--color-ink-2)] min-w-0">
+            <span className="flex items-center justify-center size-7 rounded-md bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-brand)] shrink-0">
+              <LuPaperclip className="size-3.5" />
+            </span>
+            <span className="truncate">
+              {uploading
+                ? "Uploading document…"
+                : "Click to upload PDF or document"}
+            </span>
+          </div>
+
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={uploading}
+            className="h-7.5 px-3 text-xs shrink-0 pointer-events-none gap-1.5"
+          >
+            {uploading ? (
+              <span className="spinner mr-1" />
+            ) : (
+              <LuUpload className="size-3.5" />
+            )}
+            Upload file
+          </Button>
+        </div>
+      ) : (
+        /* Attached State: Single compact document card */
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xs">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <span className="flex items-center justify-center size-8 sm:size-9 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 shrink-0">
+                <LuFileText className="size-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-xs sm:text-sm text-[var(--color-ink)] truncate leading-tight">
+                  {asLocalised(block.title, lang) || "Attachment"}
+                </p>
+                {block.meta ? (
+                  <span className="text-2xs text-[var(--color-ink-2)] truncate block mt-0.5">
+                    {block.meta}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setPreviewOpen(true)}
+                className="h-7.5 px-2.5 text-xs font-semibold gap-1 text-[var(--color-ink)] hover:text-[var(--color-brand)] border border-[var(--color-line-2)] hover:bg-[var(--color-panel)]"
+              >
+                <LuEye className="size-3.5" />
+                <span>View</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
+                className="h-7.5 px-2 text-xs text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
+                title="Replace file"
+              >
+                <LuUpload className="size-3.5" />
+              </Button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({ ...block, href: "", meta: undefined })
+                }
+                className="p-1 rounded text-[var(--color-ink-3)] hover:text-[var(--color-bad)] transition-colors cursor-pointer"
+                title="Remove attachment"
+              >
+                <LuX className="size-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {previewOpen && block.href ? (
+        <PdfViewerModal
+          open={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          title={asLocalised(block.title, lang) || "PDF Document"}
+          url={block.href}
+          meta={block.meta}
         />
-      </Field>
-      <Field label={t("attachmentMeta")}>
-        <Input
-          value={block.meta ?? ""}
-          onChange={(e) => onChange({ ...block, meta: e.target.value })}
-          placeholder="e.g. PDF · 2.4 MB"
-        />
-      </Field>
+      ) : null}
     </div>
   );
 }

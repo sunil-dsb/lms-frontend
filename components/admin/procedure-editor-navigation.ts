@@ -117,7 +117,11 @@ export function createProcedureNavigationHandlers(
         steps.findIndex((item) => item.id === "quiz") &&
       quizQuestionMissingAnswer
     ) {
-      toast.error(tQuizDesc("answerRequiredForPublish"));
+      const isSeq = quizQuestionMissingAnswer.type === "sequence";
+      const errorMsg = isSeq
+        ? "Sequence questions must have at least 2 steps with valid text."
+        : tQuizDesc("answerRequiredForPublish");
+      toast.error(errorMsg);
       document
         .getElementById(`quiz-question-${quizQuestionMissingAnswer.id}`)
         ?.scrollIntoView({

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { RichTextContent } from "@/components/editor/rich-text-editor";
 import type {
   Localised,
@@ -13,6 +14,7 @@ import type {
 import { classifyVideoUrl } from "@/lib/procedure-media";
 import {
   Allergen,
+  AttachmentCardsBlock,
   CriticalLimitFull,
   IngredientsTable,
   MethodSteps,
@@ -22,18 +24,12 @@ import {
   Shot,
   Triggers,
   Yield,
+  type AttachmentItem,
   type Ingredient,
   type MethodStep,
   type ChapterRow,
 } from "./index";
-import {
-  LuCheck,
-  LuCircle,
-  LuDownload,
-  LuExternalLink,
-  LuFileText,
-} from "react-icons/lu";
-import { Icon } from "@/components/ui/icon";
+import { LuCheck, LuCircle, LuFileText } from "react-icons/lu";
 import { RecipeBody } from "./recipe-body";
 import { CookModeLauncher } from "./cook-mode-launcher";
 import { cn } from "@/lib/utils";
@@ -49,6 +45,18 @@ import {
 } from "./blocks/method-step-helper";
 import { ChecklistBlock } from "./blocks/checklist-block";
 import { LinkedProceduresDocBlock } from "./blocks/linked-procedures-block";
+
+// react-pdf reads `document` while its module evaluates, so it can never be
+// server-rendered: react-pdf's README says to skip SSR for this import, and
+// in the App Router that is dynamic(..., { ssr: false }) — allowed only
+// inside client components (this file is one).
+const PdfViewerModal = dynamic(
+  () =>
+    import("./pdf-viewer-modal").then((m) => ({
+      default: m.PdfViewerModal,
+    })),
+  { ssr: false },
+);
 
 export { findAllergen };
 
@@ -90,6 +98,8 @@ export function BlockRenderer({
   const attachmentRows: ChapterRow[] = [];
   const out: React.ReactNode[] = [];
   const [doneMap, setDoneMap] = React.useState<Record<number, boolean>>({});
+  // The attachment whose PDF is open in the viewer overlay.
+  const [activePdf, setActivePdf] = React.useState<AttachmentItem | null>(null);
 
   // Pre-count total method blocks so we can render "Part X of Y" when there are multiple parts
   const methodBlockCount = blocks.filter((b) => b.kind === "method").length;
@@ -445,30 +455,21 @@ export function BlockRenderer({
       {out}
       {attachmentRows.length > 0 && (
         <Section title={t.attachments}>
-          <div className="chapters">
-            {attachmentRows.map((r, i) => (
-              <a
-                key={i}
-                className="chapter"
-                href={r.href}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="idx">
-                  <Icon icon={r.icon} className="i i-sm" />
-                </span>
-                <div>
-                  <div className="title">{r.title}</div>
-                  {r.meta && <div className="meta">{r.meta}</div>}
-                </div>
-                <span className="tail">
-                  <LuDownload aria-hidden="true" className="i" />
-                </span>
-              </a>
-            ))}
-          </div>
+          <AttachmentCardsBlock
+            items={attachmentRows}
+            onViewPdf={(item) => setActivePdf(item)}
+          />
         </Section>
       )}
+      {activePdf ? (
+        <PdfViewerModal
+          open
+          onClose={() => setActivePdf(null)}
+          title={activePdf.title}
+          url={activePdf.href}
+          meta={activePdf.meta}
+        />
+      ) : null}
     </>
   );
 }
