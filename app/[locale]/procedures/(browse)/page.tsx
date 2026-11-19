@@ -14,7 +14,13 @@ import { ProceduresClientList } from "./procedures-client-list";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ q?: string; category?: string; view?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    category?: string;
+    view?: string;
+    filter?: string;
+    scope?: string;
+  }>;
 }
 
 export const dynamic = "force-dynamic";
@@ -24,7 +30,12 @@ export default async function ProceduresPage({
   searchParams,
 }: PageProps): Promise<React.ReactElement> {
   const { locale } = await params;
-  const { q = "", category = "" } = await searchParams;
+  const {
+    q = "",
+    category = "",
+    filter = "",
+    scope = "",
+  } = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("employee.browse");
 
@@ -159,6 +170,7 @@ export default async function ProceduresPage({
         <ProceduresClientList
           initialQuery={q}
           initialCategory={category}
+          initialFilter={filter || scope || (category === "promos" ? "promos" : "")}
           locationId={employee.locationId}
           locale={locale}
           readsSpanish={readsSpanish}

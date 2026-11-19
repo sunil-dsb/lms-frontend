@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { queryWords, scoreProcedure } from "@/lib/procedure-search";
-import { isPromoExpired } from "@/lib/promos";
+import { isPromoExpired, isPromoActive, isPromoSlug } from "@/lib/promos";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -21,6 +21,7 @@ import {
   LuRotateCcw,
 } from "react-icons/lu";
 import { ProcedureRow } from "@/components/employee/procedure-row";
+import { Pagination } from "@/components/ui/pagination";
 import {
   allergenWords,
   factsOf,
@@ -29,6 +30,7 @@ import {
 interface ProceduresClientListProps {
   initialQuery: string;
   initialCategory: string;
+  initialFilter?: string;
   locationId: string;
   locale: string;
   readsSpanish: boolean;
@@ -52,6 +54,7 @@ interface ProceduresClientListProps {
 export function ProceduresClientList({
   initialQuery,
   initialCategory,
+  initialFilter,
   locale,
   readsSpanish,
   viewAs,
@@ -72,6 +75,9 @@ export function ProceduresClientList({
     all: tBrowse("all"),
     myStation: tBrowse("myStation"),
     assignedToMe: tBrowse("assignedToMe"),
+    promoDishes:
+      tBrowse("promoDishes") ||
+      (readsSpanish ? "Platillos promocionales" : "Promo dishes"),
     count: (c: number) => tBrowse("count", { count: c }),
     none: tBrowse("none"),
     noneFor: (q: string) => tBrowse("noneFor", { query: q }),
@@ -86,10 +92,18 @@ export function ProceduresClientList({
     english: tHome("flagEnglishOnly"),
   };
 
+  const initialScope: "" | "assigned" | "promos" =
+    initialFilter === "promos" || initialCategory === "promos"
+      ? "promos"
+      : initialFilter === "assigned" || initialCategory === "assigned"
+        ? "assigned"
+        : "";
+
   const [query, setQuery] = React.useState<string>(initialQuery);
-  const [activeCategory, setActiveCategory] =
-    React.useState<string>(initialCategory);
-  const [scope, setScope] = React.useState<"" | "assigned">("");
+  const [activeCategory, setActiveCategory] = React.useState<string>(
+    initialScope !== "" ? "" : initialCategory,
+  );
+  const [scope, setScope] = React.useState<"" | "assigned" | "promos">(initialScope);
 
   const [debouncedQuery, setDebouncedQuery] = React.useState(query);
   React.useEffect(() => {
@@ -137,7 +151,13 @@ export function ProceduresClientList({
         : undefined;
 
   const assignedProceduresQuery = useAssignedProcedures({
-    scope: scope === "assigned" ? "mine" : "all",
+    scope:
+      scope === "promos"
+        ? "promos"
+        : scope === "assigned"
+          ? "mine"
+          : "all",
+    isPromo: scope === "promos" ? true : undefined,
     categoryId: categoryUuid,
     search: debouncedQuery.trim() || undefined,
     limit: 100,
@@ -190,12 +210,12 @@ export function ProceduresClientList({
         : [];
   const mine = (p: Procedure): number =>
     p.isStationProcedure ||
-    (myStationIds.length > 0 &&
-      ((p.stationScope?.mode === "specific" &&
-        p.stationScope.stationIds.some((id) => myStationIds.includes(id))) ||
-        (p.station?.id && myStationIds.includes(p.station.id)) ||
-        (p.audience?.mode === "some" &&
-          p.audience.stationIds.some((id) => myStationIds.includes(id)))))
+      (myStationIds.length > 0 &&
+        ((p.stationScope?.mode === "specific" &&
+          p.stationScope.stationIds.some((id) => myStationIds.includes(id))) ||
+          (p.station?.id && myStationIds.includes(p.station.id)) ||
+          (p.audience?.mode === "some" &&
+            p.audience.stationIds.some((id) => myStationIds.includes(id)))))
       ? 1
       : 0;
   const assignedToMe = (p: Procedure): boolean =>
@@ -214,7 +234,16 @@ export function ProceduresClientList({
         categorySlugsMatch(p.category?.slug, activeCategory)
       );
     })
-    .filter((p) => (scope === "assigned" ? assignedToMe(p) : true))
+    .filter((p) => {
+      if (scope === "assigned") return assignedToMe(p);
+      if (scope === "promos") {
+        return (
+          isPromoActive(p) ||
+          (!procedures.some((x) => x.isPromo) && isPromoSlug(p.slug))
+        );
+      }
+      return true;
+    })
     .map((p) => ({ p, score: query.trim() ? scoreProcedure(p, words) : 1 }))
     .filter((r) => r.score > 0)
     .sort((a, b) => {
@@ -234,11 +263,25 @@ export function ProceduresClientList({
         b.score - a.score ||
         mine(b.p) - mine(a.p) ||
         new Date(b.p.updatedAt || b.p.createdAt).getTime() -
-          new Date(a.p.updatedAt || a.p.createdAt).getTime() ||
+        new Date(a.p.updatedAt || a.p.createdAt).getTime() ||
         titleOf(a.p).localeCompare(titleOf(b.p), locale)
       );
     })
     .map((r) => r.p);
+
+  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = React.useState<number>(1);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedQuery, activeCategory, scope]);
+
+  const totalPages = Math.ceil(results.length / PAGE_SIZE) || 1;
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const pagedResults = results.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
 
   /* All chip sizing uses inline styles — Tailwind v4 resets --spacing-* so gap-x, px-x classes produce no CSS */
   const chipBase =
@@ -310,6 +353,17 @@ export function ProceduresClientList({
                   {labels.assignedToMe}
                 </button>
               ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveCategory("");
+                  setScope(scope === "promos" ? "" : "promos");
+                }}
+                className={`${chipBase} ${scope === "promos" ? "bg-[var(--color-ink)] text-[var(--color-surface)]" : "bg-[var(--color-panel)] text-[var(--color-ink)] hover:bg-[var(--color-panel-2)]"}`}
+                style={chipStyle}
+              >
+                {labels.promoDishes}
+              </button>
               {categories
                 .filter((c) => !c.isArchived)
                 .map((c) => {
@@ -364,43 +418,62 @@ export function ProceduresClientList({
               noneForText={labels.noneFor(query.trim())}
             />
           ) : (
-            <ul className="mt-4 space-y-3">
-              {results.map((p) => {
-                const cover = p.procedureImage || coverOf(p);
-                const sub = p.subcategoryId
-                  ? (p.category?.subcategories?.find(
+            <>
+              <ul className="mt-4 space-y-3">
+                {pagedResults.map((p) => {
+                  const cover = p.procedureImage || coverOf(p);
+                  const sub = p.subcategoryId
+                    ? (p.category?.subcategories?.find(
                       (s) => s.id === p.subcategoryId,
                     ) ?? null)
-                  : ((p as any).subcategory ?? null);
-                return (
-                  <li key={p.id}>
-                    <ProcedureRow
-                      href={withAs(`/${locale}/procedures/${p.slug}`, viewAs)}
-                      cover={cover}
-                      iconImageUrl={p.iconImageUrl ?? p.procedureImage ?? null}
-                      category={p.category}
-                      subcategory={sub}
-                      title={titleOf(p)}
-                      purpose={purposeOf(p)}
-                      meta={
-                        p.category ? nameOf(p.category) : labels.uncategorised
-                      }
-                      flags={{
-                        ...factsOf(p, readsSpanish),
-                        allergens: allergenWords(
-                          factsOf(p, readsSpanish).allergens,
-                          isEs ? "es" : "en",
-                        ),
-                      }}
-                      flagLabels={flagLabels}
-                      locked={locked}
-                      lockedHref={lockedHref}
-                      lockedReason={lockedReason}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
+                    : ((p as any).subcategory ?? null);
+                  return (
+                    <li key={p.id}>
+                      <ProcedureRow
+                        href={withAs(`/${locale}/procedures/${p.slug}`, viewAs)}
+                        cover={cover}
+                        iconImageUrl={p.iconImageUrl ?? p.procedureImage ?? null}
+                        category={p.category}
+                        subcategory={sub}
+                        title={titleOf(p)}
+                        purpose={purposeOf(p)}
+                        meta={
+                          p.category ? nameOf(p.category) : labels.uncategorised
+                        }
+                        flags={{
+                          ...factsOf(p, readsSpanish),
+                          allergens: allergenWords(
+                            factsOf(p, readsSpanish).allergens,
+                            isEs ? "es" : "en",
+                          ),
+                        }}
+                        flagLabels={flagLabels}
+                        locked={locked}
+                        lockedHref={lockedHref}
+                        lockedReason={lockedReason}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {totalPages > 1 ? (
+                <div className="mt-6">
+                  <Pagination
+                    page={safePage}
+                    totalPages={totalPages}
+                    totalItems={results.length}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={(p) => {
+                      setCurrentPage(p);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    isEs={readsSpanish}
+                    itemLabel={readsSpanish ? "procedimientos" : "procedures"}
+                  />
+                </div>
+              ) : null}
+            </>
           )}
         </>
       )}
