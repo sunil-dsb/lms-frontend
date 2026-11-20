@@ -827,3 +827,9 @@ export function getCachedProcedure(slugOrId: string): Procedure | null {
 // ----------------------------------------------------------------------------
 // Uploads & AI Import (Mock Presigned Uploads)
 // ----------------------------------------------------------------------------
+
+export {
+  generateQuizFromProcedure,
+  type GenerateQuizApiInput,
+  type GeneratedQuizApiResponse,
+} from "../../services/library/api";

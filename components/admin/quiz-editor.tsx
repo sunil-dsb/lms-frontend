@@ -1,8 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  QuizAiModal,
+  type QuizAiModalProcedureContext,
+} from "@/components/admin/quiz-ai-modal";
 import type {
   ProcedureQuiz,
   ProcedureQuizQuestion,
@@ -45,7 +50,9 @@ const MIN_CHOICES = 2;
 const MAX_CHOICES = 6;
 const LANGS: Array<"en" | "es"> = ["en", "es"];
 
-function emptyQuestion(type: "multiple_choice" | "sequence" = "multiple_choice"): ProcedureQuizQuestion {
+function emptyQuestion(
+  type: "multiple_choice" | "sequence" = "multiple_choice",
+): ProcedureQuizQuestion {
   return {
     id:
       typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -115,7 +122,7 @@ function SortableSequenceStep({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group flex items-center gap-2 rounded-xl p-1.5 transition-all select-none",
+        "group flex items-center gap-2 rounded-xl p-2 transition-all select-none",
         isDragging
           ? "z-50 bg-[var(--color-surface)] border-2 border-[var(--color-brand-600)] shadow-lg opacity-95 scale-[1.01]"
           : "hover:bg-[var(--color-wash)]/60",
@@ -152,7 +159,7 @@ function SortableSequenceStep({
       </div>
 
       {/* Up / Down reorder */}
-      <div className="flex items-center gap-0.5 shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         <button
           type="button"
           onClick={onMoveUp}
@@ -284,7 +291,7 @@ function SequenceStepList({
                 placeholder={
                   lang === "en"
                     ? t("stepPlaceholder", { n: si + 1 }) ||
-                    `Step ${si + 1} (in correct order)...`
+                      `Step ${si + 1} (in correct order)...`
                     : `Paso ${si + 1} (en orden correcto)...`
                 }
                 deleteTitle={t("deleteStep") || "Delete step"}
@@ -325,6 +332,8 @@ interface QuizEditorProps {
   hideAttachToggle?: boolean;
   showPassingScore?: boolean;
   onDetach?: () => void;
+  procedureId?: string | null;
+  procedureContext?: QuizAiModalProcedureContext | null;
 }
 
 export function QuizEditor({
@@ -336,8 +345,13 @@ export function QuizEditor({
   hideAttachToggle = false,
   showPassingScore = false,
   onDetach,
+  procedureId,
+  procedureContext,
 }: QuizEditorProps): React.ReactElement {
+  const locale = useLocale();
+  const isEs = locale === "es";
   const t = useTranslations("admin.library.new.quiz");
+  const [aiModalOpen, setAiModalOpen] = React.useState(false);
   const [questionLangs, setQuestionLangs] = React.useState<
     Record<string, "en" | "es">
   >({});
@@ -375,10 +389,9 @@ export function QuizEditor({
           },
         })),
         correctChoiceId: q.correctChoiceId ?? "",
-        sequenceItems: (
-          q.sequenceItems && q.sequenceItems.length > 0
-            ? q.sequenceItems
-            : Array.from({ length: 3 }, () => ({
+        sequenceItems: (q.sequenceItems && q.sequenceItems.length > 0
+          ? q.sequenceItems
+          : Array.from({ length: 3 }, () => ({
               id: makeId(),
               label: { en: "", es: "" },
             }))
@@ -437,10 +450,9 @@ export function QuizEditor({
               },
             })),
             correctChoiceId: q.correctChoiceId ?? "",
-            sequenceItems: (
-              q.sequenceItems && q.sequenceItems.length > 0
-                ? q.sequenceItems
-                : Array.from({ length: 3 }, () => ({
+            sequenceItems: (q.sequenceItems && q.sequenceItems.length > 0
+              ? q.sequenceItems
+              : Array.from({ length: 3 }, () => ({
                   id: makeId(),
                   label: { en: "", es: "" },
                 }))
@@ -468,8 +480,8 @@ export function QuizEditor({
         typeof p === "string"
           ? p
           : (p as { en?: string; es?: string })?.en ||
-          (p as { en?: string; es?: string })?.es ||
-          "";
+            (p as { en?: string; es?: string })?.es ||
+            "";
       if (promptText.trim()) return true;
       return q.choices?.some((c) => {
         const l = c.label as unknown;
@@ -477,8 +489,8 @@ export function QuizEditor({
           typeof l === "string"
             ? l
             : (l as { en?: string; es?: string })?.en ||
-            (l as { en?: string; es?: string })?.es ||
-            "";
+              (l as { en?: string; es?: string })?.es ||
+              "";
         return Boolean(labelText.trim());
       });
     });
@@ -543,6 +555,53 @@ export function QuizEditor({
   const addQuestion = (): void =>
     update({ ...working, questions: [...working.questions, emptyQuestion()] });
 
+  const handleApplyAiQuestions = (
+    newQuestions: ProcedureQuizQuestion[],
+    applyMode: "replace" | "append",
+  ): void => {
+    // Strictly sanitize & validate:
+    // - MCQ must have at least 2 non-empty choices, sequenceItems: undefined
+    // - Sequence must have at least 2 steps, choices: []
+    const sanitizedApplied = newQuestions
+      .filter((q) => {
+        if (q.type === "sequence") {
+          return (q.sequenceItems || []).length >= 2;
+        }
+        // MCQ strictly requires at least 2 valid, non-empty choices
+        const validChoices = (q.choices || []).filter((c) =>
+          Boolean((c.label.en || "").trim() || (c.label.es || "").trim()),
+        );
+        return validChoices.length >= 2;
+      })
+      .map((q) => {
+        const isSeq = q.type === "sequence";
+        return {
+          ...q,
+          type: isSeq ? ("sequence" as const) : ("multiple_choice" as const),
+          choices: isSeq ? [] : q.choices || [],
+          correctChoiceId: isSeq ? "" : q.correctChoiceId || "",
+          sequenceItems: isSeq ? q.sequenceItems || [] : undefined,
+        };
+      });
+
+    let nextQuestions: ProcedureQuizQuestion[];
+    if (applyMode === "append") {
+      const existingAuthored = working.questions.filter((q) => {
+        const hasPrompt = Boolean(q.prompt?.en?.trim() || q.prompt?.es?.trim());
+        return hasPrompt;
+      });
+      nextQuestions = [...existingAuthored, ...sanitizedApplied].slice(0, 10);
+    } else {
+      nextQuestions = sanitizedApplied;
+    }
+
+    update({
+      ...working,
+      attached: true,
+      questions: nextQuestions,
+    });
+  };
+
   const deleteQuestion = (qi: number): void => {
     const next = working.questions.filter((_, i) => i !== qi);
     update({
@@ -576,18 +635,42 @@ export function QuizEditor({
     const q = working.questions[qi];
     if (!q || q.type === type) return;
 
-    let sequenceItems = q.sequenceItems;
-    if (type === "sequence" && (!sequenceItems || sequenceItems.length < 2)) {
-      sequenceItems =
-        q.choices && q.choices.length >= 2
-          ? q.choices.map((c) => ({ id: c.id, label: { ...c.label } }))
+    if (type === "sequence") {
+      const sequenceItems =
+        q.sequenceItems && q.sequenceItems.length >= 2
+          ? q.sequenceItems
           : Array.from({ length: 3 }, () => ({
+              id: makeId(),
+              label: { en: "", es: "" },
+            }));
+
+      updateQuestion(qi, {
+        type: "sequence",
+        choices: [],
+        correctChoiceId: "",
+        sequenceItems,
+      });
+      return;
+    }
+
+    // Switching to multiple_choice
+    const choices =
+      q.choices && q.choices.length >= 2
+        ? q.choices
+        : Array.from({ length: 3 }, () => ({
             id: makeId(),
             label: { en: "", es: "" },
           }));
-    }
 
-    updateQuestion(qi, { type, sequenceItems });
+    updateQuestion(qi, {
+      type: "multiple_choice",
+      choices,
+      correctChoiceId:
+        q.correctChoiceId && choices.some((c) => c.id === q.correctChoiceId)
+          ? q.correctChoiceId
+          : choices[0]?.id || "",
+      sequenceItems: undefined,
+    });
   };
 
   const updateSequenceItem = (
@@ -669,7 +752,7 @@ export function QuizEditor({
           />
           <label
             htmlFor="quiz-attach"
-            className="flex-1 cursor-pointer space-y-0.5"
+            className="flex-1 cursor-pointer space-y-1"
           >
             <span className="block text-sm font-semibold text-[var(--color-ink)]">
               {t("attachedLabel")}
@@ -680,6 +763,42 @@ export function QuizEditor({
           </label>
         </div>
       )}
+
+      {/* AI Quiz Generation Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-[var(--radius-lg)] border border-[var(--color-brand-tint-2)] bg-[var(--color-brand-tint)] shadow-xs">
+        <div className="flex items-start sm:items-center gap-3 min-w-0">
+          <div className="size-8 rounded-lg bg-[var(--color-surface)] text-[var(--color-brand-600)] flex items-center justify-center shrink-0 shadow-xs border border-[var(--color-line)]">
+            <LuSparkles className="size-4" />
+          </div>
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-[var(--color-ink)]">
+                {isEs ? "Generar Evaluación con IA" : "AI Quiz Generation"}
+              </h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-[var(--radius-sm)] bg-[var(--color-brand-600)] text-white">
+                Bilingual
+              </span>
+            </div>
+            <p className="text-xs text-[var(--color-ink-2)] line-clamp-1">
+              {isEs
+                ? "Crea preguntas bilingües (MCQ y Secuencia) basadas en este procedimiento."
+                : "Generate bilingual Multiple Choice and Sequence questions based on this procedure."}
+            </p>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          disabled={isSaving}
+          onClick={() => setAiModalOpen(true)}
+          className="shrink-0 text-xs gap-2"
+        >
+          <LuSparkles className="size-4" />
+          <span>{isEs ? "Generar con IA" : "Auto-Generate with AI"}</span>
+        </Button>
+      </div>
 
       {/* Passing requirement card — lets admin configure passing answers count (e.g. 4 of 6) */}
       {showPassingScore && working.questions.length > 0 && (
@@ -693,12 +812,12 @@ export function QuizEditor({
                 <h3 className="text-sm font-bold text-[var(--color-ink)]">
                   Passing requirement
                 </h3>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-[var(--radius-sm)] bg-[var(--color-ok-tint)] text-[var(--color-ok)] border border-[var(--color-ok-tint-2)] shrink-0">
+                <span className="text-xs font-semibold px-2 py-1 rounded-[var(--radius-sm)] bg-[var(--color-ok-tint)] text-[var(--color-ok)] border border-[var(--color-ok-tint-2)] shrink-0">
                   {Math.round(
                     ((working.minCorrectAnswers ??
                       Math.max(1, Math.ceil(working.questions.length * 0.7))) /
                       working.questions.length) *
-                    100,
+                      100,
                   )}
                   % required
                 </span>
@@ -723,7 +842,7 @@ export function QuizEditor({
                     isSaving ||
                     (working.minCorrectAnswers ??
                       Math.max(1, Math.ceil(working.questions.length * 0.7))) <=
-                    1
+                      1
                   }
                   onClick={() =>
                     setMinCorrect(
@@ -758,7 +877,7 @@ export function QuizEditor({
                     isSaving ||
                     (working.minCorrectAnswers ??
                       Math.max(1, Math.ceil(working.questions.length * 0.7))) >=
-                    working.questions.length
+                      working.questions.length
                   }
                   onClick={() =>
                     setMinCorrect(
@@ -867,15 +986,18 @@ export function QuizEditor({
                           <div className="flex items-center gap-1 p-1 bg-[var(--color-wash)] rounded-lg border border-[var(--color-line-2)] text-xs font-medium w-fit">
                             <button
                               type="button"
-                              onClick={() => setQuestionType(qi, "multiple_choice")}
+                              onClick={() =>
+                                setQuestionType(qi, "multiple_choice")
+                              }
                               className={cn(
                                 "flex items-center gap-1   px-3 py-1 rounded-md transition-all cursor-pointer",
-                                (q.type || "multiple_choice") === "multiple_choice"
+                                (q.type || "multiple_choice") ===
+                                  "multiple_choice"
                                   ? "bg-[var(--color-surface)] text-[var(--color-ink)] shadow-xs font-semibold"
                                   : "text-[var(--color-ink-3)] hover:text-[var(--color-ink)]",
                               )}
                             >
-                              <LuSquareCheck className="size-3.5" />
+                              <LuSquareCheck className="size-4" />
                               {t("typeMultipleChoice") || "Multiple Choice"}
                             </button>
                             <button
@@ -888,7 +1010,7 @@ export function QuizEditor({
                                   : "text-[var(--color-ink-3)] hover:text-[var(--color-ink)]",
                               )}
                             >
-                              <LuListOrdered className="size-3.5" />
+                              <LuListOrdered className="size-4" />
                               {t("typeSequence") || "Arrange Sequence"}
                             </button>
                           </div>
@@ -973,8 +1095,8 @@ export function QuizEditor({
                                           placeholder={
                                             lang === "en"
                                               ? t("choicePlaceholder", {
-                                                n: ci + 1,
-                                              })
+                                                  n: ci + 1,
+                                                })
                                               : `Opción ${ci + 1}`
                                           }
                                           disabled={isSaving}
@@ -1088,6 +1210,20 @@ export function QuizEditor({
         <LuPlus className="size-4" aria-hidden="true" />
         {t("addQuestion")}
       </button>
+
+      {/* AI Quiz Generator Modal */}
+      <QuizAiModal
+        open={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        procedureId={procedureId}
+        procedureContext={procedureContext}
+        existingQuestionsCount={
+          working.questions.filter((q) =>
+            Boolean(q.prompt?.en?.trim() || q.prompt?.es?.trim()),
+          ).length
+        }
+        onApplyQuestions={handleApplyAiQuestions}
+      />
     </div>
   );
 }

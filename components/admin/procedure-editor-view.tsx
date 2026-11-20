@@ -378,6 +378,19 @@ export function ProcedureEditorView({
               value={quiz}
               hideHeader
               showPassingScore={false}
+              procedureId={initial?.id || importedId || null}
+              procedureContext={{
+                titleEn: title.en,
+                titleEs: title.es,
+                purposeEn: purpose.en,
+                purposeEs: purpose.es,
+                blocks,
+                ingredients: (ingredients || []).map((ing) => ({
+                  name: ing.name,
+                  amount: ing.quantity,
+                  unit: ing.unit,
+                })),
+              }}
               onChange={(next) => {
                 if (!quiz) setQuiz(next);
                 else edit(setQuiz)(next);
@@ -698,6 +711,136 @@ export function ProcedureEditorView({
                       {t("previewEmpty")}
                     </p>
                   )}
+
+                  {/* Attached Quiz in cook preview */}
+                  {quiz?.questions && quiz.questions.length > 0 ? (
+                    <div className="mt-8 pt-6 border-t border-[var(--color-line-2)] space-y-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex size-7 items-center justify-center rounded-lg bg-[var(--color-brand-tint-2)] text-[var(--color-brand-600)]">
+                            <LuSparkles className="size-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-[var(--color-ink)]">
+                              {lang === "es"
+                                ? "Evaluación de Conocimientos"
+                                : "Knowledge Check Quiz"}
+                            </h4>
+                            <p className="text-xs text-[var(--color-ink-3)]">
+                              {lang === "es"
+                                ? `${quiz.questions.length} preguntas de comprensión`
+                                : `${quiz.questions.length} assessment question(s)`}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-xs font-semibold px-2 py-1 rounded-md bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border border-[var(--color-brand-tint-2)]">
+                          {quiz.attached
+                            ? quiz.minCorrectAnswers
+                              ? `${quiz.minCorrectAnswers}/${quiz.questions.length} to pass`
+                              : "Attached"
+                            : lang === "es"
+                              ? "Borrador de Quiz"
+                              : "Draft Quiz"}
+                        </span>
+                      </div>
+
+                      <div className="space-y-3">
+                        {quiz.questions.map((q, qIdx) => {
+                          const promptText =
+                            lang === "es"
+                              ? q.prompt?.es || q.prompt?.en
+                              : q.prompt?.en || q.prompt?.es;
+                          const isSeq = q.type === "sequence";
+                          return (
+                            <div
+                              key={q.id || qIdx}
+                              className="rounded-xl border border-[var(--color-line-2)] bg-[var(--color-surface)] p-4 space-y-3 shadow-xs"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-bold text-[var(--color-ink)]">
+                                  {lang === "es"
+                                    ? `Pregunta ${qIdx + 1}`
+                                    : `Question ${qIdx + 1}`}
+                                </span>
+                                <span className="text-[11px] font-medium text-[var(--color-ink-3)] bg-[var(--color-wash)] px-2 py-1 rounded">
+                                  {isSeq
+                                    ? lang === "es"
+                                      ? "Ordenar Secuencia"
+                                      : "Arrange Sequence"
+                                    : lang === "es"
+                                      ? "Opción Múltiple"
+                                      : "Multiple Choice"}
+                                </span>
+                              </div>
+                              <p className="text-sm font-semibold text-[var(--color-ink)]">
+                                {promptText}
+                              </p>
+                              {isSeq ? (
+                                <ol className="space-y-2 pl-1">
+                                  {(q.sequenceItems || []).map((step, sIdx) => {
+                                    const stepLabel =
+                                      lang === "es"
+                                        ? step.label?.es || step.label?.en
+                                        : step.label?.en || step.label?.es;
+                                    return (
+                                      <li
+                                        key={step.id || sIdx}
+                                        className="flex items-center gap-2 text-xs text-[var(--color-ink-2)]"
+                                      >
+                                        <span className="flex size-5 items-center justify-center rounded-full bg-[var(--color-wash)] text-[var(--color-ink)] font-bold text-[10px]">
+                                          {sIdx + 1}
+                                        </span>
+                                        <span>{stepLabel}</span>
+                                      </li>
+                                    );
+                                  })}
+                                </ol>
+                              ) : (
+                                <div className="space-y-2">
+                                  {q.choices.map((c, cIdx) => {
+                                    const choiceLabel =
+                                      lang === "es"
+                                        ? c.label?.es || c.label?.en
+                                        : c.label?.en || c.label?.es;
+                                    const isCorrect =
+                                      q.correctChoiceId === c.id;
+                                    return (
+                                      <div
+                                        key={c.id || cIdx}
+                                        className={cn(
+                                          "flex items-center justify-between p-2 rounded-lg border text-xs",
+                                          isCorrect
+                                            ? "border-[var(--color-ok-tint-2)] bg-[var(--color-ok-tint)] text-[var(--color-ok)] font-medium"
+                                            : "border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)]",
+                                        )}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span className="flex size-4 items-center justify-center rounded-full border border-current text-[9px] font-bold">
+                                            {String.fromCharCode(65 + cIdx)}
+                                          </span>
+                                          <span>
+                                            {choiceLabel ||
+                                              `Option ${cIdx + 1}`}
+                                          </span>
+                                        </div>
+                                        {isCorrect ? (
+                                          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ok)]">
+                                            {lang === "es"
+                                              ? "Correcta"
+                                              : "Correct"}
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );

@@ -1,4 +1,4 @@
-﻿# Alimentaria Mexicana LMS - Frontend
+# Alimentaria Mexicana LMS - Frontend
 
 The frontend for the Alimentaria Mexicana Learning Management System (LMS). It provides bilingual employee and administrator experiences for browsing procedures, managing the content library, onboarding employees, and working with training content.
 
@@ -25,11 +25,14 @@ This repository contains the Next.js application. The REST API is maintained sep
 
 ## Product areas
 
-- **Employee experience:** sign in, browse procedures, read procedure details, and view training pages.
-- **Administrator experience:** manage employees, categories, subcategories, procedures, settings, and training content.
-- **Procedure authoring:** create and edit bilingual procedures, organize content into blocks, add quizzes, and publish or archive procedures.
-- **Employee onboarding:** invitation links, password setup, sign in, and password reset.
-- **Localization:** English (`en`) and Spanish (`es`) routes and messages.
+- **Employee experience:** sign in, browse procedures with category/promo filters and pagination, read procedure details in cook mode, view training courses, and complete interactive chapter quizzes.
+- **Administrator experience:** manage employees, categories, subcategories, procedures, promo dishes, training courses, and settings.
+- **Procedure authoring:** create and edit bilingual procedures, organize content into blocks (method, ingredients, checklists, media, and document attachment cards with in-app PDF viewing), attach quizzes, and publish or archive procedures.
+- **PDF viewing & attachments:** document attachment blocks in procedures with an embedded in-app PDF viewer modal featuring multi-page navigation, zoom stepper, download, and external tab options.
+- **Interactive quizzes:** multiple-choice and drag-and-drop Arrange in Sequence questions with real-time step validation, neutral review feedback, and single-batch answer verification.
+- **Promotional specials:** promotional dishes with run-window dates (`promoStartsAt`, `promoExpiresAt`), capped at 3 on the home dashboard with a "See all" link, and a dedicated "Promo dishes" browse filter.
+- **Employee onboarding:** invitation links, password setup with automatic session invalidation, sign in, and password reset.
+- **Localization:** English (`en`) and Spanish (`es`) routes and messages across all user interfaces.
 - **Procedure translation:** the editor can request translation through a Next.js server route backed by OpenRouter.
 
 Some areas, especially training, still use local demo data. See [Current implementation notes](#current-implementation-notes).

@@ -125,8 +125,13 @@ export function ModalHeader({
   const id = React.useContext(ModalTitleId);
   const hasActions = actions != null;
   return (
-    <header className="flex shrink-0 flex-wrap items-start justify-between gap-4 border-b border-line px-5 py-4">
-      <div className={cn("min-w-0", hasActions && "flex-1")}>
+    <header
+      className={cn(
+        "flex shrink-0 items-start justify-between gap-4 border-b border-line px-5 py-4",
+        hasActions && "flex-wrap",
+      )}
+    >
+      <div className="min-w-0 flex-1">
         <h2
           id={id}
           className="font-ui text-md font-semibold tracking-snug text-ink"
@@ -134,7 +139,7 @@ export function ModalHeader({
           {title}
         </h2>
         {description ? (
-          <p className="mt-0.5 text-sm text-ink-2">{description}</p>
+          <p className="mt-1 text-sm text-ink-2">{description}</p>
         ) : null}
       </div>
       {/* With controls in the header (the viewer's zoom and links), the row
