@@ -360,10 +360,8 @@ function EndAddButton({
 }): React.ReactElement {
   return (
     <div className="pt-2">
-      {/* Ghost affordance — visible on hover only so it doesn't compete with slash command */}
       <InsertAfterButton
         onInsert={onAdd}
-        ghost
         allowLinkProcedure={allowLinkProcedure}
       />
     </div>

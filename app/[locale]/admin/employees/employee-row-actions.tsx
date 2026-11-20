@@ -21,12 +21,15 @@ interface EmployeeRowActionsProps {
    *  you're already on would just re-route to itself. The list page
    *  omits this and falls back to navigation. */
   onEdit?: () => void;
+  /** When true, omits the Edit item (e.g. on detail pages where a dedicated header Edit button already exists). */
+  hideEdit?: boolean;
 }
 
 export function EmployeeRowActions({
   locale,
   employee,
   onEdit,
+  hideEdit = false,
 }: EmployeeRowActionsProps): React.ReactElement {
   const t = useTranslations("admin");
   const router = useRouter();
@@ -91,7 +94,7 @@ export function EmployeeRowActions({
 
     if (employee.status === "pending") {
       return [
-        editItem,
+        ...(!hideEdit ? [editItem] : []),
         {
           label: t("actionsResend"),
           icon: LuSend,
@@ -114,7 +117,7 @@ export function EmployeeRowActions({
     }
     if (employee.status === "active") {
       return [
-        editItem,
+        ...(!hideEdit ? [editItem] : []),
         {
           label: t("actionsDeactivate"),
           icon: LuBan,
@@ -130,18 +133,7 @@ export function EmployeeRowActions({
         },
       ];
     }
-    // deactivated — no reactivate action anymore, edit only.
-    /*
-    return [
-      editItem,
-      {
-        label: t("actionsReactivate"),
-        icon: LuRotateCw,
-        onSelect: onReactivate,
-      },
-    ];
-    */
-    return [editItem];
+    return !hideEdit ? [editItem] : [];
   }
 
   return (

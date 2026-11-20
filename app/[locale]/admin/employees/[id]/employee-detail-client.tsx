@@ -401,7 +401,7 @@ export function EmployeeDetailClient({
               <EmployeeRowActions
                 locale={locale}
                 employee={employee}
-                onEdit={openEdit}
+                hideEdit
               />
             )}
           </div>

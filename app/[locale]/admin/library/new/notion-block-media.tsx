@@ -34,7 +34,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -54,6 +54,8 @@ import {
   LuPlus,
   LuVideo,
   LuX,
+  LuEye,
+  LuExternalLink,
 } from "react-icons/lu";
 import {
   BLOCK_FACTORIES,
@@ -61,6 +63,7 @@ import {
   nextStepId,
 } from "@/lib/procedure-blocks";
 import { uploadMedia, deleteUpload } from "@/lib/api";
+import { toast } from "@/components/ui/toast";
 import { classifyVideoUrl } from "@/lib/procedure-media";
 import { Icon } from "@/components/ui/icon";
 import type {
@@ -554,6 +557,9 @@ export function AttachmentBody({
     state: "idle" | "uploading" | "failed";
     error?: string;
   }>({ state: "idle" });
+  const [uploadFileName, setUploadFileName] = React.useState<string | null>(
+    null,
+  );
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [showEdit, setShowEdit] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -563,6 +569,7 @@ export function AttachmentBody({
       setUpload({ state: "failed", error: "File too large (max 25 MB)" });
       return;
     }
+    setUploadFileName(file.name);
     setUpload({ state: "uploading" });
     try {
       const uploadedUrl = await uploadMedia(file);
@@ -576,33 +583,52 @@ export function AttachmentBody({
       const ext = file.name.split(".").pop()?.toUpperCase() ?? "FILE";
       const formattedBadge = `${ext} · ${formatDocSize(file.size)}`;
 
+      // Overwrite title, meta, and href with the newly uploaded file's info
       onPatch({
         ...block,
         href: finalUrl,
-        meta: block.meta?.trim() ? block.meta : formattedBadge,
+        meta: formattedBadge,
         title: {
-          en: block.title?.en?.trim() ? block.title.en : filenameNoExt,
-          es: block.title?.es?.trim() ? block.title.es : filenameNoExt,
+          en: filenameNoExt,
+          es: filenameNoExt,
         },
       });
       setUpload({ state: "idle" });
+      toast.success("Document uploaded successfully");
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload failed";
       setUpload({
         state: "failed",
-        error: err instanceof Error ? err.message : "Upload failed",
+        error: msg,
       });
+      toast.error(msg);
+    } finally {
+      setUploadFileName(null);
     }
   };
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const f = e.target.files?.[0];
-    if (!f) return;
     e.target.value = "";
+    if (!f) return;
     void startUpload(f);
   };
 
+  const handleRemove = (): void => {
+    if (fileRef.current) fileRef.current.value = "";
+    // Completely clear href, meta, and title so subsequent uploads never inherit the old name
+    onPatch({
+      ...block,
+      href: "",
+      meta: undefined,
+      title: { en: "", es: "" },
+    });
+  };
+
+  const isUploading = upload.state === "uploading";
+
   return (
-    <div className="pt-0.5">
+    <div className="pt-1">
       <input
         ref={fileRef}
         type="file"
@@ -625,18 +651,34 @@ export function AttachmentBody({
           onDrop={(e) => {
             e.preventDefault();
             const f = e.dataTransfer.files?.[0];
-            if (f) void startUpload(f);
+            if (f && !isUploading) void startUpload(f);
           }}
-          onClick={() => fileRef.current?.click()}
-          className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-2)] hover:border-[var(--color-brand)] bg-[var(--color-wash)]/60 hover:bg-[var(--color-panel)]/40 transition-all cursor-pointer min-h-[44px]"
+          onClick={() => {
+            if (isUploading) return;
+            if (fileRef.current) fileRef.current.value = "";
+            fileRef.current?.click();
+          }}
+          className={cn(
+            "flex items-center justify-between gap-3 px-3 py-3 rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-2)] hover:border-[var(--color-brand)] bg-[var(--color-wash)]/60 hover:bg-[var(--color-panel)]/40 transition-all cursor-pointer min-h-[44px]",
+            isUploading && "opacity-75 cursor-wait",
+          )}
         >
           <div className="flex items-center gap-2 text-xs text-[var(--color-ink-2)] min-w-0">
             <span className="flex items-center justify-center size-7 rounded-md bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-brand)] shrink-0">
-              <Icon icon="ri-attachment-line" className="text-sm" />
+              {isUploading ? (
+                <Icon
+                  icon="ri-loader-4-line"
+                  className="text-sm animate-spin text-[var(--color-brand)]"
+                />
+              ) : (
+                <Icon icon="ri-attachment-line" className="text-sm" />
+              )}
             </span>
             <span className="truncate">
-              {upload.state === "uploading"
-                ? "Uploading document…"
+              {isUploading
+                ? uploadFileName
+                  ? `Uploading ${uploadFileName}…`
+                  : "Uploading document…"
                 : "Click to upload PDF or document, or drop file here"}
             </span>
           </div>
@@ -645,15 +687,15 @@ export function AttachmentBody({
             type="button"
             variant="secondary"
             size="sm"
-            disabled={upload.state === "uploading"}
+            disabled={isUploading}
             className="h-7 px-3 text-xs shrink-0 pointer-events-none gap-1"
           >
-            {upload.state === "uploading" ? (
+            {isUploading ? (
               <span className="spinner mr-1" />
             ) : (
               <Icon icon="ri-upload-2-line" className="text-sm" />
             )}
-            Upload file
+            {isUploading ? "Uploading…" : "Upload file"}
           </Button>
         </div>
       ) : (
@@ -662,14 +704,29 @@ export function AttachmentBody({
           <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-line-2 bg-surface shadow-sm">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <span className="flex items-center justify-center size-8 rounded-lg bg-bad-tint text-bad shrink-0">
-                <Icon icon="ri-file-pdf-2-line" className="text-base" />
+                {isUploading ? (
+                  <Icon
+                    icon="ri-loader-4-line"
+                    className="text-base animate-spin text-[var(--color-brand)]"
+                  />
+                ) : isPdfUrl(block.href, block.meta) ? (
+                  <Icon icon="ri-file-pdf-2-line" className="text-base" />
+                ) : (
+                  <Icon icon="ri-file-text-line" className="text-base" />
+                )}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-xs sm:text-sm text-ink truncate">
-                  {block.title?.en || block.title?.es || "Attachment"}
+                  {isUploading
+                    ? `Replacing with ${uploadFileName || "new document"}…`
+                    : block.title?.en || block.title?.es || "Attachment"}
                 </p>
-                {block.meta ? (
-                  <span className="font-ui text-xs text-ink-2 truncate block mt-2">
+                {isUploading ? (
+                  <span className="font-ui text-xs text-[var(--color-brand-600)] truncate block mt-1 animate-pulse">
+                    Uploading new file, please wait…
+                  </span>
+                ) : block.meta ? (
+                  <span className="font-ui text-xs text-ink-2 truncate block mt-1">
                     {block.meta}
                   </span>
                 ) : null}
@@ -677,34 +734,66 @@ export function AttachmentBody({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              {isPdfUrl(block.href, block.meta) && (
+              {isPdfUrl(block.href, block.meta) ? (
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
+                  disabled={isUploading}
                   onClick={() => setPreviewOpen(true)}
-                  className="min-h-8 px-2 text-xs font-semibold gap-1"
+                  className="min-h-8 px-2 text-xs font-semibold gap-1 disabled:opacity-40"
                 >
-                  <Icon icon="ri-eye-line" className="text-sm" />
+                  <LuEye className="size-3" />
                   <span>View</span>
                 </Button>
-              )}
+              ) : block.href ? (
+                <a
+                  href={block.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    buttonClassName({
+                      variant: "secondary",
+                      size: "sm",
+                    }),
+                    "min-h-8 px-2 text-xs font-semibold gap-1",
+                    isUploading && "pointer-events-none opacity-40",
+                  )}
+                  title="Open file in new tab"
+                >
+                  <LuExternalLink className="size-3.5" />
+                  <span>Open</span>
+                </a>
+              ) : null}
 
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => fileRef.current?.click()}
-                className="min-h-8 px-2 text-xs text-ink-2 hover:text-ink"
+                disabled={isUploading}
+                onClick={() => {
+                  if (isUploading) return;
+                  if (fileRef.current) fileRef.current.value = "";
+                  fileRef.current?.click();
+                }}
+                className="min-h-8 px-2 text-xs text-ink-2 hover:text-ink disabled:opacity-40"
                 title="Replace file"
               >
-                <Icon icon="ri-upload-2-line" className="text-sm" />
+                {isUploading ? (
+                  <Icon
+                    icon="ri-loader-4-line"
+                    className="text-sm animate-spin"
+                  />
+                ) : (
+                  <Icon icon="ri-upload-2-line" className="text-sm" />
+                )}
               </Button>
 
               <button
                 type="button"
-                onClick={() => onPatch({ ...block, href: "", meta: undefined })}
-                className="p-1 rounded text-ink-3 hover:text-bad transition-colors cursor-pointer"
+                disabled={isUploading}
+                onClick={handleRemove}
+                className="p-1 rounded text-ink-3 hover:text-bad disabled:opacity-40 transition-colors cursor-pointer"
                 title="Remove attachment"
               >
                 <Icon icon="ri-close-line" className="text-base" />
@@ -712,24 +801,22 @@ export function AttachmentBody({
             </div>
           </div>
 
-          {/* Optional: Collapsed customize name toggle. A system ghost
-              button rather than a bare text link: same pill shape, font
-              and colours as every other control here, plus a 40px
-              touch target. */}
+          {/* Optional: Collapsed customize name toggle */}
           <div className="px-1 flex items-center">
             <Button
               type="button"
               variant="ghost"
               size="sm"
+              disabled={isUploading}
               onClick={() => setShowEdit(!showEdit)}
-              className="min-h-10"
+              className="min-h-10 disabled:opacity-40"
             >
               {showEdit ? "Hide name editing" : "Edit document name / details"}
             </Button>
           </div>
 
           {showEdit && (
-            <div className="p-3 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)]/40 space-y-2.5 animate-in fade-in duration-150">
+            <div className="p-3 rounded-lg border border-[var(--color-line-2)] bg-[var(--color-wash)]/40 space-y-3 animate-in fade-in duration-150">
               <BilingualInput
                 value={block.title}
                 maxLength={120}

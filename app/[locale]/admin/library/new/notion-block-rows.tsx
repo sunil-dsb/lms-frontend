@@ -530,12 +530,12 @@ export function InsertAfterButton({
         ref={triggerRef}
         type="button"
         aria-label="Insert block below"
+        title="Add block"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex size-8 items-center justify-center rounded-md transition-all",
-          ghost
-            ? "text-[var(--color-ink-3)] opacity-100 [@media(hover:hover)]:opacity-30 [@media(hover:hover)]:hover:opacity-100 hover:bg-[var(--color-wash)] hover:text-[var(--color-ink-2)]"
-            : "bg-[var(--color-surface)] text-[var(--color-ink-2)] ring-1 ring-[var(--color-line-2)] shadow-e1 hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] hover:ring-[var(--color-line-3)]",
+          "flex size-8 items-center justify-center rounded-md border border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] shadow-2xs transition-all hover:border-[var(--color-brand)] hover:bg-[var(--color-panel)] hover:text-[var(--color-brand)] cursor-pointer",
+          open &&
+            "border-[var(--color-brand)] bg-[var(--color-panel)] text-[var(--color-brand)] ring-1 ring-[var(--color-brand)]/20",
         )}
       >
         <Icon icon="ri-add-line" className="text-lg" />
