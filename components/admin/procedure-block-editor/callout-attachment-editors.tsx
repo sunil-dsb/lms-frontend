@@ -21,7 +21,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -41,6 +41,7 @@ import type {
 import { syncAmountsWithFactors } from "@/lib/procedure-blocks";
 import { ALLERGEN_KEYS, type AllergenKey } from "@/lib/allergens";
 import { uploadMedia, deleteUpload } from "@/lib/api";
+import { toast } from "@/components/ui/toast";
 import { classifyVideoUrl } from "@/lib/procedure-media";
 import {
   LuArrowDown,
@@ -52,6 +53,7 @@ import {
   LuCirclePlay,
   LuCloudUpload,
   LuCopy,
+  LuExternalLink,
   LuEye,
   LuFileText,
   LuFocus,
@@ -200,6 +202,9 @@ export function AttachmentEditor({
   const t = useTranslations("admin.library.new.form.composer");
   const [lang, setLang] = React.useState<"en" | "es">("en");
   const [uploading, setUploading] = React.useState(false);
+  const [uploadingFileName, setUploadingFileName] = React.useState<
+    string | null
+  >(null);
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
 
@@ -207,8 +212,9 @@ export function AttachmentEditor({
     e: React.ChangeEvent<HTMLInputElement>,
   ): Promise<void> => {
     const file = e.target.files?.[0];
-    if (!file) return;
     e.target.value = "";
+    if (!file) return;
+    setUploadingFileName(file.name);
     setUploading(true);
     try {
       const uploadedUrl = await uploadMedia(file);
@@ -225,22 +231,38 @@ export function AttachmentEditor({
           ? `${ext} · ${(sizeKb / 1024).toFixed(1)} MB`
           : `${ext} · ${sizeKb} KB`;
 
+      // Always update title, meta, and href to the newly uploaded file
       onChange({
         ...block,
         href: finalUrl,
-        meta: block.meta?.trim() ? block.meta : metaStr,
+        meta: metaStr,
         title: {
-          en: block.title?.en?.trim() ? block.title.en : filenameNoExt,
-          es: block.title?.es?.trim() ? block.title.es : filenameNoExt,
+          en: filenameNoExt,
+          es: filenameNoExt,
         },
       });
+      toast.success("Document uploaded successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
+      setUploadingFileName(null);
     }
   };
 
+  const handleRemove = (): void => {
+    if (fileRef.current) fileRef.current.value = "";
+    // Reset href, meta, and title completely so subsequent uploads never retain old file data
+    onChange({
+      ...block,
+      href: "",
+      meta: undefined,
+      title: { en: "", es: "" },
+    });
+  };
+
   return (
-    <div className="pt-0.5">
+    <div className="pt-1">
       <input
         ref={fileRef}
         type="file"
@@ -252,16 +274,29 @@ export function AttachmentEditor({
       {!block.href ? (
         /* Empty State: Clean, minimal single-row dropzone */
         <div
-          onClick={() => fileRef.current?.click()}
-          className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-2)] hover:border-[var(--color-brand)] bg-[var(--color-wash)]/60 hover:bg-[var(--color-panel)]/40 transition-all cursor-pointer min-h-[44px]"
+          onClick={() => {
+            if (uploading) return;
+            if (fileRef.current) fileRef.current.value = "";
+            fileRef.current?.click();
+          }}
+          className={cn(
+            "flex items-center justify-between gap-3 px-4 py-3 rounded-[var(--radius-md)] border border-dashed border-[var(--color-line-2)] hover:border-[var(--color-brand)] bg-[var(--color-wash)]/60 hover:bg-[var(--color-panel)]/40 transition-all cursor-pointer min-h-[44px]",
+            uploading && "opacity-75 cursor-wait",
+          )}
         >
-          <div className="flex items-center gap-2.5 text-xs text-[var(--color-ink-2)] min-w-0">
+          <div className="flex items-center gap-3 text-xs text-[var(--color-ink-2)] min-w-0">
             <span className="flex items-center justify-center size-7 rounded-md bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-brand)] shrink-0">
-              <LuPaperclip className="size-3.5" />
+              {uploading ? (
+                <LuRefreshCw className="size-4 animate-spin text-[var(--color-brand)]" />
+              ) : (
+                <LuPaperclip className="size-4" />
+              )}
             </span>
             <span className="truncate">
               {uploading
-                ? "Uploading document…"
+                ? uploadingFileName
+                  ? `Uploading ${uploadingFileName}…`
+                  : "Uploading document…"
                 : "Click to upload PDF or document"}
             </span>
           </div>
@@ -271,66 +306,104 @@ export function AttachmentEditor({
             variant="secondary"
             size="sm"
             disabled={uploading}
-            className="h-7.5 px-3 text-xs shrink-0 pointer-events-none gap-1.5"
+            className="h-8 px-3 text-xs shrink-0 pointer-events-none gap-2"
           >
             {uploading ? (
-              <span className="spinner mr-1" />
+              <LuRefreshCw className="size-3 animate-spin mr-1" />
             ) : (
-              <LuUpload className="size-3.5" />
+              <LuUpload className="size-4" />
             )}
-            Upload file
+            {uploading ? "Uploading…" : "Upload file"}
           </Button>
         </div>
       ) : (
         /* Attached State: Single compact document card */
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-3 p-2.5 sm:p-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xs">
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3 p-3 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] shadow-2xs">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <span className="flex items-center justify-center size-8 sm:size-9 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 shrink-0">
-                <LuFileText className="size-4" />
+                {uploading ? (
+                  <LuRefreshCw className="size-4 animate-spin text-red-600 dark:text-red-400" />
+                ) : (
+                  <LuFileText className="size-4" />
+                )}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-xs sm:text-sm text-[var(--color-ink)] truncate leading-tight">
-                  {asLocalised(block.title, lang) || "Attachment"}
+                  {uploading
+                    ? `Replacing with ${uploadingFileName || "new document"}…`
+                    : asLocalised(block.title, lang) || "Attachment"}
                 </p>
-                {block.meta ? (
-                  <span className="text-2xs text-[var(--color-ink-2)] truncate block mt-0.5">
+                {uploading ? (
+                  <span className="text-2xs text-[var(--color-brand-600)] font-medium truncate block mt-1 animate-pulse">
+                    Uploading new file, please wait…
+                  </span>
+                ) : block.meta ? (
+                  <span className="text-2xs text-[var(--color-ink-2)] truncate block mt-1">
                     {block.meta}
                   </span>
                 ) : null}
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setPreviewOpen(true)}
-                className="h-7.5 px-2.5 text-xs font-semibold gap-1 text-[var(--color-ink)] hover:text-[var(--color-brand)] border border-[var(--color-line-2)] hover:bg-[var(--color-panel)]"
-              >
-                <LuEye className="size-3.5" />
-                <span>View</span>
-              </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              {isPdfUrl(block.href, block.meta) ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={uploading}
+                  onClick={() => setPreviewOpen(true)}
+                  className="h-8 px-3 text-xs font-semibold gap-1 disabled:opacity-40"
+                >
+                  <LuEye className="size-4" />
+                  <span>View</span>
+                </Button>
+              ) : block.href ? (
+                <a
+                  href={block.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    buttonClassName({
+                      variant: "secondary",
+                      size: "sm",
+                    }),
+                    "h-8 px-3 text-xs font-semibold gap-1",
+                    uploading && "pointer-events-none opacity-40",
+                  )}
+                  title="Open file in new tab"
+                >
+                  <LuExternalLink className="size-4" />
+                  <span>Open</span>
+                </a>
+              ) : null}
 
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 disabled={uploading}
-                onClick={() => fileRef.current?.click()}
-                className="h-7.5 px-2 text-xs text-[var(--color-ink-2)] hover:text-[var(--color-ink)]"
+                onClick={() => {
+                  if (uploading) return;
+                  if (fileRef.current) fileRef.current.value = "";
+                  fileRef.current?.click();
+                }}
+                className="h-8 px-2 text-xs text-[var(--color-ink-2)] hover:text-[var(--color-ink)] disabled:opacity-40"
                 title="Replace file"
               >
-                <LuUpload className="size-3.5" />
+                {uploading ? (
+                  <LuRefreshCw className="size-4 animate-spin" />
+                ) : (
+                  <LuUpload className="size-4" />
+                )}
               </Button>
 
               <button
                 type="button"
-                onClick={() =>
-                  onChange({ ...block, href: "", meta: undefined })
-                }
-                className="p-1 rounded text-[var(--color-ink-3)] hover:text-[var(--color-bad)] transition-colors cursor-pointer"
+                disabled={uploading}
+                onClick={handleRemove}
+                className="p-1 rounded text-[var(--color-ink-3)] hover:text-[var(--color-bad)] disabled:opacity-40 transition-colors cursor-pointer"
                 title="Remove attachment"
               >
                 <LuX className="size-4" />
