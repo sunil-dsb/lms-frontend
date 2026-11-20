@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { LuX } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -62,7 +63,11 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
+  // Portal to <body> so the dialog escapes any ancestor stacking context
+  // created by `opacity`, `filter`, or `transform`. Without this, a modal
+  // rendered inside an element with `opacity: 0.75` (e.g. an archived
+  // category card) inherits that opacity and appears transparent.
+  return createPortal(
     <div
       className="fixed inset-0 z-modal flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto"
       role="dialog"
@@ -97,7 +102,8 @@ export function Modal({
           {children}
         </ModalTitleId.Provider>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
