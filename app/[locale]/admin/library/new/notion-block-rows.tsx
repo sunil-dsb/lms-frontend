@@ -513,16 +513,40 @@ export function BlockRow({
 
 export function InsertAfterButton({
   onInsert,
-  ghost = false,
   allowLinkProcedure = false,
 }: {
   onInsert: (kind: ProcedureBlockKind) => void;
-  /** When true, renders as a low-profile ghost affordance rather than a full button. */
   ghost?: boolean;
   allowLinkProcedure?: boolean;
 }): React.ReactElement {
   const [open, setOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+
+  const standardOptions = [
+    { kind: "text" as const, label: "Text", icon: "ri-text" },
+    { kind: "rich_text" as const, label: "Rich text", icon: "ri-edit-line" },
+    { kind: "heading" as const, label: "Heading", icon: "ri-h-1" },
+    {
+      kind: "method" as const,
+      label: "Numbered steps",
+      icon: "ri-list-ordered",
+    },
+    { kind: "checklist" as const, label: "Checklist", icon: "ri-list-check" },
+    { kind: "table" as const, label: "Table", icon: "ri-table-line" },
+    { kind: "warning" as const, label: "Callout", icon: "ri-alert-line" },
+    { kind: "image" as const, label: "Photograph", icon: "ri-image-line" },
+    { kind: "video" as const, label: "Video", icon: "ri-video-line" },
+    {
+      kind: "attachment" as const,
+      label: "Attachment",
+      icon: "ri-attachment-line",
+    },
+    {
+      kind: "ingredients" as const,
+      label: "Ingredients",
+      icon: "ri-restaurant-line",
+    },
+  ];
 
   return (
     <>
@@ -533,9 +557,9 @@ export function InsertAfterButton({
         title="Add block"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex size-8 items-center justify-center rounded-md border border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] shadow-2xs transition-all hover:border-[var(--color-brand)] hover:bg-[var(--color-panel)] hover:text-[var(--color-brand)] cursor-pointer",
+          "flex size-8 items-center justify-center rounded-md border border-[var(--color-line-2)] bg-[var(--color-surface)] text-[var(--color-ink-2)] shadow-xs transition-colors hover:border-[var(--color-brand)] hover:bg-[var(--color-panel)] hover:text-[var(--color-brand)] cursor-pointer",
           open &&
-            "border-[var(--color-brand)] bg-[var(--color-panel)] text-[var(--color-brand)] ring-1 ring-[var(--color-brand)]/20",
+            "border-[var(--color-brand)] bg-[var(--color-panel)] text-[var(--color-brand)]",
         )}
       >
         <Icon icon="ri-add-line" className="text-lg" />
@@ -547,59 +571,43 @@ export function InsertAfterButton({
         align="start"
         width={220}
       >
-        <div className="p-1 space-y-0.5">
-          {(
-            [
-              { kind: "text", label: "Text", icon: "ri-text" },
-              { kind: "rich_text", label: "Rich text", icon: "ri-edit-line" },
-              { kind: "heading", label: "Heading", icon: "ri-h-1" },
-              {
-                kind: "method",
-                label: "Numbered steps",
-                icon: "ri-list-ordered",
-              },
-              { kind: "checklist", label: "Checklist", icon: "ri-list-check" },
-              { kind: "table", label: "Table", icon: "ri-table-line" },
-              { kind: "warning", label: "Callout", icon: "ri-alert-line" },
-              { kind: "image", label: "Photograph", icon: "ri-image-line" },
-              { kind: "video", label: "Video", icon: "ri-video-line" },
-              {
-                kind: "attachment",
-                label: "Attachment",
-                icon: "ri-attachment-line",
-              },
-              {
-                kind: "ingredients",
-                label: "Ingredients",
-                icon: "ri-restaurant-line",
-              },
-              {
-                kind: "linked_procedures",
-                label: "Link procedure",
-                icon: "ri-links-line",
-              },
-            ] as const
-          )
-            .filter(
-              (opt) => opt.kind !== "linked_procedures" || allowLinkProcedure,
-            )
-            .map((opt) => (
+        <div className="p-1 space-y-1">
+          {allowLinkProcedure && (
+            <>
               <button
-                key={opt.kind}
                 type="button"
                 onClick={() => {
-                  onInsert(opt.kind);
+                  onInsert("linked_procedures");
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-[var(--color-ink)] hover:bg-[var(--color-wash)] transition-colors"
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-semibold text-[var(--color-brand)] hover:bg-[var(--color-wash)] transition-colors cursor-pointer"
               >
                 <Icon
-                  icon={opt.icon}
-                  className="text-base text-[var(--color-ink-2)]"
+                  icon="ri-links-line"
+                  className="text-base text-[var(--color-brand)] shrink-0"
                 />
-                <span className="font-medium">{opt.label}</span>
+                <span>Link procedure</span>
               </button>
-            ))}
+              <div className="my-1 border-t border-[var(--color-line-1)]" />
+            </>
+          )}
+          {standardOptions.map((opt) => (
+            <button
+              key={opt.kind}
+              type="button"
+              onClick={() => {
+                onInsert(opt.kind);
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-[var(--color-ink)] hover:bg-[var(--color-wash)] transition-colors cursor-pointer"
+            >
+              <Icon
+                icon={opt.icon}
+                className="text-base text-[var(--color-ink-2)] shrink-0"
+              />
+              <span className="font-medium">{opt.label}</span>
+            </button>
+          ))}
         </div>
       </Popover>
     </>

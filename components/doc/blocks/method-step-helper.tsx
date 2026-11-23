@@ -59,7 +59,8 @@ export const LABELS = {
 } as const;
 
 export function pickText(value: Localised, locale: "en" | "es"): string {
-  return value[locale];
+  if (!value) return "";
+  return value[locale] || (locale === "es" ? value.en : value.es) || "";
 }
 
 export function pickOpt(

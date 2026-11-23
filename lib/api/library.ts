@@ -396,22 +396,28 @@ function normalizeQuiz(raw: any): Quiz {
     const promptText = q.prompt ?? q.question ?? { en: "", es: "" };
     const isSeq =
       q.type === "sequence" ||
-      (Array.isArray(q.sequenceItems) && q.sequenceItems.length > 0);
+      (q.type !== "multiple_choice" &&
+        Array.isArray(q.sequenceItems) &&
+        q.sequenceItems.length > 0);
     return {
       id: q.id || `q-${Math.random().toString(36).slice(2, 7)}`,
       type: isSeq ? ("sequence" as const) : ("multiple_choice" as const),
       prompt: promptText,
       question: promptText,
-      choices: (q.choices ?? []).map((c: any) => ({
-        id: c.id,
-        label: c.label ?? { en: "", es: "" },
-      })),
-      correctChoiceId: q.correctChoiceId ?? "",
-      sequenceItems: Array.isArray(q.sequenceItems)
-        ? q.sequenceItems.map((s: any) => ({
-            id: s.id,
-            label: s.label ?? { en: "", es: "" },
-          }))
+      choices: isSeq
+        ? []
+        : (q.choices ?? []).map((c: any) => ({
+            id: c.id,
+            label: c.label ?? { en: "", es: "" },
+          })),
+      correctChoiceId: isSeq ? "" : (q.correctChoiceId ?? ""),
+      sequenceItems: isSeq
+        ? Array.isArray(q.sequenceItems)
+          ? q.sequenceItems.map((s: any) => ({
+              id: s.id,
+              label: s.label ?? { en: "", es: "" },
+            }))
+          : undefined
         : undefined,
     };
   });
