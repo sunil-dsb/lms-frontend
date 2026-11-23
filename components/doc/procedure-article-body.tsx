@@ -88,7 +88,11 @@ export function ProcedureArticleBody({
     ctlLanguages: t("ctlLanguages"),
   };
 
-  const isAdmin = effectiveRole === "admin";
+  const isAdmin =
+    effectiveRole === "admin" ||
+    employee?.role === "admin" ||
+    employee?.role === "super_admin" ||
+    employee?.role === "manager";
   const isEs = locale === "es";
 
   const title = isEs
@@ -175,9 +179,10 @@ export function ProcedureArticleBody({
     <ContentProtection
       employeeName={employee?.name || ""}
       locale={locale}
-      enabled={true}
-      enableCopyProtection={true}
-      enablePrintProtection={true}
+      enabled={!isAdmin}
+      isAdmin={isAdmin}
+      enableCopyProtection={!isAdmin}
+      enablePrintProtection={!isAdmin}
     >
       <article className="doc" suppressHydrationWarning>
         <DocBehaviour />
