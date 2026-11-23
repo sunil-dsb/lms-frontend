@@ -489,6 +489,7 @@ export function AdminCourseView({
           backHref={basePath}
           sidebarOffsetPx={280}
           hasQuiz={hasQuiz}
+          isAdmin={true}
         />
       </div>
     );
@@ -505,6 +506,7 @@ export function AdminCourseView({
         backLabel={isEs ? "Capacitación" : "Training"}
         sidebarOffsetPx={280}
         showProgress={false}
+        isAdmin={true}
         extraHeaderActions={
           <div className="flex items-center gap-2">
             <Button

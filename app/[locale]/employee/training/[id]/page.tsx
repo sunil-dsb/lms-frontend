@@ -2,13 +2,13 @@ import * as React from "react";
 import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { ApiException } from "@/lib/api";
+import { ApiException, fetchMe } from "@/lib/api";
 import { fetchProcedureById } from "@/services/library/api";
 import {
   fetchEmployeeQuiz,
   fetchMyTrainingCourse,
 } from "@/services/courses/api";
-import type { Procedure, TrainingAssignment } from "@/lib/types";
+import type { Employee, Procedure, TrainingAssignment } from "@/lib/types";
 import {
   getCourseChaptersViewData,
   getChapterDetail,
@@ -49,8 +49,14 @@ export default async function EmployeeTrainingCoursePage({
     .join("; ");
 
   let employeeTraining: Awaited<ReturnType<typeof fetchMyTrainingCourse>>;
+  let currentEmployee: Employee | undefined = undefined;
   try {
-    employeeTraining = await fetchMyTrainingCourse(id, cookieHeader);
+    const [trainingRes, meRes] = await Promise.all([
+      fetchMyTrainingCourse(id, cookieHeader),
+      fetchMe(cookieHeader).catch(() => null),
+    ]);
+    employeeTraining = trainingRes;
+    currentEmployee = meRes?.employee;
   } catch (err) {
     if (err instanceof ApiException && err.status === 401) {
       redirect(`/${locale}/login`);
@@ -224,7 +230,11 @@ export default async function EmployeeTrainingCoursePage({
       <ChapterQuizView
         courseId={id}
         chapterId={currentChapterObj?.id}
-        quizId={chapterQuiz?.id || chapterDetail?.quizId || (currentChapterObj as any)?.quizId}
+        quizId={
+          chapterQuiz?.id ||
+          chapterDetail?.quizId ||
+          (currentChapterObj as any)?.quizId
+        }
         courseTitle={courseTitle}
         chapterNumber={chapterNumber}
         totalChapters={chapterDetail.totalChapters}
@@ -232,6 +242,7 @@ export default async function EmployeeTrainingCoursePage({
         questions={questions}
         minCorrectAnswers={minCorrectAnswers}
         isCompleted={isCurrentChapterCompleted}
+        employee={currentEmployee}
       />
     );
   }
@@ -293,6 +304,7 @@ export default async function EmployeeTrainingCoursePage({
         blocks={chapterDetail.blocks}
         procedure={linkedProcedure}
         hasQuiz={hasQuiz}
+        employee={currentEmployee}
       />
     );
   }
@@ -304,5 +316,11 @@ export default async function EmployeeTrainingCoursePage({
     locale,
   );
 
-  return <CourseChaptersView data={chaptersViewData} locale={locale} />;
+  return (
+    <CourseChaptersView
+      data={chaptersViewData}
+      locale={locale}
+      employee={currentEmployee}
+    />
+  );
 }
