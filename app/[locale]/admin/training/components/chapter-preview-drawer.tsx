@@ -271,69 +271,106 @@ export function ChapterPreviewDrawer({
                         </h4>
                       </div>
 
-                      {/* Choices vertical list */}
-                      <div className="flex flex-col space-y-3 pt-2">
-                        {(
-                          q.choices ||
-                          (q as unknown as { options?: unknown[] }).options ||
-                          []
-                        ).map((c: unknown, cIdx: number) => {
-                          const choice = c as {
-                            id?: string;
-                            label?: string | { en?: string; es?: string };
-                          };
-                          const label =
-                            typeof choice.label === "string"
-                              ? choice.label
-                              : (previewLang === "es"
-                                  ? choice.label?.es || choice.label?.en
-                                  : choice.label?.en || choice.label?.es) || "";
-                          const isCorrect = choice.id === q.correctChoiceId;
-                          const letter = String.fromCharCode(65 + cIdx); // A, B, C, D
-
-                          return (
-                            <div
-                              key={choice.id || cIdx}
-                              className={cn(
-                                "flex items-center justify-between rounded-xl border transition-all p-3.5 gap-3",
-                                isCorrect
-                                  ? "border-[var(--color-ok)] bg-[var(--color-ok-tint)] text-[var(--color-ink)] shadow-xs"
-                                  : "border-[var(--color-line-2)] bg-[var(--color-wash)]/40 text-[var(--color-ink)]",
-                              )}
-                            >
-                              <div className="flex items-center min-w-0 flex-1">
-                                <span
-                                  className={cn(
-                                    "flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold mr-3",
-                                    isCorrect
-                                      ? "bg-[var(--color-ok)] text-white shadow-xs"
-                                      : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] border border-[var(--color-line-2)]",
-                                  )}
+                      {/* Choices vertical list OR Sequence steps list */}
+                      {q.type === "sequence" ? (
+                        <div className="flex flex-col space-y-2.5 pt-2">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-ink-3)]">
+                            {previewLang === "es"
+                              ? "Pasos en orden cronológico"
+                              : "Steps in chronological order"}
+                          </span>
+                          <ol className="space-y-2">
+                            {(q.sequenceItems || []).map((step, sIdx) => {
+                              const stepLabel =
+                                typeof step.label === "string"
+                                  ? step.label
+                                  : (previewLang === "es"
+                                      ? step.label?.es || step.label?.en
+                                      : step.label?.en || step.label?.es) || "";
+                              return (
+                                <li
+                                  key={step.id || sIdx}
+                                  className="flex items-center gap-3 rounded-xl border border-[var(--color-line-2)] bg-[var(--color-wash)]/40 p-3 text-sm text-[var(--color-ink)]"
                                 >
-                                  {letter}
-                                </span>
-                                <span className="text-sm font-medium text-[var(--color-ink)] leading-snug break-words">
-                                  {label ||
-                                    (previewLang === "es"
-                                      ? `Opción ${letter}`
-                                      : `Option ${letter}`)}
-                                </span>
-                              </div>
-
-                              {isCorrect && (
-                                <span className="shrink-0 inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-surface)] text-[var(--color-ok-700)] border border-[var(--color-ok)]/40 shadow-xs px-3 py-1 gap-1.5">
-                                  <LuCheck className="w-4 h-4 stroke-[2.5] text-[var(--color-ok-700)]" />
-                                  <span>
-                                    {previewLang === "es"
-                                      ? "Respuesta correcta"
-                                      : "Correct answer"}
+                                  <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[var(--color-panel-2)] text-[var(--color-ink)] font-bold text-xs border border-[var(--color-line-2)]">
+                                    {sIdx + 1}
                                   </span>
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                                  <span className="font-medium leading-snug break-words">
+                                    {stepLabel ||
+                                      (previewLang === "es"
+                                        ? `Paso ${sIdx + 1}`
+                                        : `Step ${sIdx + 1}`)}
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ol>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col space-y-3 pt-2">
+                          {(
+                            q.choices ||
+                            (q as unknown as { options?: unknown[] }).options ||
+                            []
+                          ).map((c: unknown, cIdx: number) => {
+                            const choice = c as {
+                              id?: string;
+                              label?: string | { en?: string; es?: string };
+                            };
+                            const label =
+                              typeof choice.label === "string"
+                                ? choice.label
+                                : (previewLang === "es"
+                                    ? choice.label?.es || choice.label?.en
+                                    : choice.label?.en || choice.label?.es) ||
+                                  "";
+                            const isCorrect = choice.id === q.correctChoiceId;
+                            const letter = String.fromCharCode(65 + cIdx); // A, B, C, D
+
+                            return (
+                              <div
+                                key={choice.id || cIdx}
+                                className={cn(
+                                  "flex items-center justify-between rounded-xl border transition-all p-3.5 gap-3",
+                                  isCorrect
+                                    ? "border-[var(--color-ok)] bg-[var(--color-ok-tint)] text-[var(--color-ink)] shadow-xs"
+                                    : "border-[var(--color-line-2)] bg-[var(--color-wash)]/40 text-[var(--color-ink)]",
+                                )}
+                              >
+                                <div className="flex items-center min-w-0 flex-1">
+                                  <span
+                                    className={cn(
+                                      "flex w-8 h-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold mr-3",
+                                      isCorrect
+                                        ? "bg-[var(--color-ok)] text-white shadow-xs"
+                                        : "bg-[var(--color-panel-2)] text-[var(--color-ink-2)] border border-[var(--color-line-2)]",
+                                    )}
+                                  >
+                                    {letter}
+                                  </span>
+                                  <span className="text-sm font-medium text-[var(--color-ink)] leading-snug break-words">
+                                    {label ||
+                                      (previewLang === "es"
+                                        ? `Opción ${letter}`
+                                        : `Option ${letter}`)}
+                                  </span>
+                                </div>
+
+                                {isCorrect && (
+                                  <span className="shrink-0 inline-flex items-center rounded-full text-xs font-semibold bg-[var(--color-surface)] text-[var(--color-ok-700)] border border-[var(--color-ok)]/40 shadow-xs px-3 py-1 gap-1.5">
+                                    <LuCheck className="w-4 h-4 stroke-[2.5] text-[var(--color-ok-700)]" />
+                                    <span>
+                                      {previewLang === "es"
+                                        ? "Respuesta correcta"
+                                        : "Correct answer"}
+                                    </span>
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

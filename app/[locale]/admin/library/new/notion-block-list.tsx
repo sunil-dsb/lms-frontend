@@ -39,6 +39,7 @@ import {
 import { LinkProcedureModal } from "@/components/admin/link-procedure-modal";
 import { classifyVideoUrl } from "@/lib/procedure-media";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import type {
   Localised,
   LocalisedOptional,
@@ -66,6 +67,7 @@ interface NotionBlockListProps {
   onChange: (next: ProcedureBlock[]) => void;
   errors?: Record<string, string>;
   allowLinkProcedure?: boolean;
+  locale?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,27 +176,62 @@ function EmptyState({
           .filter(
             (opt) => opt.kind !== "linked_procedures" || allowLinkProcedure,
           )
-          .map((opt) => (
-            <button
-              key={opt.kind}
-              type="button"
-              onClick={() => onAdd(opt.kind)}
-              className="group flex items-center gap-4 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)] px-4 py-3 sm:px-5 sm:py-3 text-left transition-colors hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)] cursor-pointer"
-            >
-              <Icon
-                icon={opt.icon}
-                className="size-5 text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)] shrink-0"
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs sm:text-sm font-semibold text-[var(--color-ink)] truncate">
-                  {opt.label}
+          .map((opt) => {
+            const isLinkedProcedure =
+              opt.kind === "linked_procedures" && allowLinkProcedure;
+            return (
+              <button
+                key={opt.kind}
+                type="button"
+                onClick={() => onAdd(opt.kind)}
+                className={cn(
+                  "group flex items-center gap-4 rounded-[var(--radius-md)] border px-4 py-3 sm:px-5 sm:py-3 text-left transition-colors cursor-pointer",
+                  isLinkedProcedure
+                    ? "border-[var(--color-brand)] bg-[var(--color-brand-tint)] hover:bg-[var(--color-brand-tint-2)] shadow-xs"
+                    : "border border-[var(--color-line-2)] bg-[var(--color-surface)] hover:border-[var(--color-line-3)] hover:bg-[var(--color-wash)]",
+                )}
+              >
+                <Icon
+                  icon={opt.icon}
+                  className={cn(
+                    "size-5 shrink-0 transition-colors",
+                    isLinkedProcedure
+                      ? "text-[var(--color-brand-700)]"
+                      : "text-[var(--color-ink-2)] group-hover:text-[var(--color-ink)]",
+                  )}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span
+                      className={cn(
+                        "block text-xs sm:text-sm font-semibold truncate",
+                        isLinkedProcedure
+                          ? "text-[var(--color-brand-800)]"
+                          : "text-[var(--color-ink)]",
+                      )}
+                    >
+                      {opt.label}
+                    </span>
+                    {isLinkedProcedure && (
+                      <span className="rounded-full bg-[var(--color-brand-600)] px-2 py-0.5 text-xs font-semibold text-white shrink-0">
+                        Library
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      "block text-xs mt-0.5 line-clamp-1 leading-tight",
+                      isLinkedProcedure
+                        ? "text-[var(--color-brand-700)]"
+                        : "text-[var(--color-ink-2)]",
+                    )}
+                  >
+                    {opt.hint}
+                  </span>
                 </span>
-                <span className="block text-xs sm:text-xs text-[var(--color-ink-2)] mt-0.5 line-clamp-1 leading-tight">
-                  {opt.hint}
-                </span>
-              </span>
-            </button>
-          ))}
+              </button>
+            );
+          })}
       </div>
     </div>
   );
@@ -210,6 +247,7 @@ export function NotionBlockList({
   onChange,
   errors,
   allowLinkProcedure = false,
+  locale = "en",
 }: NotionBlockListProps): React.ReactElement {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -306,6 +344,7 @@ export function NotionBlockList({
           open={Boolean(linkModalTarget)}
           onClose={() => setLinkModalTarget(null)}
           onConfirm={handleConfirmLinkProcedures}
+          locale={locale}
         />
       </>
     );
@@ -346,6 +385,7 @@ export function NotionBlockList({
         open={Boolean(linkModalTarget)}
         onClose={() => setLinkModalTarget(null)}
         onConfirm={handleConfirmLinkProcedures}
+        locale={locale}
       />
     </div>
   );

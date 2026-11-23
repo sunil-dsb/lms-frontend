@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
-import { RichTextContent } from "@/components/editor/rich-text-editor";
+import {
+  RichTextContent,
+  isRichTextDocEmpty,
+} from "@/components/editor/rich-text-editor";
 import type {
   Localised,
   LocalisedOptional,
@@ -156,9 +159,18 @@ export function BlockRenderer({
         return;
       }
       case "rich_text": {
+        const primaryLang = locale === "es" ? "es" : "en";
+        const fallbackLang = primaryLang === "es" ? "en" : "es";
+        const primaryDoc = block.body?.[primaryLang];
+        const fallbackDoc = block.body?.[fallbackLang];
+        const docToRender = !isRichTextDocEmpty(primaryDoc)
+          ? primaryDoc
+          : fallbackDoc;
         add(
           key,
-          <RichTextContent value={block.body[locale === "es" ? "es" : "en"]} />,
+          <RichTextContent
+            value={docToRender ?? { type: "doc", content: [] }}
+          />,
         );
         return;
       }

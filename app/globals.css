@@ -62,7 +62,7 @@
   .rich-text-embedded .rich-text-prose { min-height: 100%; }
   /* Inactive bilingual rich-text rows collapse to a plain text line */
   .bli__field.is-inactive .rich-text-toolbar,
-  .bli__field.is-inactive .rich-text-count { display: none; }
+  .bli__field.is-inactive .rich-text-count { display: none !important; }
   .bli__field.is-inactive .rich-text-embedded > .rich-text-body {
     padding: 8px var(--s-3) 8px var(--s-3);
     overflow: hidden;

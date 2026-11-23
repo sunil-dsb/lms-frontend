@@ -14,7 +14,9 @@ import { cn } from "@/lib/utils";
 import type { ProcedureQuizQuestion, ProcedureBlock } from "@/lib/types";
 import {
   generateQuizFromProcedure,
+  generateQuizFromChapter,
   type GenerateQuizApiInput,
+  type GenerateChapterQuizApiInput,
 } from "@/services/library/api";
 import {
   LuSparkles,
@@ -37,11 +39,25 @@ export interface QuizAiModalProcedureContext {
   ingredients?: Array<Record<string, unknown>>;
 }
 
+export interface QuizAiModalChapterContext {
+  courseId?: string;
+  courseName?: string;
+  chapterNumber?: number;
+  titleEn?: string;
+  titleEs?: string;
+  purposeEn?: string;
+  purposeEs?: string;
+  blocks?: ProcedureBlock[] | Array<Record<string, unknown>>;
+}
+
 interface QuizAiModalProps {
   open: boolean;
   onClose: () => void;
+  sourceType?: "procedure" | "chapter";
   procedureId?: string | null;
   procedureContext?: QuizAiModalProcedureContext | null;
+  chapterId?: string | null;
+  chapterContext?: QuizAiModalChapterContext | null;
   existingQuestionsCount?: number;
   onApplyQuestions: (
     questions: ProcedureQuizQuestion[],
@@ -112,8 +128,11 @@ function extractBilingualText(raw: unknown): { en: string; es: string } {
 export function QuizAiModal({
   open,
   onClose,
+  sourceType = "procedure",
   procedureId,
   procedureContext,
+  chapterId,
+  chapterContext,
   existingQuestionsCount = 0,
   onApplyQuestions,
 }: QuizAiModalProps): React.ReactElement | null {
@@ -181,11 +200,18 @@ export function QuizAiModal({
   const isCustomValid = customTotal >= 2 && customTotal <= 10;
   const activeTotal = mode === "auto" ? autoCount : customTotal;
 
+  // Active blocks based on source type
+  const activeBlocks = React.useMemo(() => {
+    if (sourceType === "chapter") {
+      return chapterContext?.blocks || [];
+    }
+    return procedureContext?.blocks || [];
+  }, [sourceType, chapterContext, procedureContext]);
+
   // Method steps count helper
-  const blocks = procedureContext?.blocks || [];
   const methodStepsCount = React.useMemo(() => {
     let count = 0;
-    for (const b of blocks) {
+    for (const b of activeBlocks) {
       if (
         b &&
         typeof b === "object" &&
@@ -196,7 +222,30 @@ export function QuizAiModal({
       }
     }
     return count;
-  }, [blocks]);
+  }, [activeBlocks]);
+
+  // Attachment check (e.g. PDF)
+  const pdfAttachmentName = React.useMemo(() => {
+    for (const b of activeBlocks) {
+      if (
+        b &&
+        typeof b === "object" &&
+        (b as Record<string, unknown>).kind === "attachment"
+      ) {
+        const att = b as Record<string, unknown>;
+        const href = typeof att.href === "string" ? att.href : "";
+        const title = typeof att.title === "string" ? att.title : "";
+        const meta = typeof att.meta === "string" ? att.meta : "";
+        if (
+          href.toLowerCase().endsWith(".pdf") ||
+          meta.toLowerCase().includes("pdf")
+        ) {
+          return title || href.split("/").pop() || "sample.pdf";
+        }
+      }
+    }
+    return null;
+  }, [activeBlocks]);
 
   const hasMethodSteps = methodStepsCount >= 2;
 
@@ -210,33 +259,66 @@ export function QuizAiModal({
     const ctrl = new AbortController();
     abortCtrlRef.current = ctrl;
 
-    const payload: GenerateQuizApiInput = {
-      procedureId: procedureId || undefined,
-      procedure:
-        !procedureId && procedureContext
-          ? {
-              titleEn: procedureContext.titleEn,
-              titleEs: procedureContext.titleEs,
-              purposeEn: procedureContext.purposeEn,
-              purposeEs: procedureContext.purposeEs,
-              blocks: procedureContext.blocks as Array<Record<string, unknown>>,
-              ingredients: procedureContext.ingredients,
-            }
-          : undefined,
-      config:
-        mode === "auto"
-          ? { totalQuestions: autoCount }
-          : {
-              totalQuestions: customTotal,
-              mcqCount,
-              sequenceCount: seqCount,
-            },
-    };
-
     try {
-      const response = await generateQuizFromProcedure(payload, {
-        signal: ctrl.signal,
-      });
+      let response;
+      if (sourceType === "chapter") {
+        const payload: GenerateChapterQuizApiInput = {
+          chapterId: chapterId || undefined,
+          chapter:
+            !chapterId && chapterContext
+              ? {
+                  courseName: chapterContext.courseName,
+                  chapterNumber: chapterContext.chapterNumber,
+                  titleEn: chapterContext.titleEn,
+                  titleEs: chapterContext.titleEs,
+                  purposeEn: chapterContext.purposeEn,
+                  purposeEs: chapterContext.purposeEs,
+                  blocks: chapterContext.blocks as Array<
+                    Record<string, unknown>
+                  >,
+                }
+              : undefined,
+          config:
+            mode === "auto"
+              ? { totalQuestions: autoCount }
+              : {
+                  totalQuestions: customTotal,
+                  mcqCount,
+                  sequenceCount: seqCount,
+                },
+        };
+        response = await generateQuizFromChapter(payload, {
+          signal: ctrl.signal,
+        });
+      } else {
+        const payload: GenerateQuizApiInput = {
+          procedureId: procedureId || undefined,
+          procedure:
+            !procedureId && procedureContext
+              ? {
+                  titleEn: procedureContext.titleEn,
+                  titleEs: procedureContext.titleEs,
+                  purposeEn: procedureContext.purposeEn,
+                  purposeEs: procedureContext.purposeEs,
+                  blocks: procedureContext.blocks as Array<
+                    Record<string, unknown>
+                  >,
+                  ingredients: procedureContext.ingredients,
+                }
+              : undefined,
+          config:
+            mode === "auto"
+              ? { totalQuestions: autoCount }
+              : {
+                  totalQuestions: customTotal,
+                  mcqCount,
+                  sequenceCount: seqCount,
+                },
+        };
+        response = await generateQuizFromProcedure(payload, {
+          signal: ctrl.signal,
+        });
+      }
 
       if (!response.questions || response.questions.length === 0) {
         throw new Error(
@@ -258,23 +340,23 @@ export function QuizAiModal({
 
         const isPromptSequence = Boolean(
           (prompt.en &&
-            /arrange.*(step|order)|chronological/i.test(prompt.en)) ||
+            /arrange.*(step|order)|chronological|sequence/i.test(prompt.en)) ||
           (prompt.es &&
-            /organiza.*(paso|orden)|cronol[oó]gico/i.test(prompt.es)),
+            /organiza.*(paso|orden)|cronol[oó]gico|secuencia/i.test(prompt.es)),
         );
         const hasSequenceItems =
           Array.isArray(q.sequenceItems) && q.sequenceItems.length >= 2;
-        const hasChoices = Array.isArray(q.choices) && q.choices.length >= 2;
 
         const isSeq =
-          q.type === "sequence" ||
-          (hasSequenceItems && !hasChoices) ||
-          (isPromptSequence && !hasChoices);
+          q.type === "sequence" || isPromptSequence || hasSequenceItems;
 
         if (isSeq) {
-          const rawItems = Array.isArray(q.sequenceItems)
-            ? q.sequenceItems
-            : [];
+          const rawItems =
+            Array.isArray(q.sequenceItems) && q.sequenceItems.length > 0
+              ? q.sequenceItems
+              : Array.isArray(q.choices)
+                ? q.choices
+                : [];
           const validItems: Array<{
             id: string;
             label: { en: string; es: string };
@@ -404,39 +486,69 @@ export function QuizAiModal({
       <ModalHeader
         title={isEs ? "Generar Quiz con IA" : "Generate Quiz with AI"}
         description={
-          isEs
-            ? "Crea preguntas bilingües automáticamente a partir del contenido de este procedimiento."
-            : "Automatically generate bilingual assessment questions from this procedure's content."
+          sourceType === "chapter"
+            ? isEs
+              ? "Crea preguntas bilingües automáticamente a partir del contenido de este capítulo."
+              : "Automatically generate bilingual assessment questions from this chapter's content."
+            : isEs
+              ? "Crea preguntas bilingües automáticamente a partir del contenido de este procedimiento."
+              : "Automatically generate bilingual assessment questions from this procedure's content."
         }
         onClose={handleModalClose}
         closeLabel={isEs ? "Cerrar" : "Close"}
       />
 
       <ModalBody className="flex-1 overflow-y-auto space-y-4 flex flex-col justify-start">
-        {/* Source Procedure Header */}
+        {/* Source Header (Procedure or Chapter) */}
         <div className="rounded-xl border border-line bg-wash p-4 space-y-2 shrink-0">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-ink-3">
-              {isEs ? "Procedimiento Seleccionado" : "Source Procedure"}
-            </span>
-            <span className="text-xs px-2 py-1 rounded-full font-medium bg-surface border border-line text-ink-2">
-              {hasMethodSteps
+              {sourceType === "chapter"
                 ? isEs
-                  ? `${methodStepsCount} pasos cronológicos`
-                  : `${methodStepsCount} method steps`
+                  ? "Capítulo Seleccionado"
+                  : "Source Chapter"
                 : isEs
-                  ? "Sin pasos secuenciales"
-                  : "No sequential steps"}
+                  ? "Procedimiento Seleccionado"
+                  : "Source Procedure"}
             </span>
+            <div className="flex items-center gap-1 flex-wrap">
+              {pdfAttachmentName ? (
+                <span className="text-xs px-2 py-1 rounded-full font-medium bg-surface border border-line text-[var(--color-brand-600)]">
+                  PDF: {pdfAttachmentName}
+                </span>
+              ) : null}
+              <span className="text-xs px-2 py-1 rounded-full font-medium bg-surface border border-line text-ink-2">
+                {hasMethodSteps
+                  ? isEs
+                    ? `${methodStepsCount} pasos cronológicos`
+                    : `${methodStepsCount} method steps`
+                  : isEs
+                    ? "Sin pasos secuenciales"
+                    : "No sequential steps"}
+              </span>
+            </div>
           </div>
           <h4 className="text-sm font-bold text-ink truncate">
-            {procedureContext?.titleEn ||
-              procedureContext?.titleEs ||
-              (isEs ? "Procedimiento en borrador" : "Draft Procedure")}
+            {sourceType === "chapter"
+              ? `${chapterContext?.chapterNumber ? `Chapter ${chapterContext.chapterNumber}: ` : ""}${chapterContext?.titleEn || chapterContext?.titleEs || (isEs ? "Capítulo en borrador" : "Draft Chapter")}`
+              : procedureContext?.titleEn ||
+                procedureContext?.titleEs ||
+                (isEs ? "Procedimiento en borrador" : "Draft Procedure")}
           </h4>
-          {procedureContext?.purposeEn || procedureContext?.purposeEs ? (
+          {sourceType === "chapter" && chapterContext?.courseName ? (
+            <p className="text-xs font-medium text-[var(--color-brand-600)]">
+              {isEs ? "Curso" : "Course"}: {chapterContext.courseName}
+            </p>
+          ) : null}
+          {(
+            sourceType === "chapter"
+              ? chapterContext?.purposeEn || chapterContext?.purposeEs
+              : procedureContext?.purposeEn || procedureContext?.purposeEs
+          ) ? (
             <p className="text-xs text-ink-2 line-clamp-2">
-              {procedureContext.purposeEn || procedureContext.purposeEs}
+              {sourceType === "chapter"
+                ? chapterContext?.purposeEn || chapterContext?.purposeEs
+                : procedureContext?.purposeEn || procedureContext?.purposeEs}
             </p>
           ) : null}
         </div>

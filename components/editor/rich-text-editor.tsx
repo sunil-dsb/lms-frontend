@@ -179,15 +179,29 @@ interface RichTextEditorProps {
   label: string;
   minHeight?: number;
   embedded?: boolean;
+  active?: boolean;
   onFocus?: () => void;
   /** Maximum word count. When set, typing beyond the limit is blocked and a counter is shown. */
   maxWords?: number;
 }
 
 /** Extract plain text from a Tiptap JSON doc node */
-function extractText(node: JSONContent): string {
+export function extractText(node: JSONContent): string {
   if (node.type === "text") return node.text ?? "";
   return (node.content ?? []).map(extractText).join(" ");
+}
+
+/** Check if a RichTextDocument has any actual text content */
+export function isRichTextDocEmpty(doc?: RichTextDocument | null): boolean {
+  if (
+    !doc ||
+    !doc.content ||
+    !Array.isArray(doc.content) ||
+    doc.content.length === 0
+  ) {
+    return true;
+  }
+  return extractText(doc).trim() === "";
 }
 
 /** Count words in a Tiptap JSON doc */
@@ -202,6 +216,7 @@ export function RichTextEditor({
   label,
   minHeight = 130,
   embedded = false,
+  active = true,
   onFocus,
   maxWords,
 }: RichTextEditorProps): React.ReactElement {
@@ -252,6 +267,14 @@ export function RichTextEditor({
   React.useEffect(() => {
     if (linkOpen) linkInputRef.current?.focus();
   }, [linkOpen]);
+
+  const prevActiveRef = React.useRef(active);
+  React.useEffect(() => {
+    if (active && !prevActiveRef.current && embedded && editor) {
+      editor.commands.focus("end");
+    }
+    prevActiveRef.current = active;
+  }, [active, embedded, editor]);
 
   if (!editor)
     return (
@@ -361,34 +384,38 @@ export function RichTextEditor({
           : "overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)]"
       }
     >
-      <div
-        aria-label="Text formatting"
-        className={`rich-text-toolbar flex flex-wrap gap-1 border-b border-[var(--color-line)] ${embedded ? "px-1 py-0.5" : "p-2"}`}
-      >
-        {buttons.map(({ label: buttonLabel, icon: Icon, active, run }) => (
+      {(!embedded || active) && (
+        <div
+          aria-label="Text formatting"
+          className={`rich-text-toolbar flex flex-wrap gap-1 border-b border-[var(--color-line)] ${embedded ? "px-1 py-0.5" : "p-2"}`}
+        >
+          {buttons.map(
+            ({ label: buttonLabel, icon: Icon, active: btnActive, run }) => (
+              <button
+                key={buttonLabel}
+                aria-label={buttonLabel}
+                aria-pressed={btnActive}
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={run}
+                className={`inline-flex ${embedded ? "size-6" : "size-9"} items-center justify-center rounded-md ${btnActive ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]" : "text-[var(--color-ink-2)] hover:bg-[var(--color-wash)]"}`}
+              >
+                <Icon aria-hidden="true" />
+              </button>
+            ),
+          )}
           <button
-            key={buttonLabel}
-            aria-label={buttonLabel}
-            aria-pressed={active}
+            aria-label="Link"
+            aria-pressed={editor.isActive("link")}
             type="button"
             onMouseDown={(event) => event.preventDefault()}
-            onClick={run}
-            className={`inline-flex ${embedded ? "size-6" : "size-9"} items-center justify-center rounded-md ${active ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]" : "text-[var(--color-ink-2)] hover:bg-[var(--color-wash)]"}`}
+            onClick={openLinkEditor}
+            className={`inline-flex ${embedded ? "size-6" : "size-9"} items-center justify-center rounded-md ${editor.isActive("link") || linkOpen ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]" : "text-[var(--color-ink-2)] hover:bg-[var(--color-wash)]"}`}
           >
-            <Icon aria-hidden="true" />
+            <LuLink aria-hidden="true" />
           </button>
-        ))}
-        <button
-          aria-label="Link"
-          aria-pressed={editor.isActive("link")}
-          type="button"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={openLinkEditor}
-          className={`inline-flex ${embedded ? "size-6" : "size-9"} items-center justify-center rounded-md ${editor.isActive("link") || linkOpen ? "bg-[var(--color-brand-tint)] text-[var(--color-brand-700)]" : "text-[var(--color-ink-2)] hover:bg-[var(--color-wash)]"}`}
-        >
-          <LuLink aria-hidden="true" />
-        </button>
-      </div>
+        </div>
+      )}
       {linkOpen ? (
         <form
           onSubmit={(event) => {
@@ -449,7 +476,7 @@ export function RichTextEditor({
         style={{ minHeight: embedded ? undefined : minHeight }}
         className={`rich-text-body ${embedded ? "" : "p-3"} text-sm text-[var(--color-ink)]`}
       />
-      {maxWords ? (
+      {maxWords && (!embedded || active) ? (
         <div
           className="rich-text-count"
           style={{

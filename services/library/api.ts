@@ -700,6 +700,25 @@ export interface GeneratedQuizApiResponse {
   advisory?: string | null;
 }
 
+export interface GenerateChapterQuizApiInput {
+  chapterId?: string;
+  chapter?: {
+    courseId?: string;
+    courseName?: string;
+    chapterNumber?: number;
+    titleEn?: string;
+    titleEs?: string;
+    purposeEn?: string;
+    purposeEs?: string;
+    blocks?: Array<Record<string, unknown>>;
+  };
+  config?: {
+    totalQuestions?: number;
+    mcqCount?: number;
+    sequenceCount?: number;
+  };
+}
+
 /** POST /api/v1/quizzes/generate-from-procedure — generate a bilingual quiz with AI.
  *  Accepts either in-memory draft procedure content or a saved procedureId. */
 export async function generateQuizFromProcedure(
@@ -711,6 +730,28 @@ export async function generateQuizFromProcedure(
     message: string;
     data: GeneratedQuizApiResponse;
   }>("/api/v1/quizzes/generate-from-procedure", payload, {
+    timeout: 60_000,
+    signal: opts?.signal,
+  });
+
+  if (data.data?.questions) {
+    return data.data;
+  }
+
+  throw new Error("Backend did not return generated quiz questions");
+}
+
+/** POST /api/v1/quizzes/generate-from-chapter — generate a bilingual quiz with AI from a course chapter.
+ *  Accepts either in-memory draft chapter content or a saved chapterId. */
+export async function generateQuizFromChapter(
+  payload: GenerateChapterQuizApiInput,
+  opts?: { signal?: AbortSignal },
+): Promise<GeneratedQuizApiResponse> {
+  const { data } = await http.post<{
+    success: boolean;
+    message: string;
+    data: GeneratedQuizApiResponse;
+  }>("/api/v1/quizzes/generate-from-chapter", payload, {
     timeout: 60_000,
     signal: opts?.signal,
   });

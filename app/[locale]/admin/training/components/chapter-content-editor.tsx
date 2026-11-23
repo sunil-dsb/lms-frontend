@@ -3,6 +3,7 @@
 import * as React from "react";
 import {
   LuArrowLeft,
+  LuBookOpen,
   LuCheck,
   LuChevronRight,
   LuEye,
@@ -28,6 +29,8 @@ import type {
   ProcedureQuizQuestion,
 } from "@/lib/types";
 import { isQuizQuestionAuthored } from "@/lib/api";
+import { nextBlockId } from "@/lib/procedure-blocks";
+import { LinkProcedureModal } from "@/components/admin/link-procedure-modal";
 import { ChapterPreviewDrawer } from "./chapter-preview-drawer";
 import { ChapterLinkedQuizBanner } from "./chapter-linked-quiz-banner";
 import {
@@ -109,6 +112,23 @@ export function ChapterContentEditor({
 
   // Preview state
   const [previewOpen, setPreviewOpen] = React.useState(false);
+
+  // Top-level Link Procedure Modal state (always available from Content section header)
+  const [isLinkModalOpen, setIsLinkModalOpen] = React.useState(false);
+
+  const handleConfirmLinkProcedure = (procedureIds: string[]) => {
+    if (!procedureIds || procedureIds.length === 0) {
+      setIsLinkModalOpen(false);
+      return;
+    }
+    const newBlock: ProcedureBlock = {
+      id: nextBlockId(),
+      kind: "linked_procedures",
+      procedureIds,
+    };
+    setBlocks((prev) => [...prev, newBlock]);
+    setIsLinkModalOpen(false);
+  };
 
   // Hook managing linked procedures discovery & quiz question extraction
   const {
@@ -449,15 +469,28 @@ export function ChapterContentEditor({
                 : "What the employee reads, watches and does."
             }
             headerAction={
-              <span className="inline-flex items-center rounded-full border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-2)]">
-                {blocks.length} {blocks.length === 1 ? "block" : "blocks"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full border border-[var(--color-line-2)] bg-[var(--color-wash)] px-3 py-1 text-xs font-semibold text-[var(--color-ink-2)]">
+                  {blocks.length} {blocks.length === 1 ? "block" : "blocks"}
+                </span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  icon={LuBookOpen}
+                  onClick={() => setIsLinkModalOpen(true)}
+                  className="text-xs font-semibold shadow-xs cursor-pointer"
+                >
+                  {isEs ? "Vincular procedimiento" : "Link procedure"}
+                </Button>
+              </div>
             }
           >
             <NotionBlockList
               blocks={blocks}
               onChange={setBlocks}
               allowLinkProcedure={true}
+              locale={locale}
             />
           </FormSection>
         </div>
@@ -504,6 +537,16 @@ export function ChapterContentEditor({
             hideHeader
             hideAttachToggle
             showPassingScore={true}
+            sourceType="chapter"
+            chapterContext={{
+              courseName,
+              chapterNumber,
+              titleEn: title.en,
+              titleEs: title.es,
+              purposeEn: purpose.en,
+              purposeEs: purpose.es,
+              blocks,
+            }}
             onChange={(next) => {
               setQuiz(next);
               if (quizError) setQuizError(null);
@@ -635,6 +678,14 @@ export function ChapterContentEditor({
         blocks={blocks}
         linkedProceduresMap={linkedProceduresMap}
         quiz={quiz}
+      />
+
+      {/* LINK PROCEDURE MODAL FROM HEADER */}
+      <LinkProcedureModal
+        open={isLinkModalOpen}
+        onClose={() => setIsLinkModalOpen(false)}
+        onConfirm={handleConfirmLinkProcedure}
+        locale={locale}
       />
     </div>
   );

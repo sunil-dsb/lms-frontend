@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   QuizAiModal,
   type QuizAiModalProcedureContext,
+  type QuizAiModalChapterContext,
 } from "@/components/admin/quiz-ai-modal";
 import type {
   ProcedureQuiz,
@@ -75,6 +76,114 @@ function emptyQuestion(
           : `s-${Math.random().toString(36).slice(2, 10)}`,
       label: { en: "", es: "" },
     })),
+  };
+}
+
+function cleanQuestionForEditor(
+  q: ProcedureQuizQuestion,
+): ProcedureQuizQuestion {
+  const isSeq = q.type === "sequence";
+  const choices = (q.choices || []).map((c) => ({
+    id: c.id || makeId(),
+    label: {
+      en: typeof c.label === "string" ? c.label : (c.label?.en ?? ""),
+      es: typeof c.label === "string" ? c.label : (c.label?.es ?? ""),
+    },
+  }));
+  const sequenceItems = (
+    q.sequenceItems && q.sequenceItems.length > 0
+      ? q.sequenceItems
+      : Array.from({ length: 3 }, () => ({
+          id: makeId(),
+          label: { en: "", es: "" },
+        }))
+  ).map((s) => ({
+    id: s.id || makeId(),
+    label: {
+      en: typeof s.label === "string" ? s.label : (s.label?.en ?? ""),
+      es: typeof s.label === "string" ? s.label : (s.label?.es ?? ""),
+    },
+  }));
+
+  // Prevent cross-contamination: if question is multiple_choice and sequenceItems was copied from choices
+  if (!isSeq && choices.length > 0 && choices.length === sequenceItems.length) {
+    const isDupe = choices.every(
+      (c, i) =>
+        (c.label.en || "").trim() ===
+          (sequenceItems[i]?.label.en || "").trim() &&
+        (c.label.es || "").trim() ===
+          (sequenceItems[i]?.label.es || "").trim() &&
+        Boolean((c.label.en || "").trim() || (c.label.es || "").trim()),
+    );
+    if (isDupe) {
+      sequenceItems.splice(
+        0,
+        sequenceItems.length,
+        ...Array.from({ length: 3 }, () => ({
+          id: makeId(),
+          label: { en: "", es: "" },
+        })),
+      );
+    }
+  }
+
+  // Prevent cross-contamination: if question is sequence and choices was copied from sequenceItems
+  if (
+    isSeq &&
+    sequenceItems.length > 0 &&
+    sequenceItems.length === choices.length
+  ) {
+    const isDupe = sequenceItems.every(
+      (s, i) =>
+        (s.label.en || "").trim() === (choices[i]?.label.en || "").trim() &&
+        (s.label.es || "").trim() === (choices[i]?.label.es || "").trim() &&
+        Boolean((s.label.en || "").trim() || (s.label.es || "").trim()),
+    );
+    if (isDupe) {
+      choices.splice(
+        0,
+        choices.length,
+        ...Array.from({ length: 3 }, () => ({
+          id: makeId(),
+          label: { en: "", es: "" },
+        })),
+      );
+    }
+  }
+
+  return {
+    id: q.id || makeId(),
+    type: isSeq ? ("sequence" as const) : ("multiple_choice" as const),
+    sourceProcedureId: q.sourceProcedureId,
+    sourceProcedureTitle: q.sourceProcedureTitle,
+    prompt: {
+      en:
+        typeof q.prompt === "string"
+          ? q.prompt
+          : (q.prompt?.en ?? q.question?.en ?? ""),
+      es:
+        typeof q.prompt === "string"
+          ? q.prompt
+          : (q.prompt?.es ?? q.question?.es ?? ""),
+    },
+    choices:
+      choices.length >= 2
+        ? choices
+        : Array.from({ length: 3 }, () => ({
+            id: makeId(),
+            label: { en: "", es: "" },
+          })),
+    correctChoiceId:
+      q.correctChoiceId && choices.some((c) => c.id === q.correctChoiceId)
+        ? q.correctChoiceId
+        : choices[0]?.id || "",
+    sequenceItems:
+      sequenceItems.length >= 2
+        ? sequenceItems
+        : Array.from({ length: 3 }, () => ({
+            id: makeId(),
+            label: { en: "", es: "" },
+          })),
   };
 }
 
@@ -332,8 +441,11 @@ interface QuizEditorProps {
   hideAttachToggle?: boolean;
   showPassingScore?: boolean;
   onDetach?: () => void;
+  sourceType?: "procedure" | "chapter";
   procedureId?: string | null;
   procedureContext?: QuizAiModalProcedureContext | null;
+  chapterId?: string | null;
+  chapterContext?: QuizAiModalChapterContext | null;
 }
 
 export function QuizEditor({
@@ -345,8 +457,11 @@ export function QuizEditor({
   hideAttachToggle = false,
   showPassingScore = false,
   onDetach,
+  sourceType = "procedure",
   procedureId,
   procedureContext,
+  chapterId,
+  chapterContext,
 }: QuizEditorProps): React.ReactElement {
   const locale = useLocale();
   const isEs = locale === "es";
@@ -366,43 +481,7 @@ export function QuizEditor({
         initialValue.minCorrectAnswers ??
         Math.max(1, Math.ceil(initialValue.questions.length * 0.7)),
       passingScorePercent: initialValue.passingScorePercent,
-      questions: initialValue.questions.map((q) => ({
-        id: q.id || makeId(),
-        type: q.type || "multiple_choice",
-        sourceProcedureId: q.sourceProcedureId,
-        sourceProcedureTitle: q.sourceProcedureTitle,
-        prompt: {
-          en:
-            typeof q.prompt === "string"
-              ? q.prompt
-              : (q.prompt?.en ?? q.question?.en ?? ""),
-          es:
-            typeof q.prompt === "string"
-              ? q.prompt
-              : (q.prompt?.es ?? q.question?.es ?? ""),
-        },
-        choices: (q.choices || []).map((c) => ({
-          id: c.id || makeId(),
-          label: {
-            en: typeof c.label === "string" ? c.label : (c.label?.en ?? ""),
-            es: typeof c.label === "string" ? c.label : (c.label?.es ?? ""),
-          },
-        })),
-        correctChoiceId: q.correctChoiceId ?? "",
-        sequenceItems: (q.sequenceItems && q.sequenceItems.length > 0
-          ? q.sequenceItems
-          : Array.from({ length: 3 }, () => ({
-              id: makeId(),
-              label: { en: "", es: "" },
-            }))
-        ).map((s) => ({
-          id: s.id || makeId(),
-          label: {
-            en: typeof s.label === "string" ? s.label : (s.label?.en ?? ""),
-            es: typeof s.label === "string" ? s.label : (s.label?.es ?? ""),
-          },
-        })),
-      })),
+      questions: initialValue.questions.map(cleanQuestionForEditor),
     };
   });
 
@@ -427,43 +506,7 @@ export function QuizEditor({
             value.minCorrectAnswers ??
             prev.minCorrectAnswers ??
             Math.max(1, Math.ceil(value.questions.length * 0.7)),
-          questions: value.questions.map((q) => ({
-            id: q.id || makeId(),
-            type: q.type || "multiple_choice",
-            sourceProcedureId: q.sourceProcedureId,
-            sourceProcedureTitle: q.sourceProcedureTitle,
-            prompt: {
-              en:
-                typeof q.prompt === "string"
-                  ? q.prompt
-                  : (q.prompt?.en ?? q.question?.en ?? ""),
-              es:
-                typeof q.prompt === "string"
-                  ? q.prompt
-                  : (q.prompt?.es ?? q.question?.es ?? ""),
-            },
-            choices: (q.choices || []).map((c) => ({
-              id: c.id || makeId(),
-              label: {
-                en: typeof c.label === "string" ? c.label : (c.label?.en ?? ""),
-                es: typeof c.label === "string" ? c.label : (c.label?.es ?? ""),
-              },
-            })),
-            correctChoiceId: q.correctChoiceId ?? "",
-            sequenceItems: (q.sequenceItems && q.sequenceItems.length > 0
-              ? q.sequenceItems
-              : Array.from({ length: 3 }, () => ({
-                  id: makeId(),
-                  label: { en: "", es: "" },
-                }))
-            ).map((s) => ({
-              id: s.id || makeId(),
-              label: {
-                en: typeof s.label === "string" ? s.label : (s.label?.en ?? ""),
-                es: typeof s.label === "string" ? s.label : (s.label?.es ?? ""),
-              },
-            })),
-          })),
+          questions: value.questions.map(cleanQuestionForEditor),
         };
       });
     }
@@ -474,27 +517,6 @@ export function QuizEditor({
     setQuestionLangs((prev) => ({ ...prev, [qId]: l }));
 
   const update = (next: ProcedureQuiz): void => {
-    const hasQuestions = next.questions?.some((q) => {
-      const p = q.prompt as unknown;
-      const promptText =
-        typeof p === "string"
-          ? p
-          : (p as { en?: string; es?: string })?.en ||
-            (p as { en?: string; es?: string })?.es ||
-            "";
-      if (promptText.trim()) return true;
-      return q.choices?.some((c) => {
-        const l = c.label as unknown;
-        const labelText =
-          typeof l === "string"
-            ? l
-            : (l as { en?: string; es?: string })?.en ||
-              (l as { en?: string; es?: string })?.es ||
-              "";
-        return Boolean(labelText.trim());
-      });
-    });
-
     const totalQ = next.questions.length;
     const clampedMin = next.minCorrectAnswers
       ? Math.min(Math.max(1, next.minCorrectAnswers), Math.max(1, totalQ))
@@ -503,7 +525,7 @@ export function QuizEditor({
     const enriched: ProcedureQuiz = {
       ...next,
       minCorrectAnswers: clampedMin,
-      attached: hideAttachToggle ? true : hasQuestions ? true : next.attached,
+      attached: hideAttachToggle ? true : Boolean(next.attached),
     };
     setWorking(enriched);
     onChange(enriched);
@@ -636,7 +658,7 @@ export function QuizEditor({
     if (!q || q.type === type) return;
 
     if (type === "sequence") {
-      const sequenceItems =
+      const existingItems =
         q.sequenceItems && q.sequenceItems.length >= 2
           ? q.sequenceItems
           : Array.from({ length: 3 }, () => ({
@@ -644,23 +666,65 @@ export function QuizEditor({
               label: { en: "", es: "" },
             }));
 
+      // Never duplicate choices into sequence items
+      const isDupe =
+        q.choices &&
+        q.choices.length > 0 &&
+        existingItems.length === q.choices.length &&
+        existingItems.every(
+          (item, idx) =>
+            (item.label.en || "").trim() ===
+              (q.choices[idx]?.label.en || "").trim() &&
+            (item.label.es || "").trim() ===
+              (q.choices[idx]?.label.es || "").trim() &&
+            Boolean(
+              (item.label.en || "").trim() || (item.label.es || "").trim(),
+            ),
+        );
+
+      const sequenceItems = isDupe
+        ? Array.from({ length: 3 }, () => ({
+            id: makeId(),
+            label: { en: "", es: "" },
+          }))
+        : existingItems;
+
       updateQuestion(qi, {
         type: "sequence",
-        choices: [],
-        correctChoiceId: "",
         sequenceItems,
       });
       return;
     }
 
     // Switching to multiple_choice
-    const choices =
+    const existingChoices =
       q.choices && q.choices.length >= 2
         ? q.choices
         : Array.from({ length: 3 }, () => ({
             id: makeId(),
             label: { en: "", es: "" },
           }));
+
+    // Never duplicate sequence items into choices
+    const isDupe =
+      q.sequenceItems &&
+      q.sequenceItems.length > 0 &&
+      existingChoices.length === q.sequenceItems.length &&
+      existingChoices.every(
+        (c, idx) =>
+          (c.label.en || "").trim() ===
+            (q.sequenceItems![idx]?.label.en || "").trim() &&
+          (c.label.es || "").trim() ===
+            (q.sequenceItems![idx]?.label.es || "").trim() &&
+          Boolean((c.label.en || "").trim() || (c.label.es || "").trim()),
+      );
+
+    const choices = isDupe
+      ? Array.from({ length: 3 }, () => ({
+          id: makeId(),
+          label: { en: "", es: "" },
+        }))
+      : existingChoices;
 
     updateQuestion(qi, {
       type: "multiple_choice",
@@ -669,7 +733,6 @@ export function QuizEditor({
         q.correctChoiceId && choices.some((c) => c.id === q.correctChoiceId)
           ? q.correctChoiceId
           : choices[0]?.id || "",
-      sequenceItems: undefined,
     });
   };
 
@@ -780,9 +843,13 @@ export function QuizEditor({
               </span>
             </div>
             <p className="text-xs text-[var(--color-ink-2)] line-clamp-1">
-              {isEs
-                ? "Crea preguntas bilingües (MCQ y Secuencia) basadas en este procedimiento."
-                : "Generate bilingual Multiple Choice and Sequence questions based on this procedure."}
+              {sourceType === "chapter"
+                ? isEs
+                  ? "Crea preguntas bilingües (MCQ y Secuencia) basadas en este capítulo."
+                  : "Generate bilingual Multiple Choice and Sequence questions based on this chapter."
+                : isEs
+                  ? "Crea preguntas bilingües (MCQ y Secuencia) basadas en este procedimiento."
+                  : "Generate bilingual Multiple Choice and Sequence questions based on this procedure."}
             </p>
           </div>
         </div>
@@ -1215,8 +1282,11 @@ export function QuizEditor({
       <QuizAiModal
         open={aiModalOpen}
         onClose={() => setAiModalOpen(false)}
+        sourceType={sourceType}
         procedureId={procedureId}
         procedureContext={procedureContext}
+        chapterId={chapterId}
+        chapterContext={chapterContext}
         existingQuestionsCount={
           working.questions.filter((q) =>
             Boolean(q.prompt?.en?.trim() || q.prompt?.es?.trim()),
