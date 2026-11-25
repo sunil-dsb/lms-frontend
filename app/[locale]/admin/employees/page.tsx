@@ -1,16 +1,24 @@
 import * as React from "react";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Button } from "@/components/ui/button";
+import { fetchMe } from "@/lib/api";
+import { canInviteEmployees } from "@/lib/rbac";
 import { EmployeesClientTable } from "./employees-client-table";
 import type { EmployeeStatus } from "@/lib/types";
 import { PageHeader } from "@/components/admin/page-header";
-import { FilterChips } from "@/components/ui/filter-chips";
 import { LuPlus } from "react-icons/lu";
 
 interface PageProps {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    role?: string;
+    station?: string;
+    job?: string;
+    q?: string;
+  }>;
 }
 
 const STATUS_VALUES: readonly (EmployeeStatus | "all")[] = [
@@ -27,6 +35,15 @@ function parseStatus(raw: string | undefined): EmployeeStatus | "all" {
   return "all";
 }
 
+function parseRole(
+  raw: string | undefined,
+): "all" | "supervisor" | "employee" | "manager" {
+  if (raw === "supervisor" || raw === "employee" || raw === "manager") {
+    return raw;
+  }
+  return "all";
+}
+
 export default async function AdminEmployeesPage({
   params,
   searchParams,
@@ -36,11 +53,11 @@ export default async function AdminEmployeesPage({
 
   const sp = await searchParams;
   const status = parseStatus(sp.status);
+  const roleParam = parseRole(sp.role);
+  const stationParam = sp.station || "all";
+  const jobParam = sp.job || "all";
   const q = (sp.q ?? "").trim();
 
-  // No server-side fetching here on purpose: the list, role and station
-  // calls are made client-side by EmployeesClientTable (React Query —
-  // visible in the Network tab, cached and shared app-wide).
   const t = await getTranslations("admin");
   const tc = await getTranslations("common");
 
@@ -65,11 +82,19 @@ export default async function AdminEmployeesPage({
     noMatches: t("noMatches"),
   };
 
-  const statusBadge = (s: EmployeeStatus): string => {
-    if (s === "pending") return t("statusPending");
-    if (s === "active") return t("statusActive");
-    return t("statusDeactivated");
-  };
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join("; ");
+
+  let canInvite = false;
+  try {
+    const { employee: me } = await fetchMe(cookieHeader);
+    canInvite = canInviteEmployees(me.role);
+  } catch {
+    // fallback
+  }
 
   return (
     <div className="mx-auto w-full max-w-page space-y-6 pb-12">
@@ -77,41 +102,23 @@ export default async function AdminEmployeesPage({
         title={t("listHeading")}
         subtitle={t("peopleSubtitle")}
         actions={
-          <Link href={`/${locale}/admin/employees/new`}>
-            <Button icon={LuPlus}>{t("inviteEmployee")}</Button>
-          </Link>
+          canInvite ? (
+            <Link href={`/${locale}/admin/employees/new`}>
+              <Button icon={LuPlus}>{t("inviteEmployee")}</Button>
+            </Link>
+          ) : null
         }
       />
 
-      {q ? (
-        <p className="flex flex-wrap items-center gap-2 text-base text-[var(--color-ink-2)]">
-          {t("filteredBy", { q })}
-          <Link
-            href={`/${locale}/admin/employees?status=${status}`}
-            className="font-semibold text-[var(--color-brand-700)] underline-offset-2 hover:underline"
-          >
-            {t("clearFilter")}
-          </Link>
-        </p>
-      ) : null}
-
-      <FilterChips
-        label={locale === "es" ? "Estado" : "Status"}
-        value={status}
-        chips={STATUS_VALUES.map((s) => ({
-          value: s,
-          label: s === "all" ? t("filterAll") : statusBadge(s),
-          href: `/${locale}/admin/employees?status=${s}`,
-        }))}
-      />
-
-      {/* Keyed on the URL filters: client state survives same-route
-          navigations, so a chip / clear-link click must re-seed the
-          table's local search instead of carrying it over. */}
+      {/* Roster Table with unified Toolbar (Status CapsuleTabs with counts, 
+          Search input, Role/Station/Job dropdowns, and Removable Active Filters) */}
       <EmployeesClientTable
-        key={`${status}-${q}`}
-        statusFilter={status}
-        searchQuery={q}
+        key={`${status}-${roleParam}-${stationParam}-${jobParam}-${q}`}
+        initialStatus={status}
+        initialRole={roleParam}
+        initialStation={stationParam}
+        initialJob={jobParam}
+        initialSearch={q}
         locale={locale}
         labels={labels}
       />
