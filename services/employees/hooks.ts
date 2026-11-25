@@ -13,19 +13,31 @@ export const EMPLOYEES_QUERY_KEY = ["employees"] as const;
  * backend round-trip.
  */
 export function useEmployees(options: EmployeeFilterOptions = {}) {
+  const page = options.page ?? 1;
+  const limit = options.limit ?? 10;
   const status = options.status ?? "all";
+  const role = options.role ?? "all";
+  const stationId = options.stationId ?? "all";
+  const jobId = options.jobId ?? "all";
   const q = options.q?.trim() ?? "";
   const query = useQuery({
-    queryKey: [...EMPLOYEES_QUERY_KEY, { status, q }],
-    queryFn: () => fetchEmployees({ status, q }).then((r) => r.employees),
-    // The key swaps on every debounced keystroke — keep the previous rows
-    // on screen instead of flashing the loading state (v5 API).
+    queryKey: [
+      ...EMPLOYEES_QUERY_KEY,
+      { page, limit, status, role, stationId, jobId, q },
+    ],
+    queryFn: () =>
+      fetchEmployees({ page, limit, status, role, stationId, jobId, q }),
+    // The key swaps on every debounced keystroke / filter / page change — keep
+    // the previous rows on screen instead of flashing the loading state (v5 API).
     placeholderData: keepPreviousData,
   });
 
   return {
-    employees: query.data ?? [],
+    employees: query.data?.employees ?? [],
+    meta: query.data?.meta,
+    statusCounts: query.data?.statusCounts,
     isLoading: query.isLoading,
+    isFetching: query.isFetching,
     error:
       query.error instanceof Error
         ? query.error

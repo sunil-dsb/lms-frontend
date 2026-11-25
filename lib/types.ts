@@ -1,16 +1,24 @@
-export const ROLES = ["super_admin", "manager", "employee"] as const;
+export const ROLES = [
+  "super_admin",
+  "manager",
+  "supervisor",
+  "employee",
+] as const;
 export type SystemRole = (typeof ROLES)[number];
 export type EmployeeRole = (typeof ROLES)[number] | "admin";
 export type ClearanceLevel = "general" | "station" | "confidential" | "master";
 export type LanguagePref = "en" | "es";
 export type EmployeeStatus = "pending" | "active" | "deactivated";
-export type AccessLevel = "employee" | "manager";
+export type AccessLevel = "employee" | "supervisor" | "manager";
+export type Gender = "male" | "female" | "other" | "prefer_not_to_say";
 
 export interface Employee {
   id: string;
   name: string;
   email?: string | null;
   locationId: string;
+  employeeCode?: string | null;
+  locationName?: string | null;
   accessLevel?: AccessLevel;
   roleIds: string[];
   jobIds?: string[];
@@ -20,6 +28,21 @@ export interface Employee {
   status?: EmployeeStatus;
   roleClearance?: ClearanceLevel | null;
   createdAt?: string;
+  dateOfBirth?: string | null;
+  fathersName?: string | null;
+  gender?: Gender | null;
+  address?: string | null;
+  phoneNumber?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactRelation?: string | null;
+  emergencyContactPhone?: string | null;
+  startDate?: string | null;
+  sinNumber?: string | null;
+  hourlyRate?: string | number | null;
+  supervisors?: Array<{ id: string; name: string; email?: string | null }>;
+  managers?: Array<{ id: string; name: string; email?: string | null }>;
+  supervisorIds?: string[];
+  managerIds?: string[];
   /** Denormalised names from GET /api/auth/me — prefer these over extra lookups. */
   stations?: Array<{ id: string; name: string }>;
   jobs?: Array<{ id: string; name: string }>;
@@ -79,9 +102,10 @@ export interface CreateEmployeeInput {
   name: string;
   email?: string | null;
   locationId: string;
-  /** LMS access tier. Required. 'manager' implies elevated permissions;
+  /** LMS access tier. Required. 'manager' or 'supervisor' implies elevated permissions;
    *  'admin' is not assignable through the employee invite flow. */
   accessLevel: AccessLevel;
+  role?: EmployeeRole;
   /** One or more job roles (Line Cook, Prep Cook, ...). The first entry
    *  is treated as the employee's primary role. */
   roleIds: string[];
@@ -89,6 +113,19 @@ export interface CreateEmployeeInput {
   stationIds?: string[];
   employeeCode?: string | null;
   languagePref?: LanguagePref;
+  dateOfBirth?: string | null;
+  fathersName?: string | null;
+  gender?: Gender | null;
+  address?: string | null;
+  phoneNumber?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactRelation?: string | null;
+  emergencyContactPhone?: string | null;
+  startDate?: string | null;
+  sinNumber?: string | null;
+  hourlyRate?: string | number | null;
+  supervisorIds?: string[];
+  managerIds?: string[];
 }
 
 export interface ApiError {
@@ -400,7 +437,7 @@ export interface ProcedureBody {
   blocks: ProcedureBlock[];
 }
 
-export type QuizQuestionType = 'multiple_choice' | 'sequence';
+export type QuizQuestionType = "multiple_choice" | "sequence";
 
 export interface QuizSequenceItem {
   id: string;
@@ -420,9 +457,9 @@ export interface ProcedureQuizQuestion {
   sourceProcedureTitle?: string;
 }
 
-/** Quiz attached to a procedure. `attached` is the manual toggle set by
- *  the admin in the wizard; visibility on the reader side is the OR of
- *  `attached` and `procedure.attachedToTraining` (either path renders it). */
+/** Quiz authored in the procedure editor. Procedure quizzes are always
+ *  shown when they contain questions; `attached` remains true for legacy
+ *  quiz records and shared editor compatibility. */
 export interface ProcedureQuiz {
   id?: string;
   questions: ProcedureQuizQuestion[];
@@ -448,8 +485,7 @@ export interface Quiz {
   nameEs?: string;
   quizType?: string;
   questions: ProcedureQuizQuestion[];
-  /** Manual toggle. Visibility on the read side is the OR of this flag
-   *  and the parent procedure / course's training-attached flag. */
+  /** Legacy compatibility field; the frontend treats quizzes as attached. */
   attached: boolean;
   createdAt: string;
   updatedAt: string;
@@ -539,7 +575,7 @@ export interface Procedure {
   /** FK to the training course this SOP feeds into. `null` means the SOP
    *  is standalone — it is not part of any training plan and the employee
    *  only ever sees it via the library search. When non-null the linked
-   *  training course is what gates quiz visibility per `quizMode`. The
+   *  training course is associated with this procedure. The
    *  backend will add this column as `linked_training_id text` (nullable,
    *  no FK constraint yet — the `training_courses` table itself lands in
    *  stage 3, so the column stays free of the FK until then). */
@@ -668,7 +704,7 @@ export interface CreateProcedureInput {
   quizId?: string | null;
   /** Marks this procedure as a training course (vs an SOP / recipe).
    *  Surfaces it in the admin Training list, makes the employee Training
-   *  tab its home, and gates the optional quiz block on read. */
+   *  tab its home. */
   attachedToTraining?: boolean;
   /** Procedure ids of SOPs / recipes referenced from this course.
    *  Legacy training-course shape. */

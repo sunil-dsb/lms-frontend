@@ -19,21 +19,33 @@ export type {
 };
 
 export interface EmployeeFilterOptions {
+  page?: number;
+  limit?: number;
   status?: EmployeeStatus | "all";
+  role?:
+    "all" | "supervisor" | "employee" | "manager" | "admin" | "super_admin";
+  stationId?: string;
+  jobId?: string;
   q?: string;
 }
 
-export const EMPLOYEES_UPDATED_EVENT = "lms_employees_updated";
-
-export interface UpdateEmployeeInput {
-  name: string;
-  email: string | null;
-  locationId: string;
-  accessLevel: AccessLevel;
-  role: EmployeeRole;
-  roleIds: string[];
-  stationIds: string[];
+export interface EmployeesFetchResult {
+  employees: AdminEmployee[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  statusCounts: {
+    all: number;
+    pending: number;
+    active: number;
+    deactivated: number;
+  };
 }
+
+export const EMPLOYEES_UPDATED_EVENT = "lms_employees_updated";
 
 /** One row of GET /api/v1/employees/:id/training — a training course the
  *  employee is assigned to, with derived per-course progress. `status` is
