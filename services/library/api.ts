@@ -87,6 +87,7 @@ export async function fetchProcedures(
     ["draft", "published", "archived"].includes(options.status)
       ? options.status
       : undefined;
+  const isPromo = options.isPromo;
 
   // ID-list filters and status filters live on GET /procedures/filter; plain search/page
   // stay on GET /procedures. Both return { procedures, meta }.
@@ -94,10 +95,12 @@ export async function fetchProcedures(
     (validCategoryIds?.length ?? 0) > 0 ||
     (validSubcategoryIds?.length ?? 0) > 0 ||
     (validStationIds?.length ?? 0) > 0 ||
-    Boolean(validStatus);
+    Boolean(validStatus) ||
+    isPromo !== undefined;
 
   const params: Record<string, any> = { page, limit };
   if (validStatus) params.status = validStatus;
+  if (isPromo !== undefined) params.isPromo = String(isPromo);
   if (search) params.search = search;
   if (useFilter) {
     if (validCategoryIds?.length)

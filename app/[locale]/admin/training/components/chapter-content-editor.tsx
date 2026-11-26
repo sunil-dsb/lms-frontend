@@ -45,6 +45,7 @@ interface ChapterContentEditorProps {
   courseName: string;
   chapterNumber: number;
   initialChapter?: EditorChapter | null;
+  initialStep?: WizardStep;
   onSave: (chapter: EditorChapter) => void;
   onCancel: () => void;
 }
@@ -56,12 +57,13 @@ export function ChapterContentEditor({
   courseName,
   chapterNumber,
   initialChapter,
+  initialStep = "content",
   onSave,
   onCancel,
 }: ChapterContentEditorProps): React.ReactElement {
   const isEs = locale === "es";
 
-  const [step, setStep] = React.useState<WizardStep>("content");
+  const [step, setStep] = React.useState<WizardStep>(initialStep);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -535,7 +537,6 @@ export function ChapterContentEditor({
           <QuizEditor
             value={quiz}
             hideHeader
-            hideAttachToggle
             showPassingScore={true}
             sourceType="chapter"
             chapterContext={{

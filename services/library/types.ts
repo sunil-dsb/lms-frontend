@@ -6,6 +6,7 @@ export interface ProcedureFilterOptions {
   locationId?: string;
   categoryId?: string;
   status?: string;
+  isPromo?: boolean;
   q?: string;
   page?: number;
   /** Full-text search (backend `search` param, matches titleEn/titleEs). */

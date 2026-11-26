@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
+import { LuLoader } from "react-icons/lu";
 import type { Procedure, TrainingAssignment } from "@/lib/types";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -31,6 +33,7 @@ interface CourseAssignmentModalProps {
   locale: string;
   course: Procedure | null;
   onAssigned?: (countAssigned: number) => void;
+  onEditMissingChapter?: (chapterNumber: number) => void;
 }
 
 type ModalView = "main" | "people";
@@ -60,6 +63,7 @@ export function CourseAssignmentModal({
   locale,
   course,
   onAssigned,
+  onEditMissingChapter,
 }: CourseAssignmentModalProps): React.ReactElement | null {
   // Modal Views: "main" (Image 1) or "people" (Image 2)
   const [view, setView] = React.useState<ModalView>("main");
@@ -83,6 +87,7 @@ export function CourseAssignmentModal({
     null,
   );
   const [isLoadingData, setIsLoadingData] = React.useState(false);
+  const [isPageRedirecting, setIsPageRedirecting] = React.useState(false);
 
   // Main modal state
   const [scope, setScope] = React.useState<AssignScope>("everyone");
@@ -584,8 +589,16 @@ export function CourseAssignmentModal({
 
   return (
     <>
+      {/* Subtle blur overlay that disables clicks while redirecting */}
+      {isPageRedirecting &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] backdrop-blur-[2px] bg-black/5 cursor-wait select-none pointer-events-auto" />,
+          document.body,
+        )}
+
       <Modal
-        open={open}
+        open={open && !isPageRedirecting}
         onClose={onClose}
         size="xl"
         className="p-0 overflow-hidden w-full max-w-[720px] h-[92vh] sm:h-[640px] max-h-[94vh] rounded-[var(--radius-xl)] shadow-xl flex flex-col border border-[var(--color-line)] bg-[var(--color-surface)]"
@@ -636,6 +649,15 @@ export function CourseAssignmentModal({
               toggleJob={toggleJob}
               onSelectAllStations={handleSelectAllStations}
               onDeselectAllStations={handleDeselectAllStations}
+              onStartRedirect={() => setIsPageRedirecting(true)}
+              onEditMissingChapter={
+                onEditMissingChapter
+                  ? (chNum) => {
+                      setIsPageRedirecting(true);
+                      onEditMissingChapter(chNum);
+                    }
+                  : undefined
+              }
               onOpenPeopleView={() => {
                 if (scope === "everyone" || selectedPeopleIds.size === 0) {
                   setSelectedPeopleIds(new Set(mainScopeEmployeeIds));

@@ -3,11 +3,6 @@
 /**
  * QuizReader — the read-side quiz block on a procedure detail page.
  *
- * Visibility: the quiz renders when either `quiz.attached` is true OR the
- * procedure is part of a training plan (`attachedToTraining`). When the
- * procedure has a quiz but neither flag is on, admins see a one-click
- * "Attach quiz" banner above the document body.
- *
  * The reader mirrors the QuizEditor surface one-to-one: collapsed-by-default
  * accordion rows, click to expand, correct answer highlighted in ok-green
  * with a "Correct" badge. This keeps what the employee sees in lockstep with
@@ -17,14 +12,17 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import type { Localised, ProcedureQuiz, ProcedureQuizQuestion } from "@/lib/types";
+import type {
+  Localised,
+  ProcedureQuiz,
+  ProcedureQuizQuestion,
+} from "@/lib/types";
 import {
   LuCheck,
   LuChevronRight,
   LuCircle,
   LuCircleCheck,
   LuLoader,
-  LuMessageCircleQuestion,
   LuRotateCcw,
   LuX,
 } from "react-icons/lu";
@@ -272,7 +270,9 @@ export function QuizReader({
                           sequenceOrders[q.id] ||
                           (q.sequenceItems || []).map((s) => s.id)
                         }
-                        onChange={(newIds) => handleSequenceChange(q.id, newIds)}
+                        onChange={(newIds) =>
+                          handleSequenceChange(q.id, newIds)
+                        }
                         locale={locale}
                         isReview={Boolean(sequenceChecked[q.id])}
                         correctIds={(q.sequenceItems || []).map((s) => s.id)}
@@ -315,14 +315,18 @@ export function QuizReader({
                               <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[var(--ok)] text-white shadow-xs">
                                 <LuCheck className="size-3.5 stroke-[3]" />
                               </span>
-                              <span className="leading-snug">{t("orderCorrect")}</span>
+                              <span className="leading-snug">
+                                {t("orderCorrect")}
+                              </span>
                             </>
                           ) : (
                             <>
                               <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[var(--bad)] text-white shadow-xs">
                                 <LuX className="size-3.5 stroke-[3]" />
                               </span>
-                              <span className="leading-snug">{t("orderIncorrect")}</span>
+                              <span className="leading-snug">
+                                {t("orderIncorrect")}
+                              </span>
                             </>
                           )}
                         </div>
@@ -335,7 +339,10 @@ export function QuizReader({
                         const isCorrect =
                           hasCorrectId && c.id === q.correctChoiceId;
                         const isWrongSelection =
-                          hasAnswered && isSelected && hasCorrectId && !isCorrect;
+                          hasAnswered &&
+                          isSelected &&
+                          hasCorrectId &&
+                          !isCorrect;
 
                         let stateStyle =
                           "border border-[var(--line-2)] bg-[var(--surface)] text-[var(--ink)] hover:border-[var(--line-3)] hover:bg-[var(--panel)]";
@@ -389,7 +396,9 @@ export function QuizReader({
                           >
                             <RadioDot
                               selected={isSelected}
-                              isCorrect={hasCorrectId && hasAnswered && isCorrect}
+                              isCorrect={
+                                hasCorrectId && hasAnswered && isCorrect
+                              }
                               isWrong={isWrongSelection}
                             />
                             <span className="flex-1 leading-snug text-[var(--ink)]">
@@ -408,58 +417,5 @@ export function QuizReader({
         })}
       </ol>
     </section>
-  );
-}
-
-/** Banner shown to admins when the procedure has a quiz but neither
- *  `quiz.attached` nor `attachedToTraining` is true. One click flips the
- *  attached flag in the mock store (real backend call would PATCH the
- *  procedure). The banner is rendered above the document body so it's the
- *  first thing the admin notices. */
-export function QuizAttachBanner({
-  onAttach,
-  onDismiss,
-  isAttaching,
-}: {
-  onAttach: () => void;
-  onDismiss: () => void;
-  isAttaching?: boolean;
-}): React.ReactElement {
-  const t = useTranslations("employee.doc.quiz");
-  return (
-    <div
-      role="status"
-      className="mb-6 flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--color-warn)] bg-[var(--color-warn-tint)] p-4 shadow-e1"
-    >
-      <span className="mt-1 flex size-tap-admin shrink-0 items-center justify-center rounded-full bg-[var(--color-warn-tint)] text-[var(--color-warn-ink)]">
-        <LuMessageCircleQuestion className="size-5" aria-hidden="true" />
-      </span>
-      <div className="flex-1 space-y-1">
-        <p className="text-sm font-semibold text-[var(--color-warn-ink)]">
-          {t("bannerTitle")}
-        </p>
-        <p className="text-sm text-[var(--color-warn-ink)]">
-          {t("bannerBody")}
-        </p>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={onDismiss}
-          disabled={isAttaching}
-          className="rounded-full px-3 py-2 text-sm font-semibold text-[var(--color-warn-ink)] hover:bg-[var(--color-warn-tint)] disabled:opacity-50"
-        >
-          {t("bannerDismiss")}
-        </button>
-        <button
-          type="button"
-          onClick={onAttach}
-          disabled={isAttaching}
-          className="rounded-full bg-[var(--color-warn-tint-2)] px-3 py-2 text-sm font-semibold text-[var(--color-warn-ink)] shadow-e1 hover:brightness-95 disabled:opacity-50"
-        >
-          {isAttaching ? t("bannerAttaching") : t("bannerAttach")}
-        </button>
-      </div>
-    </div>
   );
 }

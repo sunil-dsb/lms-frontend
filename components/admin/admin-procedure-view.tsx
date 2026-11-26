@@ -18,9 +18,7 @@ import {
   canPublishProcedure,
   deleteProcedure,
   fetchQuizById,
-  getQuizById,
   setProcedureState,
-  updateQuiz,
   clearLibraryListCache,
 } from "@/lib/api";
 import { updateProcedure, updateProcedurePromo } from "@/services/library/api";
@@ -31,6 +29,7 @@ import {
   ASSIGNED_PROCEDURES_QUERY_KEY,
 } from "@/services/library/hooks";
 import type { Employee, Procedure, ProcedureStatus } from "@/lib/types";
+import { canManageProcedures } from "@/lib/rbac";
 import { Button } from "@/components/ui/button";
 import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
 import { ProcedureArticleBody } from "@/components/doc/procedure-article-body";
@@ -51,6 +50,7 @@ export function AdminProcedureView({
   const t = useTranslations("admin.library.detail");
   const tRow = useTranslations("admin");
   const router = useRouter();
+  const canManage = canManageProcedures(employee.role);
 
   const queryClient = useQueryClient();
   const [proc, setProc] = React.useState<Procedure>(initial);
@@ -87,12 +87,6 @@ export function AdminProcedureView({
       console.error("Failed to update promo settings:", err);
     }
   };
-
-  // Quiz attach banner state. The banner is shown by `<ProcedureArticleBody>`
-  // when a procedure has an authored quiz that isn't yet attached and isn't
-  // gated by training. Admin-only state, mirrors the cook route's wiring.
-  const [bannerDismissed, setBannerDismissed] = React.useState(false);
-  const [isAttaching, setIsAttaching] = React.useState(false);
 
   const [, setQuizTick] = React.useState(0);
   React.useEffect(() => {
@@ -140,22 +134,6 @@ export function AdminProcedureView({
       if (!(err instanceof ApiException)) throw err;
     }
   }, [proc.id, locale, router, t]);
-
-  const handleAttach = React.useCallback(async (): Promise<void> => {
-    if (!proc.quizId) return;
-    const quiz = getQuizById(proc.quizId);
-    if (!quiz || quiz.attached) return;
-    setIsAttaching(true);
-    try {
-      await updateQuiz(proc.quizId, { attached: true });
-      setProc({ ...proc, updatedAt: new Date().toISOString() });
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("lms_procedures_updated"));
-      }
-    } finally {
-      setIsAttaching(false);
-    }
-  }, [proc]);
 
   // The kebab's three items follow the same shape as the explorer's row
   // kebab, so the manager learns one menu and meets it twice.
@@ -266,28 +244,30 @@ export function AdminProcedureView({
               locale={locale === "es" ? "es" : "en"}
             />
           ) : null}
-          <div className="flex items-center gap-2 sm:gap-2 shrink-0">
-            <Button
-              variant="secondary"
-              icon={LuPencil}
-              onClick={() => {
-                window.scrollTo({
-                  top: 0,
-                  left: 0,
-                  behavior: "instant" as ScrollBehavior,
-                });
-                router.push(
-                  `/${locale}/admin/library/${proc.slug || proc.id}/edit`,
-                );
-              }}
-            >
-              <span className="hidden sm:inline">{t("actionsEdit")}</span>
-            </Button>
-            <RowActions
-              triggerLabel={tRow("rowActionsLabel")}
-              items={actionItems}
-            />
-          </div>
+          {canManage ? (
+            <div className="flex items-center gap-2 sm:gap-2 shrink-0">
+              <Button
+                variant="secondary"
+                icon={LuPencil}
+                onClick={() => {
+                  window.scrollTo({
+                    top: 0,
+                    left: 0,
+                    behavior: "instant" as ScrollBehavior,
+                  });
+                  router.push(
+                    `/${locale}/admin/library/${proc.slug || proc.id}/edit`,
+                  );
+                }}
+              >
+                <span className="hidden sm:inline">{t("actionsEdit")}</span>
+              </Button>
+              <RowActions
+                triggerLabel={tRow("rowActionsLabel")}
+                items={actionItems}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -303,7 +283,10 @@ export function AdminProcedureView({
       {/* Why Publish is missing from the kebab: drafts without stations that
           aren't General can't go live. Shown instead of silence so the
           manager knows what to fix (assign a station in the editor). */}
-      {!proc.isArchived && proc.status === "draft" && !publishable ? (
+      {canManage &&
+      !proc.isArchived &&
+      proc.status === "draft" &&
+      !publishable ? (
         <p className="rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-2 text-sm text-[var(--color-ink-2)]">
           {t("publishBlocked")}
         </p>
@@ -314,10 +297,6 @@ export function AdminProcedureView({
         employee={employee}
         effectiveRole="admin"
         locale={locale}
-        onAttachQuiz={handleAttach}
-        isAttaching={isAttaching}
-        bannerDismissed={bannerDismissed}
-        onDismissBanner={() => setBannerDismissed(true)}
       />
 
       <PromoConfigModal

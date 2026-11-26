@@ -81,6 +81,7 @@ export function SubcategoryAccordion({
   onToggle,
   onToggleStation,
   locale,
+  canManageCategories,
 }: {
   category: Category;
   subcategory: Subcategory;
@@ -94,6 +95,7 @@ export function SubcategoryAccordion({
     next: Array<{ id: string; name: string }>,
   ) => void;
   locale: string;
+  canManageCategories: boolean;
 }): React.ReactElement {
   const router = useRouter();
   const subName = isEs ? subcategory.nameEs : subcategory.nameEn;
@@ -264,11 +266,13 @@ export function SubcategoryAccordion({
             <span>{isEs ? "Añadir procedimiento" : "Add procedure"}</span>
           </Button>
 
-          <RowActions
-            items={items}
-            triggerLabel={`${isEs ? "Acciones" : "Actions"}: ${subName}`}
-            className={pending ? "pointer-events-none opacity-50" : undefined}
-          />
+          {canManageCategories ? (
+            <RowActions
+              items={items}
+              triggerLabel={`${isEs ? "Acciones" : "Actions"}: ${subName}`}
+              className={pending ? "pointer-events-none opacity-50" : undefined}
+            />
+          ) : null}
 
           <LuChevronRight
             aria-hidden="true"

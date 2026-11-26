@@ -364,13 +364,6 @@ export function ProcedureEditorReviewPanel({
                       ? t("reviewQuizSummary", { count: quizCount })
                       : t("quizNone")}
                   </p>
-                  {quizCount > 0 ? (
-                    <StatusPill tone={quiz?.attached ? "ok" : "neutral"}>
-                      {quiz?.attached
-                        ? t("reviewQuizAttached")
-                        : t("reviewQuizDetached")}
-                    </StatusPill>
-                  ) : null}
                 </div>
               </li>
 

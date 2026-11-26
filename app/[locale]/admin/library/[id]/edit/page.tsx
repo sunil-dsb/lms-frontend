@@ -1,7 +1,9 @@
 import * as React from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
-import { getProcedureBySlug, ApiException } from "@/lib/api";
+import { fetchMe, getProcedureBySlug, ApiException } from "@/lib/api";
+import { canManageProcedures } from "@/lib/rbac";
 import type { Procedure } from "@/lib/types";
 import { EditProcedureLoader } from "./edit-procedure-loader";
 
@@ -22,6 +24,16 @@ export default async function AdminLibraryEditPage({
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
+
+  try {
+    const { employee } = await fetchMe(cookieHeader);
+    if (!canManageProcedures(employee.role)) {
+      redirect(`/${locale}/admin/library`);
+    }
+  } catch (err) {
+    if ((err as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT"))
+      throw err;
+  }
 
   // Load the procedure to edit when the server can see it. A miss used
   // to 404 immediately — but procedures the server can't reach may still

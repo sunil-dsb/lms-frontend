@@ -266,12 +266,7 @@
         "checkOrder": "Check order",
         "orderCorrect": "All steps are in the correct sequence!",
         "orderIncorrect": "The order is not quite right yet. Drag or use arrows to rearrange.",
-        "shuffleAgain": "Shuffle again",
-        "bannerTitle": "This procedure has an unpublished quiz",
-        "bannerBody": "Attach it now so readers see it next time they open this procedure. If the procedure becomes part of training, the quiz will show automatically.",
-        "bannerAttach": "Attach quiz",
-        "bannerAttaching": "Attaching…",
-        "bannerDismiss": "Dismiss"
+        "shuffleAgain": "Shuffle again"
       }
     },
     "training": {
@@ -423,8 +418,8 @@
     "auditSearchPlaceholder": "Search by name…",
     "auditChangesNone": "No field-level changes recorded.",
     "auditRetry": "Try again",
-    "auditNoAccessTitle": "Super admins only",
-    "auditNoAccessBody": "The audit log is limited to super admins. If you think you should have access, ask one to update your role.",
+    "auditNoAccessTitle": "Admins only",
+    "auditNoAccessBody": "The audit log is limited to admins. If you think you should have access, ask one to update your role.",
     "auditNoAccessBack": "Back to admin home",
     "auditTypeCourse": "Course",
     "auditTypeChapter": "Chapter",
@@ -611,8 +606,6 @@
         "reviewAssignCount": "{count, plural, one {# person} other {# people}}",
         "reviewAssignEmpty": "Nobody picked yet.",
         "reviewQuizLabel": "Quiz",
-        "reviewQuizAttached": "Attached",
-        "reviewQuizDetached": "Not attached",
         "reviewQuizSummary": "{count, plural, one {# question} other {# questions}}",
         "reviewProtectionLabel": "Protection",
         "importChooseTitle": "How would you like to start?",
@@ -747,8 +740,6 @@
         "quiz": {
           "title": "Quiz",
           "description": "Add a short knowledge check that confirms the reader understood this procedure. Author each question, its options, and which option is correct.",
-          "attachedLabel": "Attach quiz to this procedure",
-          "attachedHelp": "When attached, the quiz is visible on the procedure page. If the procedure is part of training, the quiz shows automatically even without this toggle.",
           "promptPlaceholder": "Type the question",
           "choicePlaceholder": "Option {n}",
           "correctBadge": "Correct",

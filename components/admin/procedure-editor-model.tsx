@@ -135,9 +135,7 @@ export function useProcedureEditorModel({
 
   const savedQuiz = initial?.quizId ? getQuizById(initial.quizId) : null;
   const [quiz, setQuiz] = React.useState<ProcedureQuiz | null>(
-    savedQuiz
-      ? { questions: savedQuiz.questions, attached: savedQuiz.attached }
-      : null,
+    savedQuiz ? { questions: savedQuiz.questions, attached: true } : null,
   );
 
   React.useEffect(() => {
@@ -147,7 +145,7 @@ export function useProcedureEditorModel({
         if (loaded && (!loaded.quizType || loaded.quizType === "procedure")) {
           setQuiz({
             questions: loaded.questions,
-            attached: loaded.attached ?? true,
+            attached: true,
           });
         }
       });

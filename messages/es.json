@@ -266,12 +266,7 @@
         "checkOrder": "Verificar orden",
         "orderCorrect": "¡Todos los pasos están en el orden correcto!",
         "orderIncorrect": "El orden aún no es correcto. Arrastra o usa las flechas para reordenar.",
-        "shuffleAgain": "Mezclar de nuevo",
-        "bannerTitle": "Este procedimiento tiene un cuestionario sin publicar",
-        "bannerBody": "Adjúntalo ahora para que los lectores lo vean la próxima vez que abran este procedimiento. Si el procedimiento pasa a formar parte de una capacitación, el cuestionario aparecerá automáticamente.",
-        "bannerAttach": "Adjuntar cuestionario",
-        "bannerAttaching": "Adjuntando…",
-        "bannerDismiss": "Descartar"
+        "shuffleAgain": "Mezclar de nuevo"
       }
     },
     "training": {
@@ -423,8 +418,8 @@
     "auditSearchPlaceholder": "Buscar por nombre…",
     "auditChangesNone": "No se registraron cambios a nivel de campo.",
     "auditRetry": "Intentar de nuevo",
-    "auditNoAccessTitle": "Solo super administradores",
-    "auditNoAccessBody": "El registro de actividad es exclusivo para super administradores. Si crees que deberías tener acceso, pide que actualicen tu rol.",
+    "auditNoAccessTitle": "Solo administradores",
+    "auditNoAccessBody": "El registro de actividad es exclusivo para administradores. Si crees que deberías tener acceso, pide que actualicen tu rol.",
     "auditNoAccessBack": "Volver al inicio de administración",
     "auditTypeCourse": "Curso",
     "auditTypeChapter": "Capítulo",
@@ -611,8 +606,6 @@
         "reviewAssignCount": "{count, plural, one {# persona} other {# personas}}",
         "reviewAssignEmpty": "Aún no se ha elegido a nadie.",
         "reviewQuizLabel": "Cuestionario",
-        "reviewQuizAttached": "Adjunto",
-        "reviewQuizDetached": "No adjunto",
         "reviewQuizSummary": "{count, plural, one {# pregunta} other {# preguntas}}",
         "reviewProtectionLabel": "Protección",
         "importChooseTitle": "¿Cómo te gustaría empezar?",
@@ -747,8 +740,6 @@
         "quiz": {
           "title": "Cuestionario",
           "description": "Añade una breve verificación para confirmar que el lector entendió el procedimiento. Escribe cada pregunta, sus opciones y marca la opción correcta.",
-          "attachedLabel": "Adjuntar cuestionario a este procedimiento",
-          "attachedHelp": "Cuando está adjunto, el cuestionario se muestra en la página del procedimiento. Si el procedimiento forma parte de una capacitación, el cuestionario aparece automáticamente aunque este interruptor esté apagado.",
           "promptPlaceholder": "Escribe la pregunta",
           "choicePlaceholder": "Opción {n}",
           "correctBadge": "Correcta",

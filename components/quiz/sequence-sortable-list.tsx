@@ -106,7 +106,9 @@ function SortableItem({
           {...attributes}
           {...listeners}
           aria-label="Drag to reorder"
-          className="flex size-7 items-center justify-center rounded-lg text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-[var(--color-wash)] active:cursor-grabbing cursor-grab shrink-0 transition-colors"
+          /* touch-none is required: without it the mobile browser claims the
+             gesture as a page scroll, fires pointercancel, and the drag aborts. */
+          className="flex size-7 items-center justify-center rounded-lg touch-none select-none text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-[var(--color-wash)] active:cursor-grabbing cursor-grab shrink-0 transition-colors"
         >
           <LuGripVertical className="size-4" />
         </button>
@@ -254,7 +256,9 @@ export function SequenceSortableList({
 /**
  * Utility to shuffle items ensuring the result is NOT the same as the original correct sequence.
  */
-export function shuffleSequence<T extends { id: string }>(items: T[]): string[] {
+export function shuffleSequence<T extends { id: string }>(
+  items: T[],
+): string[] {
   if (items.length <= 1) return items.map((i) => i.id);
 
   const originalIds = items.map((i) => i.id);
@@ -280,4 +284,3 @@ export function shuffleSequence<T extends { id: string }>(items: T[]): string[] 
   }
   return shuffled;
 }
-

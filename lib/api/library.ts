@@ -428,7 +428,7 @@ function normalizeQuiz(raw: any): Quiz {
     nameEs: raw.nameEs || "",
     quizType: raw.quizType || "procedure",
     questions,
-    attached: raw.attached ?? true,
+    attached: true,
     createdAt: raw.createdAt || new Date().toISOString(),
     updatedAt: raw.updatedAt || new Date().toISOString(),
   };
@@ -628,7 +628,6 @@ export async function createQuiz(input: {
   nameEs?: string;
   quizType?: string;
   questions: Quiz["questions"];
-  attached?: boolean;
 }): Promise<{ quiz: Quiz }> {
   const payload = {
     nameEn: input.nameEn || "Procedure Quiz",
@@ -643,7 +642,7 @@ export async function createQuiz(input: {
     if (raw && (raw.id || raw.questions)) {
       const created = normalizeQuiz({
         ...raw,
-        attached: input.attached ?? true,
+        attached: true,
       });
       const store = getQuizzesStore();
       store.unshift(created);
@@ -662,7 +661,7 @@ export async function createQuiz(input: {
     nameEs: payload.nameEs,
     quizType: payload.quizType,
     questions: input.questions,
-    attached: input.attached ?? true,
+    attached: true,
     createdAt: now,
     updatedAt: now,
   };
@@ -677,7 +676,7 @@ export async function createQuiz(input: {
  *  Falls back to the local store when the API is unreachable. */
 export async function updateQuiz(
   id: string,
-  patch: Partial<Pick<Quiz, "attached" | "questions" | "nameEn" | "nameEs">> & {
+  patch: Partial<Pick<Quiz, "questions" | "nameEn" | "nameEs">> & {
     quizType?: string;
     procedureId?: string;
   },
@@ -699,7 +698,7 @@ export async function updateQuiz(
     if (raw && (raw.id || raw.questions)) {
       const updated = normalizeQuiz({
         ...raw,
-        attached: patch.attached ?? true,
+        attached: true,
       });
       const store = getQuizzesStore();
       const idx = store.findIndex((s) => s.id === id);
@@ -721,6 +720,7 @@ export async function updateQuiz(
   const updated: Quiz = {
     ...store[idx],
     ...patch,
+    attached: true,
     updatedAt: new Date().toISOString(),
   };
   const next = [...store];

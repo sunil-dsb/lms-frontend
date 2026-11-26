@@ -438,7 +438,6 @@ interface QuizEditorProps {
   onChange: (next: ProcedureQuiz | null) => void;
   isSaving?: boolean;
   hideHeader?: boolean;
-  hideAttachToggle?: boolean;
   showPassingScore?: boolean;
   onDetach?: () => void;
   sourceType?: "procedure" | "chapter";
@@ -454,7 +453,6 @@ export function QuizEditor({
   onChange,
   isSaving,
   hideHeader,
-  hideAttachToggle = false,
   showPassingScore = false,
   onDetach,
   sourceType = "procedure",
@@ -474,9 +472,9 @@ export function QuizEditor({
   const initialValue = value ?? quiz ?? null;
 
   const [working, setWorking] = React.useState<ProcedureQuiz>(() => {
-    if (!initialValue) return makeBlankQuiz(hideAttachToggle);
+    if (!initialValue) return makeBlankQuiz();
     return {
-      attached: hideAttachToggle ? true : Boolean(initialValue.attached),
+      attached: true,
       minCorrectAnswers:
         initialValue.minCorrectAnswers ??
         Math.max(1, Math.ceil(initialValue.questions.length * 0.7)),
@@ -501,7 +499,7 @@ export function QuizEditor({
 
         return {
           ...prev,
-          attached: value.attached ?? prev.attached,
+          attached: true,
           minCorrectAnswers:
             value.minCorrectAnswers ??
             prev.minCorrectAnswers ??
@@ -525,14 +523,11 @@ export function QuizEditor({
     const enriched: ProcedureQuiz = {
       ...next,
       minCorrectAnswers: clampedMin,
-      attached: hideAttachToggle ? true : Boolean(next.attached),
+      attached: true,
     };
     setWorking(enriched);
     onChange(enriched);
   };
-
-  const setAttached = (next: boolean): void =>
-    update({ ...working, attached: next });
 
   const setMinCorrect = (count: number): void => {
     update({ ...working, minCorrectAnswers: count });
@@ -800,31 +795,6 @@ export function QuizEditor({
             {t("description")}
           </p>
         </header>
-      )}
-
-      {/* Attach toggle — only shown for standalone procedures, not in training */}
-      {!hideAttachToggle && (
-        <div className="flex items-start gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4">
-          <input
-            id="quiz-attach"
-            type="checkbox"
-            checked={working.attached}
-            disabled={isSaving}
-            onChange={(e) => setAttached(e.target.checked)}
-            className="mt-1 size-5 accent-[var(--color-brand-600)]"
-          />
-          <label
-            htmlFor="quiz-attach"
-            className="flex-1 cursor-pointer space-y-1"
-          >
-            <span className="block text-sm font-semibold text-[var(--color-ink)]">
-              {t("attachedLabel")}
-            </span>
-            <span className="block text-sm text-[var(--color-ink-2)]">
-              {t("attachedHelp")}
-            </span>
-          </label>
-        </div>
       )}
 
       {/* AI Quiz Generation Banner */}
@@ -1298,8 +1268,8 @@ export function QuizEditor({
   );
 }
 
-function makeBlankQuiz(attached = false): ProcedureQuiz {
-  return { questions: [emptyQuestion()], attached };
+function makeBlankQuiz(): ProcedureQuiz {
+  return { questions: [emptyQuestion()], attached: true };
 }
 
 function makeId(): string {

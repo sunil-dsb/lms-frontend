@@ -34,9 +34,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 export function CategoriesClientList({
   initialCategories,
   locale,
+  canManageCategories = false,
 }: {
   initialCategories: Category[];
   locale: string;
+  canManageCategories?: boolean;
 }): React.ReactElement {
   // Subcategories in ONE call (GET /api/v1/categories/subcategories),
   // grouped by `categoryId` client-side — never one request per category.
@@ -92,6 +94,7 @@ export function CategoriesClientList({
                 <CategoryCard
                   category={c}
                   locale={locale}
+                  canManageCategories={canManageCategories}
                   archivedChipLabel={null}
                   procedureCount={procedureCounts.get(c.id) ?? 0}
                 />
@@ -167,6 +170,7 @@ export function CategoriesClientList({
                 <CategoryCard
                   category={c}
                   locale={locale}
+                  canManageCategories={canManageCategories}
                   archivedChipLabel={isEs ? "Archivada" : "Archived"}
                   procedureCount={procedureCounts.get(c.id) ?? 0}
                 />
@@ -191,11 +195,13 @@ export function CategoriesClientList({
 function CategoryCard({
   category,
   locale,
+  canManageCategories,
   archivedChipLabel,
   procedureCount,
 }: {
   category: Category;
   locale: string;
+  canManageCategories: boolean;
   archivedChipLabel: string | null;
   procedureCount: number;
 }): React.ReactElement {
@@ -240,7 +246,7 @@ function CategoryCard({
           {archivedChipLabel ? (
             <StatusPill tone="neutral">{archivedChipLabel}</StatusPill>
           ) : null}
-          <CategoryActions category={category} />
+          {canManageCategories ? <CategoryActions category={category} /> : null}
         </div>
       </div>
 
