@@ -251,12 +251,16 @@ export function EmployeeEditPage({
     setForm((current) => ({
       ...current,
       accessLevel: level,
+      roleIds: level === "employee" ? current.roleIds : [],
+      stationIds: level === "employee" ? current.stationIds : [],
       supervisorIds: level === "employee" ? current.supervisorIds : [],
       managerIds: level === "supervisor" ? current.managerIds : [],
     }));
     setFieldErrors((current) => ({
       ...current,
       accessLevel: undefined,
+      roleIds: undefined,
+      stationIds: undefined,
       supervisorIds: undefined,
       managerIds: undefined,
     }));

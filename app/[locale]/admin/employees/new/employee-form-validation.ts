@@ -188,22 +188,25 @@ export function validateEmployeeForm(
     );
   }
 
-  if (form.roleIds.length === 0) {
-    setErr(
-      "roleIds",
-      t("errorNeedJobRole") || "At least one job role is required",
-    );
-  }
+  // Job roles and stations are only relevant and required for kitchen employees
+  if (form.accessLevel === "employee") {
+    if (form.roleIds.length === 0) {
+      setErr(
+        "roleIds",
+        t("errorNeedJobRole") || "At least one job role is required",
+      );
+    }
 
-  if (form.stationIds.length === 0) {
-    setErr("stationIds", "At least one kitchen station is required");
-  }
+    if (form.stationIds.length === 0) {
+      setErr("stationIds", "At least one kitchen station is required");
+    }
 
-  if (form.accessLevel === "employee" && form.supervisorIds.length === 0) {
-    setErr(
-      "supervisorIds",
-      "At least one reporting supervisor is required for employees",
-    );
+    if (form.supervisorIds.length === 0) {
+      setErr(
+        "supervisorIds",
+        "At least one reporting supervisor is required for employees",
+      );
+    }
   }
 
   if (form.accessLevel === "supervisor" && form.managerIds.length === 0) {

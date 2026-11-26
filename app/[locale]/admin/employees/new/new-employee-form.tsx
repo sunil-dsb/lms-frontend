@@ -202,73 +202,30 @@ export function NewEmployeeForm({
   }
 
   // Handle access level toggle:
-  // When Employee is selected: fetch jobs from jobs API; keep selections empty until user selects role
-  // When Manager is selected: fetch jobs and send all jobs to get all stations; preselect all jobs and all stations
+  // When Employee is selected: fetch jobs from jobs API; selections kept empty until user selects role
+  // When Manager or Supervisor is selected: no station/job role required; clear roleIds & stationIds
   async function setAccessLevel(next: AccessLevel | ""): Promise<void> {
     clearFieldError("accessLevel");
+    clearFieldError("roleIds");
+    clearFieldError("stationIds");
+    clearFieldError("supervisorIds");
+    clearFieldError("managerIds");
     if (error) setError(null);
 
-    if (next === "manager") {
-      setIsLoadingRoles(true);
-      setIsLoadingStations(true);
-      try {
-        const { jobs: fetchedJobs } = await fetchJobs();
-        const currentRoles: Role[] = fetchedJobs.map((j) => ({
-          id: j.id,
-          name: j.name,
-          clearanceLevel: "general",
-          stationIds: [],
-          createdAt: j.createdAt || new Date().toISOString(),
-        }));
-        setRoles(currentRoles);
-
-        const allJobIds = fetchedJobs.map((j) => j.id);
-        const { stations: fetchedStations } = await fetchJobStations(allJobIds);
-        const uniqueStations: Station[] = fetchedStations.map((s, idx) => ({
-          id: s.id,
-          name: s.name,
-          locationId: form.locationId,
-          sortOrder: idx + 1,
-          isArchived: false,
-        }));
-
-        setAllStations(uniqueStations);
-        setAvailableStations(uniqueStations);
-
-        // Preselect ALL job roles and ALL stations for Manager
-        setForm((f) => ({
-          ...f,
-          accessLevel: "manager",
-          roleIds: currentRoles.map((r) => r.id),
-          stationIds: uniqueStations.map((s) => s.id),
-        }));
-        clearFieldError("roleIds");
-        clearFieldError("stationIds");
-      } catch (err) {
-        const msg =
-          err instanceof ApiException && err.message
-            ? err.message
-            : err instanceof Error && err.message
-              ? err.message
-              : t("errorGeneric");
-        toast.error(msg);
-        setAvailableStations(allStations);
-        setForm((f) => ({
-          ...f,
-          accessLevel: "manager",
-          roleIds: roles.map((r) => r.id),
-          stationIds: allStations.map((s) => s.id),
-        }));
-        clearFieldError("roleIds");
-        clearFieldError("stationIds");
-      } finally {
-        setIsLoadingRoles(false);
-        setIsLoadingStations(false);
-      }
+    if (next === "manager" || next === "supervisor") {
+      setAvailableStations([]);
+      setForm((f) => ({
+        ...f,
+        accessLevel: next,
+        roleIds: [],
+        stationIds: [],
+        supervisorIds: [],
+        managerIds: next === "supervisor" ? f.managerIds : [],
+      }));
       return;
     }
 
-    if (next === "supervisor" || next === "employee") {
+    if (next === "employee") {
       setIsLoadingRoles(true);
       try {
         const { jobs: fetchedJobs } = await fetchJobs();
@@ -295,9 +252,10 @@ export function NewEmployeeForm({
       setAvailableStations([]);
       setForm((f) => ({
         ...f,
-        accessLevel: next,
+        accessLevel: "employee",
         roleIds: [],
         stationIds: [],
+        managerIds: [],
       }));
       return;
     }

@@ -278,19 +278,10 @@ export function EmployeeAccessSection({
         {/* Dynamic Reporting Hierarchy Selector */}
         {form.accessLevel === "employee" ? (
           <div className="space-y-2 rounded-xl border border-[var(--color-line-2)] bg-[var(--color-field)]/40 p-4">
-            <Label
-              id="supervisors-label"
-              className="text-sm font-semibold text-[var(--color-ink)]"
-            >
-              Reporting Supervisor(s)
-            </Label>
-            <p className="text-xs text-[var(--color-ink-2)]">
-              Assign one or more supervisors overseeing this employee across
-              shifts and kitchen stations.
-            </p>
             <MultiSelectChips
               id="reportingSupervisors"
               label="Reporting Supervisor(s)"
+              hint="Assign one or more supervisors overseeing this employee across shifts and kitchen stations."
               value={form.supervisorIds}
               onChange={onSupervisorsChange}
               options={supervisors.map((s) => ({
@@ -318,19 +309,10 @@ export function EmployeeAccessSection({
 
         {form.accessLevel === "supervisor" ? (
           <div className="space-y-2 rounded-xl border border-[var(--color-line-2)] bg-[var(--color-field)]/40 p-4">
-            <Label
-              id="managers-label"
-              className="text-sm font-semibold text-[var(--color-ink)]"
-            >
-              Reporting Manager(s)
-            </Label>
-            <p className="text-xs text-[var(--color-ink-2)]">
-              Assign the location manager(s) or general managers this supervisor
-              reports to.
-            </p>
             <MultiSelectChips
               id="reportingManagers"
               label="Reporting Manager(s)"
+              hint="Assign the location manager(s) or general managers this supervisor reports to."
               value={form.managerIds}
               onChange={onManagersChange}
               options={managers.map((m) => ({
@@ -356,63 +338,66 @@ export function EmployeeAccessSection({
           </div>
         ) : null}
 
-        <div className="grid gap-5 sm:grid-cols-2 items-start">
-          <div>
-            <MultiSelectChips
-              id="jobRoles"
-              label={t("jobRolesLabel")}
-              hint={t("jobRolesHint")}
-              value={form.roleIds}
-              onChange={onRolesChange}
-              options={roles.map((role) => ({
-                value: role.id,
-                label: role.name,
-              }))}
-              disabled={isPending || !form.accessLevel || isLoadingRoles}
-              isLoading={isLoadingRoles}
-              loadingText="Loading job roles..."
-              addLabel={t("jobRolesAdd")}
-              emptyText={t("jobRolesPrompt")}
-            />
-            {fieldErrors.roleIds ? (
-              <p
-                role="alert"
-                className="mt-2 text-xs font-medium text-[var(--color-bad)]"
-              >
-                {fieldErrors.roleIds}
-              </p>
-            ) : null}
+        {/* Kitchen Job Roles & Stations - Relevant ONLY for kitchen employees */}
+        {form.accessLevel === "employee" ? (
+          <div className="grid gap-5 sm:grid-cols-2 items-start">
+            <div>
+              <MultiSelectChips
+                id="jobRoles"
+                label={t("jobRolesLabel")}
+                hint={t("jobRolesHint")}
+                value={form.roleIds}
+                onChange={onRolesChange}
+                options={roles.map((role) => ({
+                  value: role.id,
+                  label: role.name,
+                }))}
+                disabled={isPending || isLoadingRoles}
+                isLoading={isLoadingRoles}
+                loadingText="Loading job roles..."
+                addLabel={t("jobRolesAdd")}
+                emptyText={t("jobRolesPrompt")}
+              />
+              {fieldErrors.roleIds ? (
+                <p
+                  role="alert"
+                  className="mt-2 text-xs font-medium text-[var(--color-bad)]"
+                >
+                  {fieldErrors.roleIds}
+                </p>
+              ) : null}
+            </div>
+            <div>
+              <MultiSelectChips
+                id="stations"
+                label={t("stationsLabel")}
+                hint={t("stationsHint")}
+                value={form.stationIds}
+                onChange={onStationsChange}
+                options={stations.map((station) => ({
+                  value: station.id,
+                  label: station.name || t("selectPlaceholder"),
+                }))}
+                disabled={
+                  isPending || (stations.length === 0 && !isLoadingStations)
+                }
+                isLoading={isLoadingStations}
+                loadingText="Loading stations..."
+                blockedReason={stationsBlockedReason}
+                addLabel={t("stationsAdd")}
+                emptyText={t("stationsPrompt")}
+              />
+              {fieldErrors.stationIds ? (
+                <p
+                  role="alert"
+                  className="mt-2 text-xs font-medium text-[var(--color-bad)]"
+                >
+                  {fieldErrors.stationIds}
+                </p>
+              ) : null}
+            </div>
           </div>
-          <div>
-            <MultiSelectChips
-              id="stations"
-              label={t("stationsLabel")}
-              hint={t("stationsHint")}
-              value={form.stationIds}
-              onChange={onStationsChange}
-              options={stations.map((station) => ({
-                value: station.id,
-                label: station.name || t("selectPlaceholder"),
-              }))}
-              disabled={
-                isPending || (stations.length === 0 && !isLoadingStations)
-              }
-              isLoading={isLoadingStations}
-              loadingText="Loading stations..."
-              blockedReason={stationsBlockedReason}
-              addLabel={t("stationsAdd")}
-              emptyText={t("stationsPrompt")}
-            />
-            {fieldErrors.stationIds ? (
-              <p
-                role="alert"
-                className="mt-2 text-xs font-medium text-[var(--color-bad)]"
-              >
-                {fieldErrors.stationIds}
-              </p>
-            ) : null}
-          </div>
-        </div>
+        ) : null}
       </div>
     </FormSection>
   );
