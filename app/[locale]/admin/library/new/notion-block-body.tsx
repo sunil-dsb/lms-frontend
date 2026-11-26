@@ -22,10 +22,12 @@ export type BodyProps<T extends ProcedureBlock> = {
 
 export function BlockBody({
   block,
+  locale,
   onPatch,
   onInsertAfter,
 }: {
   block: ProcedureBlock;
+  locale?: string;
   onPatch: (next: ProcedureBlock) => void;
   onInsertAfter?: (kind: ProcedureBlockKind) => void;
 }): React.ReactElement {
@@ -66,7 +68,13 @@ export function BlockBody({
     case "checklist":
       return <ChecklistBody block={block} onPatch={onPatch as never} />;
     case "linked_procedures":
-      return <LinkedProceduresBody block={block} onPatch={onPatch as never} />;
+      return (
+        <LinkedProceduresBody
+          block={block}
+          onPatch={onPatch as never}
+          locale={locale}
+        />
+      );
     default:
       return <></>;
   }

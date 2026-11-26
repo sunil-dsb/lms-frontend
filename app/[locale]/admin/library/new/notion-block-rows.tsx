@@ -369,6 +369,7 @@ interface BlockRowProps {
   index: number;
   total: number;
   error?: string;
+  locale?: string;
   onPatch: (next: ProcedureBlock) => void;
   onRemove: () => void;
   onMove: (direction: "up" | "down") => void;
@@ -381,6 +382,7 @@ export function BlockRow({
   index,
   total,
   error,
+  locale,
   onPatch,
   onRemove,
   onMove,
@@ -474,7 +476,9 @@ export function BlockRow({
                                 ? "Table"
                                 : block.kind === "rich_text"
                                   ? "Rich text"
-                                  : "Link procedure"}
+                                  : block.kind === "linked_procedures"
+                                    ? "Link procedure"
+                                    : "Block"}
         </span>
 
         {/* Spacer pushes actions to the right */}
@@ -499,6 +503,7 @@ export function BlockRow({
       {/* Block body */}
       <BlockBody
         block={block}
+        locale={locale}
         onPatch={onPatch}
         onInsertAfter={onInsertAfter}
       />

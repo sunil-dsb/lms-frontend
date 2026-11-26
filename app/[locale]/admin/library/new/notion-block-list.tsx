@@ -316,6 +316,10 @@ export function NotionBlockList({
   }
 
   function handleConfirmLinkProcedures(procedureIds: string[]) {
+    if (!procedureIds || procedureIds.length === 0) {
+      setLinkModalTarget(null);
+      return;
+    }
     const newBlock: ProcedureBlock = {
       id: nextBlockId(),
       kind: "linked_procedures",
@@ -370,6 +374,7 @@ export function NotionBlockList({
               index={i}
               total={blocks.length}
               error={errors?.[block.id]}
+              locale={locale}
               onPatch={(next) => patch(block.id, next)}
               onRemove={() => remove(block.id)}
               onMove={(dir) => move(block.id, dir)}
