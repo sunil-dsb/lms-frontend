@@ -21,6 +21,7 @@ export type {
 export interface EmployeeFilterOptions {
   page?: number;
   limit?: number;
+  locationId?: string;
   status?: EmployeeStatus | "all";
   role?:
     "all" | "supervisor" | "employee" | "manager" | "admin" | "super_admin";

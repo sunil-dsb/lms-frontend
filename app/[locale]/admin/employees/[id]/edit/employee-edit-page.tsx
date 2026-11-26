@@ -66,6 +66,7 @@ const EMPTY_FORM: FormState = {
   hourlyRate: "",
   supervisorIds: [],
   managerIds: [],
+  subordinateIds: [],
 };
 
 function formFromEmployee(employee: AdminEmployee): FormState {
@@ -118,6 +119,10 @@ function formFromEmployee(employee: AdminEmployee): FormState {
       [],
     managerIds:
       employee.managerIds ?? employee.managers?.map((item) => item.id) ?? [],
+    subordinateIds:
+      employee.subordinateIds ??
+      employee.subordinates?.map((item) => item.id) ??
+      [],
   };
 }
 

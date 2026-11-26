@@ -45,6 +45,7 @@ export interface FormState {
   // Dynamic Reporting
   supervisorIds: string[];
   managerIds: string[];
+  subordinateIds: string[];
 }
 
 export const MAX_NAME_LENGTH = 100;

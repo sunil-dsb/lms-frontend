@@ -8,6 +8,7 @@ import { formatSystemRole } from "@/lib/rbac";
 import { PageHeader } from "@/components/admin/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar } from "@/components/ui/avatar";
 import { LuBriefcaseBusiness, LuContact, LuUserRound } from "react-icons/lu";
 
 function ProfileSection({
@@ -79,28 +80,45 @@ export function MyProfilePage({
 
   if (
     (isLoading && !basicEmployee) ||
-    (detailsQuery.isLoading && !detailsQuery.data)
+    (detailsQuery.isLoading && !detailsQuery.data && !basicEmployee)
   ) {
     return (
-      <main className="mx-auto w-full max-w-6xl space-y-5 px-4 py-8 sm:px-6 lg:px-8">
+      <main
+        className="mx-auto w-full max-w-doc space-y-5 px-3 pt-4 sm:px-6 sm:pt-8"
+        style={{ paddingBottom: "100px" }}
+      >
         <PageHeader
           eyebrow={isEs ? "Volver al inicio" : "Back to home"}
           eyebrowHref={backHref}
           title={isEs ? "Mi perfil" : "My Profile"}
+          subtitle={
+            isEs
+              ? "Tu información personal y laboral."
+              : "Your personal and work information."
+          }
         />
-        <Skeleton className="h-36 w-full rounded-[var(--radius-lg)]" />
-        <Skeleton className="h-56 w-full rounded-[var(--radius-lg)]" />
+        <Skeleton className="h-28 w-full rounded-[var(--radius-lg)]" />
+        <Skeleton className="h-44 w-full rounded-[var(--radius-lg)]" />
+        <Skeleton className="h-44 w-full rounded-[var(--radius-lg)]" />
       </main>
     );
   }
 
   if (error || !basicEmployee) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <main
+        className="mx-auto w-full max-w-doc space-y-5 px-3 pt-4 sm:px-6 sm:pt-8"
+        style={{ paddingBottom: "100px" }}
+      >
         <PageHeader
           eyebrow={isEs ? "Volver al inicio" : "Back to home"}
           eyebrowHref={backHref}
           title={isEs ? "Mi perfil" : "My Profile"}
+          subtitle={
+            isEs
+              ? "Tu información personal y laboral."
+              : "Your personal and work information."
+          }
         />
         <p
           role="alert"
@@ -154,7 +172,10 @@ export function MyProfilePage({
     .toUpperCase();
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-5 px-4 py-8 sm:px-6 lg:px-8">
+    <main
+      className="mx-auto w-full max-w-doc space-y-5 px-3 pt-4 sm:px-6 sm:pt-8"
+      style={{ paddingBottom: "100px" }}
+    >
       <PageHeader
         eyebrow={isEs ? "Volver al inicio" : "Back to home"}
         eyebrowHref={backHref}
@@ -167,25 +188,28 @@ export function MyProfilePage({
       />
 
       <Card>
-        <CardContent className="flex flex-wrap items-center gap-4 py-6">
-          <span
-            aria-hidden="true"
-            className="flex size-16 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-lg font-semibold text-[var(--color-ink)]"
-          >
-            {initials || "?"}
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold tracking-tight text-[var(--color-ink)]">
-              {employee.name}
-            </h2>
-            <p className="mt-1 text-sm text-[var(--color-ink-2)]">
-              {employee.email ||
-                (isEs ? "Sin correo electrónico" : "No email on file")}
-            </p>
+        <CardContent className="flex flex-row items-center justify-between gap-4 py-6 px-4 sm:px-6">
+          <div className="flex items-center gap-4 min-w-0">
+            <Avatar
+              initials={initials || "?"}
+              size="md"
+              className="border border-[var(--color-line-2)] shrink-0"
+            />
+            <div className="min-w-0">
+              <h2 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-ink)] truncate">
+                {employee.name}
+              </h2>
+              <p className="mt-0.5 text-xs sm:text-sm text-[var(--color-ink-2)] truncate">
+                {employee.email ||
+                  (isEs ? "Sin correo electrónico" : "No email on file")}
+              </p>
+            </div>
           </div>
-          <span className="rounded-full border border-[var(--color-line-2)] bg-[var(--color-panel)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)]">
-            {formatSystemRole(employee.role, isEs)}
-          </span>
+          <div className="shrink-0">
+            <span className="inline-flex rounded-full border border-[var(--color-line-2)] bg-[var(--color-panel)] px-3 py-1 text-xs font-semibold text-[var(--color-ink)]">
+              {formatSystemRole(employee.role, isEs)}
+            </span>
+          </div>
         </CardContent>
       </Card>
 

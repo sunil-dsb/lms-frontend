@@ -221,6 +221,7 @@ export async function createEmployee(
     hourlyRate: input.hourlyRate || undefined,
     supervisorIds: input.supervisorIds ?? [],
     managerIds: input.managerIds ?? [],
+    subordinateIds: input.subordinateIds ?? [],
   });
 
   const invite: InviteResult = {
@@ -232,9 +233,7 @@ export async function createEmployee(
   return { employee: normalizeEmployee<Employee>(data.data.employee), invite };
 }
 
-export async function fetchSupervisors(
-  locationId?: string,
-): Promise<{
+export async function fetchSupervisors(locationId?: string): Promise<{
   supervisors: Array<{ id: string; name: string; email: string }>;
 }> {
   const { data } = await http.get<{
@@ -380,4 +379,30 @@ export async function updateEmployee(
     employee: normalizeEmployee<AdminEmployee>(data.data.employee),
     inviteUrl: rawInvite ? frontendInviteUrl(rawInvite) : undefined,
   };
+}
+
+export async function updateEmployeeSubordinates(
+  employeeId: string,
+  subordinateIds: string[],
+): Promise<{
+  subordinates: Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  }>;
+}> {
+  const { data } = await http.put<{
+    success: boolean;
+    data: {
+      subordinates: Array<{
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+      }>;
+    };
+  }>(EMPLOYEES_ENDPOINTS.SUBORDINATES(employeeId), { subordinateIds });
+
+  return data.data;
 }

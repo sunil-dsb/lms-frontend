@@ -10,4 +10,5 @@ export const EMPLOYEES_ENDPOINTS = {
   TRAINING: (id: string) => `/api/v1/employees/${id}/training`,
   SUPERVISORS: "/api/v1/employees/supervisors",
   MANAGERS: "/api/v1/employees/managers",
+  SUBORDINATES: (id: string) => `/api/v1/employees/${id}/subordinates`,
 } as const;

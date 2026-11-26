@@ -260,7 +260,7 @@ export function AssignCourseModal({
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-brand-700)] hover:underline cursor-pointer select-none"
+                    className="inline-flex items-center gap-2 text-xs font-medium text-[var(--color-brand-700)] hover:underline cursor-pointer select-none"
                   >
                     <input
                       type="checkbox"
@@ -289,7 +289,7 @@ export function AssignCourseModal({
                   aria-hidden="true"
                 />
                 <input
-                  type="search"
+                  type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={
@@ -297,7 +297,7 @@ export function AssignCourseModal({
                       ? "Buscar cursos por título..."
                       : "Search courses by title..."
                   }
-                  className="w-full h-10 rounded-md border border-[var(--color-line-2)] bg-[var(--color-surface)] pl-9 pr-4 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-brand-600)] focus:ring-1 focus:ring-[var(--color-brand-600)] focus:outline-none transition-colors"
+                  className="w-full h-10 rounded-md border border-[var(--color-line-2)] bg-[var(--color-surface)] pl-10 pr-4 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-3)] focus:border-[var(--color-brand-600)] focus:ring-1 focus:ring-[var(--color-brand-600)] focus:outline-none transition-colors"
                 />
               </div>
             </div>
@@ -392,12 +392,12 @@ export function AssignCourseModal({
             </div>
 
             {/* Due Date & Requirement Settings Section (Side-by-side, perfectly balanced) */}
-            <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Due Date Box */}
-              <div className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] p-3.5 flex flex-col justify-between space-y-2.5">
-                <div className="space-y-1.5">
+              <div className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] p-4 flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
                   <label className="block text-sm font-semibold text-[var(--color-ink)]">
-                    <span className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-2">
                       <LuCalendar className="size-4 text-[var(--color-ink-3)]" />
                       {isEs ? "Fecha límite" : "Due Date"}
                     </span>
@@ -406,14 +406,14 @@ export function AssignCourseModal({
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full h-9 rounded-md border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-ink)] focus:border-[var(--color-brand-600)] focus:ring-1 focus:ring-[var(--color-brand-600)] focus:outline-none"
+                    className="w-full h-10 rounded-md border border-[var(--color-line-2)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-ink)] focus:border-[var(--color-brand-600)] focus:ring-1 focus:ring-[var(--color-brand-600)] focus:outline-none"
                     required
                   />
                 </div>
 
                 {/* Presets */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-xs text-[var(--color-ink-3)] mr-0.5">
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-xs text-[var(--color-ink-3)] mr-1">
                     {isEs ? "Preajustes:" : "Presets:"}
                   </span>
                   {[
@@ -425,7 +425,7 @@ export function AssignCourseModal({
                       key={p.days}
                       type="button"
                       onClick={() => handleQuickDate(p.days)}
-                      className="text-xs px-2.5 py-1 rounded-full border border-[var(--color-line-2)] bg-[var(--color-panel)] text-[var(--color-ink-2)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
+                      className="text-xs px-3 py-1 rounded-full border border-[var(--color-line-2)] bg-[var(--color-panel)] text-[var(--color-ink-2)] hover:bg-[var(--color-wash)] hover:text-[var(--color-ink)] transition-colors cursor-pointer"
                     >
                       {p.label}
                     </button>
@@ -434,23 +434,23 @@ export function AssignCourseModal({
               </div>
 
               {/* Requirement Box */}
-              <div className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] p-3.5 flex flex-col justify-between space-y-2.5">
+              <div className="rounded-md border border-[var(--color-line)] bg-[var(--color-surface)] p-4 flex flex-col justify-between space-y-3">
                 <label className="block text-sm font-semibold text-[var(--color-ink)]">
                   {isEs ? "Prioridad de capacitación" : "Training Priority"}
                 </label>
 
-                <label className="flex items-start gap-2.5 p-2.5 rounded-md border border-[var(--color-line-2)] bg-[var(--color-wash)] cursor-pointer hover:border-[var(--color-line)] transition-colors flex-1">
+                <label className="flex items-start gap-3 p-3 rounded-md border border-[var(--color-line-2)] bg-[var(--color-wash)] cursor-pointer hover:border-[var(--color-line)] transition-colors flex-1">
                   <input
                     type="checkbox"
                     checked={isRequired}
                     onChange={(e) => setIsRequired(e.target.checked)}
-                    className="size-4 mt-0.5 rounded border-[var(--color-line-2)] text-[var(--color-brand-600)] focus:ring-[var(--color-brand-600)] cursor-pointer shrink-0"
+                    className="size-4 mt-1 rounded border-[var(--color-line-2)] text-[var(--color-brand-600)] focus:ring-[var(--color-brand-600)] cursor-pointer shrink-0"
                   />
                   <div>
                     <span className="text-sm font-semibold text-[var(--color-ink)] block">
                       {isEs ? "Capacitación obligatoria" : "Mandatory training"}
                     </span>
-                    <span className="text-xs text-[var(--color-ink-3)] block mt-0.5 leading-snug">
+                    <span className="text-xs text-[var(--color-ink-3)] block mt-1 leading-snug">
                       {isEs
                         ? "Debe completarse antes de la fecha límite para mantener la certificación al día."
                         : "Must be completed by due date to maintain certified status."}

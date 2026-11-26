@@ -7,6 +7,7 @@ import { CustomSelect } from "@/components/ui/custom-select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MultiSelectChips } from "@/components/ui/multi-select-chips";
+import { SearchableStaffPicker } from "./searchable-staff-picker";
 import { getAllowedInviteRoles } from "@/lib/rbac";
 import type {
   AccessLevel,
@@ -172,12 +173,15 @@ export function EmployeeAccessSection({
   isLoadingStations,
   isLoadingSupervisors = false,
   isLoadingManagers = false,
+  isLoadingKitchenStaff = false,
   stationsBlockedReason,
   onAccessChange,
   onRolesChange,
   onStationsChange,
   onSupervisorsChange,
   onManagersChange,
+  onSubordinatesChange,
+  kitchenStaff,
 }: {
   form: FormState;
   fieldErrors: FieldErrors;
@@ -185,6 +189,7 @@ export function EmployeeAccessSection({
   stations: Station[];
   supervisors?: Array<{ id: string; name: string; email: string }>;
   managers?: Array<{ id: string; name: string; email: string }>;
+  kitchenStaff?: Array<{ id: string; name: string; email?: string | null }>;
   currentUserRole?: string | null;
   hideAccessLevel?: boolean;
   isPending: boolean;
@@ -192,12 +197,14 @@ export function EmployeeAccessSection({
   isLoadingStations: boolean;
   isLoadingSupervisors?: boolean;
   isLoadingManagers?: boolean;
+  isLoadingKitchenStaff?: boolean;
   stationsBlockedReason?: string;
   onAccessChange: (level: AccessLevel) => void;
   onRolesChange: (ids: string[]) => void;
   onStationsChange: (ids: string[]) => void;
   onSupervisorsChange: (ids: string[]) => void;
   onManagersChange: (ids: string[]) => void;
+  onSubordinatesChange?: (ids: string[]) => void;
 }) {
   const t = useTranslations("admin");
   const allowedRoles = getAllowedInviteRoles(currentUserRole);
@@ -308,34 +315,68 @@ export function EmployeeAccessSection({
         ) : null}
 
         {form.accessLevel === "supervisor" ? (
-          <div className="space-y-2 rounded-xl border border-[var(--color-line-2)] bg-[var(--color-field)]/40 p-4">
-            <MultiSelectChips
-              id="reportingManagers"
-              label="Reporting Manager(s)"
-              hint="Assign the location manager(s) or general managers this supervisor reports to."
-              value={form.managerIds}
-              onChange={onManagersChange}
-              options={managers.map((m) => ({
-                value: m.id,
-                label: m.name,
-              }))}
-              disabled={
-                isPending || (managers.length === 0 && !isLoadingManagers)
-              }
-              isLoading={isLoadingManagers}
-              loadingText="Loading managers..."
-              addLabel="Add Manager"
-              emptyText="No managers registered for this location yet"
+          <>
+            <div className="space-y-2 rounded-xl border border-[var(--color-line-2)] bg-[var(--color-field)]/40 p-4">
+              <MultiSelectChips
+                id="reportingManagers"
+                label="Reporting Manager(s)"
+                hint="Assign the location manager(s) or general managers this supervisor reports to."
+                value={form.managerIds}
+                onChange={onManagersChange}
+                options={managers.map((m) => ({
+                  value: m.id,
+                  label: m.name,
+                }))}
+                disabled={
+                  isPending || (managers.length === 0 && !isLoadingManagers)
+                }
+                isLoading={isLoadingManagers}
+                loadingText="Loading managers..."
+                addLabel="Add Manager"
+                emptyText="No managers registered for this location yet"
+              />
+              {fieldErrors.managerIds ? (
+                <p
+                  role="alert"
+                  className="text-xs font-medium text-[var(--color-bad)]"
+                >
+                  {fieldErrors.managerIds}
+                </p>
+              ) : null}
+            </div>
+
+            {/* Optional: Assign Kitchen Staff Under this New Supervisor */}
+            <SearchableStaffPicker
+              id="assignedKitchenStaff"
+              label="Assign Kitchen Team (Optional)"
+              hint="Select kitchen employees who will report to this supervisor. You can also assign or change this later from their profile."
+              selectedIds={form.subordinateIds}
+              items={kitchenStaff ?? []}
+              isLoading={isLoadingKitchenStaff}
+              loadingText="Loading kitchen staff..."
+              emptyText="No kitchen employees registered in this location yet"
+              searchPlaceholder="Search kitchen employees by name or email..."
+              onChange={onSubordinatesChange ?? (() => {})}
+              disabled={isPending}
             />
-            {fieldErrors.managerIds ? (
-              <p
-                role="alert"
-                className="text-xs font-medium text-[var(--color-bad)]"
-              >
-                {fieldErrors.managerIds}
-              </p>
-            ) : null}
-          </div>
+          </>
+        ) : null}
+
+        {/* For Manager: Optionally assign Supervisors Under this New Manager */}
+        {form.accessLevel === "manager" ? (
+          <SearchableStaffPicker
+            id="assignedSupervisors"
+            label="Assign Shift Supervisors (Optional)"
+            hint="Select shift supervisors who will report to this manager. You can also assign or change this later from their profile."
+            selectedIds={form.subordinateIds}
+            items={supervisors}
+            isLoading={isLoadingSupervisors}
+            loadingText="Loading supervisors..."
+            emptyText="No supervisors registered in this location yet"
+            searchPlaceholder="Search supervisors by name or email..."
+            onChange={onSubordinatesChange ?? (() => {})}
+            disabled={isPending}
+          />
         ) : null}
 
         {/* Kitchen Job Roles & Stations - Relevant ONLY for kitchen employees */}

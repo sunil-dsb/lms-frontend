@@ -15,6 +15,7 @@ import {
   createEmployee,
   fetchSupervisors,
   fetchManagers,
+  fetchEmployees,
 } from "@/services/employees/api";
 import { toast } from "@/components/ui/toast";
 import { fetchLocations } from "@/services/locations/api";
@@ -76,6 +77,7 @@ const initialState = (defaultLocationId: string): FormState => ({
   hourlyRate: "",
   supervisorIds: [],
   managerIds: [],
+  subordinateIds: [],
 });
 
 export function NewEmployeeForm({
@@ -117,6 +119,11 @@ export function NewEmployeeForm({
   const [managers, setManagers] = useState<
     Array<{ id: string; name: string; email: string }>
   >([]);
+  const [kitchenStaff, setKitchenStaff] = useState<
+    Array<{ id: string; name: string; email?: string | null }>
+  >([]);
+  const [isLoadingKitchenStaff, setIsLoadingKitchenStaff] =
+    useState<boolean>(false);
   const [isLoadingSupervisors, setIsLoadingSupervisors] =
     useState<boolean>(false);
   const [isLoadingManagers, setIsLoadingManagers] = useState<boolean>(false);
@@ -133,11 +140,12 @@ export function NewEmployeeForm({
   const hasLoadedRef = React.useRef(false);
   const roleFetchSeq = React.useRef(0);
 
-  // Load supervisors and managers whenever the location changes
+  // Load supervisors, managers, and kitchen staff whenever the location changes
   useEffect(() => {
     if (!form.locationId) return;
     setIsLoadingSupervisors(true);
     setIsLoadingManagers(true);
+    setIsLoadingKitchenStaff(true);
     fetchSupervisors(form.locationId)
       .then((res) => setSupervisors(res.supervisors))
       .catch(() => setSupervisors([]))
@@ -146,6 +154,15 @@ export function NewEmployeeForm({
       .then((res) => setManagers(res.managers))
       .catch(() => setManagers([]))
       .finally(() => setIsLoadingManagers(false));
+    fetchEmployees({
+      locationId: form.locationId,
+      role: "employee",
+      status: "active",
+      limit: 100,
+    })
+      .then((res) => setKitchenStaff(res.employees))
+      .catch(() => setKitchenStaff([]))
+      .finally(() => setIsLoadingKitchenStaff(false));
   }, [form.locationId]);
 
   // Load real locations from the API on mount (do NOT load jobs or stations yet)
@@ -221,6 +238,7 @@ export function NewEmployeeForm({
         stationIds: [],
         supervisorIds: [],
         managerIds: next === "supervisor" ? f.managerIds : [],
+        subordinateIds: [],
       }));
       return;
     }
@@ -418,6 +436,10 @@ export function NewEmployeeForm({
           supervisorIds:
             form.accessLevel === "employee" ? form.supervisorIds : [],
           managerIds: form.accessLevel === "supervisor" ? form.managerIds : [],
+          subordinateIds:
+            form.accessLevel === "supervisor" || form.accessLevel === "manager"
+              ? form.subordinateIds
+              : [],
         });
         // Server-truth check: the backend must echo exactly what we sent.
         // If it ever stores extras, say so loudly instead of looking saved.
@@ -542,18 +564,21 @@ export function NewEmployeeForm({
           stations={availableStations}
           supervisors={supervisors}
           managers={managers}
+          kitchenStaff={kitchenStaff}
           currentUserRole={currentUserRole}
           isPending={isPending}
           isLoadingRoles={isLoadingRoles}
           isLoadingStations={isLoadingStations}
           isLoadingSupervisors={isLoadingSupervisors}
           isLoadingManagers={isLoadingManagers}
+          isLoadingKitchenStaff={isLoadingKitchenStaff}
           stationsBlockedReason={stationsBlockedReason}
           onAccessChange={(level) => void setAccessLevel(level)}
           onRolesChange={(ids) => void handleRoleIdsChange(ids)}
           onStationsChange={handleStationIdsChange}
           onSupervisorsChange={(ids) => update("supervisorIds", ids)}
           onManagersChange={(ids) => update("managerIds", ids)}
+          onSubordinatesChange={(ids) => update("subordinateIds", ids)}
         />
         <EmployeePersonalSection
           form={form}

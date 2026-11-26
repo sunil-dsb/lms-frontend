@@ -24,6 +24,7 @@ import {
   LuShieldOff,
   LuTrash2,
   LuUser,
+  LuUsers,
 } from "react-icons/lu";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import {
 } from "@/components/admin/training-summary";
 import { EmployeeRowActions } from "../employee-row-actions";
 import { AssignCourseModal } from "./assign-course-modal";
+import { ManageSubordinatesModal } from "./manage-subordinates-modal";
 import { GrantOverrideModal } from "@/components/admin/grant-override-modal";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
@@ -120,6 +122,23 @@ export function EmployeeDetailClient({
   // Can view confidential HR and payroll details (Date of birth, Address, Father's Name, Hourly Rate, SIN Number):
   // Super Admin and Manager only. Supervisors on kitchen floor do not manage payroll or personal files.
   const canViewConfidential = isSuper || isMgr;
+
+  // Can manage subordinates for this supervisor/manager:
+  // - Super Admin: can manage any supervisor or manager
+  // - Manager: can manage subordinates for supervisors in their location
+  const canManageSubordinates = useMemo(() => {
+    if (!employee || !me) return false;
+    if (isSuper) {
+      return targetRole === "supervisor" || targetRole === "manager";
+    }
+    if (isMgr) {
+      if (targetRole === "supervisor") {
+        if (!me.locationId || !employee.locationId) return true;
+        return me.locationId === employee.locationId;
+      }
+    }
+    return false;
+  }, [employee, me, isSuper, isMgr, targetRole]);
 
   // Can edit this employee:
   // 1. Super Admin: can edit all employees
@@ -211,6 +230,7 @@ export function EmployeeDetailClient({
   const { data: locationsData } = useLocations();
   const locations = locationsData?.locations ?? [];
   const [assignCourseOpen, setAssignCourseOpen] = useState(false);
+  const [manageSubordinatesOpen, setManageSubordinatesOpen] = useState(false);
   const [unassigningCourse, setUnassigningCourse] = useState<{
     id: string;
     title: string;
@@ -704,6 +724,89 @@ export function EmployeeDetailClient({
               )}
             </dd>
           </div>
+
+          {(targetRole === "supervisor" || targetRole === "manager") && (
+            <div className="sm:col-span-2 border-t border-[var(--color-line-2)] pt-4 mt-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <dt className="text-sm font-medium text-[var(--color-ink)]">
+                    {targetRole === "supervisor"
+                      ? isEs
+                        ? "Equipo de empleados asignados"
+                        : "Assigned Kitchen Team"
+                      : isEs
+                        ? "Supervisores asignados a su cargo"
+                        : "Supervisors Reporting to Manager"}
+                  </dt>
+                  <p className="text-xs text-[var(--color-ink-3)] mt-0.5">
+                    {targetRole === "supervisor"
+                      ? isEs
+                        ? "Empleados que supervisa directamente en esta sede."
+                        : "Kitchen employees supervised directly in this location."
+                      : isEs
+                        ? "Supervisores que reportan directamente a este gerente."
+                        : "Supervisors reporting directly to this location manager."}
+                  </p>
+                </div>
+                {canManageSubordinates && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    icon={LuUsers}
+                    onClick={() => setManageSubordinatesOpen(true)}
+                  >
+                    {targetRole === "supervisor"
+                      ? isEs
+                        ? "Asignar empleados"
+                        : "Assign Employees"
+                      : isEs
+                        ? "Asignar supervisores"
+                        : "Assign Supervisors"}
+                  </Button>
+                )}
+              </div>
+              <dd className="mt-3 min-w-0">
+                {employee?.subordinates && employee.subordinates.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {employee.subordinates.map((sub) => (
+                      <div
+                        key={sub.id}
+                        className="flex items-center gap-2 p-2 rounded-[var(--radius-md)] border border-[var(--color-line-2)] bg-[var(--color-surface)]"
+                      >
+                        <div className="size-7 rounded-full bg-[var(--color-panel)] border border-[var(--color-line-2)] flex items-center justify-center text-xs font-semibold text-[var(--color-ink-2)] shrink-0">
+                          {initials(sub.name)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            href={`/${locale}/admin/employees/${sub.id}`}
+                            className="text-xs font-semibold text-[var(--color-ink)] hover:text-[var(--color-brand-600)] hover:underline truncate block"
+                          >
+                            {sub.name}
+                          </Link>
+                          {sub.email && (
+                            <p className="text-[11px] text-[var(--color-ink-3)] truncate">
+                              {sub.email}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-sm text-[var(--color-ink-3)] italic">
+                    {targetRole === "supervisor"
+                      ? isEs
+                        ? "No hay empleados asignados a este supervisor todavía."
+                        : "No employees assigned to this supervisor yet."
+                      : isEs
+                        ? "No hay supervisores asignados a este gerente todavía."
+                        : "No supervisors assigned to this manager yet."}
+                  </span>
+                )}
+              </dd>
+            </div>
+          )}
         </dl>
       </FormSection>
 
@@ -1168,6 +1271,22 @@ export function EmployeeDetailClient({
           }}
         />
       )}
+
+      {/* Manage Subordinates Modal */}
+      {employee &&
+        (targetRole === "supervisor" || targetRole === "manager") && (
+          <ManageSubordinatesModal
+            isOpen={manageSubordinatesOpen}
+            onClose={() => setManageSubordinatesOpen(false)}
+            targetEmployee={employee}
+            locale={locale}
+            onSuccess={() => {
+              void queryClient.invalidateQueries({
+                queryKey: ["employee", id],
+              });
+            }}
+          />
+        )}
 
       {/* Unassign Course Confirm Modal */}
       {employee && (

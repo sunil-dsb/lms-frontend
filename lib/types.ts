@@ -43,6 +43,14 @@ export interface Employee {
   managers?: Array<{ id: string; name: string; email?: string | null }>;
   supervisorIds?: string[];
   managerIds?: string[];
+  subordinates?: Array<{
+    id: string;
+    name: string;
+    email?: string | null;
+    role?: string;
+    status?: string;
+  }>;
+  subordinateIds?: string[];
   /** Denormalised names from GET /api/auth/me — prefer these over extra lookups. */
   stations?: Array<{ id: string; name: string }>;
   jobs?: Array<{ id: string; name: string }>;
@@ -126,6 +134,7 @@ export interface CreateEmployeeInput {
   hourlyRate?: string | number | null;
   supervisorIds?: string[];
   managerIds?: string[];
+  subordinateIds?: string[];
 }
 
 export interface ApiError {
