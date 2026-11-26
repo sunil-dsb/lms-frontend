@@ -91,9 +91,16 @@ export function ChapterContentEditor({
   const [quizError, setQuizError] = React.useState<string | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
 
-  const [blocks, setBlocks] = React.useState<ProcedureBlock[]>(
-    () => initialChapter?.blocks ?? [],
-  );
+  const [blocks, setBlocks] = React.useState<ProcedureBlock[]>(() => {
+    const raw = initialChapter?.blocks ?? [];
+    return raw.filter((b) => {
+      if (!b || !b.kind) return false;
+      if (b.kind === "linked_procedures") {
+        return Array.isArray(b.procedureIds) && b.procedureIds.length > 0;
+      }
+      return true;
+    });
+  });
 
   const [quiz, setQuiz] = React.useState<ProcedureQuiz | null>(() => {
     if (!initialChapter?.quiz) return null;
@@ -279,6 +286,14 @@ export function ChapterContentEditor({
         )
       : undefined;
 
+    const cleanedBlocks = blocks.filter((b) => {
+      if (!b || !b.kind) return false;
+      if (b.kind === "linked_procedures") {
+        return Array.isArray(b.procedureIds) && b.procedureIds.length > 0;
+      }
+      return true;
+    });
+
     const saved: EditorChapter = {
       id: initialChapter?.id || `chapter-${Date.now()}`,
       title: resolvedTitle,
@@ -294,7 +309,7 @@ export function ChapterContentEditor({
               initialChapter?.quizId !== primaryProc?.quizId
             ? initialChapter.quizId
             : undefined,
-      blocks,
+      blocks: cleanedBlocks,
       quiz:
         hasQuestions && quiz
           ? {
