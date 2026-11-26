@@ -1,7 +1,10 @@
 import * as React from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { fetchBackendCategories } from "@/services/categories/api";
+import { fetchMe } from "@/lib/api";
+import { canManageProcedures, isSuperAdmin } from "@/lib/rbac";
 import type { Category } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { CategoriesClientList } from "./categories-client-list";
@@ -28,6 +31,18 @@ export default async function AdminLibraryCategoriesPage({
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
 
+  let canManageCategories = false;
+  try {
+    const { employee } = await fetchMe(cookieHeader);
+    if (!canManageProcedures(employee.role)) {
+      redirect(`/${locale}/admin/library`);
+    }
+    canManageCategories = isSuperAdmin(employee.role);
+  } catch (err) {
+    if ((err as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT"))
+      throw err;
+  }
+
   let categories: Category[] = [];
   let loadError: string | null = null;
   try {
@@ -41,7 +56,10 @@ export default async function AdminLibraryCategoriesPage({
 
   return (
     <div className="mx-auto max-w-page space-y-6">
-      <PageHeader title={t("pageTitle")} actions={<CreateCategoryButton />} />
+      <PageHeader
+        title={t("pageTitle")}
+        actions={canManageCategories ? <CreateCategoryButton /> : null}
+      />
 
       {loadError ? (
         <p
@@ -55,7 +73,11 @@ export default async function AdminLibraryCategoriesPage({
         </p>
       ) : null}
 
-      <CategoriesClientList initialCategories={categories} locale={locale} />
+      <CategoriesClientList
+        initialCategories={categories}
+        locale={locale}
+        canManageCategories={canManageCategories}
+      />
     </div>
   );
 }

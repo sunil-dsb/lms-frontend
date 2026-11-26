@@ -26,8 +26,10 @@ const EMPTY_STATIONS: any[] = [];
 
 export function LibraryExplorerClient({
   locale,
+  canManage = true,
 }: {
   locale: string;
+  canManage?: boolean;
 }): React.ReactElement {
   const locationsQuery = useLocations();
   const locationId = locationsQuery.data?.locations?.[0]?.id;
@@ -39,7 +41,10 @@ export function LibraryExplorerClient({
   const stationsQuery = useStations({ locationId });
   // The admin library includes drafts and archived procedures too; the
   // employee browse query applies visibility filtering and can hide them.
-  const proceduresQuery = useProcedures({}, true);
+  const proceduresQuery = useProcedures(
+    canManage ? {} : { status: "published" },
+    true,
+  );
 
   // Backend rows only — no mock fallback.
   const categories = React.useMemo(() => {
@@ -68,6 +73,7 @@ export function LibraryExplorerClient({
       categories={categories}
       stations={stationsQuery.data ?? EMPTY_STATIONS}
       locale={locale}
+      canManage={canManage}
       proceduresLoading={proceduresQuery.isLoading}
     />
   );

@@ -19,6 +19,7 @@ export function ProcedureExplorerFilters({
   statusFilter,
   onStatusChange,
   statusOptions,
+  showStatusFilter = true,
   searchQuery,
   onSearchChange,
   hasActiveFilters,
@@ -40,6 +41,7 @@ export function ProcedureExplorerFilters({
   statusFilter: string;
   onStatusChange: (value: string) => void;
   statusOptions: Array<{ value: string; label: string }>;
+  showStatusFilter?: boolean;
   searchQuery: string;
   onSearchChange: (value: string) => void;
   hasActiveFilters: boolean;
@@ -92,15 +94,17 @@ export function ProcedureExplorerFilters({
             />
           </div>
         ) : null}
-        <div className="w-full sm:w-field-sm sm:shrink-0">
-          <CustomSelect
-            value={statusFilter}
-            onChange={onStatusChange}
-            options={statusOptions}
-            size="sm"
-            className="h-tap-admin text-sm"
-          />
-        </div>
+        {showStatusFilter ? (
+          <div className="w-full sm:w-field-sm sm:shrink-0">
+            <CustomSelect
+              value={statusFilter}
+              onChange={onStatusChange}
+              options={statusOptions}
+              size="sm"
+              className="h-tap-admin text-sm"
+            />
+          </div>
+        ) : null}
 
         <div className="find w-full sm:min-w-0 sm:flex-1" role="search">
           <LuSearch aria-hidden="true" className="i" />

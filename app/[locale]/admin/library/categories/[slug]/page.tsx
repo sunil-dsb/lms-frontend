@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
 import { listLocations, ApiException, fetchMe } from "@/lib/api";
 import { fetchBackendCategories } from "@/services/categories/api";
+import { isSuperAdmin } from "@/lib/rbac";
 import type { Category } from "@/lib/types";
 import { CategoryDetailClient } from "./category-detail-client";
 
@@ -36,9 +37,11 @@ export default async function AdminCategoryDetailPage({
     .join("; ");
 
   let locationId: string | null = null;
+  let canManageCategories = false;
   try {
     const me = await fetchMe(cookieHeader);
     locationId = me.employee.locationId;
+    canManageCategories = isSuperAdmin(me.employee.role);
   } catch (err) {
     if (!(err instanceof ApiException)) throw err;
     locationId = await readFirstManagedLocation(cookieHeader);
@@ -67,6 +70,7 @@ export default async function AdminCategoryDetailPage({
       slug={slug}
       locale={locale}
       locationId={locationId}
+      canManageCategories={canManageCategories}
     />
   );
 }

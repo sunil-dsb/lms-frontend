@@ -13,7 +13,7 @@ import {
 import { DocBehaviour } from "@/components/doc/doc-behaviour";
 import { BlockRenderer, findAllergen } from "@/components/doc/block-renderer";
 import { CookModeLauncher } from "@/components/doc/cook-mode-launcher";
-import { QuizAttachBanner, QuizReader } from "@/components/doc/quiz-reader";
+import { QuizReader } from "@/components/doc/quiz-reader";
 import { Watermark } from "@/components/doc/watermark";
 import { ContentProtection } from "@/components/security/content-protection";
 import { getQuizById } from "@/lib/api";
@@ -25,11 +25,6 @@ interface ProcedureArticleBodyProps {
   effectiveRole: "admin" | "employee";
   locale: string;
   hideQuiz?: boolean;
-  /** Admin-only: wires the QuizAttachBanner attach button. */
-  onAttachQuiz?: () => void;
-  isAttaching?: boolean;
-  bannerDismissed?: boolean;
-  onDismissBanner?: () => void;
   docBar?: React.ReactNode;
 }
 
@@ -65,10 +60,6 @@ export function ProcedureArticleBody({
   effectiveRole,
   locale,
   hideQuiz,
-  onAttachQuiz,
-  isAttaching,
-  bannerDismissed,
-  onDismissBanner,
   docBar,
 }: ProcedureArticleBodyProps): React.ReactElement {
   const t = useTranslations("employee.doc");
@@ -158,23 +149,14 @@ export function ProcedureArticleBody({
     setMounted(true);
   }, []);
 
-  // Quiz attach banner: shown to admins when the procedure has a quiz but
-  // neither `quiz.attached` nor `attachedToTraining` is on. The read side
-  // resolves `procedure.quizId` to its quiz row via `getQuizById` on every
-  // render. We gate this on `mounted` so SSR and initial client hydration
-  // match identically, preventing hydration mismatch when quiz is stored in
-  // client-only localStorage.
+  // Resolve the procedure's quiz after mount to keep server rendering and
+  // initial hydration aligned with the client-side quiz cache.
   const rawQuiz = mounted && proc.quizId ? getQuizById(proc.quizId) : null;
   // A procedure page must ONLY render quizzes whose type is 'procedure' (never 'course' quizzes)
   const quiz =
     rawQuiz && (!rawQuiz.quizType || rawQuiz.quizType === "procedure")
       ? rawQuiz
       : null;
-  const quizExists = Boolean(quiz && quiz.questions.length > 0);
-  const quizVisible = Boolean(
-    quiz && (quiz.attached || proc.attachedToTraining),
-  );
-  const showAttachBanner = isAdmin && quizExists && !quizVisible;
   return (
     <ContentProtection
       employeeName={employee?.name || ""}
@@ -187,16 +169,6 @@ export function ProcedureArticleBody({
       <article className="doc" suppressHydrationWarning>
         <DocBehaviour />
         {docBar}
-        {showAttachBanner && !bannerDismissed ? (
-          <div className="mx-auto w-full max-w-doc px-4 pt-6 sm:px-6">
-            <QuizAttachBanner
-              onAttach={onAttachQuiz ?? ((): void => {})}
-              onDismiss={onDismissBanner ?? ((): void => {})}
-              isAttaching={Boolean(isAttaching)}
-            />
-          </div>
-        ) : null}
-
         {cover ? <Cover src={cover.src} alt={cover.alt} /> : null}
 
         {/* For a cook: the category once, with when it last changed, and no tile.
@@ -307,9 +279,8 @@ export function ProcedureArticleBody({
           }
         />
 
-        {/* Quiz: visible when manually attached OR when the procedure is part of
-         *  training, unless hideQuiz is set (e.g. inside course chapter learn view). */}
-        {!hideQuiz && quiz && (quiz.attached || proc.attachedToTraining) ? (
+        {/* Procedure quizzes are always visible when they contain questions. */}
+        {!hideQuiz && quiz && quiz.questions.length > 0 ? (
           <QuizReader quiz={quiz} locale={isEs ? "es" : "en"} />
         ) : null}
       </article>

@@ -64,6 +64,9 @@ export function CourseEditor({
   >(isEditMode ? "chapters" : "details");
   const [editingChapter, setEditingChapter] =
     React.useState<EditorChapter | null>(null);
+  const [chapterInitialStep, setChapterInitialStep] = React.useState<
+    "content" | "quiz"
+  >("content");
   const [isDirty, setIsDirty] = React.useState(false);
 
   const isSavingChapterMutationRef = React.useRef(false);
@@ -128,6 +131,24 @@ export function CourseEditor({
       setChapters(initialChapters);
     }
   }, [initialChapters, isDirty]);
+
+  // Support direct deep-link into chapter quiz editor via query params: ?chapter=1&tab=quiz
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const targetChapterNum = params.get("chapter");
+    const targetTab = params.get("tab");
+
+    if (targetChapterNum && chapters.length > 0) {
+      const num = parseInt(targetChapterNum, 10);
+      const targetChapter = chapters[num - 1] || chapters[0];
+      if (targetChapter) {
+        setEditingChapter(targetChapter);
+        setChapterInitialStep(targetTab === "quiz" ? "quiz" : "content");
+        setStep("chapter-editor");
+      }
+    }
+  }, [chapters]);
 
   const [fetchedProcedures, setFetchedProcedures] = React.useState<
     Record<string, Procedure>
@@ -497,6 +518,7 @@ export function CourseEditor({
         courseName={courseName}
         chapterNumber={chapterNum}
         initialChapter={editingChapter}
+        initialStep={chapterInitialStep}
         onSave={(savedChapter) => {
           const exists = chapters.some((c) => c.id === savedChapter.id);
           const next = exists
@@ -610,10 +632,17 @@ export function CourseEditor({
       handleRemoveChapter={handleRemoveChapter}
       onAddChapter={() => {
         setEditingChapter(null);
+        setChapterInitialStep("content");
         setStep("chapter-editor");
       }}
       onSelectChapter={(ch) => {
         setEditingChapter(ch);
+        setChapterInitialStep("content");
+        setStep("chapter-editor");
+      }}
+      onEditChapterQuiz={(ch) => {
+        setEditingChapter(ch);
+        setChapterInitialStep("quiz");
         setStep("chapter-editor");
       }}
     />

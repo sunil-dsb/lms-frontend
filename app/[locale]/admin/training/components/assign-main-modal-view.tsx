@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { LuCheck, LuEye, LuLoader, LuTriangleAlert, LuX } from "react-icons/lu";
@@ -51,6 +52,8 @@ interface AssignMainModalViewProps {
   allEmployees?: MockEmployee[];
   onSelectAllStations?: () => void;
   onDeselectAllStations?: () => void;
+  onEditMissingChapter?: (chapterNumber: number) => void;
+  onStartRedirect?: () => void;
 }
 
 export function AssignMainModalView({
@@ -91,11 +94,14 @@ export function AssignMainModalView({
   allEmployees,
   onSelectAllStations,
   onDeselectAllStations,
+  onEditMissingChapter,
+  onStartRedirect,
 }: AssignMainModalViewProps): React.ReactElement {
   const router = useRouter();
   const tForm = useTranslations("admin.training.form");
   const isEs = locale === "es";
   const title = (isEs ? course.titleEs : course.titleEn) || course.slug;
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   // Filter out any legacy or invalid stations like "Saucier"
   const cleanStations = availableStations.filter(
@@ -103,7 +109,15 @@ export function AssignMainModalView({
   );
 
   return (
-    <div className="flex flex-col h-full justify-between">
+    <div className="relative flex flex-col h-full justify-between">
+      {/* Subtle blur overlay that disables clicks while redirecting */}
+      {isRedirecting &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[9999] backdrop-blur-[2px] bg-black/5 cursor-wait select-none pointer-events-auto" />,
+          document.body,
+        )}
+
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
         {/* Header */}
@@ -223,16 +237,30 @@ export function AssignMainModalView({
                   <div className="flex justify-end pt-1">
                     <button
                       type="button"
-                      onClick={() =>
-                        router.push(
-                          `/${locale}/admin/training/${course.id}/edit`,
-                        )
-                      }
-                      className="inline-flex items-center gap-2 text-xs font-bold text-[var(--color-brand-600)] hover:underline cursor-pointer"
+                      disabled={isRedirecting}
+                      onClick={() => {
+                        setIsRedirecting(true);
+                        if (onStartRedirect) {
+                          onStartRedirect();
+                        }
+                        if (onEditMissingChapter) {
+                          const targetNum = missingChapterNumbers[0] || 1;
+                          onEditMissingChapter(targetNum);
+                        } else {
+                          const targetUrl = `/${locale}/admin/training/${course.id}/edit?chapter=${missingChapterNumbers[0] || 1}&tab=quiz`;
+                          window.location.href = targetUrl;
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 text-xs font-bold text-[var(--color-brand-600)] hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isEs
-                        ? "Editar curso y agregar preguntas →"
-                        : "Edit course & add questions →"}
+                      {isRedirecting && (
+                        <LuLoader className="size-3.5 animate-spin" />
+                      )}
+                      <span>
+                        {isEs
+                          ? "Agregar preguntas de evaluación →"
+                          : "Add quiz questions →"}
+                      </span>
                     </button>
                   </div>
                 </div>

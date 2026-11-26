@@ -3,7 +3,6 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   ApiException,
   fetchMe,
-  listEmployees,
   listLocations,
   listProcedures,
   listRoles,
@@ -19,7 +18,9 @@ import type {
 import { fetchTrainingProgress } from "@/lib/api/training-progress";
 import { serverCookieHeader } from "@/lib/server-cookies";
 import { fetchCourses } from "@/services/courses/api";
+import { fetchEmployees } from "@/services/employees/api";
 import { getCategoryIcon } from "@/lib/category-icons";
+import { canManageProcedures } from "@/lib/rbac";
 import {
   buildAttention,
   buildTrainingHome,
@@ -78,6 +79,7 @@ export default async function AdminHomePage({
   const cookieHeader = await serverCookieHeader();
 
   let meId: string | null = null;
+  let meRole: string | null = null;
   let employees: AdminEmployee[] = [];
   let procedures: Procedure[] = [];
   let roles: Role[] = [];
@@ -94,6 +96,7 @@ export default async function AdminHomePage({
       listLocations(cookieHeader),
     ]);
     meId = me.employee.id;
+    meRole = me.employee.role;
     const location =
       locations.find((l) => l.id === me.employee.locationId) ?? locations[0];
     const locationId = location?.id ?? me.employee.locationId;
@@ -105,15 +108,17 @@ export default async function AdminHomePage({
       trainingProgress,
       recentCourses,
     ] = await Promise.all([
-      listEmployees({ status: "all" }, cookieHeader),
+      fetchAllVisibleEmployees(cookieHeader).then((visibleEmployees) => ({
+        employees: visibleEmployees,
+      })),
       listProcedures({}, cookieHeader),
       listRoles(cookieHeader),
       listStations(locationId, cookieHeader),
       // The training card + stat share the admin/progress payload (with a
       // local catch so a backend blip empties the card instead of 500ing).
-      fetchTrainingProgress(cookieHeader, { includeAssignments: true }).then(
-        (r) => r.data,
-      ),
+      fetchTrainingProgress(cookieHeader, { includeAssignments: true })
+        .then((r) => r.data)
+        .catch(() => null),
       // Recently updated courses: only the first page matters here.
       fetchCourses({ limit: 8, status: "published" }, cookieHeader).catch(
         () => null,
@@ -183,6 +188,8 @@ export default async function AdminHomePage({
   const trainedPct = training.total
     ? Math.round((training.complete / training.total) * 100)
     : 0;
+  const canManage = canManageProcedures(meRole);
+
   const stats: Stat[] = [
     {
       label: t("stat.training"),
@@ -221,8 +228,9 @@ export default async function AdminHomePage({
       label: t("stat.library"),
       icon: LuBookOpen,
       value: String(live.length),
-      note:
-        drafts || noSpanish
+      note: !canManage
+        ? `procedures live on the floor`
+        : drafts || noSpanish
           ? [
               drafts ? t("stat.libraryDrafts", { count: drafts }) : null,
               noSpanish
@@ -232,19 +240,20 @@ export default async function AdminHomePage({
               .filter(Boolean)
               .join(" · ")
           : t("stat.libraryClear"),
-      tone: drafts || noSpanish ? "caution" : undefined,
-      href: drafts
-        ? `/${locale}/admin/library?status=draft`
-        : `/${locale}/admin/library`,
+      tone: canManage && (drafts || noSpanish) ? "caution" : undefined,
+      href: `/${locale}/admin/library`,
     },
   ];
 
   // Cap "Needs attention" at ten rows: past that the card outgrows the page
   // and the count badge alone tells the manager the size of the backlog.
   const ATTENTION_MAX = 10;
+  const filteredGroups = !canManage
+    ? groups.filter((g) => g.kind === "invite")
+    : groups;
   const cappedGroups: AttentionGroup[] = [];
   let attentionQuota = ATTENTION_MAX;
-  for (const g of groups) {
+  for (const g of filteredGroups) {
     if (attentionQuota <= 0) break;
     const items = g.items.slice(0, attentionQuota);
     attentionQuota -= items.length;
@@ -322,20 +331,31 @@ export default async function AdminHomePage({
 
   return (
     <div className="mx-auto max-w-page space-y-8 pb-12">
-      {/* One way in to making content. */}
+      {/* Primary call to action: Managers/Admins can create procedures; Supervisors assign training */}
       <HomeHeader
         place={dateLabel}
         headline={
           total === 0 ? t("headlineClear") : t("headline", { count: total })
         }
-        actions={[
-          {
-            href: `/${locale}/admin/library/new`,
-            label: t("actionCreate"),
-            icon: LuPlus,
-            primary: true,
-          },
-        ]}
+        actions={
+          canManage
+            ? [
+                {
+                  href: `/${locale}/admin/library/new`,
+                  label: t("actionCreate"),
+                  icon: LuPlus,
+                  primary: true,
+                },
+              ]
+            : [
+                {
+                  href: `/${locale}/admin/training`,
+                  label: "Assign Training",
+                  icon: LuGraduationCap,
+                  primary: true,
+                },
+              ]
+        }
       />
 
       <StatStrip stats={stats} />
@@ -389,6 +409,27 @@ export default async function AdminHomePage({
       />
     </div>
   );
+}
+
+async function fetchAllVisibleEmployees(
+  cookieHeader: string,
+): Promise<AdminEmployee[]> {
+  const limit = 100;
+  const firstPage = await fetchEmployees(
+    { status: "all", page: 1, limit },
+    cookieHeader,
+  );
+  if (firstPage.meta.totalPages <= 1) return firstPage.employees;
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.meta.totalPages - 1 }, (_, index) =>
+      fetchEmployees({ status: "all", page: index + 2, limit }, cookieHeader),
+    ),
+  );
+  return [
+    ...firstPage.employees,
+    ...remainingPages.flatMap((page) => page.employees),
+  ];
 }
 
 function HomeError({ message }: { message: string }): React.ReactElement {

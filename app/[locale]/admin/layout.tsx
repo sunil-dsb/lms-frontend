@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { setRequestLocale } from "next-intl/server";
 import { fetchMe, listLocations, logout } from "@/lib/api";
 import type { Employee } from "@/lib/types";
+import { canAccessAdminPortal } from "@/lib/rbac";
 import { AdminShell } from "./admin-shell";
 
 /**
@@ -62,6 +63,9 @@ export default async function AdminLayout({
     ]);
     if (meRes.status === "rejected") throw meRes.reason;
     employee = meRes.value.employee;
+    if (!canAccessAdminPortal(employee.role)) {
+      redirect(`/${locale}/employee/home`);
+    }
     if (locRes.status === "fulfilled") {
       const { locations } = locRes.value;
       workspace =

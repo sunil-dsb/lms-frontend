@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { flushSync } from "react-dom";
-import { LuArrowUpRight, LuLogOut, LuMoon } from "react-icons/lu";
+import { LuArrowUpRight, LuLogOut, LuMoon, LuUserRound } from "react-icons/lu";
 import { LocaleSwitch } from "@/components/ui/locale-switch";
 import { EmployeeTopBarBackButton } from "./employee-top-bar-back-button";
 import { THEME_COOKIE, THEME_MAX_AGE } from "@/lib/theme";
@@ -198,6 +198,17 @@ export function EmployeeTopBar({
               </div>
 
               <div className="my-3 border-t border-[var(--color-line-2)]" />
+
+              <Link
+                href={`/${locale}/employee/profile`}
+                onClick={() => setIsOpen(false)}
+                role="menuitem"
+                className="flex items-center py-1 text-xs font-medium text-[var(--color-ink)] transition-colors hover:text-[var(--color-brand-600)] sm:text-sm"
+                style={{ gap: "10px" }}
+              >
+                <LuUserRound className="size-4 shrink-0" aria-hidden="true" />
+                <span>{locale === "es" ? "Mi perfil" : "My Profile"}</span>
+              </Link>
 
               {/* Dark mode toggle row with pill switch */}
               <div className="flex items-center justify-between py-1">

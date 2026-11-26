@@ -19,15 +19,8 @@ import {
 } from "@/components/ui/bilingual-input";
 import { IconTile } from "@/components/ui/icon-tile";
 import { Popover } from "@/components/ui/popover";
-import { RowActions, type RowActionItem } from "@/components/ui/row-actions";
 import { cn } from "@/lib/utils";
-import {
-  LuCheck,
-  LuChevronDown,
-  LuChevronRight,
-  LuPlus,
-  LuX,
-} from "react-icons/lu";
+import { LuChevronDown, LuPlus, LuX } from "react-icons/lu";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/admin/page-header";
 import { Label } from "@/components/ui/label";
@@ -66,6 +59,7 @@ interface CategoryDetailClientProps {
   locale: string;
   /** Manager's location — scopes the station picker options. */
   locationId: string | null;
+  canManageCategories: boolean;
 }
 
 function isUuid(val: string | null | undefined): boolean {
@@ -80,6 +74,7 @@ export function CategoryDetailClient({
   slug,
   locale,
   locationId,
+  canManageCategories,
 }: CategoryDetailClientProps): React.ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -404,13 +399,15 @@ export function CategoryDetailClient({
         title={isEs ? category.nameEs : category.nameEn}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="primary"
-              icon={LuPlus}
-              onClick={() => setAddSubcategoryOpen(true)}
-            >
-              {isEs ? "Agregar subcategoría" : "Add subcategory"}
-            </Button>
+            {canManageCategories ? (
+              <Button
+                variant="primary"
+                icon={LuPlus}
+                onClick={() => setAddSubcategoryOpen(true)}
+              >
+                {isEs ? "Agregar subcategoría" : "Add subcategory"}
+              </Button>
+            ) : null}
             <Link href={`/${locale}/admin/library/categories`}>
               <Button variant="secondary">
                 {isEs ? "Volver a categorías" : "Back to categories"}
@@ -644,6 +641,7 @@ export function CategoryDetailClient({
               }
               onToggleStation={toggleStations}
               locale={locale}
+              canManageCategories={canManageCategories}
             />
           ))}
         </div>

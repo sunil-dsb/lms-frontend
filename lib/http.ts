@@ -74,12 +74,30 @@ function normaliseAxiosError(error: AxiosError<ApiErrorBody>): ApiException {
   const status = error.response?.status ?? 0;
   const body = error.response?.data;
   const code = body?.code ?? body?.error?.code ?? "UNKNOWN";
-  const message =
-    body?.message ?? body?.error?.message ?? error.message ?? "Request failed";
   const details =
     body?.details ??
     body?.errors?.map((e) => ({ path: e.field, message: e.message })) ??
     [];
+
+  let message =
+    body?.message ?? body?.error?.message ?? error.message ?? "Request failed";
+
+  // If the server returns a generic "Validation error", unpack the human-friendly field message
+  if (
+    (message === "Validation error" ||
+      message === "Validation Error" ||
+      code === "VALIDATION_ERROR" ||
+      code === "INVALID_INPUT") &&
+    details.length > 0
+  ) {
+    const specificMessage = details
+      .map((d) => d.message)
+      .filter(Boolean)
+      .join(". ");
+    if (specificMessage) {
+      message = specificMessage;
+    }
+  }
 
   return new ApiException(status, code, message, details);
 }

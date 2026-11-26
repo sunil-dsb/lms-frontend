@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Employee, SystemRole } from "@/lib/types";
+import { formatSystemRole, normalizeRole } from "@/lib/rbac";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LocaleSwitch } from "@/components/ui/locale-switch";
 import {
@@ -58,8 +59,14 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/library/categories",
         icon: LuFolders,
         labelKey: "navCategories",
+        roles: ["super_admin", "manager"],
       },
-      { href: "/library/new", icon: LuCirclePlus, labelKey: "navNewProcedure" },
+      {
+        href: "/library/new",
+        icon: LuCirclePlus,
+        labelKey: "navNewProcedure",
+        roles: ["super_admin", "manager"],
+      },
     ],
   },
   {
@@ -77,13 +84,23 @@ export const NAV_GROUPS: NavGroup[] = [
     headingKey: "groupPeople",
     items: [
       { href: "/employees", icon: LuUsers, labelKey: "navEmployees" },
-      { href: "/employees/new", icon: LuUserPlus, labelKey: "inviteEmployee" },
+      {
+        href: "/employees/new",
+        icon: LuUserPlus,
+        labelKey: "inviteEmployee",
+        roles: ["super_admin", "manager"],
+      },
     ],
   },
   {
     headingKey: "groupSettings",
     items: [
-      { href: "/settings", icon: LuChefHat, labelKey: "navSettings" },
+      {
+        href: "/settings",
+        icon: LuChefHat,
+        labelKey: "navSettings",
+        roles: ["super_admin"],
+      },
       {
         href: "/audit",
         icon: LuHistory,
@@ -131,13 +148,29 @@ export function Sidebar({
   signOutAction,
   className,
 }: SidebarProps): React.ReactElement {
+  const isEs = locale === "es";
+  const systemRole = normalizeRole(employee.role);
+
+  const roleName = React.useMemo(() => {
+    return formatSystemRole(employee.role, isEs);
+  }, [employee.role, isEs]);
+
+  const panelTitle = React.useMemo(() => {
+    const r = employee.role?.toLowerCase();
+    if (r === "manager") return isEs ? "Panel de Gerente" : "Manager Panel";
+    if (r === "supervisor")
+      return isEs ? "Panel de Supervisor" : "Supervisor Panel";
+    if (r === "super_admin") return isEs ? "Panel de Admin" : "Admin Panel";
+    return isEs ? "Portal de Personal" : "Staff Portal";
+  }, [employee.role, isEs]);
+
   return (
     <aside
       className={cn(
         "sticky top-0 h-screen w-sidebar shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-surface)]",
         className,
       )}
-      aria-label={titleLabel}
+      aria-label={panelTitle || titleLabel}
     >
       <div className="flex h-16 min-h-16 items-center gap-3 bg-[var(--color-brand-600)] px-4 py-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -146,50 +179,62 @@ export function Sidebar({
           alt=""
           width={40}
           height={40}
-          className="size-10 shrink-0 rounded-[var(--radius-md)] object-cover"
+          className="size-10 shrink-0 rounded-[var(--radius-md)] object-cover shadow-xs"
         />
-        <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold leading-heading text-[var(--color-white)]">
-            {workspace.split(",")[0] || titleLabel}
+        <div className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold leading-heading text-white">
+            {workspace.split(",")[0] || "Alimentaria Mexicana"}
           </span>
-          <span className="block truncate text-sm leading-meta text-[var(--color-white)]">
-            {workspace.split(",").slice(1).join(",").trim() || titleLabel}
+          <span className="block truncate text-xs leading-meta text-white/80">
+            {panelTitle}
           </span>
-        </span>
+        </div>
       </div>
       <span className="pix-edge is-down" aria-hidden="true" />
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4 pt-6">
-        {groups.map((group) => (
-          <div key={group.headingKey} className="space-y-1">
-            {group.headingKey === "groupWorkspace" ? null : (
-              <p className="px-3 pb-1 text-sm leading-meta text-[var(--color-ink-3)]">
-                {headingFor(group.headingKey)}
-              </p>
-            )}
-            <ul className="space-y-0.5">
-              {group.items.map((item) => (
-                <li key={item.href || "home"}>
-                  <NavLink
-                    href={`/${locale}/admin${item.href}`}
-                    icon={item.icon}
-                    label={labelFor(item.labelKey)}
-                    active={isActive(item.href)}
-                    onClick={onNavigate}
-                    soon={item.soon ? soonLabel : undefined}
-                  />
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        {groups.map((group) => {
+          const visibleItems = group.items.filter(
+            (item) => !item.roles || item.roles.includes(systemRole),
+          );
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={group.headingKey} className="space-y-1">
+              {group.headingKey === "groupWorkspace" ? null : (
+                <p className="px-3 pb-1 text-sm leading-meta text-[var(--color-ink-3)]">
+                  {headingFor(group.headingKey)}
+                </p>
+              )}
+              <ul className="space-y-0.5">
+                {visibleItems.map((item) => (
+                  <li key={item.href || "home"}>
+                    <NavLink
+                      href={`/${locale}/admin${item.href}`}
+                      icon={item.icon}
+                      label={labelFor(item.labelKey)}
+                      active={isActive(item.href)}
+                      onClick={onNavigate}
+                      soon={item.soon ? soonLabel : undefined}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </nav>
 
       <div className="border-t border-[var(--color-line)] p-3">
-        <p className="flex items-center gap-3 px-3 py-2">
+        <Link
+          href={`/${locale}/admin/profile`}
+          onClick={onNavigate}
+          aria-label={isEs ? "Ver mi perfil" : "View my profile"}
+          className="flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 transition-colors hover:bg-[var(--color-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+        >
           <span
             aria-hidden="true"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-sm font-semibold text-[var(--color-ink)]"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-panel)] text-sm font-semibold text-[var(--color-ink)] border border-[var(--color-line-2)] shadow-2xs"
           >
             {employee.name
               .split(" ")
@@ -199,10 +244,15 @@ export function Sidebar({
               .join("")
               .toUpperCase()}
           </span>
-          <span className="min-w-0 truncate text-sm font-medium text-[var(--color-ink)]">
-            {employee.name}
-          </span>
-        </p>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold text-[var(--color-ink)]">
+              {employee.name}
+            </div>
+            <div className="truncate text-xs text-[var(--color-ink-3)] capitalize">
+              {roleName}
+            </div>
+          </div>
+        </Link>
         {/* Sign out — a form so the server action runs directly on submit
             (same pattern as the employee top bar). Sits in the footer so it
             is present on desktop and in the mobile drawer. */}

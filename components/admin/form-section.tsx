@@ -35,7 +35,7 @@ export function FormSection({
       {/* Wraps on a phone. The header's action is a search field and two arrows
           at their natural width; beside a title at 390px they pushed the section
           78px past the screen and the whole page scrolled sideways. */}
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] pb-3">
+      <header className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 border-b border-[var(--color-line)] pb-3">
         <div className="flex min-w-0 flex-1 items-start gap-3">
           {icon && <IconTile size="md" icon={icon} />}
           <div className="min-w-0">
@@ -49,7 +49,11 @@ export function FormSection({
             )}
           </div>
         </div>
-        {headerAction}
+        {headerAction && (
+          <div className="shrink-0 flex items-center justify-start sm:justify-end w-full sm:w-auto">
+            {headerAction}
+          </div>
+        )}
       </header>
       <div className="space-y-4 pt-1">{children}</div>
     </section>

@@ -77,6 +77,7 @@ interface LibraryProcedureExplorerProps {
   stations?: Station[];
   locale: string;
   isLoading?: boolean;
+  canManage?: boolean;
   /** Procedures query still resolving — the filter bar renders immediately
    *  with whatever catalog arrived, and only the list area shows a skeleton.
    *  The page no longer waits for every query before painting anything. */
@@ -103,6 +104,7 @@ export function LibraryProcedureExplorer({
   locale,
   isLoading = false,
   proceduresLoading = false,
+  canManage = true,
 }: LibraryProcedureExplorerProps): React.ReactElement {
   if (isLoading) {
     return <LibraryExplorerSkeleton />;
@@ -204,8 +206,8 @@ export function LibraryProcedureExplorer({
   // Archived is its own choice: out of the list by default, one pick away for
   // the audit.
   const [statusFilter, setStatusFilter] = React.useState<
-    "all" | ProcedureStatus | "archived"
-  >("all");
+    "all" | ProcedureStatus | "archived" | "promos"
+  >(canManage ? "all" : "published");
   // Station filter: narrows the list to procedures whose stationScope covers
   // the chosen station. `mode: 'all'` procedures are always kept because they
   // apply to every station; `mode: 'specific'` matches when stationIds contains
@@ -380,15 +382,17 @@ export function LibraryProcedureExplorer({
   }, [stationFilter]);
 
   const backendStatus = React.useMemo(() => {
-    if (statusFilter === "all") return undefined;
+    if (statusFilter === "all" || statusFilter === "promos") return undefined;
     return statusFilter;
   }, [statusFilter]);
+  const backendIsPromo = statusFilter === "promos" ? true : undefined;
 
   const hasActiveBackendFilters = Boolean(
     backendCategoryIds?.length ||
     backendSubcategoryIds?.length ||
     backendStationIds?.length ||
     backendStatus ||
+    backendIsPromo ||
     debouncedSearch.trim(),
   );
 
@@ -401,6 +405,7 @@ export function LibraryProcedureExplorer({
         subcategoryIds: backendSubcategoryIds,
         stationIds: backendStationIds,
         status: backendStatus,
+        isPromo: backendIsPromo,
         search: debouncedSearch.trim() || undefined,
       },
     ],
@@ -412,6 +417,7 @@ export function LibraryProcedureExplorer({
           subcategoryIds: backendSubcategoryIds,
           stationIds: backendStationIds,
           status: backendStatus,
+          isPromo: backendIsPromo,
           search: debouncedSearch.trim() || undefined,
         },
         true,
@@ -546,6 +552,11 @@ export function LibraryProcedureExplorer({
         label: isEs ? "Archivados" : "Archived",
         icon: LuArchive,
       },
+      {
+        value: "promos",
+        label: isEs ? "Platillos promocionales" : "Promo dishes",
+        icon: PiSparkle,
+      },
     ];
   }, [isEs]);
 
@@ -594,11 +605,13 @@ export function LibraryProcedureExplorer({
             return false;
         }
 
-        // Status Filter: expired promo dishes automatically qualify as archived
+        // Promo selection returns every promo dish, regardless of procedure status.
         const isRowArchived = Boolean(
           p.isArchived || p.status === "archived" || isPromoExpired(p),
         );
-        if (statusFilter === "archived") {
+        if (statusFilter === "promos") {
+          if (!p.isPromo) return false;
+        } else if (statusFilter === "archived") {
           if (!isRowArchived) return false;
         } else {
           if (isRowArchived) return false;
@@ -708,14 +721,14 @@ export function LibraryProcedureExplorer({
   const hasActiveFilters =
     selectedCategorySlug !== "all" ||
     selectedSubcategoryId !== "all" ||
-    statusFilter !== "all" ||
+    (canManage && statusFilter !== "all") ||
     stationFilter !== "all" ||
     searchQuery.trim().length > 0;
 
   const resetFilters = (): void => {
     setSelectedCategorySlug("all");
     setSelectedSubcategoryId("all");
-    setStatusFilter("all");
+    setStatusFilter(canManage ? "all" : "published");
     setStationFilter("all");
     setSearchQuery("");
     setCurrentPage(1);
@@ -783,10 +796,13 @@ export function LibraryProcedureExplorer({
         }}
         statusFilter={statusFilter}
         onStatusChange={(value) => {
-          setStatusFilter(value as ProcedureStatus | "all" | "archived");
+          setStatusFilter(
+            value as ProcedureStatus | "all" | "archived" | "promos",
+          );
           setCurrentPage(1);
         }}
         statusOptions={statusOptions}
+        showStatusFilter={canManage}
         searchQuery={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value);
@@ -798,6 +814,7 @@ export function LibraryProcedureExplorer({
         onReset={resetFilters}
       />
       <ProcedureExplorerResults
+        canManage={canManage}
         loading={
           proceduresLoading ||
           (hasActiveBackendFilters && isFilterLoading && !filterApiResponse)

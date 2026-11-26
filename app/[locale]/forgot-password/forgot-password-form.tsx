@@ -31,6 +31,8 @@ interface ForgotPasswordFormProps {
   locale: string;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function ForgotPasswordForm({
   locale,
 }: ForgotPasswordFormProps): React.ReactElement {
@@ -45,7 +47,7 @@ export function ForgotPasswordForm({
     setError(null);
 
     const trimmed = email.trim();
-    if (!trimmed || !trimmed.includes("@")) {
+    if (!trimmed || !EMAIL_REGEX.test(trimmed)) {
       setError(t("errorInvalid"));
       return;
     }

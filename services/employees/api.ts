@@ -60,9 +60,11 @@ function normalizeEmployee<T extends Employee>(raw: any): T {
     raw?.accessLevel ??
     (raw?.role === "manager"
       ? "manager"
-      : raw?.role === "super_admin" || raw?.role === "admin"
-        ? "manager"
-        : "employee");
+      : raw?.role === "supervisor"
+        ? "supervisor"
+        : raw?.role === "super_admin" || raw?.role === "admin"
+          ? "manager"
+          : "employee");
 
   return {
     ...raw,
@@ -108,8 +110,27 @@ export async function fetchEmployeeById(
 export async function fetchEmployees(
   opts: EmployeeFilterOptions = {},
   cookieHeader?: string,
-): Promise<{ employees: AdminEmployee[] }> {
+): Promise<{
+  employees: AdminEmployee[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  statusCounts: {
+    all: number;
+    pending: number;
+    active: number;
+    deactivated: number;
+  };
+}> {
+  const page = opts.page ?? 1;
+  const limit = opts.limit ?? 10;
   const status = opts.status ?? "all";
+  const role = opts.role ?? "all";
+  const stationId = opts.stationId ?? "all";
+  const jobId = opts.jobId ?? "all";
   const headers: Record<string, string> = {};
 
   if (cookieHeader) {
@@ -122,26 +143,56 @@ export async function fetchEmployees(
 
   const { data } = await http.get<{
     success: boolean;
-    data: { employees: AdminEmployee[] };
+    data: {
+      employees: AdminEmployee[];
+      meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      };
+      statusCounts?: {
+        all: number;
+        pending: number;
+        active: number;
+        deactivated: number;
+      };
+    };
   }>(EMPLOYEES_ENDPOINTS.LIST, {
     headers: Object.keys(headers).length ? headers : undefined,
     params: {
+      page,
+      limit,
       status: status !== "all" ? status : undefined,
-      // Backend paginates (default 10) — ask for the whole roster: the
-      // dashboard counts and People filters need every row to be correct.
-      limit: 200,
-      // ?search= filters name / email / employee code server-side.
+      role: role !== "all" ? role : undefined,
+      stationId: stationId !== "all" ? stationId : undefined,
+      jobId: jobId !== "all" ? jobId : undefined,
       search: opts.q?.trim() || undefined,
     },
   });
 
   const rawList = data.data?.employees ?? [];
-  return { employees: rawList.map((e) => normalizeEmployee<AdminEmployee>(e)) };
+  return {
+    employees: rawList.map((e) => normalizeEmployee<AdminEmployee>(e)),
+    meta: data.data?.meta ?? {
+      total: rawList.length,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(rawList.length / limit)),
+    },
+    statusCounts: data.data?.statusCounts ?? {
+      all: rawList.length,
+      pending: 0,
+      active: 0,
+      deactivated: 0,
+    },
+  };
 }
 
 export async function createEmployee(
   input: CreateEmployeeInput,
 ): Promise<{ employee: Employee; invite: InviteResult }> {
+  const role = input.role || input.accessLevel || "employee";
   const { data } = await http.post<{
     success: boolean;
     data: {
@@ -152,11 +203,25 @@ export async function createEmployee(
     name: input.name,
     email: input.email,
     locationId: input.locationId,
-    role: input.accessLevel === "manager" ? "manager" : "employee",
+    role: role === "admin" || role === "super_admin" ? "manager" : role,
     jobIds: input.roleIds,
     stationIds: input.stationIds ?? [],
     employeeCode: input.employeeCode || undefined,
     languagePref: input.languagePref ?? "en",
+    dateOfBirth: input.dateOfBirth || undefined,
+    fathersName: input.fathersName || undefined,
+    gender: input.gender || undefined,
+    address: input.address || undefined,
+    phoneNumber: input.phoneNumber || undefined,
+    emergencyContactName: input.emergencyContactName || undefined,
+    emergencyContactRelation: input.emergencyContactRelation || undefined,
+    emergencyContactPhone: input.emergencyContactPhone || undefined,
+    startDate: input.startDate || undefined,
+    sinNumber: input.sinNumber || undefined,
+    hourlyRate: input.hourlyRate || undefined,
+    supervisorIds: input.supervisorIds ?? [],
+    managerIds: input.managerIds ?? [],
+    subordinateIds: input.subordinateIds ?? [],
   });
 
   const invite: InviteResult = {
@@ -166,6 +231,30 @@ export async function createEmployee(
   };
 
   return { employee: normalizeEmployee<Employee>(data.data.employee), invite };
+}
+
+export async function fetchSupervisors(locationId?: string): Promise<{
+  supervisors: Array<{ id: string; name: string; email: string }>;
+}> {
+  const { data } = await http.get<{
+    success: boolean;
+    data: { supervisors: Array<{ id: string; name: string; email: string }> };
+  }>(EMPLOYEES_ENDPOINTS.SUPERVISORS, {
+    params: locationId ? { locationId } : undefined,
+  });
+  return { supervisors: data.data?.supervisors ?? [] };
+}
+
+export async function fetchManagers(
+  locationId?: string,
+): Promise<{ managers: Array<{ id: string; name: string; email: string }> }> {
+  const { data } = await http.get<{
+    success: boolean;
+    data: { managers: Array<{ id: string; name: string; email: string }> };
+  }>(EMPLOYEES_ENDPOINTS.MANAGERS, {
+    params: locationId ? { locationId } : undefined,
+  });
+  return { managers: data.data?.managers ?? [] };
 }
 
 export async function resendInvite(
@@ -241,19 +330,33 @@ export async function fetchEmployeeTraining(
   return data.data?.assignments ?? [];
 }
 
-/** Full-body update (backend validates against the create schema minus
- *  employeeCode — every field required). The caller must send the current
+/** Full-body update (backend validates against the create schema — every
+ *  field is required). The caller must send the current
  *  `status`/`languagePref` explicitly: the backend defaults an omitted
  *  status to `pending`, which would silently deactivate people. */
 export interface UpdateEmployeeRequest {
-  name: string;
-  email: string;
-  locationId: string;
-  role: "super_admin" | "manager" | "employee";
-  jobIds: string[];
-  stationIds: string[];
-  languagePref: "en" | "es";
-  status: "pending" | "active" | "deactivated";
+  name?: string;
+  email?: string;
+  locationId?: string;
+  role?: "manager" | "supervisor" | "employee";
+  jobIds?: string[];
+  stationIds?: string[];
+  languagePref?: "en" | "es";
+  status?: "pending" | "active" | "deactivated";
+  employeeCode?: string | null;
+  dateOfBirth?: string;
+  fathersName?: string;
+  gender?: "male" | "female" | "other" | "prefer_not_to_say";
+  address?: string;
+  phoneNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactRelation?: string;
+  emergencyContactPhone?: string;
+  startDate?: string;
+  sinNumber?: string;
+  hourlyRate?: string;
+  supervisorIds?: string[];
+  managerIds?: string[];
 }
 
 export async function updateEmployee(
@@ -276,4 +379,30 @@ export async function updateEmployee(
     employee: normalizeEmployee<AdminEmployee>(data.data.employee),
     inviteUrl: rawInvite ? frontendInviteUrl(rawInvite) : undefined,
   };
+}
+
+export async function updateEmployeeSubordinates(
+  employeeId: string,
+  subordinateIds: string[],
+): Promise<{
+  subordinates: Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  }>;
+}> {
+  const { data } = await http.put<{
+    success: boolean;
+    data: {
+      subordinates: Array<{
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+      }>;
+    };
+  }>(EMPLOYEES_ENDPOINTS.SUBORDINATES(employeeId), { subordinateIds });
+
+  return data.data;
 }

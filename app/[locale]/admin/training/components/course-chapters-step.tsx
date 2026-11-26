@@ -57,6 +57,7 @@ interface CourseChaptersStepProps {
   handleRemoveChapter: (id: string) => Promise<void>;
   onAddChapter: () => void;
   onSelectChapter: (chapter: EditorChapter) => void;
+  onEditChapterQuiz?: (chapter: EditorChapter) => void;
 }
 
 export function CourseChaptersStep({
@@ -82,6 +83,7 @@ export function CourseChaptersStep({
   handleRemoveChapter,
   onAddChapter,
   onSelectChapter,
+  onEditChapterQuiz,
 }: CourseChaptersStepProps): React.ReactElement {
   const [isEditingDetails, setIsEditingDetails] = React.useState(false);
   const [editTitleDraft, setEditTitleDraft] =
@@ -541,6 +543,18 @@ export function CourseChaptersStep({
           onClose={() => setIsAssignModalOpen(false)}
           locale={locale}
           course={assignmentCourse}
+          onEditMissingChapter={
+            onEditChapterQuiz
+              ? (chapterNumber) => {
+                  const targetChapter =
+                    chapters[chapterNumber - 1] || chapters[0];
+                  if (targetChapter) {
+                    setIsAssignModalOpen(false);
+                    onEditChapterQuiz(targetChapter);
+                  }
+                }
+              : undefined
+          }
         />
       )}
     </>

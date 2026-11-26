@@ -11,7 +11,12 @@ import { CustomSelect } from "@/components/ui/custom-select";
 import { MultiSelectChips } from "@/components/ui/multi-select-chips";
 import { PageHeader } from "@/components/admin/page-header";
 import { LuUserPlus, LuLoader } from "react-icons/lu";
-import { createEmployee } from "@/services/employees/api";
+import {
+  createEmployee,
+  fetchSupervisors,
+  fetchManagers,
+  fetchEmployees,
+} from "@/services/employees/api";
 import { toast } from "@/components/ui/toast";
 import { fetchLocations } from "@/services/locations/api";
 import { fetchJobs, fetchJobStations } from "@/services/jobs/api";
@@ -30,6 +35,9 @@ import {
   EmployeeAccessSection,
   EmployeeAdditionalSection,
   EmployeeDetailsSection,
+  EmployeeEmergencySection,
+  EmployeePayrollSection,
+  EmployeePersonalSection,
 } from "./employee-form-sections";
 import {
   type FieldErrors,
@@ -43,6 +51,8 @@ interface NewEmployeeFormProps {
   locale: string;
   locations: Location[];
   roles: Role[];
+  currentUserRole?: string | null;
+  currentUserLocationId?: string | null;
 }
 
 const initialState = (defaultLocationId: string): FormState => ({
@@ -54,12 +64,28 @@ const initialState = (defaultLocationId: string): FormState => ({
   stationIds: [],
   employeeCode: "",
   languagePref: "en",
+  dateOfBirth: "",
+  fathersName: "",
+  gender: "",
+  address: "",
+  phoneNumber: "",
+  emergencyContactName: "",
+  emergencyContactRelation: "",
+  emergencyContactPhone: "",
+  startDate: "",
+  sinNumber: "",
+  hourlyRate: "",
+  supervisorIds: [],
+  managerIds: [],
+  subordinateIds: [],
 });
 
 export function NewEmployeeForm({
   locale,
   locations: initialLocations,
   roles: initialRoles,
+  currentUserRole,
+  currentUserLocationId,
 }: NewEmployeeFormProps): React.ReactElement {
   const t = useTranslations("admin");
 
@@ -67,14 +93,40 @@ export function NewEmployeeForm({
   const validInitialLocations = initialLocations.filter(
     (l) => l.id !== "loc-main",
   );
-  const [locations, setLocations] = useState<Location[]>(validInitialLocations);
+  // If user is a manager, restrict locations to their assigned location
+  const filteredLocations =
+    currentUserRole === "manager" && currentUserLocationId
+      ? validInitialLocations.filter((l) => l.id === currentUserLocationId)
+      : validInitialLocations;
+
+  const [locations, setLocations] = useState<Location[]>(
+    filteredLocations.length > 0 ? filteredLocations : validInitialLocations,
+  );
   const [roles, setRoles] = useState<Role[]>(initialRoles);
 
-  const defaultLocationId = validInitialLocations[0]?.id ?? "";
+  const defaultLocationId =
+    (currentUserRole === "manager" && currentUserLocationId) ||
+    filteredLocations[0]?.id ||
+    validInitialLocations[0]?.id ||
+    "";
   const [form, setForm] = useState<FormState>(initialState(defaultLocationId));
 
   const [allStations, setAllStations] = useState<Station[]>([]);
   const [availableStations, setAvailableStations] = useState<Station[]>([]);
+  const [supervisors, setSupervisors] = useState<
+    Array<{ id: string; name: string; email: string }>
+  >([]);
+  const [managers, setManagers] = useState<
+    Array<{ id: string; name: string; email: string }>
+  >([]);
+  const [kitchenStaff, setKitchenStaff] = useState<
+    Array<{ id: string; name: string; email?: string | null }>
+  >([]);
+  const [isLoadingKitchenStaff, setIsLoadingKitchenStaff] =
+    useState<boolean>(false);
+  const [isLoadingSupervisors, setIsLoadingSupervisors] =
+    useState<boolean>(false);
+  const [isLoadingManagers, setIsLoadingManagers] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isLoadingLocations, setIsLoadingLocations] = useState<boolean>(false);
@@ -86,10 +138,32 @@ export function NewEmployeeForm({
   } | null>(null);
   const [isPending, startTransition] = useTransition();
   const hasLoadedRef = React.useRef(false);
-  // Roleâ†’stations fetches race when roles are toggled quickly: a slow
-  // response for an older selection must not overwrite the newer one
-  // (stale role sets re-add stations the manager just removed).
   const roleFetchSeq = React.useRef(0);
+
+  // Load supervisors, managers, and kitchen staff whenever the location changes
+  useEffect(() => {
+    if (!form.locationId) return;
+    setIsLoadingSupervisors(true);
+    setIsLoadingManagers(true);
+    setIsLoadingKitchenStaff(true);
+    fetchSupervisors(form.locationId)
+      .then((res) => setSupervisors(res.supervisors))
+      .catch(() => setSupervisors([]))
+      .finally(() => setIsLoadingSupervisors(false));
+    fetchManagers(form.locationId)
+      .then((res) => setManagers(res.managers))
+      .catch(() => setManagers([]))
+      .finally(() => setIsLoadingManagers(false));
+    fetchEmployees({
+      locationId: form.locationId,
+      role: "employee",
+      status: "active",
+      limit: 100,
+    })
+      .then((res) => setKitchenStaff(res.employees))
+      .catch(() => setKitchenStaff([]))
+      .finally(() => setIsLoadingKitchenStaff(false));
+  }, [form.locationId]);
 
   // Load real locations from the API on mount (do NOT load jobs or stations yet)
   useEffect(() => {
@@ -145,67 +219,27 @@ export function NewEmployeeForm({
   }
 
   // Handle access level toggle:
-  // When Employee is selected: fetch jobs from jobs API; keep selections empty until user selects role
-  // When Manager is selected: fetch jobs and send all jobs to get all stations; preselect all jobs and all stations
+  // When Employee is selected: fetch jobs from jobs API; selections kept empty until user selects role
+  // When Manager or Supervisor is selected: no station/job role required; clear roleIds & stationIds
   async function setAccessLevel(next: AccessLevel | ""): Promise<void> {
     clearFieldError("accessLevel");
+    clearFieldError("roleIds");
+    clearFieldError("stationIds");
+    clearFieldError("supervisorIds");
+    clearFieldError("managerIds");
     if (error) setError(null);
 
-    if (next === "manager") {
-      setIsLoadingRoles(true);
-      setIsLoadingStations(true);
-      try {
-        const { jobs: fetchedJobs } = await fetchJobs();
-        const currentRoles: Role[] = fetchedJobs.map((j) => ({
-          id: j.id,
-          name: j.name,
-          clearanceLevel: "general",
-          stationIds: [],
-          createdAt: j.createdAt || new Date().toISOString(),
-        }));
-        setRoles(currentRoles);
-
-        const allJobIds = fetchedJobs.map((j) => j.id);
-        const { stations: fetchedStations } = await fetchJobStations(allJobIds);
-        const uniqueStations: Station[] = fetchedStations.map((s, idx) => ({
-          id: s.id,
-          name: s.name,
-          locationId: form.locationId,
-          sortOrder: idx + 1,
-          isArchived: false,
-        }));
-
-        setAllStations(uniqueStations);
-        setAvailableStations(uniqueStations);
-
-        // Preselect ALL job roles and ALL stations for Manager
-        setForm((f) => ({
-          ...f,
-          accessLevel: "manager",
-          roleIds: currentRoles.map((r) => r.id),
-          stationIds: uniqueStations.map((s) => s.id),
-        }));
-        clearFieldError("roleIds");
-      } catch (err) {
-        const msg =
-          err instanceof ApiException && err.message
-            ? err.message
-            : err instanceof Error && err.message
-              ? err.message
-              : t("errorGeneric");
-        toast.error(msg);
-        setAvailableStations(allStations);
-        setForm((f) => ({
-          ...f,
-          accessLevel: "manager",
-          roleIds: roles.map((r) => r.id),
-          stationIds: allStations.map((s) => s.id),
-        }));
-        clearFieldError("roleIds");
-      } finally {
-        setIsLoadingRoles(false);
-        setIsLoadingStations(false);
-      }
+    if (next === "manager" || next === "supervisor") {
+      setAvailableStations([]);
+      setForm((f) => ({
+        ...f,
+        accessLevel: next,
+        roleIds: [],
+        stationIds: [],
+        supervisorIds: [],
+        managerIds: next === "supervisor" ? f.managerIds : [],
+        subordinateIds: [],
+      }));
       return;
     }
 
@@ -239,6 +273,7 @@ export function NewEmployeeForm({
         accessLevel: "employee",
         roleIds: [],
         stationIds: [],
+        managerIds: [],
       }));
       return;
     }
@@ -323,6 +358,9 @@ export function NewEmployeeForm({
       ...f,
       stationIds: nextStationIds,
     }));
+    if (nextStationIds.length > 0) {
+      clearFieldError("stationIds");
+    }
   }
 
   const stationsBlockedReason = useMemo<string | undefined>(() => {
@@ -378,10 +416,30 @@ export function NewEmployeeForm({
           email: form.email.trim(),
           locationId: form.locationId,
           accessLevel: form.accessLevel as AccessLevel,
+          role: form.accessLevel as any,
           roleIds: form.roleIds,
           stationIds: selectedStationIds,
           employeeCode: form.employeeCode.trim() || null,
           languagePref: form.languagePref,
+          dateOfBirth: form.dateOfBirth.trim() || null,
+          fathersName: form.fathersName.trim() || null,
+          gender: (form.gender || null) as any,
+          address: form.address.trim() || null,
+          phoneNumber: form.phoneNumber.trim() || null,
+          emergencyContactName: form.emergencyContactName.trim() || null,
+          emergencyContactRelation:
+            form.emergencyContactRelation.trim() || null,
+          emergencyContactPhone: form.emergencyContactPhone.trim() || null,
+          startDate: form.startDate.trim() || null,
+          sinNumber: form.sinNumber.trim() || null,
+          hourlyRate: form.hourlyRate.trim() || null,
+          supervisorIds:
+            form.accessLevel === "employee" ? form.supervisorIds : [],
+          managerIds: form.accessLevel === "supervisor" ? form.managerIds : [],
+          subordinateIds:
+            form.accessLevel === "supervisor" || form.accessLevel === "manager"
+              ? form.subordinateIds
+              : [],
         });
         // Server-truth check: the backend must echo exactly what we sent.
         // If it ever stores extras, say so loudly instead of looking saved.
@@ -504,13 +562,41 @@ export function NewEmployeeForm({
           fieldErrors={fieldErrors}
           roles={roles}
           stations={availableStations}
+          supervisors={supervisors}
+          managers={managers}
+          kitchenStaff={kitchenStaff}
+          currentUserRole={currentUserRole}
           isPending={isPending}
           isLoadingRoles={isLoadingRoles}
           isLoadingStations={isLoadingStations}
+          isLoadingSupervisors={isLoadingSupervisors}
+          isLoadingManagers={isLoadingManagers}
+          isLoadingKitchenStaff={isLoadingKitchenStaff}
           stationsBlockedReason={stationsBlockedReason}
           onAccessChange={(level) => void setAccessLevel(level)}
           onRolesChange={(ids) => void handleRoleIdsChange(ids)}
           onStationsChange={handleStationIdsChange}
+          onSupervisorsChange={(ids) => update("supervisorIds", ids)}
+          onManagersChange={(ids) => update("managerIds", ids)}
+          onSubordinatesChange={(ids) => update("subordinateIds", ids)}
+        />
+        <EmployeePersonalSection
+          form={form}
+          fieldErrors={fieldErrors}
+          isPending={isPending}
+          onUpdate={update}
+        />
+        <EmployeeEmergencySection
+          form={form}
+          fieldErrors={fieldErrors}
+          isPending={isPending}
+          onUpdate={update}
+        />
+        <EmployeePayrollSection
+          form={form}
+          fieldErrors={fieldErrors}
+          isPending={isPending}
+          onUpdate={update}
         />
         <EmployeeAdditionalSection
           form={form}

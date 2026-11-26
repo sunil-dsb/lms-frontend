@@ -368,12 +368,8 @@ export function ProcedureEditorView({
             title={t("quizTitle")}
             subtitle={tQuizDesc("description")}
           >
-            {/* The quiz author needs a question on screen the moment they
-                land on this step — no Drawer gate, no Add button. Passing
-                `null` lets the editor seed one blank question (attached
-                off, four empty options) so the "Attach" toggle and Question 1
-                are visible immediately. On first edit the parent state
-                catches up through `edit(setQuiz)`. */}
+            {/* Start with a blank question ready to edit. On first edit the
+                parent state catches up through `edit(setQuiz)`. */}
             <QuizEditor
               value={quiz}
               hideHeader
@@ -734,13 +730,11 @@ export function ProcedureEditorView({
                           </div>
                         </div>
                         <span className="text-xs font-semibold px-2 py-1 rounded-md bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] border border-[var(--color-brand-tint-2)]">
-                          {quiz.attached
-                            ? quiz.minCorrectAnswers
-                              ? `${quiz.minCorrectAnswers}/${quiz.questions.length} to pass`
-                              : "Attached"
+                          {quiz.minCorrectAnswers
+                            ? `${quiz.minCorrectAnswers}/${quiz.questions.length} to pass`
                             : lang === "es"
-                              ? "Borrador de Quiz"
-                              : "Draft Quiz"}
+                              ? "Cuestionario"
+                              : "Quiz"}
                         </span>
                       </div>
 

@@ -1,12 +1,15 @@
 import * as React from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
+  fetchMe,
   listLocations,
   listRoles,
   listStations,
   ApiException,
 } from "@/lib/api";
+import { canManageSettings } from "@/lib/rbac";
 import type { Location, Role, Station } from "@/lib/types";
 import { PageHeader } from "@/components/admin/page-header";
 import { FilterChips } from "@/components/ui/filter-chips";
@@ -27,6 +30,17 @@ export default async function SettingsPage({
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
+
+  try {
+    const { employee } = await fetchMe(cookieHeader);
+    if (!canManageSettings(employee.role)) {
+      redirect(`/${locale}/admin`);
+    }
+  } catch (err) {
+    if ((err as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT"))
+      throw err;
+    redirect(`/${locale}/login?reason=session`);
+  }
 
   let stations: Station[] = [];
   let roles: Role[] = [];

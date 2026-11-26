@@ -8,4 +8,7 @@ export const EMPLOYEES_ENDPOINTS = {
   // Reactivation removed — a deactivated employee stays deactivated.
   // REACTIVATE: (id: string) => `/api/v1/employees/${id}/reactivate`,
   TRAINING: (id: string) => `/api/v1/employees/${id}/training`,
+  SUPERVISORS: "/api/v1/employees/supervisors",
+  MANAGERS: "/api/v1/employees/managers",
+  SUBORDINATES: (id: string) => `/api/v1/employees/${id}/subordinates`,
 } as const;

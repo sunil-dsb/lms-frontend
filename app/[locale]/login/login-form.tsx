@@ -5,7 +5,13 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { LuEye, LuEyeOff, LuCircleAlert, LuLoader, LuCheck } from "react-icons/lu";
+import {
+  LuEye,
+  LuEyeOff,
+  LuCircleAlert,
+  LuLoader,
+  LuCheck,
+} from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,12 +23,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { login, ApiException } from "@/lib/api";
+import { canAccessAdminPortal } from "@/lib/rbac";
+import { cn } from "@/lib/utils";
 
 interface LoginFormProps {
   locale: string;
   initialEmail?: string;
   status?: string;
 }
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginForm({
   locale,
@@ -31,6 +41,7 @@ export function LoginForm({
 }: LoginFormProps): React.ReactElement {
   const t = useTranslations("login");
   const router = useRouter();
+  const isEs = locale === "es";
 
   const [email, setEmail] = useState(initialEmail || "");
   const [password, setPassword] = useState("");
@@ -49,17 +60,35 @@ export function LoginForm({
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setError(t("errorInvalid"));
+      setError(
+        isEs
+          ? "Por favor ingresa tu correo electrónico."
+          : "Email address is required.",
+      );
+      return;
+    }
+
+    // Client-side email validation to avoid unnecessary backend calls
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setError(
+        isEs
+          ? "Dirección de correo electrónico inválida."
+          : "Invalid email address.",
+      );
+      return;
+    }
+
+    if (!password) {
+      setError(
+        isEs ? "Por favor ingresa tu contraseña." : "Password is required.",
+      );
       return;
     }
 
     startTransition(async () => {
       try {
         const res = await login({ email: trimmedEmail, password });
-        if (
-          res.employee?.role === "admin" ||
-          res.employee?.role === "super_admin"
-        ) {
+        if (canAccessAdminPortal(res.employee?.role)) {
           router.replace(`/${locale}/admin`);
         } else {
           router.replace(`/${locale}/employee/home`);
@@ -67,14 +96,22 @@ export function LoginForm({
         router.refresh();
       } catch (err) {
         if (err instanceof ApiException) {
-          if (err.code === "ACCOUNT_LOCKED") setError(t("errorLocked"));
-          else if (err.code === "INVALID_CREDENTIALS")
+          if (err.code === "ACCOUNT_LOCKED") {
+            setError(t("errorLocked"));
+          } else if (err.code === "INVALID_CREDENTIALS") {
             setError(t("errorInvalid"));
-          // Never render raw server text for 5xx — it can carry driver
-          // internals (SQL, params). Show the generic message instead.
-          else if (err.status >= 500 || err.status === 0)
+          } else if (err.details && err.details.length > 0) {
+            // Surface specific readable field validation messages from the backend
+            const specific = err.details
+              .map((d) => d.message)
+              .filter(Boolean)
+              .join(". ");
+            setError(specific || err.message);
+          } else if (err.status >= 500 || err.status === 0) {
             setError(t("errorGeneric"));
-          else setError(err.message);
+          } else {
+            setError(err.message);
+          }
         } else {
           setError(t("errorGeneric"));
         }
@@ -140,9 +177,17 @@ export function LoginForm({
               placeholder={t("emailPlaceholder")}
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (error) setError(null);
+              }}
               disabled={isPending}
-              className="h-12 w-full rounded-xl sm:rounded-2xl border-[var(--color-line-2)] bg-[var(--color-field)] text-sm sm:text-base focus:border-[var(--color-brand-600)] transition-all"
+              className={cn(
+                "h-12 w-full rounded-xl sm:rounded-2xl border-[var(--color-line-2)] bg-[var(--color-field)] text-sm sm:text-base focus:border-[var(--color-brand-600)] transition-all",
+                error &&
+                  /email/i.test(error) &&
+                  "border-[var(--color-bad)] focus:border-[var(--color-bad)]",
+              )}
               style={{ paddingLeft: "16px", paddingRight: "16px" }}
             />
           </div>
@@ -173,7 +218,10 @@ export function LoginForm({
                 placeholder={t("passwordPlaceholder")}
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError(null);
+                }}
                 disabled={isPending}
                 className="h-12 w-full rounded-xl sm:rounded-2xl border-[var(--color-line-2)] bg-[var(--color-field)] text-sm sm:text-base focus:border-[var(--color-brand-600)] transition-all"
                 style={{ paddingLeft: "16px", paddingRight: "48px" }}

@@ -168,7 +168,6 @@ export function createProcedureSaveHandler(
               nameEn: quizNameEn,
               nameEs: quizNameEs,
               questions: quiz.questions,
-              attached: quiz.attached,
               ...(ownerId && isUuid(ownerId) ? { procedureId: ownerId } : {}),
             });
             quizId = prevQuizId;
@@ -179,7 +178,6 @@ export function createProcedureSaveHandler(
                 nameEs: quizNameEs,
                 quizType: "procedure",
                 questions: quiz.questions,
-                attached: quiz.attached,
               })
             ).quiz.id;
           }

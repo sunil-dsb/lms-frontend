@@ -30,6 +30,8 @@ import { TrainingCoursesListSkeleton } from "@/components/admin/training-courses
 import { cn } from "@/lib/utils";
 
 import { CourseAssignmentModal } from "./components/course-assignment-modal";
+import { useMe } from "@/services/auth/hooks";
+import { canManageCourses } from "@/lib/rbac";
 import {
   useCourses,
   useArchiveCourse,
@@ -50,6 +52,8 @@ export function TrainingCourseExplorer({
   const tCommon = useTranslations("admin");
   const router = useRouter();
   const isEs = locale === "es";
+  const { employee: me } = useMe();
+  const canManage = canManageCourses(me?.role);
 
   // Server-driven filters + pagination: the chip filter, the debounced
   // search box and the page number are all query params of GET /api/v1/courses
@@ -239,13 +243,15 @@ export function TrainingCourseExplorer({
         <h1 className="font-[family-name:var(--font-display)] text-xl sm:text-2xl font-bold leading-snug sm:leading-display tracking-tight text-[var(--color-ink)]">
           {isEs ? "Cursos" : "Courses"}
         </h1>
-        <Button
-          type="button"
-          icon={LuPlus}
-          onClick={() => router.push(`/${locale}/admin/training/new`)}
-        >
-          {t("newCourse")}
-        </Button>
+        {canManage ? (
+          <Button
+            type="button"
+            icon={LuPlus}
+            onClick={() => router.push(`/${locale}/admin/training/new`)}
+          >
+            {t("newCourse")}
+          </Button>
+        ) : null}
       </div>
 
       {/* Filter Chips: All / Assigned / Unassigned / Archived */}
@@ -272,11 +278,15 @@ export function TrainingCourseExplorer({
             label: isEs ? "No asignados" : "Unassigned",
             count: filterCounts?.unassigned,
           },
-          {
-            value: "archived",
-            label: isEs ? "Archivados" : "Archived",
-            count: filterCounts?.archived,
-          },
+          ...(canManage
+            ? [
+                {
+                  value: "archived",
+                  label: isEs ? "Archivados" : "Archived",
+                  count: filterCounts?.archived,
+                },
+              ]
+            : []),
         ]}
       />
 
@@ -485,59 +495,61 @@ export function TrainingCourseExplorer({
                     </Button>
                   ) : null}
 
-                  <RowActions
-                    triggerLabel={t("rowActionsLabel", { title })}
-                    items={
-                      isArchived
-                        ? [
-                            {
-                              label: isEs
-                                ? "Restaurar curso"
-                                : "Restore course",
-                              icon: LuRotateCcw,
-                              onSelect: () => handleUnarchive(row.course.id),
-                            },
-                            {
-                              label: isEs
-                                ? "Eliminar permanentemente"
-                                : "Delete permanently",
-                              icon: LuTrash2,
-                              destructive: true,
-                              confirmTitle: isEs
-                                ? "Eliminar curso"
-                                : "Delete course",
-                              confirmDescription: isEs
-                                ? `"${title}" y su contenido se eliminarán permanentemente. Esto no se puede deshacer.`
-                                : `"${title}" and its contents will be permanently removed. This can't be undone.`,
-                              confirmLabel: isEs ? "Eliminar" : "Delete",
-                              onSelect: () => handleDelete(row.course.id),
-                            },
-                          ]
-                        : [
-                            {
-                              label: t("rowEdit"),
-                              icon: LuFilePen,
-                              onSelect: () =>
-                                router.push(
-                                  `/${locale}/admin/training/${row.course.id}/edit`,
-                                ),
-                            },
-                            {
-                              label: t("rowArchive"),
-                              icon: LuArchive,
-                              destructive: true,
-                              confirmTitle: isEs
-                                ? "Archivar curso"
-                                : "Archive course",
-                              confirmDescription: isEs
-                                ? `"${title}" se archivará. Las personas asignadas ya no lo verán.`
-                                : `"${title}" will be archived. Anyone assigned will see it as gone.`,
-                              confirmLabel: isEs ? "Archivar" : "Archive",
-                              onSelect: () => handleArchive(row.course.id),
-                            },
-                          ]
-                    }
-                  />
+                  {canManage ? (
+                    <RowActions
+                      triggerLabel={t("rowActionsLabel", { title })}
+                      items={
+                        isArchived
+                          ? [
+                              {
+                                label: isEs
+                                  ? "Restaurar curso"
+                                  : "Restore course",
+                                icon: LuRotateCcw,
+                                onSelect: () => handleUnarchive(row.course.id),
+                              },
+                              {
+                                label: isEs
+                                  ? "Eliminar permanentemente"
+                                  : "Delete permanently",
+                                icon: LuTrash2,
+                                destructive: true,
+                                confirmTitle: isEs
+                                  ? "Eliminar curso"
+                                  : "Delete course",
+                                confirmDescription: isEs
+                                  ? `"${title}" y su contenido se eliminarán permanentemente. Esto no se puede deshacer.`
+                                  : `"${title}" and its contents will be permanently removed. This can't be undone.`,
+                                confirmLabel: isEs ? "Eliminar" : "Delete",
+                                onSelect: () => handleDelete(row.course.id),
+                              },
+                            ]
+                          : [
+                              {
+                                label: t("rowEdit"),
+                                icon: LuFilePen,
+                                onSelect: () =>
+                                  router.push(
+                                    `/${locale}/admin/training/${row.course.id}/edit`,
+                                  ),
+                              },
+                              {
+                                label: t("rowArchive"),
+                                icon: LuArchive,
+                                destructive: true,
+                                confirmTitle: isEs
+                                  ? "Archivar curso"
+                                  : "Archive course",
+                                confirmDescription: isEs
+                                  ? `"${title}" se archivará. Las personas asignadas ya no lo verán.`
+                                  : `"${title}" will be archived. Anyone assigned will see it as gone.`,
+                                confirmLabel: isEs ? "Archivar" : "Archive",
+                                onSelect: () => handleArchive(row.course.id),
+                              },
+                            ]
+                      }
+                    />
+                  ) : null}
                 </div>
               </li>
             );

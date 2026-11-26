@@ -21,8 +21,7 @@ export interface Quiz {
    *  so the existing `QuizEditor` + `QuizReader` components work
    *  unchanged. */
   questions: ProcedureQuizQuestion[];
-  /** Manual attach toggle. Visibility on the read side is the OR of this
-   *  flag and the parent procedure / course's training-attached flag. */
+  /** Legacy compatibility field; quizzes are treated as attached. */
   attached: boolean;
   createdAt: string;
   updatedAt: string;

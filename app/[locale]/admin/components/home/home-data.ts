@@ -370,7 +370,9 @@ export function buildTrainingHome({
     total:
       progress.summary.completed +
       progress.summary.inProgress +
-      progress.summary.overdue,
+      progress.summary.overdue +
+      (progress.summary.notStarted ?? 0) +
+      (progress.summary.dueSoon ?? 0),
     overdueCount: progress.summary.overdue,
     overdue,
     dueThisWeek,

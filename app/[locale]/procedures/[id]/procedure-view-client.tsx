@@ -21,10 +21,8 @@ import {
   fetchQuizById,
   getCachedProcedure,
   getProcedureBySlug,
-  getQuizById,
   logRestrictedView,
   logout,
-  updateQuiz,
 } from "@/lib/api";
 import { isPromoExpired } from "@/lib/promos";
 import { PROCEDURES_QUERY_KEY } from "@/services/library/hooks";
@@ -124,9 +122,6 @@ export function ProcedureViewClient({
   const [isLoading, setIsLoading] = React.useState(!proc || !cachedHasBlocks);
   const [notFoundState, setNotFoundState] = React.useState(false);
 
-  const [bannerDismissed, setBannerDismissed] = React.useState(false);
-  const [isAttaching, setIsAttaching] = React.useState(false);
-
   // Always refresh from the API once on mount — the cached copy is a
   // first paint, not the source of truth. A failed refresh only reads
   // as not-found when there was no cached copy to fall back to.
@@ -218,22 +213,6 @@ export function ProcedureViewClient({
     // Once per procedure opened, not on every re-render of it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [protectedId, employee.id]);
-
-  const handleAttach = React.useCallback(async () => {
-    if (!proc || !proc.quizId) return;
-    const quiz = getQuizById(proc.quizId);
-    if (!quiz || quiz.attached) return;
-    setIsAttaching(true);
-    try {
-      await updateQuiz(proc.quizId, { attached: true });
-      setProc({ ...proc, updatedAt: new Date().toISOString() });
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("lms_procedures_updated"));
-      }
-    } finally {
-      setIsAttaching(false);
-    }
-  }, [proc]);
 
   // Back navigation: when the user navigates *forward* to a procedure
   // (e.g. from a category detail page), the previous URL is in
@@ -467,10 +446,6 @@ export function ProcedureViewClient({
         employee={employee}
         effectiveRole={isAdmin ? "admin" : "employee"}
         locale={locale}
-        onAttachQuiz={handleAttach}
-        isAttaching={isAttaching}
-        bannerDismissed={bannerDismissed}
-        onDismissBanner={() => setBannerDismissed(true)}
         docBar={
           proc ? (
             <DocBar

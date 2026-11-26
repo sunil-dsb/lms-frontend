@@ -1,7 +1,9 @@
 import * as React from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { listLocations } from "@/lib/api";
+import { fetchMe, listLocations } from "@/lib/api";
+import { canInviteEmployees } from "@/lib/rbac";
 import { NewEmployeeForm } from "./new-employee-form";
 import type { Location } from "@/lib/types";
 
@@ -23,8 +25,24 @@ export default async function NewEmployeePage({
 
   const t = await getTranslations("admin");
 
-  const locationsRes = await listLocations(cookieHeader);
+  const [meRes, locationsRes] = await Promise.all([
+    fetchMe(cookieHeader),
+    listLocations(cookieHeader),
+  ]);
+
+  if (!canInviteEmployees(meRes.employee.role)) {
+    redirect(`/${locale}/admin/employees`);
+  }
+
   const locations: Location[] = locationsRes.locations;
 
-  return <NewEmployeeForm locale={locale} locations={locations} roles={[]} />;
+  return (
+    <NewEmployeeForm
+      locale={locale}
+      locations={locations}
+      roles={[]}
+      currentUserRole={meRes.employee.role}
+      currentUserLocationId={meRes.employee.locationId}
+    />
+  );
 }

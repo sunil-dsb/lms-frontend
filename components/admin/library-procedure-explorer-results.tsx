@@ -48,6 +48,7 @@ import {
 import * as React from "react";
 
 export function ProcedureExplorerResults({
+  canManage = true,
   loading,
   isEs,
   locale,
@@ -63,6 +64,7 @@ export function ProcedureExplorerResults({
   onArchive,
   onDelete,
 }: {
+  canManage?: boolean;
   loading: boolean;
   isEs: boolean;
   locale: string;
@@ -391,84 +393,86 @@ export function ProcedureExplorerResults({
                     </div>
                   </div>
                 </Link>
-                <RowActions
-                  triggerLabel={`${isEs ? "Acciones" : "Actions"}: ${title}`}
-                  items={
-                    [
-                      isRowArchived
-                        ? null
-                        : {
-                            label: isEs ? "Editar" : "Edit",
-                            icon: LuPencil,
-                            onSelect: () =>
-                              router.push(
-                                `/${locale}/admin/library/${p.slug || p.id}/edit`,
-                              ),
-                          },
-                      isRowArchived
-                        ? {
-                            label: isEs ? "Restaurar" : "Restore",
-                            icon: LuArchiveRestore,
-                            onSelect: () =>
-                              void act(p.id, {
-                                isArchived: false,
-                                status: "published",
-                              }),
-                          }
-                        : p.status === "draft"
+                {canManage ? (
+                  <RowActions
+                    triggerLabel={`${isEs ? "Acciones" : "Actions"}: ${title}`}
+                    items={
+                      [
+                        isRowArchived
+                          ? null
+                          : {
+                              label: isEs ? "Editar" : "Edit",
+                              icon: LuPencil,
+                              onSelect: () =>
+                                router.push(
+                                  `/${locale}/admin/library/${p.slug || p.id}/edit`,
+                                ),
+                            },
+                        isRowArchived
                           ? {
-                              label: isEs ? "Publicar" : "Publish",
-                              icon: LuCircleCheck,
-                              onSelect: () => {
-                                // Placement gate: publishing needs a station
-                                // (or General). Unplaced rows go to the
-                                // editor's Access step with the reason shown.
-                                if (!canPublishProcedure(p)) {
-                                  router.push(
-                                    `/${locale}/admin/library/${p.slug || p.id}/edit?step=access&publishBlocked=1`,
-                                  );
-                                  return;
-                                }
-                                void act(p.id, { status: "published" }, p);
-                              },
+                              label: isEs ? "Restaurar" : "Restore",
+                              icon: LuArchiveRestore,
+                              onSelect: () =>
+                                void act(p.id, {
+                                  isArchived: false,
+                                  status: "published",
+                                }),
                             }
-                          : null,
-                      isRowArchived
-                        ? null
-                        : {
-                            label: isEs ? "Archivar" : "Archive",
-                            icon: LuArchive,
-                            onSelect: () => void onArchive(p.id),
-                          },
-                      isRowArchived
-                        ? null
-                        : {
-                            label: p.isPromo
-                              ? isEs
-                                ? "Editar promoción"
-                                : "Edit promo"
-                              : isEs
-                                ? "Agregar a promoción"
-                                : "Add to promo",
-                            icon: LuSparkles,
-                            onSelect: () => setPromoProcedure(p),
-                          },
-                      {
-                        label: isEs ? "Eliminar" : "Delete",
-                        icon: LuTrash2,
-                        destructive: true,
-                        confirmTitle: isEs
-                          ? "Eliminar procedimiento"
-                          : "Delete procedure",
-                        confirmDescription: isEs
-                          ? `"${title}" se eliminará permanentemente. Esta acción no se puede deshacer.`
-                          : `"${title}" will be permanently deleted. This cannot be undone.`,
-                        confirmLabel: isEs ? "Sí, eliminar" : "Yes, delete",
-                        onSelect: () => void onDelete(p.id),
-                      },
-                    ].filter(Boolean) as RowActionItem[]
-                  }
-                />
+                          : p.status === "draft"
+                            ? {
+                                label: isEs ? "Publicar" : "Publish",
+                                icon: LuCircleCheck,
+                                onSelect: () => {
+                                  // Placement gate: publishing needs a station
+                                  // (or General). Unplaced rows go to the
+                                  // editor's Access step with the reason shown.
+                                  if (!canPublishProcedure(p)) {
+                                    router.push(
+                                      `/${locale}/admin/library/${p.slug || p.id}/edit?step=access&publishBlocked=1`,
+                                    );
+                                    return;
+                                  }
+                                  void act(p.id, { status: "published" }, p);
+                                },
+                              }
+                            : null,
+                        isRowArchived
+                          ? null
+                          : {
+                              label: isEs ? "Archivar" : "Archive",
+                              icon: LuArchive,
+                              onSelect: () => void onArchive(p.id),
+                            },
+                        isRowArchived
+                          ? null
+                          : {
+                              label: p.isPromo
+                                ? isEs
+                                  ? "Editar promoción"
+                                  : "Edit promo"
+                                : isEs
+                                  ? "Agregar a promoción"
+                                  : "Add to promo",
+                              icon: LuSparkles,
+                              onSelect: () => setPromoProcedure(p),
+                            },
+                        {
+                          label: isEs ? "Eliminar" : "Delete",
+                          icon: LuTrash2,
+                          destructive: true,
+                          confirmTitle: isEs
+                            ? "Eliminar procedimiento"
+                            : "Delete procedure",
+                          confirmDescription: isEs
+                            ? `"${title}" se eliminará permanentemente. Esta acción no se puede deshacer.`
+                            : `"${title}" will be permanently deleted. This cannot be undone.`,
+                          confirmLabel: isEs ? "Sí, eliminar" : "Yes, delete",
+                          onSelect: () => void onDelete(p.id),
+                        },
+                      ].filter(Boolean) as RowActionItem[]
+                    }
+                  />
+                ) : null}
               </li>
             );
           })}

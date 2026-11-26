@@ -11,6 +11,13 @@ import type { AdminEmployee } from "@/lib/types";
 import { LuBan, LuPencil, LuSend } from "react-icons/lu";
 import { ResendInviteModal } from "./resend-invite-modal";
 import { EMPLOYEES_QUERY_KEY } from "@/services/employees/hooks";
+import { useMe } from "@/services/auth/hooks";
+import {
+  canDeactivateEmployees,
+  canEditEmployees,
+  isManager,
+  isSuperAdmin,
+} from "@/lib/rbac";
 
 interface EmployeeRowActionsProps {
   locale: string;
@@ -30,18 +37,35 @@ export function EmployeeRowActions({
   employee,
   onEdit,
   hideEdit = false,
-}: EmployeeRowActionsProps): React.ReactElement {
+}: EmployeeRowActionsProps): React.ReactElement | null {
   const t = useTranslations("admin");
   const router = useRouter();
   const queryClient = useQueryClient();
   const [_pending, startTransition] = useTransition();
   const [isResendOpen, setIsResendOpen] = useState(false);
+  const { employee: me } = useMe();
+  const isSelf = me?.id === employee.id;
+  const isSuper = isSuperAdmin(me?.role);
+  const isManagerUser = isManager(me?.role);
+  const isTargetElevated =
+    employee.role === "manager" || employee.role === "super_admin";
+
+  const canEdit =
+    canEditEmployees(me?.role) &&
+    (!isSelf || isSuper) &&
+    (!isManagerUser || !isTargetElevated);
+
+  const canDeactivate =
+    canDeactivateEmployees(me?.role) &&
+    (!isSelf || isSuper) &&
+    (!isManagerUser || !isTargetElevated);
 
   function refresh(): void {
     router.refresh();
   }
 
   function handleEdit(): void {
+    if (!canEdit) return;
     if (onEdit) {
       onEdit();
       return;
@@ -49,14 +73,16 @@ export function EmployeeRowActions({
     // No callback provided — assume the caller is the list and the user
     // needs to navigate to the detail page. Use the locale-aware path
     // so the same row in the EN and ES routes lands on the right page.
-    router.push(`/${locale}/admin/employees/${employee.id}`);
+    router.push(`/${locale}/admin/employees/${employee.id}/edit`);
   }
 
   function onResend(): void {
+    if (!canDeactivate) return;
     setIsResendOpen(true);
   }
 
   function onDeactivate(): void {
+    if (!canDeactivate) return;
     startTransition(async () => {
       try {
         await deactivateEmployee(employee.id);
@@ -68,81 +94,81 @@ export function EmployeeRowActions({
     });
   }
 
-  // Reactivation removed — a deactivated employee stays deactivated.
-  /*
-  function onReactivate(): void {
-    startTransition(async () => {
-      try {
-        await reactivateEmployee(employee.id);
-        await queryClient.invalidateQueries({ queryKey: EMPLOYEES_QUERY_KEY });
-        refresh();
-      } catch {
-        // page refresh reflects the error
-      }
-    });
-  }
-  */
-
   function buildItems(): RowActionItem[] {
-    // Edit is always the first item — non-destructive, navigation. The
-    // pending/active/deactivated paths keep their existing kebab items.
     const editItem: RowActionItem = {
       label: t("actionsEdit"),
       icon: LuPencil,
       onSelect: handleEdit,
     };
 
+    const allowedEdit = canEdit && !hideEdit;
+
     if (employee.status === "pending") {
       return [
-        ...(!hideEdit ? [editItem] : []),
-        {
-          label: t("actionsResend"),
-          icon: LuSend,
-          onSelect: onResend,
-        },
-        {
-          label: t("actionsDeactivate"),
-          icon: LuBan,
-          destructive: true,
-          confirmTitle:
-            locale === "es" ? "¿Desactivar empleado?" : "Deactivate employee?",
-          confirmDescription:
-            locale === "es"
-              ? "El empleado quedará inactivo y se conservarán sus datos."
-              : "This employee will be deactivated and their records will be kept.",
-          confirmLabel: locale === "es" ? "Desactivar" : "Deactivate",
-          onSelect: onDeactivate,
-        },
+        ...(allowedEdit ? [editItem] : []),
+        ...(canDeactivate
+          ? [
+              {
+                label: t("actionsResend"),
+                icon: LuSend,
+                onSelect: onResend,
+              },
+              {
+                label: t("actionsDeactivate"),
+                icon: LuBan,
+                destructive: true,
+                confirmTitle:
+                  locale === "es"
+                    ? "¿Desactivar empleado?"
+                    : "Deactivate employee?",
+                confirmDescription:
+                  locale === "es"
+                    ? "El empleado quedará inactivo y se conservarán sus datos."
+                    : "This employee will be deactivated and their records will be kept.",
+                confirmLabel: locale === "es" ? "Desactivar" : "Deactivate",
+                onSelect: onDeactivate,
+              },
+            ]
+          : []),
       ];
     }
     if (employee.status === "active") {
       return [
-        ...(!hideEdit ? [editItem] : []),
-        {
-          label: t("actionsDeactivate"),
-          icon: LuBan,
-          destructive: true,
-          confirmTitle:
-            locale === "es" ? "¿Desactivar empleado?" : "Deactivate employee?",
-          confirmDescription:
-            locale === "es"
-              ? "El empleado quedará inactivo y se conservarán sus datos."
-              : "This employee will be deactivated and their records will be kept.",
-          confirmLabel: locale === "es" ? "Desactivar" : "Deactivate",
-          onSelect: onDeactivate,
-        },
+        ...(allowedEdit ? [editItem] : []),
+        ...(canDeactivate
+          ? [
+              {
+                label: t("actionsDeactivate"),
+                icon: LuBan,
+                destructive: true,
+                confirmTitle:
+                  locale === "es"
+                    ? "¿Desactivar empleado?"
+                    : "Deactivate employee?",
+                confirmDescription:
+                  locale === "es"
+                    ? "El empleado quedará inactivo y se conservarán sus datos."
+                    : "This employee will be deactivated and their records will be kept.",
+                confirmLabel: locale === "es" ? "Desactivar" : "Deactivate",
+                onSelect: onDeactivate,
+              },
+            ]
+          : []),
       ];
     }
-    return !hideEdit ? [editItem] : [];
+    return allowedEdit ? [editItem] : [];
   }
+
+  const items = buildItems();
+  if (items.length === 0) return null;
 
   return (
     <>
       <RowActions
-        items={buildItems()}
+        items={items}
         triggerLabel={`${t("rowActionsLabel")}: ${employee.name}`}
       />
-      {employee.status === "pending" ? (
+      {employee.status === "pending" && canDeactivate ? (
         <ResendInviteModal
           open={isResendOpen}
           onClose={() => setIsResendOpen(false)}

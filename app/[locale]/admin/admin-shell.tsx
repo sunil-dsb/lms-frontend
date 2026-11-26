@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { Employee, SystemRole } from "@/lib/types";
+import { normalizeRole } from "@/lib/rbac";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LocaleSwitch } from "@/components/ui/locale-switch";
 import { LuMenu, LuX } from "react-icons/lu";
@@ -68,11 +69,21 @@ export function AdminShell({
   const tShell = useTranslations("admin.shell");
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const isEs = locale === "es";
+
+  const panelTitle = React.useMemo(() => {
+    const r = employee.role?.toLowerCase();
+    if (r === "manager") return isEs ? "Panel de Gerente" : "Manager Panel";
+    if (r === "supervisor")
+      return isEs ? "Panel de Supervisor" : "Supervisor Panel";
+    if (r === "super_admin") return isEs ? "Panel de Admin" : "Admin Panel";
+    return isEs ? "Portal de Personal" : "Staff Portal";
+  }, [employee.role, isEs]);
 
   // Rows some roles must not see. The audit log is super_admin-only — the
   // API answers 403 for anyone else, so don't show a door that isn't theirs.
   const visibleGroups = React.useMemo(() => {
-    const role = employee.role as SystemRole;
+    const role = normalizeRole(employee.role);
     return NAV_GROUPS.map((group) => ({
       ...group,
       items: group.items.filter(
@@ -137,7 +148,16 @@ export function AdminShell({
     employee,
     workspace,
     groups: visibleGroups,
-    labelFor: (key: string) => t(key),
+    labelFor: (key: string) => {
+      const role = normalizeRole(employee.role);
+      if (
+        key === "navEmployees" &&
+        (role === "supervisor" || role === "manager")
+      ) {
+        return isEs ? "Mi equipo" : "My Team";
+      }
+      return t(key);
+    },
     headingFor: (key: string) => tShell(key),
     isActive,
     onNavigate: () => setDrawerOpen(false),
@@ -217,7 +237,7 @@ export function AdminShell({
           <LuMenu aria-hidden="true" className="text-lg" />
         </button>
         <span className="font-[family-name:var(--font-ui)] text-sm sm:text-md font-semibold tracking-tight text-[var(--color-ink)] shrink-0">
-          {tShell("title")}
+          {panelTitle}
         </span>
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <ThemeToggle
@@ -236,7 +256,7 @@ export function AdminShell({
           className="fixed inset-0 z-backdrop lg:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label={tShell("title")}
+          aria-label={panelTitle}
         >
           <button
             type="button"
@@ -254,7 +274,7 @@ export function AdminShell({
           >
             <div className="flex h-bar items-center justify-between border-b border-[var(--color-line)] px-4">
               <span className="font-[family-name:var(--font-ui)] text-md font-semibold tracking-tight text-[var(--color-ink)]">
-                {tShell("title")}
+                {panelTitle}
               </span>
               <button
                 type="button"

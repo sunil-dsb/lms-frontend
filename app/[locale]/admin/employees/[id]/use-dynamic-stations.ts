@@ -8,6 +8,7 @@ interface UseDynamicStationsProps {
   locationId: string;
   roles: Role[];
   stations: Station[];
+  initialStations?: Array<{ id: string; name: string }>;
   setStationIds: React.Dispatch<React.SetStateAction<string[]>>;
   needRoleMessage: string;
   stationsEmptyMessage: string;
@@ -18,6 +19,7 @@ export function useDynamicStations({
   locationId,
   roles,
   stations,
+  initialStations = [],
   setStationIds,
   needRoleMessage,
   stationsEmptyMessage,
@@ -43,14 +45,33 @@ export function useDynamicStations({
   const [dynamicStations, setDynamicStations] = useState<Station[] | null>(
     null,
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const isInitialMount = React.useRef(true);
+  const prevRoleIdsRef = React.useRef<string[]>([]);
 
   React.useEffect(() => {
+    // If roleIds is empty, clear stations
     if (roleIds.length === 0) {
       setDynamicStations([]);
-      setStationIds([]);
+      // Only clear selected stationIds if this is not the initial mount or if user explicitly removed all roles
+      if (!isInitialMount.current) {
+        setStationIds([]);
+      }
+      setIsLoading(false);
+      prevRoleIdsRef.current = [];
       return;
     }
+
+    // Determine if roles actually changed after initial mount
+    const rolesChanged =
+      !isInitialMount.current &&
+      (prevRoleIdsRef.current.length !== roleIds.length ||
+        prevRoleIdsRef.current.some((id, idx) => id !== roleIds[idx]));
+
+    prevRoleIdsRef.current = [...roleIds];
+
     let cancelled = false;
+    setIsLoading(true);
     void fetchJobStations(roleIds)
       .then((res) => {
         if (cancelled) return;
@@ -63,16 +84,27 @@ export function useDynamicStations({
             isArchived: false,
           }));
           setDynamicStations(mapped);
-          setStationIds((prev) =>
-            prev.filter((id) => mapped.some((m) => m.id === id)),
-          );
+          // Only filter out invalid station IDs if user explicitly changed roles
+          if (rolesChanged) {
+            setStationIds((prev) =>
+              prev.filter((id) => mapped.some((m) => m.id === id)),
+            );
+          }
         } else {
           setDynamicStations([]);
-          setStationIds([]);
+          if (rolesChanged) {
+            setStationIds([]);
+          }
         }
       })
       .catch(() => {
         if (!cancelled) setDynamicStations(null);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+          isInitialMount.current = false;
+        }
       });
     return () => {
       cancelled = true;
@@ -81,9 +113,46 @@ export function useDynamicStations({
 
   const availableStations = useMemo<Station[]>(() => {
     if (roleIds.length === 0) return [];
-    if (dynamicStations !== null) return dynamicStations;
-    return stations.filter((s) => stationsCoveredByRoles.has(s.id));
-  }, [roleIds.length, stations, dynamicStations, stationsCoveredByRoles]);
+
+    const baseList: Station[] =
+      dynamicStations !== null
+        ? dynamicStations
+        : stations.filter((s) => stationsCoveredByRoles.has(s.id));
+
+    // Also include any catalog stations matching the roles or existing selections
+    // to ensure no station is missing from options or chip labels
+    const seen = new Set(baseList.map((s) => s.id));
+    const merged = [...baseList];
+
+    for (const initStation of initialStations) {
+      if (initStation.id && !seen.has(initStation.id)) {
+        seen.add(initStation.id);
+        merged.push({
+          id: initStation.id,
+          name: initStation.name,
+          locationId,
+          sortOrder: merged.length + 1,
+          isArchived: false,
+        });
+      }
+    }
+
+    for (const s of stations) {
+      if (!seen.has(s.id) && stationsCoveredByRoles.has(s.id)) {
+        seen.add(s.id);
+        merged.push(s);
+      }
+    }
+
+    return merged;
+  }, [
+    roleIds.length,
+    dynamicStations,
+    stations,
+    stationsCoveredByRoles,
+    initialStations,
+    locationId,
+  ]);
 
   const stationsBlockedReason = useMemo<string | undefined>(() => {
     if (roleIds.length === 0) return needRoleMessage;
@@ -98,6 +167,7 @@ export function useDynamicStations({
 
   return {
     availableStations,
+    isLoading,
     stationsBlockedReason,
   };
 }
