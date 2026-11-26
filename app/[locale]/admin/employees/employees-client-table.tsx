@@ -21,7 +21,12 @@ import { useRoles } from "@/services/jobs/hooks";
 import { useStations } from "@/services/stations/hooks";
 import { useLocations } from "@/services/locations/hooks";
 import { useMe } from "@/services/auth/hooks";
-import { canEditEmployees, formatSystemRole, isSuperAdmin } from "@/lib/rbac";
+import {
+  canEditEmployees,
+  formatSystemRole,
+  isSuperAdmin,
+  isSupervisor,
+} from "@/lib/rbac";
 import { CustomSelect, type SelectOption } from "@/components/ui/custom-select";
 import { cn } from "@/lib/utils";
 
@@ -154,6 +159,7 @@ export function EmployeesClientTable({
 
   const { employee: me } = useMe();
   const isSuper = isSuperAdmin(me?.role);
+  const isSuperv = isSupervisor(me?.role);
   const canEdit = canEditEmployees(me?.role);
 
   function openEdit(employee: AdminEmployee): void {
@@ -437,16 +443,18 @@ export function EmployeesClientTable({
 
           {/* 3 Dropdowns on right side by side - each about 150px wide, 40px tall */}
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
-            {/* Role Filter Dropdown */}
-            <div className="w-full sm:w-[150px] shrink-0">
-              <CustomSelect
-                value={role}
-                onChange={(val) => handleRoleChange(val as any)}
-                options={roleOptions}
-                size="default"
-                className="h-10 text-sm w-full"
-              />
-            </div>
+            {/* Role Filter Dropdown - Hidden for supervisors since all their subordinates are employees */}
+            {!isSuperv && (
+              <div className="w-full sm:w-[150px] shrink-0">
+                <CustomSelect
+                  value={role}
+                  onChange={(val) => handleRoleChange(val as any)}
+                  options={roleOptions}
+                  size="default"
+                  className="h-10 text-sm w-full"
+                />
+              </div>
+            )}
 
             {/* Station Filter Dropdown */}
             <div className="w-full sm:w-[150px] shrink-0">

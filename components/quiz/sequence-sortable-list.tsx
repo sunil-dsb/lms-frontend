@@ -5,7 +5,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -106,9 +107,8 @@ function SortableItem({
           {...attributes}
           {...listeners}
           aria-label="Drag to reorder"
-          /* touch-none is required: without it the mobile browser claims the
-             gesture as a page scroll, fires pointercancel, and the drag aborts. */
-          className="flex size-7 items-center justify-center rounded-lg touch-none select-none text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-[var(--color-wash)] active:cursor-grabbing cursor-grab shrink-0 transition-colors"
+          className="flex size-7 items-center justify-center rounded-lg text-[var(--color-ink-3)] hover:text-[var(--color-ink)] hover:bg-[var(--color-wash)] active:cursor-grabbing cursor-grab shrink-0 transition-colors touch-none"
+          style={{ touchAction: "none" }}
         >
           <LuGripVertical className="size-4" />
         </button>
@@ -182,9 +182,15 @@ export function SequenceSortableList({
   }, [items]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {

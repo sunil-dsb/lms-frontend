@@ -19,7 +19,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -242,7 +243,8 @@ function SortableSequenceStep({
         type="button"
         aria-label="Drag to reorder"
         title="Drag to reorder"
-        className="flex size-7 cursor-grab items-center justify-center rounded-md text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] active:cursor-grabbing transition-colors shrink-0"
+        className="flex size-7 cursor-grab items-center justify-center rounded-md text-[var(--color-ink-3)] hover:bg-[var(--color-panel)] hover:text-[var(--color-ink)] active:cursor-grabbing transition-colors shrink-0 touch-none"
+        style={{ touchAction: "none" }}
         {...attributes}
         {...listeners}
       >
@@ -340,9 +342,15 @@ function SequenceStepList({
 }) {
   const items = q.sequenceItems || [];
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {

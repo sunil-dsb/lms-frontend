@@ -37,6 +37,7 @@ interface ChapterLearnViewProps {
   /** Sidebar width in px to offset the fixed sticky button (admin layout). Default 0. */
   sidebarOffsetPx?: number;
   hasQuiz?: boolean;
+  isAdmin?: boolean;
 }
 
 /**
@@ -69,12 +70,22 @@ export function ChapterLearnView({
   backHref,
   sidebarOffsetPx = 0,
   hasQuiz = true,
+  isAdmin,
 }: ChapterLearnViewProps): React.ReactElement {
   const router = useRouter();
   const t = useTranslations("employee.training");
   const [isAdvancing, setIsAdvancing] = React.useState(false);
   const effectiveBasePath =
     basePath ?? `/${locale}/employee/training/${courseId}`;
+
+  const isAdministrator =
+    isAdmin ??
+    Boolean(
+      basePath?.includes("/admin/") ||
+      employee?.role === "admin" ||
+      employee?.role === "super_admin" ||
+      employee?.role === "manager",
+    );
 
   const handleAdvance = React.useCallback(async () => {
     if (isAdvancing) return;
@@ -204,9 +215,10 @@ export function ChapterLearnView({
     <ContentProtection
       employeeName={employee?.name || ""}
       locale={locale}
-      enabled={true}
-      enableCopyProtection={true}
-      enablePrintProtection={true}
+      enabled={!isAdministrator}
+      isAdmin={isAdministrator}
+      enableCopyProtection={!isAdministrator}
+      enablePrintProtection={!isAdministrator}
     >
       <div className="relative min-h-screen bg-[var(--color-bg)]">
         <main
@@ -292,7 +304,7 @@ export function ChapterLearnView({
                   <ProcedureArticleBody
                     proc={standaloneProcedure}
                     employee={employee}
-                    effectiveRole="employee"
+                    effectiveRole={isAdministrator ? "admin" : "employee"}
                     locale={locale}
                     hideQuiz={true}
                   />
@@ -305,7 +317,7 @@ export function ChapterLearnView({
               <ProcedureArticleBody
                 proc={standaloneProcedure}
                 employee={employee}
-                effectiveRole="employee"
+                effectiveRole={isAdministrator ? "admin" : "employee"}
                 locale={locale}
                 hideQuiz={true}
                 docBar={

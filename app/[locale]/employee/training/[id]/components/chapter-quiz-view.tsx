@@ -14,7 +14,7 @@ import {
   LuEye,
   LuArrowRight,
 } from "react-icons/lu";
-import type { ProcedureQuizQuestion } from "@/lib/types";
+import type { ProcedureQuizQuestion, Employee } from "@/lib/types";
 import { completeMyTrainingChapter } from "@/services/courses/api";
 import { MY_TRAINING_QUERY_KEY } from "@/services/courses/hooks";
 import { ApiException, checkQuizBatchAnswersApi } from "@/lib/api";
@@ -46,6 +46,7 @@ interface ChapterQuizViewProps {
   sidebarOffsetPx?: number;
   isCompleted?: boolean;
   isAdmin?: boolean;
+  employee?: Employee;
 }
 
 /**
@@ -73,6 +74,7 @@ export function ChapterQuizView({
   sidebarOffsetPx = 0,
   isCompleted = false,
   isAdmin = false,
+  employee,
 }: ChapterQuizViewProps): React.ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -80,6 +82,15 @@ export function ChapterQuizView({
   const isEs = locale === "es";
   const effectiveBasePath =
     basePath ?? `/${locale}/employee/training/${courseId}`;
+
+  const isAdministrator =
+    isAdmin ||
+    Boolean(
+      basePath?.includes("/admin/") ||
+      employee?.role === "admin" ||
+      employee?.role === "super_admin" ||
+      employee?.role === "manager",
+    );
 
   const totalQuestions = questions.length || 1;
   const passingRequirement =
@@ -170,8 +181,7 @@ export function ChapterQuizView({
         questionId: q.id,
         sequenceOrder:
           q.type === "sequence"
-            ? sequenceAnswers[idx] ||
-              (q.sequenceItems || []).map((s) => s.id)
+            ? sequenceAnswers[idx] || (q.sequenceItems || []).map((s) => s.id)
             : undefined,
         choiceId: q.type !== "sequence" ? answers[idx] : undefined,
       }));
@@ -329,9 +339,10 @@ export function ChapterQuizView({
     <ContentProtection
       employeeName=""
       locale={locale}
-      enabled={true}
-      enableCopyProtection={true}
-      enablePrintProtection={true}
+      enabled={!isAdministrator}
+      isAdmin={isAdministrator}
+      enableCopyProtection={!isAdministrator}
+      enablePrintProtection={!isAdministrator}
     >
       <div className="relative min-h-screen bg-[var(--color-bg)]">
         <main
@@ -505,15 +516,21 @@ export function ChapterQuizView({
                 items={currentQuestion.sequenceItems || []}
                 orderedIds={
                   isCompleted
-                    ? (currentQuestion.sequenceItems || []).map((item) => item.id)
+                    ? (currentQuestion.sequenceItems || []).map(
+                        (item) => item.id,
+                      )
                     : sequenceAnswers[currentIndex] ||
-                      (currentQuestion.sequenceItems || []).map((item) => item.id)
+                      (currentQuestion.sequenceItems || []).map(
+                        (item) => item.id,
+                      )
                 }
                 onChange={handleSequenceChange}
                 locale={locale}
                 disabled={isCompleted}
                 isReview={isCompleted}
-                correctIds={(currentQuestion.sequenceItems || []).map((item) => item.id)}
+                correctIds={(currentQuestion.sequenceItems || []).map(
+                  (item) => item.id,
+                )}
               />
             </div>
           ) : (
@@ -612,7 +629,7 @@ export function ChapterQuizView({
             currentQuestion?.type === "sequence"
               ? Boolean(
                   sequenceAnswers[currentIndex] &&
-                    sequenceAnswers[currentIndex].length > 0,
+                  sequenceAnswers[currentIndex].length > 0,
                 )
               : Boolean(answers[currentIndex])
           }

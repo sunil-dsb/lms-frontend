@@ -13,6 +13,8 @@ export interface ContentProtectionProps {
   locale?: string;
   /** Master toggle to turn protection on or off (defaults to true) */
   enabled?: boolean;
+  /** Whether the viewer is an admin or author (if true, protection is disabled) */
+  isAdmin?: boolean;
   /** Prevent copying, cutting, drag-and-drop, and right-click (defaults to true) */
   enableCopyProtection?: boolean;
   /** Prevent printing (defaults to true) */
@@ -36,10 +38,12 @@ export function ContentProtection({
   employeeName = "",
   locale = "en",
   enabled = true,
+  isAdmin = false,
   enableCopyProtection = true,
   enablePrintProtection = true,
   className = "",
 }: ContentProtectionProps): React.ReactElement {
+  const isProtected = enabled && !isAdmin;
   const isEs = locale === "es";
   const lastToastTime = React.useRef(0);
 
@@ -53,7 +57,7 @@ export function ContentProtection({
 
   // Keyboard shortcuts interceptor (Ctrl+C, Ctrl+P, Ctrl+U, PrintScreen, F12)
   React.useEffect(() => {
-    if (!enabled || !enableCopyProtection) return;
+    if (!isProtected || !enableCopyProtection) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCtrlOrMeta = e.ctrlKey || e.metaKey;
@@ -149,7 +153,7 @@ export function ContentProtection({
       window.removeEventListener("keyup", handleKeyUp, true);
     };
   }, [
-    enabled,
+    isProtected,
     enableCopyProtection,
     enablePrintProtection,
     isEs,
@@ -158,12 +162,12 @@ export function ContentProtection({
 
   // Context Menu & Copy/Cut event listeners
   const handleContextMenu = (e: React.MouseEvent) => {
-    if (!enabled || !enableCopyProtection) return;
+    if (!isProtected || !enableCopyProtection) return;
     e.preventDefault();
   };
 
   const handleCopy = (e: React.ClipboardEvent) => {
-    if (!enabled || !enableCopyProtection) return;
+    if (!isProtected || !enableCopyProtection) return;
     e.preventDefault();
     if (e.clipboardData) {
       e.clipboardData.setData(
@@ -179,16 +183,16 @@ export function ContentProtection({
   };
 
   const handleCut = (e: React.ClipboardEvent) => {
-    if (!enabled || !enableCopyProtection) return;
+    if (!isProtected || !enableCopyProtection) return;
     e.preventDefault();
   };
 
   const handleDragStart = (e: React.DragEvent) => {
-    if (!enabled || !enableCopyProtection) return;
+    if (!isProtected || !enableCopyProtection) return;
     e.preventDefault();
   };
 
-  if (!enabled) {
+  if (!isProtected) {
     return <>{children}</>;
   }
 

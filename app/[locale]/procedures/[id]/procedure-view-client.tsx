@@ -278,7 +278,11 @@ export function ProcedureViewClient({
   // <article className="doc"> has something to lift off of. The employee
   // branch keeps --bg because the phone shell already runs edge-to-edge
   // white and the doc fills the viewport.
-  const isAdmin = effectiveRole === "admin";
+  const isAdmin =
+    effectiveRole === "admin" ||
+    employee?.role === "admin" ||
+    employee?.role === "super_admin" ||
+    employee?.role === "manager";
 
   // The cook-mode CTA in the doc-bar belongs to the page's first recipe block.
   // The body is rendered by `<CookModeLauncher>` further down, but the
@@ -440,7 +444,7 @@ export function ProcedureViewClient({
       <ProcedureArticleBody
         proc={proc}
         employee={employee}
-        effectiveRole={effectiveRole}
+        effectiveRole={isAdmin ? "admin" : "employee"}
         locale={locale}
         docBar={
           proc ? (

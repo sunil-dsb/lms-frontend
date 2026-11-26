@@ -7,6 +7,7 @@ import { CourseChaptersHeader } from "./course-chapters-header";
 import { CourseChapterItem } from "./course-chapter-item";
 import { StickyContinueButton } from "./sticky-continue-button";
 import { ContentProtection } from "@/components/security/content-protection";
+import type { Employee } from "@/lib/types";
 
 interface CourseChaptersViewProps {
   data: CourseChaptersViewData;
@@ -18,6 +19,8 @@ interface CourseChaptersViewProps {
   /** Sidebar width in px to offset the fixed sticky button (admin layout). Default 0. */
   sidebarOffsetPx?: number;
   showProgress?: boolean;
+  isAdmin?: boolean;
+  employee?: Employee;
 }
 
 /**
@@ -38,8 +41,18 @@ export function CourseChaptersView({
   extraHeaderActions,
   sidebarOffsetPx = 0,
   showProgress = true,
+  isAdmin,
+  employee,
 }: CourseChaptersViewProps): React.ReactElement {
   const t = useTranslations("employee.training");
+  const isAdministrator =
+    isAdmin ??
+    Boolean(
+      basePath?.includes("/admin/") ||
+      employee?.role === "admin" ||
+      employee?.role === "super_admin" ||
+      employee?.role === "manager",
+    );
   const {
     courseId,
     title,
@@ -96,11 +109,12 @@ export function CourseChaptersView({
 
   return (
     <ContentProtection
-      employeeName=""
+      employeeName={employee?.name || ""}
       locale={locale}
-      enabled={true}
-      enableCopyProtection={true}
-      enablePrintProtection={true}
+      enabled={!isAdministrator}
+      isAdmin={isAdministrator}
+      enableCopyProtection={!isAdministrator}
+      enablePrintProtection={!isAdministrator}
     >
       <div className="relative min-h-screen bg-[var(--color-bg)]">
         <main

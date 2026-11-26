@@ -43,6 +43,15 @@ export function EditCourseLoader({
       chapterCount: course.chapters?.length ?? 0,
     } as unknown as Procedure;
 
+    const sanitizeBlocks = (rawBlocks: any[]) =>
+      (rawBlocks || []).filter((b) => {
+        if (!b || !b.kind) return false;
+        if (b.kind === "linked_procedures") {
+          return Array.isArray(b.procedureIds) && b.procedureIds.length > 0;
+        }
+        return true;
+      });
+
     const backendChapters: EditorChapter[] = (course.chapters || []).map(
       (ch) => ({
         id: ch.id,
@@ -52,7 +61,7 @@ export function EditCourseLoader({
           locale === "es"
             ? ch.subtitleEs || ch.subtitleEn
             : ch.subtitleEn || ch.subtitleEs,
-        blocks: (ch.blocks as any[]) || [],
+        blocks: sanitizeBlocks(ch.blocks as any[]),
         procedureId: ch.procedureId ?? undefined,
         procedureSlug: undefined,
         quizId: ch.quizId ?? undefined,
@@ -68,7 +77,7 @@ export function EditCourseLoader({
         titleEs: ch.titleEs,
         contentEn: ch.subtitleEn || "",
         contentEs: ch.subtitleEs || "",
-        blocks: (ch.blocks as any[]) || [],
+        blocks: sanitizeBlocks(ch.blocks as any[]),
         procedureId: ch.procedureId ?? undefined,
         quizId: ch.quizId ?? undefined,
         quiz: (ch.quiz as any) ?? null,

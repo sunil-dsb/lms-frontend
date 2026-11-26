@@ -110,22 +110,29 @@ export function LinkedProceduresBody({
     <>
       <div className="space-y-3">
         {selectedProcedures.length === 0 ? (
-          <div
-            onClick={() => setIsModalOpen(true)}
-            className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--color-line-2)] bg-[var(--color-wash)]/40 py-8 px-6 text-center cursor-pointer hover:border-[var(--color-brand-300)] hover:bg-[var(--color-brand-50)]/20 transition-all group"
-          >
-            <div className="flex size-11 items-center justify-center rounded-xl bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] group-hover:text-[var(--color-brand-600)] group-hover:border-[var(--color-brand-200)] shadow-xs transition-colors">
-              <LuBookOpen className="w-5 h-5" />
+          (block.procedureIds || []).length > 0 ? (
+            <div className="flex items-center justify-center py-6 text-xs text-[var(--color-ink-3)] bg-[var(--color-wash)]/30 rounded-xl border border-[var(--color-line-2)]">
+              <span className="inline-block size-4 animate-spin rounded-full border-2 border-[var(--color-line-2)] border-t-[var(--color-brand-600)] mr-2" />
+              {isEs ? "Cargando procedimiento..." : "Loading procedure..."}
             </div>
-            <p className="mt-3 text-sm font-semibold text-[var(--color-ink)]">
-              {isEs ? "Vincular un procedimiento" : "Link a procedure"}
-            </p>
-            <p className="mt-1 text-xs text-[var(--color-ink-3)] max-w-sm">
-              {isEs
-                ? "Selecciona un procedimiento de la biblioteca para incluirlo en este capítulo."
-                : "Select a procedure from the library to include it in this chapter."}
-            </p>
-          </div>
+          ) : (
+            <div
+              onClick={() => setIsModalOpen(true)}
+              className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--color-line-2)] bg-[var(--color-wash)]/40 py-8 px-6 text-center cursor-pointer hover:border-[var(--color-brand-300)] hover:bg-[var(--color-brand-50)]/20 transition-all group"
+            >
+              <div className="flex size-11 items-center justify-center rounded-xl bg-[var(--color-surface)] border border-[var(--color-line-2)] text-[var(--color-ink-2)] group-hover:text-[var(--color-brand-600)] group-hover:border-[var(--color-brand-200)] shadow-xs transition-colors">
+                <LuBookOpen className="w-5 h-5" />
+              </div>
+              <p className="mt-3 text-sm font-semibold text-[var(--color-ink)]">
+                {isEs ? "Vincular un procedimiento" : "Link a procedure"}
+              </p>
+              <p className="mt-1 text-xs text-[var(--color-ink-3)] max-w-sm">
+                {isEs
+                  ? "Selecciona un procedimiento de la biblioteca para incluirlo en este capítulo."
+                  : "Select a procedure from the library to include it in this chapter."}
+              </p>
+            </div>
+          )
         ) : (
           selectedProcedures.map((sop) => {
             const title = isEs
