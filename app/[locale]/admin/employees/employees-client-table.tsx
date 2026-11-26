@@ -266,10 +266,6 @@ export function EmployeesClientTable({
       ...(isSuper
         ? [
             {
-              value: "admin",
-              label: isEs ? "Administradores" : "Admins",
-            },
-            {
               value: "manager",
               label: isEs ? "Gerentes" : "Managers",
             },
