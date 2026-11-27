@@ -23,6 +23,8 @@ import { CourseDetailSkeleton } from "@/components/admin/training-courses-skelet
 import { CourseChaptersView } from "@/app/[locale]/employee/training/[id]/components/course-chapters-view";
 import { ChapterLearnView } from "@/app/[locale]/employee/training/[id]/components/chapter-learn-view";
 import { ChapterQuizView } from "@/app/[locale]/employee/training/[id]/components/chapter-quiz-view";
+import { useMe } from "@/services/auth/hooks";
+import { canManageCourses } from "@/lib/rbac";
 import { CourseAssignmentModal } from "../components/course-assignment-modal";
 
 interface AdminCourseViewProps {
@@ -236,6 +238,9 @@ export function AdminCourseView({
   const basePath = `/${locale}/admin/training/${courseId}`;
   const backHref = `/${locale}/admin/training`;
 
+  const { employee: me } = useMe();
+  const canManage = canManageCourses(me?.role);
+
   // Default chapters view data (all chapters unlocked for admin inspection)
   const chaptersViewData = React.useMemo(() => {
     const raw = getCourseChaptersViewData(activeCourse, undefined, locale);
@@ -359,12 +364,16 @@ export function AdminCourseView({
                     {isEs ? "Volver al curso" : "Back to course"}
                   </Link>
                 )}
-                <Link
-                  href={`/${locale}/admin/training/${courseId}/edit`}
-                  className="rounded-full border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] px-5 py-2 text-sm font-semibold hover:bg-[var(--color-brand-tint-2)] transition-colors shadow-2xs"
-                >
-                  {isEs ? "Editar y agregar preguntas" : "Edit & add questions"}
-                </Link>
+                {canManage && (
+                  <Link
+                    href={`/${locale}/admin/training/${courseId}/edit`}
+                    className="rounded-full border border-[var(--color-brand-600)] bg-[var(--color-brand-tint)] text-[var(--color-brand-700)] px-5 py-2 text-sm font-semibold hover:bg-[var(--color-brand-tint-2)] transition-colors shadow-2xs"
+                  >
+                    {isEs
+                      ? "Editar y agregar preguntas"
+                      : "Edit & add questions"}
+                  </Link>
+                )}
               </div>
             </div>
           </main>
@@ -518,16 +527,18 @@ export function AdminCourseView({
             >
               {isEs ? "Asignar" : "Assign"}
             </Button>
-            <Link href={`/${locale}/admin/training/${courseId}/edit`}>
-              <Button
-                size="sm"
-                variant="surface"
-                icon={LuPencil}
-                className="cursor-pointer"
-              >
-                {isEs ? "Editar curso" : "Edit course"}
-              </Button>
-            </Link>
+            {canManage && (
+              <Link href={`/${locale}/admin/training/${courseId}/edit`}>
+                <Button
+                  size="sm"
+                  variant="surface"
+                  icon={LuPencil}
+                  className="cursor-pointer"
+                >
+                  {isEs ? "Editar curso" : "Edit course"}
+                </Button>
+              </Link>
+            )}
           </div>
         }
       />
