@@ -21,6 +21,8 @@ import {
   fetchAssignableEmployees,
   fetchCourseAssignments,
 } from "@/lib/api/training";
+import { useMe } from "@/services/auth/hooks";
+import { canManageCourses } from "@/lib/rbac";
 import {
   AssignMainModalView,
   type AssignScope,
@@ -67,6 +69,8 @@ export function CourseAssignmentModal({
 }: CourseAssignmentModalProps): React.ReactElement | null {
   // Modal Views: "main" (Image 1) or "people" (Image 2)
   const [view, setView] = React.useState<ModalView>("main");
+  const { employee: me } = useMe();
+  const canManage = canManageCourses(me?.role);
 
   // API Data States
   const [employees, setEmployees] = React.useState<MockEmployee[]>([]);
@@ -629,6 +633,7 @@ export function CourseAssignmentModal({
                 (c) => c.number,
               )}
               isLoadingData={isLoadingData}
+              canManageCourses={canManage}
               canAssign={
                 (mainScopeEmployeeIds.length > 0 ||
                   (scope === "station" && selectedStations.size > 0)) &&

@@ -43,6 +43,7 @@ interface AssignMainModalViewProps {
   missingChapterNumbers?: number[];
   isLoadingData?: boolean;
   canAssign: boolean;
+  canManageCourses?: boolean;
   isSubmitting: boolean;
   onOpenPeopleView: () => void;
   onClose: () => void;
@@ -85,6 +86,7 @@ export function AssignMainModalView({
   missingChapterNumbers = [],
   isLoadingData = false,
   canAssign,
+  canManageCourses = true,
   isSubmitting,
   onOpenPeopleView,
   onClose,
@@ -234,35 +236,45 @@ export function AssignMainModalView({
                       </p>
                     </div>
                   </div>
-                  <div className="flex justify-end pt-1">
-                    <button
-                      type="button"
-                      disabled={isRedirecting}
-                      onClick={() => {
-                        setIsRedirecting(true);
-                        if (onStartRedirect) {
-                          onStartRedirect();
-                        }
-                        if (onEditMissingChapter) {
-                          const targetNum = missingChapterNumbers[0] || 1;
-                          onEditMissingChapter(targetNum);
-                        } else {
-                          const targetUrl = `/${locale}/admin/training/${course.id}/edit?chapter=${missingChapterNumbers[0] || 1}&tab=quiz`;
-                          window.location.href = targetUrl;
-                        }
-                      }}
-                      className="inline-flex items-center gap-2 text-xs font-bold text-[var(--color-brand-600)] hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isRedirecting && (
-                        <LuLoader className="size-3.5 animate-spin" />
-                      )}
-                      <span>
+                  {canManageCourses ? (
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="button"
+                        disabled={isRedirecting}
+                        onClick={() => {
+                          setIsRedirecting(true);
+                          if (onStartRedirect) {
+                            onStartRedirect();
+                          }
+                          if (onEditMissingChapter) {
+                            const targetNum = missingChapterNumbers[0] || 1;
+                            onEditMissingChapter(targetNum);
+                          } else {
+                            const targetUrl = `/${locale}/admin/training/${course.id}/edit?chapter=${missingChapterNumbers[0] || 1}&tab=quiz`;
+                            window.location.href = targetUrl;
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 text-xs font-bold text-[var(--color-brand-600)] hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isRedirecting && (
+                          <LuLoader className="size-3.5 animate-spin" />
+                        )}
+                        <span>
+                          {isEs
+                            ? "Agregar preguntas de evaluación →"
+                            : "Add quiz questions →"}
+                        </span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="pt-1">
+                      <p className="text-xs italic text-[var(--color-warn-ink)]/80">
                         {isEs
-                          ? "Agregar preguntas de evaluación →"
-                          : "Add quiz questions →"}
-                      </span>
-                    </button>
-                  </div>
+                          ? "Comunícate con un administrador o gerente para agregar preguntas de cuestionario a este curso antes de asignarlo."
+                          : "Contact an admin or manager to add quiz questions to this course before it can be assigned."}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </>
